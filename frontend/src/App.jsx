@@ -21,6 +21,10 @@ function App() {
       
       s.on("connect", () => console.log(`[FRONTEND_MASTER] Socket Connected: ${s.id}`));
       
+      s.on("disconnect", (reason) => {
+        console.warn(`[FRONTEND_MASTER] !!! SOCKET DISCONNECTED: ${reason}`);
+      });
+      
       s.on("presence_update", (list) => {
         console.log(`[FRONTEND_MASTER] Presence Sync: ${list.length} creators now live.`);
         setCreators(list);
@@ -28,16 +32,31 @@ function App() {
     }
   }, []);
 
+  // AUTO-RECOVERY: If socket reconnects while we are a creator, re-register immediately
+  useEffect(() => {
+    if (roomData?.isCreator && socketRef.current) {
+      const socket = socketRef.current;
+      const reRegister = () => {
+        console.log(`[FRONTEND_MASTER] AUTO-RECOVER: Re-registering ${roomData.creatorId}`);
+        socket.emit("register_creator", {
+          creatorId: roomData.creatorId,
+          roomName: roomData.roomName
+        });
+      };
+
+      socket.on("connect", reRegister);
+      // Initial registration if just joined
+      reRegister();
+
+      return () => {
+        socket.off("connect", reRegister);
+      };
+    }
+  }, [roomData, socketRef.current]);
+
   const handleJoin = (data) => {
     console.log(`[FRONTEND_MASTER] ACTION: Entering Video Room: ${data.roomName}`);
     setRoomData(data);
-    if (data.isCreator && socketRef.current) {
-      console.log(`[FRONTEND_MASTER] SOCKET_EMIT: register_creator for ${data.creatorId}`);
-      socketRef.current.emit("register_creator", {
-        creatorId: data.creatorId,
-        roomName: data.roomName
-      });
-    }
   };
 
   const handleLeave = () => {
