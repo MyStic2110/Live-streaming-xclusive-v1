@@ -9,6 +9,12 @@ export const setupPresenceSocket = (io) => {
       broadcast(io);
     });
 
+    socket.on("remove_creator", () => {
+      if (presenceService.removeCreatorBySocket(socket.id)) {
+        broadcast(io);
+      }
+    });
+
     socket.on("disconnect", (reason) => {
       console.log(`[SOCKET] Disconnected: ${socket.id} | Reason: ${reason}`);
       if (presenceService.removeCreatorBySocket(socket.id)) {

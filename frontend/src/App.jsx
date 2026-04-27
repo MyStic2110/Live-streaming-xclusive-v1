@@ -61,6 +61,9 @@ function App() {
 
   const handleLeave = () => {
     console.log(`[FRONTEND_MASTER] ACTION: Leaving Video Room.`);
+    if (roomData?.isCreator && socketRef.current) {
+      socketRef.current.emit("remove_creator");
+    }
     setRoomData(null);
   };
 
