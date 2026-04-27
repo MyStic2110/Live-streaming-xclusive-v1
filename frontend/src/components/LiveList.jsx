@@ -78,13 +78,23 @@ export default function LiveList({ onJoin, creators }) {
             </div>
           ) : (
             creators.map((c) => (
-              <div key={c.creatorId} className="azure-card">
-                 <div className="video-placeholder">
-                    READY FOR CALL
+              <div key={c.creatorId} className="azure-card streaming-card">
+                 <div className="card-media">
+                    <div className="live-badge">
+                      <span className="pulse-dot"></span> LIVE
+                    </div>
+                    <div className="creator-avatar">
+                      {c.creatorId.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div className="card-overlay">
+                       <span className="viewer-count">1.2k viewing</span>
+                    </div>
                  </div>
-                 <div style={{ padding: "1.5rem" }}>
-                   <button onClick={() => joinCall(c.creatorId)} className="btn-azure" style={{ width: "100%" }}>
-                     JOIN PRIVATE SESSION
+                 <div className="card-info">
+                   <h3 className="creator-name">{c.creatorId}</h3>
+                   <p className="room-info">Private Premium Session</p>
+                   <button onClick={() => joinCall(c.creatorId)} className="btn-azure join-btn">
+                     JOIN NOW
                    </button>
                  </div>
               </div>
