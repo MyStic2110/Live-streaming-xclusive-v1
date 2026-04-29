@@ -109,10 +109,15 @@ body {
   margin-bottom: 1rem;
 }
 
-.grid-layout {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2.5rem;
+/* Streaming & Hero Components */
+.hero-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.hero-section h1 {
+  font-weight: 800;
+  color: var(--text-main);
 }
 
 .azure-card {
@@ -131,102 +136,15 @@ body {
   box-shadow: 0 20px 40px rgba(59, 130, 246, 0.1);
 }
 
-.video-placeholder {
-  height: 240px;
-  background: #f1f5f9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-/* Streaming Enhancements */
-.streaming-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.card-media {
-  height: 200px;
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.live-badge {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  background: #ef4444;
-  color: white;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.7rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
-
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  background: white;
-  border-radius: 50%;
-  animation: pulse 1.5s infinite;
-}
-
 .creator-avatar {
-  width: 70px;
-  height: 70px;
   background: var(--primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1.5rem;
   font-weight: 800;
   box-shadow: 0 10px 20px var(--primary-glow);
-}
-
-.card-overlay {
-  position: absolute;
-  bottom: 15px;
-  right: 15px;
-}
-
-.viewer-count {
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.65rem;
-  color: white;
-}
-
-.card-info {
-  padding: 1.5rem;
-}
-
-.creator-name {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 0.2rem;
-}
-
-.room-info {
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  margin-bottom: 1.2rem;
-}
-
-.join-btn {
-  width: 100%;
 }
 
 @keyframes pulse {

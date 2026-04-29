@@ -1,46 +1,40 @@
 import { tokenService } from '../services/tokenService.js';
-import { presenceService } from '../services/presenceService.js';
+import { AgentDispatchClient } from 'livekit-server-sdk';
+import { config } from '../config/livekit.js';
 
-export const goLive = async (req, res) => {
-  console.log(`[HTTP_CONTROLLER] --> POST /go-live | START`);
+const ROOM_NAME  = "ai_room_MURALI";
+const AGENT_NAME = "WEATHER AGENT FOR INDIA";
+const USER_ID    = "MURALI";
+
+export const talkToAI = async (req, res) => {
+  console.log(`[HTTP_CONTROLLER] --> POST /talk-to-ai | START`);
   try {
-    const { creatorId } = req.body;
-    console.log(`[HTTP_CONTROLLER] PARAMS: creatorId=${creatorId}`);
+    // 1. Generate token
+    const { token } = await tokenService.generateToken(USER_ID, ROOM_NAME, true);
+    console.log(`[HTTP_CONTROLLER] Token generated for ${USER_ID}`);
+
+    // 2. Prepare HTTP URL for Dispatch (LiveKit API uses HTTP/HTTPS)
+    const apiUrl = config.livekit.url.replace("ws://", "http://").replace("wss://", "https://");
     
-    const roomName = `room_${creatorId.substring(0, 5)}`;
-    const { token, identity } = await tokenService.generateToken(creatorId, roomName, true);
-    
-    console.log(`[HTTP_CONTROLLER] <-- SUCCESS: Room Created: ${roomName}`);
-    res.json({ token, roomName, identity });
+    console.log(`[HTTP_CONTROLLER] Dispatching agent ${AGENT_NAME} to room ${ROOM_NAME}...`);
+    console.log(`[HTTP_CONTROLLER] Using API Target: ${apiUrl}`);
+
+    const dispatchClient = new AgentDispatchClient(
+      apiUrl,
+      config.livekit.apiKey,
+      config.livekit.apiSecret
+    );
+
+    // 3. Create Dispatch
+    const dispatch = await dispatchClient.createDispatch(ROOM_NAME, AGENT_NAME);
+    console.log(`[HTTP_CONTROLLER] ✅ Agent dispatched successfully! Dispatch ID: ${dispatch.id}`);
+
+    res.json({ token, roomName: ROOM_NAME, identity: USER_ID, isAI: true });
   } catch (err) {
-    console.error("[HTTP_CONTROLLER] !!! CRITICAL ERROR:", err.message);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-export const requestCall = async (req, res) => {
-  console.log(`[HTTP_CONTROLLER] --> POST /request-call | START`);
-  try {
-    const { creatorId, userId } = req.body;
-    console.log(`[HTTP_CONTROLLER] PARAMS: creatorId=${creatorId}, userId=${userId}`);
-    
-    const creatorData = presenceService.getCreator(creatorId);
-    if (!creatorData) {
-      console.log(`[HTTP_CONTROLLER] <-- FAIL: Creator ${creatorId} not found in presence map.`);
-      return res.status(404).json({ error: "Creator Offline" });
+    console.error("[HTTP_CONTROLLER] ❌ CRITICAL AI DISPATCH ERROR:", err.message);
+    if (err.response) {
+       console.error("[HTTP_CONTROLLER] Response data:", err.response.data);
     }
-
-    const { token, identity } = await tokenService.generateToken(userId, creatorData.roomName, false);
-    
-    console.log(`[HTTP_CONTROLLER] <-- SUCCESS: Call Granted for room ${creatorData.roomName}`);
-    res.json({ token, identity });
-  } catch (err) {
-    console.error("[HTTP_CONTROLLER] !!! CRITICAL ERROR:", err.message);
     res.status(500).json({ error: err.message });
   }
-};
-
-export const endRoom = (req, res) => {
-  console.log(`[HTTP_CONTROLLER] --> POST /end-room | Handled.`);
-  res.json({ success: true });
 };

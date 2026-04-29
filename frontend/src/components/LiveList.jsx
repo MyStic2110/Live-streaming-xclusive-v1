@@ -1,105 +1,66 @@
-import React, { useState } from "react";
+import React from "react";
 import axios from "axios";
 
-const API = "";
+const API = import.meta.env.VITE_API_URL || "";
 const generateId = (prefix) => `${prefix}_${Math.floor(Math.random() * 1000)}`;
 
-export default function LiveList({ onJoin, creators }) {
-  const [isGoingLive, setIsGoingLive] = useState(false);
-
-  const goLive = async () => {
-    console.log("[LIVELIST] ACTION: User clicked 'GO LIVE'");
-    setIsGoingLive(true);
-    
-    const creatorId = generateId("creator");
-    console.log(`[LIVELIST] STEP 1: Generated Creator ID: ${creatorId}`);
-
+export default function LiveList({ onJoin }) {
+  const initiateAITalk = async () => {
+    console.log("[LIVELIST] ACTION: User clicked 'TALK TO AI'");
     try {
-      console.log(`[LIVELIST] STEP 2: Requesting room from Backend...`);
-      const res = await axios.post(`${API}/go-live`, { creatorId });
-      
-      console.log(`[LIVELIST] STEP 3: Room Received! Name: ${res.data.roomName}`);
+      const res = await axios.post(`${API}/talk-to-ai`);
       onJoin({
         roomName: res.data.roomName,
         token: res.data.token,
-        isCreator: true,
-        creatorId: creatorId
+        isCreator: false,
+        creatorId: "Mistral_AI",
+        isAI: true
       });
     } catch (err) {
-      console.error("[LIVELIST] !!! FAILED TO GO LIVE:", err.message);
-      alert("Failed to go live");
-      setIsGoingLive(false);
+      console.error("[LIVELIST] !!! FAILED TO START AI SESSION:", err.message);
+      alert("AI Assistant is currently offline");
     }
   };
-
-  const joinCall = async (creatorId) => {
-    console.log(`[LIVELIST] ACTION: User clicked 'JOIN' for Creator: ${creatorId}`);
-    const userId = generateId("user");
-    
-    try {
-      console.log(`[LIVELIST] STEP 1: Requesting call token for User: ${userId}`);
-      const res = await axios.post(`${API}/request-call`, { creatorId, userId });
-      
-      console.log(`[LIVELIST] STEP 2: Token Received! Entering session...`);
-      onJoin({
-        roomName: "room_unknown", 
-        token: res.data.token,
-        isCreator: false,
-        creatorId: creatorId
-      });
-    } catch (err) {
-      console.error("[LIVELIST] !!! FAILED TO JOIN CALL:", err.message);
-      alert("Creator is offline");
-    }
-  }
 
   return (
     <div className="app-container">
       <nav className="navbar">
-        <div className="brand">
-          XCLUSIVE <span className="version-badge">AZURE V5.1</span>
+        <div className="brand" style={{ letterSpacing: "1px", color: "#3b82f6" }}>
+          SWARM <span className="version-badge" style={{ background: "rgba(59, 130, 246, 0.1)", color: "#3b82f6", border: "1px solid rgba(59, 130, 246, 0.3)", marginLeft: "15px", letterSpacing: "0.5px" }}>ARMY OF AGENTS • BUILDING FUTURE GEN</span>
         </div>
-        <button onClick={goLive} className="btn-azure" disabled={isGoingLive}>
-          {isGoingLive ? "CONNECTING..." : "GO LIVE"}
-        </button>
       </nav>
 
-      <main className="main-wrapper">
+      <main className="main-wrapper" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
         <div className="hero-section">
-          <h1>Direct Premium Access</h1>
-          <p>The world's most stable 1:1 video platform.</p>
+          <h1 style={{ fontSize: "3.5rem", marginBottom: "0.5rem" }}>Weather Agent for India</h1>
+          <p style={{ fontSize: "1.2rem", opacity: 0.8 }}>Real-time weather insights, powered by advanced AI.</p>
         </div>
 
-        <div className="grid-layout">
-          {creators.length === 0 ? (
-            <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "6rem", color: "var(--text-muted)" }}>
-              <h2>Waiting for secure lines...</h2>
-              <p style={{ fontSize: "0.8rem", marginTop: "1rem" }}>Be the first to go live and start a session.</p>
-            </div>
-          ) : (
-            creators.map((c) => (
-              <div key={c.creatorId} className="azure-card streaming-card">
-                 <div className="card-media">
-                    <div className="live-badge">
-                      <span className="pulse-dot"></span> LIVE
-                    </div>
-                    <div className="creator-avatar">
-                      {c.creatorId.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div className="card-overlay">
-                       <span className="viewer-count">1.2k viewing</span>
-                    </div>
-                 </div>
-                 <div className="card-info">
-                   <h3 className="creator-name">{c.creatorId}</h3>
-                   <p className="room-info">Private Premium Session</p>
-                   <button onClick={() => joinCall(c.creatorId)} className="btn-azure join-btn">
-                     JOIN NOW
-                   </button>
-                 </div>
-              </div>
-            ))
-          )}
+        <div className="status-banner" style={{ 
+          background: "rgba(59, 130, 246, 0.1)", 
+          border: "1px solid rgba(59, 130, 246, 0.3)", 
+          padding: "0.5rem 1.5rem", 
+          borderRadius: "20px", 
+          marginBottom: "2rem",
+          color: "#3b82f6",
+          fontWeight: "bold",
+          fontSize: "0.9rem"
+        }}>
+          <span className="dot" style={{ display: "inline-block", width: "8px", height: "8px", background: "#3b82f6", borderRadius: "50%", marginRight: "10px", boxShadow: "0 0 10px #3b82f6" }}></span>
+          1 AGENT LIVE NOW • 50+ AGENTS COMING SOON
+        </div>
+
+        <div className="azure-card" style={{ padding: "3rem", textAlign: "center", maxWidth: "500px", width: "100%" }}>
+          <div className="creator-avatar" style={{ margin: "0 auto 2rem", width: "120px", height: "120px", fontSize: "3rem", background: "linear-gradient(135deg, #007bff, #00ff88)" }}>
+            WA
+          </div>
+          <h2 style={{ marginBottom: "1rem" }}>Premium AI Session</h2>
+          <p style={{ color: "var(--text-muted)", marginBottom: "2rem" }}>
+            Experience the future of real-time weather interaction. Encrypted, secure, and uniquely Indian.
+          </p>
+          <button onClick={initiateAITalk} className="btn-azure" style={{ width: "100%", fontSize: "1.2rem", padding: "1.2rem" }}>
+            START CONVERSATION
+          </button>
         </div>
       </main>
     </div>

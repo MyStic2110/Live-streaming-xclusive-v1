@@ -4,12 +4,9 @@ import { config } from '../config/livekit.js';
 class TokenService {
   async generateToken(identity, roomName, canPublish = false) {
     console.log(`[TOKEN_SERVICE] STEP 1: Starting generation for identity: ${identity}`);
-    
-    const uniqueIdentity = `${identity}_${Math.floor(Date.now() / 1000)}`;
-    console.log(`[TOKEN_SERVICE] STEP 2: Fingerprint created: ${uniqueIdentity}`);
 
     const at = new AccessToken(config.livekit.apiKey, config.livekit.apiSecret, {
-      identity: uniqueIdentity,
+      identity: identity,
       ttl: "2h"
     });
 
@@ -24,7 +21,7 @@ class TokenService {
     const token = await at.toJwt();
     console.log(`[TOKEN_SERVICE] STEP 4: JWT Signing Complete. Status: SUCCESS`);
     
-    return { token, identity: uniqueIdentity };
+    return { token, identity: identity };
   }
 }
 
