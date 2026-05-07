@@ -1,0 +1,20 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
+.env
+
+# MP3 files (optional, but good to keep repo small)
+*.mp3
+
+# IDEs
+.vscode/
+.idea/

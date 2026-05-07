@@ -7,34 +7,39 @@ const AGENT_NAME = "WEATHER AGENT FOR INDIA";
 const USER_ID    = "MURALI";
 
 export const talkToAI = async (req, res) => {
-  console.log(`[HTTP_CONTROLLER] --> POST /talk-to-ai | START`);
+  const { agentType } = req.body; // 'weather' or 'lina'
+  
+  let roomName = "ai_room_MURALI";
+  let agentName = "WEATHER AGENT FOR INDIA";
+
+  if (agentType === "lina") {
+    roomName = "personal_companion";
+    agentName = "LINA";
+  }
+
+  console.log(`[HTTP_CONTROLLER] --> POST /talk-to-ai | AGENT: ${agentName} | ROOM: ${roomName}`);
+  
   try {
     // 1. Generate token
-    const { token } = await tokenService.generateToken(USER_ID, ROOM_NAME, true);
+    const { token } = await tokenService.generateToken(USER_ID, roomName, true);
     console.log(`[HTTP_CONTROLLER] Token generated for ${USER_ID}`);
 
-    // 2. Prepare HTTP URL for Dispatch (LiveKit API uses HTTP/HTTPS)
+    // 2. Prepare HTTP URL for Dispatch
     const apiUrl = config.livekit.url.replace("ws://", "http://").replace("wss://", "https://");
     
-    console.log(`[HTTP_CONTROLLER] Dispatching agent ${AGENT_NAME} to room ${ROOM_NAME}...`);
-    console.log(`[HTTP_CONTROLLER] Using API Target: ${apiUrl}`);
-
     const dispatchClient = new AgentDispatchClient(
       apiUrl,
       config.livekit.apiKey,
       config.livekit.apiSecret
     );
 
-    // 3. Create Dispatch
-    const dispatch = await dispatchClient.createDispatch(ROOM_NAME, AGENT_NAME);
-    console.log(`[HTTP_CONTROLLER] ✅ Agent dispatched successfully! Dispatch ID: ${dispatch.id}`);
+    // 3. Create Dispatch for the SPECIFIC agent
+    const dispatch = await dispatchClient.createDispatch(roomName, agentName);
+    console.log(`[HTTP_CONTROLLER] ✅ ${agentName} dispatched successfully!`);
 
-    res.json({ token, roomName: ROOM_NAME, identity: USER_ID, isAI: true });
+    res.json({ token, roomName: roomName, identity: USER_ID, isAI: true });
   } catch (err) {
     console.error("[HTTP_CONTROLLER] ❌ CRITICAL AI DISPATCH ERROR:", err.message);
-    if (err.response) {
-       console.error("[HTTP_CONTROLLER] Response data:", err.response.data);
-    }
     res.status(500).json({ error: err.message });
   }
 };
