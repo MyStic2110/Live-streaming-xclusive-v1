@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "swarm": "concurrently -n \"INFRA,LINA,WEATHER,BACKEND,FRONTEND\" -c \"gray,magenta,blue,green,cyan\" \"docker-compose up\" \"cd python-agent && .\\venv\\Scripts\\python.exe agents/lina/lina.py dev\" \"cd python-agent && .\\venv\\Scripts\\python.exe agents/weather_agent/weather_agent.py dev\" \"cd backend && npm run dev\" \"cd frontend && npm run dev\""
+    "swarm": "concurrently -n \"INFRA,LINA,WEATHER,VIGIL,BACKEND,FRONTEND\" -c \"gray,magenta,blue,yellow,green,cyan\" \"docker-compose up\" \"cd python-agent && .\\venv\\Scripts\\python.exe agents/lina/lina.py dev\" \"cd python-agent && .\\venv\\Scripts\\python.exe agents/weather_agent/weather_agent.py dev\" \"cd python-agent && .\\venv\\Scripts\\python.exe agents/vigil/vigil.py dev\" \"cd backend && npm run dev\" \"cd frontend && npm run dev\""
   },
   "dependencies": {
     "@ngrok/ngrok": "^1.7.0",

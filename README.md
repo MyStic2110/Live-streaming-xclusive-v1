@@ -22,14 +22,21 @@ A professional AI voice agent specializing in witty, localized weather reporting
 - **Voice**: Paul Neutral (crisp, professional)
 - **Run**: `python agents/weather_agent/weather_agent.py dev`
 
+### 🛡️ Vigil — Cybersecurity Auditor
+A serious, authoritative AI auditor that conducts professional 18-question maturity assessments. Vigil is designed to be persistent and ensure clear data capture for security scoring.
+
+- **Stack**: Deepgram STT + GPT-4o-mini + Deepgram Aura (Hera) TTS
+- **Voice**: Aura Hera (authoritative, expert)
+- **Run**: `python agents/vigil/vigil.py dev`
+
 ---
 
 ## 🌟 Key Features
 
 - **Multi-Agent Architecture**: Run specialized agents independently in separate rooms.
 - **Real-Time Voice Pipeline**: VAD → STT → LLM → TTS, all streaming in real-time.
-- **Stable on Windows**: Tuned VAD endpointing and Deepgram integration for reliable Windows performance.
-- **Scalable Design**: Add new agents by simply creating a new folder under `agents/`.
+- **Persistent Audit Logic**: Vigil ensures clear 'Yes/No' answers through active validation.
+- **Dynamic Identity**: Agents no longer use hardcoded names; they capture your identity in real-time.
 
 ---
 
@@ -42,12 +49,9 @@ livekit-video-app/
 ├── python-agent/                # Python (SWARM AI Voice Pipeline)
 │   ├── agents/
 │   │   ├── lina/                # 💖 Lina Agent (Warm Personal Partner)
-│   │   │   ├── lina.py
-│   │   │   ├── trigger_lina.py
-│   │   │   ├── create_lina_voice.py
-│   │   │   └── assets/          # Voice samples & MP3 references
-│   │   └── weather_agent/       # 🌦️ Weather Agent (India)
-│   │       └── weather_agent.py
+│   │   ├── weather_agent/       # 🌦️ Weather Agent (India)
+│   │   └── vigil/               # 🛡️ Vigil Agent (Cyber Auditor)
+│   │       └── vigil.py
 │   ├── tests/
 │   │   ├── shared/              # Generic STT/TTS tests
 │   │   ├── lina_specific/       # Lina brain & memory tests

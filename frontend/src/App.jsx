@@ -3,6 +3,7 @@ import axios from "axios";
 import LiveList from "./components/LiveList";
 import VideoRoom from "./components/VideoRoom";
 import LinaRoom from "./components/LinaRoom";
+import VigilRoom from "./components/VigilRoom";
 import '@livekit/components-styles/index.css';
 import "./index.css";
 
@@ -22,12 +23,15 @@ function App() {
   };
 
   const isLina = roomData?.creatorId === "LINA";
+  const isVigil = roomData?.creatorId === "VIGIL";
 
   return (
     <div className="app-container">
       {roomData ? (
         isLina ? (
           <LinaRoom roomData={roomData} onLeave={handleLeave} />
+        ) : isVigil ? (
+          <VigilRoom roomData={roomData} onLeave={handleLeave} />
         ) : (
           <VideoRoom roomData={roomData} onLeave={handleLeave} />
         )
