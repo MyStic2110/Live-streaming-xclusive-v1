@@ -5,6 +5,7 @@ import VideoRoom from "./components/VideoRoom";
 import LinaRoom from "./components/LinaRoom";
 import VigilRoom from "./components/VigilRoom";
 import BIRoom from "./components/BIRoom";
+import NovaRoom from "./components/NovaRoom";
 import '@livekit/components-styles/index.css';
 import "./index.css";
 
@@ -26,6 +27,7 @@ function App() {
   const isLina = roomData?.creatorId === "LINA";
   const isVigil = roomData?.creatorId === "VIGIL";
   const isBI = roomData?.creatorId === "BI";
+  const isNova = roomData?.creatorId === "NOVA";
 
   return (
     <div className="app-container">
@@ -36,6 +38,8 @@ function App() {
           <VigilRoom roomData={roomData} onLeave={handleLeave} />
         ) : isBI ? (
           <BIRoom roomData={roomData} onLeave={handleLeave} />
+        ) : isNova ? (
+          <NovaRoom roomData={roomData} onLeave={handleLeave} />
         ) : (
           <VideoRoom roomData={roomData} onLeave={handleLeave} />
         )

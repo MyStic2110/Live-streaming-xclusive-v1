@@ -1,0 +1,27 @@
+[
+  {
+    "route": "/dashboard",
+    "description": "The main home screen showing an overview of the account.",
+    "keywords": ["home", "main", "overview", "dashboard", "summary", "start"]
+  },
+  {
+    "route": "/billing/usage",
+    "description": "Shows API limits, token usage, invoices, and credit card management.",
+    "keywords": ["billing", "invoice", "cost", "tokens", "usage", "limits", "money", "credit card", "pay"]
+  },
+  {
+    "route": "/settings/data-import",
+    "description": "The tool to upload and import existing customer data from Excel or CSV files.",
+    "keywords": ["import", "excel", "csv", "upload", "data", "migration", "bulk", "transfer"]
+  },
+  {
+    "route": "/admin/roles-and-permissions",
+    "description": "Manage team access, create new roles, and restrict data visibility.",
+    "keywords": ["admin", "roles", "permissions", "access", "restrict", "team", "junior", "reps", "security", "users"]
+  },
+  {
+    "route": "/reports/analytics",
+    "description": "View performance charts, graphs, and quarterly reports.",
+    "keywords": ["reports", "analytics", "q3", "quarterly", "performance", "charts", "graphs", "metrics"]
+  }
+]

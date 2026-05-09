@@ -126,6 +126,18 @@ export default function LiveList({ onJoin }) {
         "Humidity and storm trends.", "Rainfall alerts per district.",
         "Predict weather disruptions.", "South India climate summary."
       ]
+    },
+    {
+      id: "nova", title: "Nova Copilot", icon: "🚀", color: "#0ea5e9",
+      desc: "State-of-the-art SaaS copilot with autonomous UI navigation.",
+      btnText: "ACTIVATE NOVA",
+      prompts: [
+        "Run the success test.", "Run the failure test.",
+        "Show me the dashboard.", "Open my user settings.",
+        "How do I create a project?", "Log me out safely.",
+        "Show my billing info.", "Switch to dark mode.",
+        "Explain your ACK system.", "Demonstrate Show and Tell."
+      ]
     }
   ];
 
