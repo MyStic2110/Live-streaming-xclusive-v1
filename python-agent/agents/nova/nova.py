@@ -24,38 +24,47 @@ logger = logging.getLogger("nova")
 logger.setLevel(logging.INFO)
 
 DEFAULT_SCHEMA = {
-  "company_name": "Generic SaaS Co",
+  "company_name": "Nexus IPL 2026",
   "available_routes": {
-    "dashboard": "Navigates to the main dashboard",
-    "settings": "Navigates to the user settings page",
-    "billing": "Navigates to the billing and invoices page"
+    "dashboard": "Match Arena (Scores & Standings)",
+    "squad": "Squad Hub (Referrals & Multipliers)",
+    "history": "Performance Records (Past Results)",
+    "changelog": "Evolution Log (Updates)",
+    "logout": "Exit the platform",
+    "login": "Go to the authentication arena"
   },
   "available_actions": {
-    "logout": "Logs the user out of the application",
-    "create_project": "Opens the modal to create a new project",
-    "switch_dark_mode": "Toggles the application theme to dark mode"
+    "refresh_scores": "Updates the live arena data",
+    "analyze_match": "Opens a deep dive into match analytics"
   }
 }
 
-# --- GLOBAL PLUGINS (Pre-warmed for latency) ---
-VAD_PLUGIN = silero.VAD.load(min_silence_duration=0.5) # Sharper VAD
-STT_PLUGIN = deepgram.STT(model="nova-2-general")
-TTS_PLUGIN = deepgram.TTS(model="aura-asteria-en") 
+# --- GLOBAL CONSTANTS ---
 ROUTER = SemanticRouter()
 
 async def entrypoint(ctx: JobContext):
     logger.info(f"--- NOVA (Optimized Pipeline) CONNECTING ---")
+    
+    # Initialize plugins INSIDE the entrypoint (Fixes Windows loop errors)
+    vad = silero.VAD.load(min_silence_duration=0.5)
+    stt = deepgram.STT(model="nova-2-general")
+    tts = deepgram.TTS(model="aura-asteria-en")
+
     await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
     await ctx.room.local_participant.set_metadata(json.dumps({"name": "NOVA"}))
 
-    system_prompt = f"""You are Nova, an AI SaaS Copilot. 
-Your job is to translate user commands into UI actions.
+    system_prompt = f"""You are Nova, the official Intelligence Copilot for Nexus IPL 2026.
+Your role is to guide users through the match arena, help them manage their squad, and explain their performance analytics.
 
-FAST-PATH ENABLED: The system may sometimes navigate the UI before you even speak. 
-If you see a [FAST-PATH] hint, just confirm that you've navigated there.
+AUTHENTICATION: You can physically log users out or take them to the Google sign-in page if they ask.
+
+FAST-PATH: I have a direct link to the UI. Often, I will move the screen BEFORE you even speak. 
+If you see a [FAST-PATH] hint, simply confirm that you've navigated the user to that section.
 
 AVAILABLE ROUTES: {json.dumps(DEFAULT_SCHEMA['available_routes'])}
 AVAILABLE ACTIONS: {json.dumps(DEFAULT_SCHEMA['available_actions'])}
+
+Be professional, enthusiastic about cricket, and sound like a high-end AI specialist.
 """
 
     # --- OPTIMIZED TOOLS (Optimistic Execution) ---
@@ -109,13 +118,21 @@ AVAILABLE ACTIONS: {json.dumps(DEFAULT_SCHEMA['available_actions'])}
     )
 
     session = AgentSession(
-        vad=VAD_PLUGIN,
-        stt=STT_PLUGIN,
+        vad=vad,
+        stt=stt,
         llm=llm_plugin,
-        tts=TTS_PLUGIN,
+        tts=tts,
         # Reduced min_delay for snappier conversation
         turn_handling={"interruption": {"enabled": False}, "endpointing": {"min_delay": 0.8}},
     )
+
+    # --- THE NEXUS ONBOARDING GREETING ---
+    @session.on("agent_started")
+    def on_started():
+        asyncio.create_task(session.say(
+            "Welcome to Nexus IPL 2026! I’m Nova. I’ve integrated directly into your Match Arena. I can show you the live scores, analyze your ball-by-ball predictions, or even walk you through the Global Standings. What can I demo for you first?",
+            allow_interruptions=True
+        ))
 
     @session.on("user_input_transcribed")
     def on_stt(event: voice.UserInputTranscribedEvent):
@@ -151,7 +168,9 @@ AVAILABLE ACTIONS: {json.dumps(DEFAULT_SCHEMA['available_actions'])}
             try:
                 msg = json.loads(dp.data.decode("utf-8"))
                 if msg.get("type") == "ack":
-                    logger.info(f"[LATENCY:ACK] UI finished action '{msg.get('key')}': {msg.get('status')}")
+                    status = msg.get("status")
+                    detail = msg.get("message", "No detail")
+                    logger.info(f"[LATENCY:ACK] UI finished action '{msg.get('key')}': {status} | Detail: {detail}")
             except: pass
 
     await session.start(room=ctx.room, agent=agent)

@@ -1,27 +1,59 @@
 [
   {
-    "route": "/dashboard",
-    "description": "The main home screen showing an overview of the account.",
-    "keywords": ["home", "main", "overview", "dashboard", "summary", "start"]
+    "route": "dashboard",
+    "description": "The Match Arena showing live IPL scores, the global leaderboard, and upcoming fixtures.",
+    "keywords": [
+      "arena", "matches", "scores", "live", "dashboard", "home", "upcoming", 
+      "standings", "leaderboard", "rankings", "top users", "who is winning", "table",
+      "current games", "ipl scorecard", "who is playing", "main screen", "go back", 
+      "fixtures", "schedule", "match list", "live scores", "points table", "rank"
+    ]
   },
   {
-    "route": "/billing/usage",
-    "description": "Shows API limits, token usage, invoices, and credit card management.",
-    "keywords": ["billing", "invoice", "cost", "tokens", "usage", "limits", "money", "credit card", "pay"]
+    "route": "squad",
+    "description": "The Squad Hub where users manage referrals, boost their multipliers, and see active friends.",
+    "keywords": [
+      "squad", "referrals", "friends", "multiplier", "invite", "team", "growth", 
+      "refer", "link", "my tribe", "boost", "points booster", "referral link", 
+      "my friends", "how to get points", "20x", "earn more", "sharing", "viral", 
+      "active squad", "invite code", "get more points", "increase multiplier"
+    ]
   },
   {
-    "route": "/settings/data-import",
-    "description": "The tool to upload and import existing customer data from Excel or CSV files.",
-    "keywords": ["import", "excel", "csv", "upload", "data", "migration", "bulk", "transfer"]
+    "route": "history",
+    "description": "The Performance History showing past prediction results, ball-by-ball analysis, and points earned.",
+    "keywords": [
+      "history", "predictions", "performance", "past", "results", "analysis", 
+      "points", "how did i do", "my scores", "previous matches", "breakdown",
+      "how much i won", "my predictions", "past results", "analytical breakdown", 
+      "how i played", "records", "previous games", "stats", "metrics", "accuracy", 
+      "points earned", "match history", "old predictions"
+    ]
   },
   {
-    "route": "/admin/roles-and-permissions",
-    "description": "Manage team access, create new roles, and restrict data visibility.",
-    "keywords": ["admin", "roles", "permissions", "access", "restrict", "team", "junior", "reps", "security", "users"]
+    "route": "changelog",
+    "description": "The Nexus Evolution log showing system updates, version history, and new features.",
+    "keywords": [
+      "updates", "changelog", "new", "evolution", "system", "version", 
+      "what happened", "changes", "roadmap", "whats new", "latest version", 
+      "features", "dev log", "system changes", "bug fixes", "next steps", 
+      "new release", "patch notes"
+    ]
   },
   {
-    "route": "/reports/analytics",
-    "description": "View performance charts, graphs, and quarterly reports.",
-    "keywords": ["reports", "analytics", "q3", "quarterly", "performance", "charts", "graphs", "metrics"]
+    "route": "logout",
+    "description": "Signs the user out of the Nexus platform.",
+    "keywords": [
+      "logout", "signout", "exit", "log me out", "leave", "sign out", "goodbye",
+      "quit", "finish session", "close account", "leave platform", "disconnect"
+    ]
+  },
+  {
+    "route": "login",
+    "description": "Navigates to the login screen or shows the Google Auth button.",
+    "keywords": [
+      "login", "signin", "sign in", "google login", "authorize", "access my account",
+      "get in", "start", "google account", "access", "enter arena", "authenticate"
+    ]
   }
 ]
