@@ -30,6 +30,9 @@ export const talkToAI = async (req, res) => {
   } else if (agentType === "nova") {
     roomName = `nova_session_${userId}`;
     agentName = "NOVA";
+  } else if (agentType === "vision") {
+    roomName = `vision_session_${userId}`;
+    agentName = "VONE";
   } else if (agentType === "aura") {
     roomName = `aura_session_${userId}`;
     agentName = "AURA";

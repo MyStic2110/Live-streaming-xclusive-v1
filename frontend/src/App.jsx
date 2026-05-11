@@ -7,6 +7,7 @@ import VigilRoom from "./components/VigilRoom";
 import BIRoom from "./components/BIRoom";
 import NovaRoom from "./components/NovaRoom";
 import WeatherRoom from "./components/WeatherRoom";
+import VisionRoom from "./components/VisionRoom";
 import '@livekit/components-styles/index.css';
 import "./index.css";
 
@@ -31,6 +32,7 @@ function App() {
   const isBI2 = roomData?.creatorId === "BI2";
   const isNova = roomData?.creatorId === "NOVA";
   const isAura = roomData?.creatorId === "AURA";
+  const isVision = roomData?.creatorId === "VONE";
 
   return (
     <div className="app-container">
@@ -47,6 +49,8 @@ function App() {
           <NovaRoom roomData={roomData} onLeave={handleLeave} />
         ) : isAura ? (
           <WeatherRoom roomData={roomData} onLeave={handleLeave} />
+        ) : isVision ? (
+          <VisionRoom roomData={roomData} onLeave={handleLeave} />
         ) : (
           <VideoRoom roomData={roomData} onLeave={handleLeave} />
         )

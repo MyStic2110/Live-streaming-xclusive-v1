@@ -223,6 +223,15 @@ export default function LiveList({ onJoin }) {
         "Nova, show my past prediction history.", "Nova, what's new in the latest version?",
         "Nova, log me out of Nexus."
       ]
+    },
+    {
+      id: "vision", title: "V-One Vision", icon: "👁️", color: "#f59e0b",
+      desc: "Biometric face verification and attendance logging. 100% local, secure identity confirmation.",
+      btnText: "Start Verification",
+      prompts: [
+        "Capture my attendance.", "Verify my identity.", "Run biometric scan.",
+        "Log shift start.", "Identity check."
+      ]
     }
   ];
 
