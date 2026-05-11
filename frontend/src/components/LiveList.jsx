@@ -1,88 +1,162 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 
 const API = import.meta.env.VITE_API_URL || "";
 
-function SwarmNode({ title, icon, color, desc, prompts, btnText, onAction, isActive, onHover }) {
+// --- OPERATEAI DESIGN TOKENS ---
+const COLORS = {
+  primary: "#111827", // Deep Navy/Black
+  accent: "#3b82f6",  // Blue
+  textMuted: "#6b7280",
+  bgLight: "#ffffff",
+  bgSoft: "#f9fafb",
+  border: "#e5e7eb",
+  success: "#10b981"
+};
+
+// --- COMPONENTS ---
+
+const SectionHeader = ({ title, subtitle, alignment = "center" }) => (
+  <div style={{ textAlign: alignment, marginBottom: "4rem" }}>
+    <h2 style={{ fontSize: "2.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem", letterSpacing: "-1px" }}>{title}</h2>
+    <p style={{ fontSize: "1.1rem", color: COLORS.textMuted, maxWidth: "600px", margin: alignment === "center" ? "0 auto" : "0" }}>{subtitle}</p>
+  </div>
+);
+
+const AgentCard = ({ agent, onAction }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
     <motion.div 
-      onMouseEnter={onHover}
-      style={{
-        position: "relative",
-        padding: "2rem",
-        background: isActive ? "white" : "rgba(255,255,255,0.4)",
-        borderRadius: "24px",
-        border: `1px solid ${isActive ? color : "rgba(0,0,0,0.05)"}`,
-        cursor: "pointer",
-        backdropFilter: "blur(20px)",
-        boxShadow: isActive ? `0 20px 40px ${color}15` : "0 4px 6px rgba(0,0,0,0.02)",
-        transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-        overflow: "hidden",
-        width: "100%"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{ 
+        background: "white", 
+        padding: "2.5rem", 
+        borderRadius: "24px", 
+        border: `1px solid ${isHovered ? agent.color : COLORS.border}`,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        transition: "all 0.3s ease",
+        height: "100%",
+        boxShadow: isHovered ? `0 20px 40px ${agent.color}15` : "none"
       }}
-      whileHover={{ y: -5, boxShadow: `0 20px 40px rgba(0,0,0,0.05)` }}
+      className="hover-shadow"
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+      <div>
         <div style={{ 
-          width: "50px", height: "50px", borderRadius: "12px", 
-          background: `${color}11`, display: "flex", alignItems: "center", 
-          justifyContent: "center", fontSize: "1.5rem", border: `1px solid ${color}22`
+          width: "60px", height: "60px", borderRadius: "16px", 
+          background: `${agent.color}11`, display: "flex", alignItems: "center", 
+          justifyContent: "center", fontSize: "2rem", border: `1px solid ${agent.color}22`,
+          marginBottom: "2rem"
         }}>
-          {icon}
+          {agent.icon}
         </div>
-        <div>
-          <h3 style={{ margin: 0, fontSize: "1.3rem", fontWeight: "900", color: isActive ? color : "#111827" }}>{title}</h3>
-          <p style={{ margin: 0, fontSize: "0.95rem", color: "#4b5563", marginTop: "8px", lineHeight: "1.6" }}>{desc}</p>
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {isActive && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            style={{ marginTop: "2.5rem" }}
-          >
-            <div style={{ fontSize: "0.75rem", fontWeight: "900", color: color, letterSpacing: "2px", marginBottom: "1.2rem" }}>SUGGESTED COMMANDS</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-              {prompts.map((p, i) => (
-                <div key={i} style={{ 
-                  fontSize: "0.85rem", color: "#1f2937", fontWeight: "500",
-                  padding: "10px 14px", background: "#f9fafb", borderRadius: "8px",
-                  border: "1px solid #e5e7eb"
-                }}>
-                  {p}
-                </div>
-              ))}
-            </div>
-            <button 
-              onClick={onAction}
-              style={{ 
-                marginTop: "2rem", width: "100%", padding: "1rem", 
-                background: color, color: "white", border: "none", 
-                borderRadius: "12px", fontWeight: "900", cursor: "pointer",
-                boxShadow: `0 10px 20px ${color}33`
-              }}
+        <h3 style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem" }}>{agent.title}</h3>
+        <p style={{ color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "2rem", fontSize: "1rem" }}>{agent.desc}</p>
+        
+        <AnimatePresence>
+          {isHovered && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              style={{ overflow: "hidden" }}
             >
-              {btnText}
-            </button>
-          </motion.div>
+              <div style={{ fontSize: "0.7rem", fontWeight: "900", color: agent.color, letterSpacing: "2px", marginBottom: "1rem", textTransform: "uppercase" }}>Suggested Commands</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "2rem" }}>
+                {agent.prompts.map((p, i) => (
+                  <div key={i} style={{ 
+                    fontSize: "0.75rem", color: COLORS.primary, fontWeight: "500",
+                    padding: "8px 12px", background: COLORS.bgSoft, borderRadius: "8px",
+                    border: `1px solid ${COLORS.border}`
+                  }}>
+                    {p}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {!isHovered && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "2rem" }}>
+            {agent.prompts.slice(0, 3).map((p, i) => (
+              <span key={i} style={{ fontSize: "0.75rem", background: COLORS.bgSoft, padding: "6px 12px", borderRadius: "99px", color: COLORS.primary, fontWeight: "600", border: `1px solid ${COLORS.border}` }}>
+                {p}
+              </span>
+            ))}
+          </div>
         )}
-      </AnimatePresence>
+      </div>
+      
+      <button 
+        onClick={() => onAction(agent.id)}
+        style={{ 
+          width: "100%", padding: "1.2rem", background: isHovered ? agent.color : COLORS.primary, 
+          color: "white", border: "none", borderRadius: "12px", 
+          fontWeight: "800", cursor: "pointer", fontSize: "0.9rem",
+          letterSpacing: "1px", transition: "all 0.3s ease"
+        }}
+      >
+        {agent.btnText.toUpperCase()}
+      </button>
     </motion.div>
   );
-}
+};
+
+const PricingCard = ({ tier, price, duration, bestFor, features, isFeatured }) => (
+  <div style={{ 
+    background: isFeatured ? COLORS.primary : "white", 
+    padding: "3rem", 
+    borderRadius: "32px", 
+    border: isFeatured ? `none` : `1px solid ${COLORS.border}`,
+    color: isFeatured ? "white" : COLORS.primary,
+    position: "relative",
+    display: "flex",
+    flexDirection: "column",
+    boxShadow: isFeatured ? "0 20px 50px rgba(17, 24, 39, 0.2)" : "none"
+  }}>
+    {isFeatured && (
+      <div style={{ position: "absolute", top: "2rem", right: "2rem", background: COLORS.accent, color: "white", padding: "4px 12px", borderRadius: "99px", fontSize: "0.7rem", fontWeight: "900" }}>MOST POPULAR</div>
+    )}
+    <h3 style={{ fontSize: "1.2rem", fontWeight: "800", marginBottom: "0.5rem", opacity: isFeatured ? 0.9 : 1 }}>{tier}</h3>
+    <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "1.5rem" }}>
+      <span style={{ fontSize: "2.5rem", fontWeight: "900" }}>{price}</span>
+      <span style={{ fontSize: "0.9rem", opacity: 0.6 }}>{duration}</span>
+    </div>
+    <p style={{ fontSize: "0.9rem", color: isFeatured ? "rgba(255,255,255,0.7)" : COLORS.textMuted, marginBottom: "2rem", lineHeight: "1.5" }}>{bestFor}</p>
+    
+    <div style={{ flex: 1 }}>
+      {features.map((f, i) => (
+        <div key={i} style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "12px", fontSize: "0.95rem" }}>
+          <span style={{ color: isFeatured ? COLORS.success : COLORS.accent }}>✓</span>
+          <span style={{ opacity: isFeatured ? 0.9 : 1 }}>{f}</span>
+        </div>
+      ))}
+    </div>
+    
+    <button style={{ 
+      marginTop: "3rem", width: "100%", padding: "1.2rem", 
+      background: isFeatured ? "white" : COLORS.primary, 
+      color: isFeatured ? COLORS.primary : "white", 
+      border: "none", borderRadius: "12px", fontWeight: "900", cursor: "pointer"
+    }}>
+      GET STARTED
+    </button>
+  </div>
+);
+
+// --- MAIN PAGE ---
 
 export default function LiveList({ onJoin }) {
-  const [activeAgent, setActiveAgent] = useState("bi");
-
   const agents = [
     {
       id: "bi", title: "Cortex BI", icon: "📊", color: "#059669",
-      desc: "Conversational MySQL analysis and realtime business insights.",
-      btnText: "CONSULT CORTEX",
+      desc: "Conversational MySQL analysis and realtime business insights. Perfect for data-driven operations.",
+      btnText: "Consult Cortex",
       prompts: [
         "Which drivers had the highest cancellations?", "Compare today’s revenue with yesterday.",
         "Show peak booking hours in Chennai.", "Why did failed rides increase today?",
@@ -92,9 +166,21 @@ export default function LiveList({ onJoin }) {
       ]
     },
     {
+      id: "bi2", title: "Cortex II", icon: "🍃", color: "#10b981",
+      desc: "Live MongoDB intelligence for IPL Nexus — users, predictions, and leaderboard insights.",
+      btnText: "Consult Cortex II",
+      prompts: [
+        "How many users are registered?", "Show the top 5 leaderboard scores.",
+        "Who has the highest squad multiplier?", "How many predictions were made today?",
+        "List all completed matches.", "Which users joined this week?",
+        "Show session scores summary.", "Count predictions collection.",
+        "Show recent match results.", "Top scoring users overall."
+      ]
+    },
+    {
       id: "vigil", title: "Vigil Auditor", icon: "🛡️", color: "#4f46e5",
-      desc: "Professional IR maturity assessment and security audit.",
-      btnText: "DEPLOY VIGIL",
+      desc: "Professional IR maturity assessment and security audit. Security governance for enterprises.",
+      btnText: "Deploy Vigil",
       prompts: [
         "Assess IR maturity.", "Identify security gaps.",
         "Audit readiness summary.", "Review access control risks.",
@@ -105,8 +191,8 @@ export default function LiveList({ onJoin }) {
     },
     {
       id: "lina", title: "Lina", icon: "✨", color: "#d946ef",
-      desc: "Your empathetic companion. Here to listen and support.",
-      btnText: "CONNECT LINA",
+      desc: "Empathetic companion and mental wellness support. Specialized in conversational therapy patterns.",
+      btnText: "Connect Lina",
       prompts: [
         "I’ve had a stressful day.", "Talk to me for a while.",
         "Help me slow my thoughts.", "I’m feeling overwhelmed.",
@@ -116,9 +202,9 @@ export default function LiveList({ onJoin }) {
       ]
     },
     {
-      id: "weather", title: "Weather Agent", icon: "☁️", color: "#3b82f6",
-      desc: "Indian monsoon patterns and regional climate insights.",
-      btnText: "DEPLOY WEATHER",
+      id: "aura", title: "Aura", icon: "☁️", color: "#3b82f6",
+      desc: "Indian monsoon patterns and regional climate insights. Real-time weather intelligence.",
+      btnText: "Deploy Aura",
       prompts: [
         "Will monsoon intensity increase?", "Rainfall predictions for Chennai.",
         "Which regions face flooding?", "How will weather affect transport?",
@@ -129,83 +215,280 @@ export default function LiveList({ onJoin }) {
     },
     {
       id: "nova", title: "Nova Copilot", icon: "🚀", color: "#0ea5e9",
-      desc: "State-of-the-art SaaS copilot with autonomous UI navigation.",
-      btnText: "ACTIVATE NOVA",
+      desc: "Advanced SaaS copilot with autonomous UI navigation. Your companion in the Nexus ecosystem.",
+      btnText: "Activate Nova",
       prompts: [
-        "Run the success test.", "Run the failure test.",
-        "Show me the dashboard.", "Open my user settings.",
-        "How do I create a project?", "Log me out safely.",
-        "Show my billing info.", "Switch to dark mode.",
-        "Explain your ACK system.", "Demonstrate Show and Tell."
+        "Nova, show me the live match arena.", "Nova, open my squad hub.",
+        "Nova, check the points leaderboard.", "Nova, explain my squad multiplier.",
+        "Nova, show my past prediction history.", "Nova, what's new in the latest version?",
+        "Nova, log me out of Nexus."
       ]
     }
   ];
 
-  const initiateAITalk = async (agentType) => {
+  const pricing = [
+    {
+      tier: "Audit + Roadmap",
+      price: "₹15,000",
+      duration: "/one-time",
+      bestFor: "Owners who want to know exactly where AI fits before committing to a build.",
+      features: [
+        "30-min AI Opportunity Audit",
+        "Deep-dive into 3 manual workflows",
+        "Prioritized ROI Roadmap",
+        "Tool & Budget Recommendations",
+        "1 Week of Slack Support"
+      ],
+      isFeatured: false
+    },
+    {
+      tier: "Build + Manage",
+      price: "₹45,000",
+      duration: "/setup",
+      bestFor: "The most common engagement. Pick one painful process — we build and hand over.",
+      features: [
+        "End-to-end AI Agent Build",
+        "Integration with existing stack",
+        "n8n / Make / Custom API setup",
+        "Full Documentation & Loom Video",
+        "30-day Support Period"
+      ],
+      isFeatured: true
+    },
+    {
+      tier: "Full Retainer",
+      price: "₹25,000",
+      duration: "/mo",
+      bestFor: "For teams scaling fast who need ongoing AI automation and priority support.",
+      features: [
+        "Unlimited Workflow Tweaks",
+        "Monthly AI Strategy Sessions",
+        "Priority 24h Support",
+        "New Feature Implementation",
+        "Server & API Monitoring"
+      ],
+      isFeatured: false
+    }
+  ];
+
+  const initiateAITalk = async (agentId) => {
     try {
-      const res = await axios.post(`${API}/talk-to-ai`, { agentType });
-      onJoin({ roomName: res.data.roomName, token: res.data.token, isCreator: false, creatorId: agentType.toUpperCase(), isAI: true });
+      const res = await axios.post(`${API}/talk-to-ai`, { agentType: agentId });
+      onJoin({ 
+        roomName: res.data.roomName, 
+        token: res.data.token, 
+        isCreator: false, 
+        creatorId: agentId.toUpperCase(), 
+        isAI: true 
+      });
     } catch (err) {
       alert("AI Assistant is offline");
     }
   };
 
   return (
-    <div style={{ 
-      minHeight: "100vh", background: "#f9fafb", color: "#111827", 
-      fontFamily: "'Outfit', sans-serif", overflowX: "hidden",
-      display: "flex", flexDirection: "column"
-    }}>
-      {/* Dynamic Background */}
-      <div style={{ 
-        position: "fixed", inset: 0, zIndex: 0,
-        background: `radial-gradient(circle at 80% 20%, ${agents.find(a => a.id === activeAgent).color}08 0%, transparent 40%)`,
-        transition: "all 1s ease"
-      }} />
-
-      <nav style={{ padding: "2rem 4rem", display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 10, background: "white", borderBottom: "1px solid #f3f4f6" }}>
-        <div style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "4px", color: "#3b82f6" }}>SWARM <span style={{ color: "#9ca3af", fontSize: "0.7rem", fontWeight: "400" }}>| FUTURE GEN INTEL</span></div>
-        <div style={{ color: "#9ca3af", fontSize: "0.7rem", letterSpacing: "2px" }}>4 AGENTS ACTIVE • SYSTEM STABLE</div>
+    <div style={{ background: COLORS.bgLight, fontFamily: "'Outfit', sans-serif" }}>
+      {/* Navigation */}
+      <nav style={{ 
+        padding: "1.5rem 5%", display: "flex", justifyContent: "space-between", 
+        alignItems: "center", borderBottom: `1px solid ${COLORS.border}`,
+        position: "sticky", top: 0, background: "rgba(255,255,255,0.8)", 
+        backdropFilter: "blur(10px)", zIndex: 100
+      }}>
+        <div style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "2px", color: COLORS.primary }}>
+          SWARM <span style={{ color: COLORS.accent }}>AGENTIC</span>
+        </div>
+        <div style={{ display: "flex", gap: "2.5rem", fontSize: "0.9rem", fontWeight: "600", color: COLORS.textMuted }}>
+          <a href="#services" style={{ textDecoration: "none", color: "inherit" }}>Services</a>
+          <a href="#pricing" style={{ textDecoration: "none", color: "inherit" }}>Pricing</a>
+          <a href="#work" style={{ textDecoration: "none", color: "inherit" }}>Our Work</a>
+          <a href="#about" style={{ textDecoration: "none", color: "inherit" }}>About</a>
+        </div>
+        <button style={{ padding: "0.8rem 1.5rem", background: COLORS.primary, color: "white", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}>
+          GET YOUR PLAN →
+        </button>
       </nav>
 
-      <main style={{ flex: 1, padding: "4rem", display: "flex", gap: "6rem", zIndex: 10, maxWidth: "1600px", margin: "0 auto", width: "100%" }}>
-        {/* Left Side: Massive Text & Intro */}
-        <div style={{ flex: 1.2, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <motion.h1 
-            key={activeAgent}
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            style={{ fontSize: "7rem", fontWeight: "900", lineHeight: "0.85", letterSpacing: "-5px", margin: 0, color: "#111827" }}
-          >
-            {agents.find(a => a.id === activeAgent).title.split(" ")[0].toUpperCase()}<br/>
-            <span style={{ color: "#e5e7eb" }}>FLEET</span>
-          </motion.h1>
-          <p style={{ fontSize: "1.2rem", color: "#6b7280", maxWidth: "500px", marginTop: "3rem", lineHeight: "1.6" }}>
-            Deploy specialized AI agents for analytics, governance, emotional support, and realtime intelligence.
-          </p>
-          <div style={{ display: "flex", gap: "1rem", marginTop: "4rem" }}>
-             <div style={{ padding: "0.6rem 1.2rem", background: "white", border: "1px solid #f3f4f6", borderRadius: "40px", fontSize: "0.7rem", color: "#9ca3af", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>SECURE TLS</div>
-             <div style={{ padding: "0.6rem 1.2rem", background: "white", border: "1px solid #f3f4f6", borderRadius: "40px", fontSize: "0.7rem", color: "#9ca3af", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>GPT-4O POWERED</div>
-          </div>
+      {/* Hero Section */}
+      <header style={{ padding: "8rem 5% 6rem", textAlign: "center", maxWidth: "1000px", margin: "0 auto" }}>
+        <div style={{ 
+          display: "inline-block", padding: "6px 16px", background: "rgba(59, 130, 246, 0.1)", 
+          color: COLORS.accent, borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", 
+          marginBottom: "2rem", letterSpacing: "1px" 
+        }}>
+          B2B AI AUTOMATION & INTELLIGENCE
         </div>
+        <h1 style={{ fontSize: "4.5rem", fontWeight: "900", color: COLORS.primary, lineHeight: "1.05", letterSpacing: "-3px", marginBottom: "2rem" }}>
+          Automate your operations.<br/>Connect your tools.<br/>Deploy your <span style={{ color: COLORS.accent }}>Fleet.</span>
+        </h1>
+        <p style={{ fontSize: "1.25rem", color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "3.5rem" }}>
+          We build AI systems that go live in 1–2 weeks. Not just chatbots, but autonomous agents that handle manual data, security audits, and climate intelligence.
+        </p>
+        <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center" }}>
+          <button style={{ padding: "1.2rem 2.5rem", background: COLORS.primary, color: "white", border: "none", borderRadius: "12px", fontWeight: "800", fontSize: "1rem", cursor: "pointer" }}>
+            BOOK A FREE AUDIT →
+          </button>
+          <button style={{ padding: "1.2rem 2.5rem", background: "white", color: COLORS.primary, border: `1px solid ${COLORS.border}`, borderRadius: "12px", fontWeight: "800", fontSize: "1rem", cursor: "pointer" }}>
+            SEE OUR WORK ↓
+          </button>
+        </div>
+      </header>
 
-        {/* Right Side: Interactive Node Stack */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1.5rem", justifyContent: "center" }}>
-          {agents.map(agent => (
-            <SwarmNode 
-              key={agent.id}
-              {...agent}
-              isActive={activeAgent === agent.id}
-              onHover={() => setActiveAgent(agent.id)}
-              onAction={() => initiateAITalk(agent.id)}
-            />
+      {/* Trust / Clients Section */}
+      <div style={{ padding: "0 5% 6rem", textAlign: "center" }}>
+        <p style={{ fontSize: "0.7rem", fontWeight: "900", color: COLORS.textMuted, letterSpacing: "2px", marginBottom: "2.5rem" }}>POWERING INTELLIGENCE FOR</p>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "5rem", opacity: 0.4, filter: "grayscale(100%)", flexWrap: "wrap" }}>
+           <div style={{ fontSize: "1.5rem", fontWeight: "900" }}>NEXUS CORP</div>
+           <div style={{ fontSize: "1.5rem", fontWeight: "900" }}>IPL GLOBAL</div>
+           <div style={{ fontSize: "1.5rem", fontWeight: "900" }}>CLEARALIGN</div>
+           <div style={{ fontSize: "1.5rem", fontWeight: "900" }}>SWARM DEFENSE</div>
+           <div style={{ fontSize: "1.5rem", fontWeight: "900" }}>FUTURE GEN</div>
+        </div>
+      </div>
+
+      {/* Stats Bar */}
+      <div style={{ display: "flex", justifyContent: "center", gap: "8rem", padding: "4rem 0", background: COLORS.bgSoft, borderTop: `1px solid ${COLORS.border}`, borderBottom: `1px solid ${COLORS.border}` }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "2.5rem", fontWeight: "900" }}>40+</div>
+          <div style={{ fontSize: "0.8rem", fontWeight: "700", color: COLORS.textMuted }}>HRS SAVED / WEEK</div>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "2.5rem", fontWeight: "900" }}>96%</div>
+          <div style={{ fontSize: "0.8rem", fontWeight: "700", color: COLORS.textMuted }}>ERROR REDUCTION</div>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "2.5rem", fontWeight: "900" }}>24/7</div>
+          <div style={{ fontSize: "0.8rem", fontWeight: "700", color: COLORS.textMuted }}>AGENT UPTIME</div>
+        </div>
+      </div>
+
+      {/* Process Section */}
+      <section id="process" style={{ padding: "8rem 5%", background: "white" }}>
+        <SectionHeader 
+          title="A clear, proven process." 
+          subtitle="No surprises, no delays. We move from initial audit to production-ready agent in 2 weeks."
+        />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
+          {[
+            { step: "01", title: "Audit", desc: "Deep-dive into your workflows. Find bottlenecks and the highest-ROI AI opportunities." },
+            { step: "02", title: "Architect", desc: "Design the agent logic. Choose tools, plan integrations, map the data flow." },
+            { step: "03", title: "Build", desc: "Rapid development with weekly demos. Build → test → iterate until perfect." },
+            { step: "04", title: "Deploy", desc: "Go live with monitoring. Full documentation, team training, and support." }
+          ].map((item, i) => (
+            <div key={i} style={{ position: "relative" }}>
+              <div style={{ fontSize: "4rem", fontWeight: "900", color: "#f3f4f6", marginBottom: "-2rem", lineHeight: 1 }}>{item.step}</div>
+              <h4 style={{ fontSize: "1.5rem", fontWeight: "800", color: COLORS.primary, marginBottom: "1rem", position: "relative" }}>{item.title}</h4>
+              <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6" }}>{item.desc}</p>
+            </div>
           ))}
         </div>
-      </main>
+      </section>
 
-      <footer style={{ padding: "2rem 4rem", color: "#d1d5db", fontSize: "0.7rem", letterSpacing: "2px", zIndex: 10, textAlign: "center", borderTop: "1px solid #f3f4f6", background: "white" }}>
-        SWARM COMMAND INTERFACE © 2026 • CLEARALIGN DEFENSE
+      {/* Services Section */}
+      <section id="services" style={{ padding: "8rem 5%", background: COLORS.bgSoft }}>
+        <SectionHeader 
+          title="The Swarm Fleet" 
+          subtitle="Deploy specialized AI agents for analytics, governance, and real-time intelligence. Every agent is ready to scale with your team."
+        />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))", gap: "2.5rem", maxWidth: "1400px", margin: "0 auto" }}>
+          {agents.map(agent => (
+            <AgentCard key={agent.id} agent={agent} onAction={initiateAITalk} />
+          ))}
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" style={{ padding: "8rem 5%", background: COLORS.bgSoft }}>
+        <SectionHeader 
+          title="Transparent AI Pricing" 
+          subtitle="Every automation is different, but our pricing isn't. Honest brackets, transparent ROI, and fixed quotes after your free audit."
+        />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "2.5rem", maxWidth: "1200px", margin: "0 auto" }}>
+          {pricing.map((tier, idx) => (
+            <PricingCard key={idx} {...tier} />
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section id="faq" style={{ padding: "8rem 5%", background: "white" }}>
+        <SectionHeader 
+          title="Common Questions" 
+          subtitle="Everything you're probably wondering about deploying your AI fleet."
+        />
+        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+          {[
+            { q: "How long does a typical build take?", a: "Most agents are live in production within 1–2 weeks, including tool integration." },
+            { q: "Do you use my data for training?", a: "Never. We use enterprise-grade APIs where data is not used for model training." },
+            { q: "Can the agents talk to my existing tools?", a: "Yes. We specialize in connecting to MySQL, MongoDB, Slack, and custom CRM APIs." },
+            { q: "What are the running costs?", a: "Typically between ₹1,500 – ₹8,000/mo depending on the agent's message volume." }
+          ].map((item, i) => (
+            <div key={i} style={{ borderBottom: `1px solid ${COLORS.border}`, padding: "2rem 0" }}>
+              <h4 style={{ fontSize: "1.1rem", fontWeight: "800", color: COLORS.primary, marginBottom: "0.5rem" }}>{item.q}</h4>
+              <p style={{ color: COLORS.textMuted, fontSize: "1rem", lineHeight: "1.6" }}>{item.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Call to Action */}
+      <section style={{ padding: "8rem 5%", textAlign: "center", background: COLORS.primary, color: "white" }}>
+        <h2 style={{ fontSize: "3rem", fontWeight: "900", marginBottom: "1.5rem", letterSpacing: "-1px" }}>Ready to automate your business?</h2>
+        <p style={{ fontSize: "1.2rem", opacity: 0.8, maxWidth: "600px", margin: "0 auto 3rem" }}>
+          Book a free 30-minute automation audit. No commitment, no pitch — just clarity on where AI gives your business the biggest ROI.
+        </p>
+        <button style={{ padding: "1.5rem 3.5rem", background: COLORS.accent, color: "white", border: "none", borderRadius: "12px", fontWeight: "900", fontSize: "1.1rem", cursor: "pointer" }}>
+          BOOK YOUR FREE AUDIT →
+        </button>
+      </section>
+
+      {/* Footer */}
+      <footer style={{ padding: "6rem 5% 3rem", borderTop: `1px solid ${COLORS.border}` }}>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "4rem", maxWidth: "1400px", margin: "0 auto", marginBottom: "4rem" }}>
+          <div>
+            <div style={{ fontSize: "1.5rem", fontWeight: "900", letterSpacing: "2px", marginBottom: "1.5rem" }}>SWARM</div>
+            <p style={{ color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "1.6" }}>
+              The future of work is agentic. We bridge the gap between complex AI capabilities and real-world business ROI.
+            </p>
+          </div>
+          <div>
+            <h4 style={{ fontSize: "0.9rem", fontWeight: "900", marginBottom: "1.5rem" }}>SERVICES</h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "2" }}>
+              <li>Cortex Analytics</li>
+              <li>Security Audits</li>
+              <li>Climate Intel</li>
+              <li>Autonomous Copilots</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style={{ fontSize: "0.9rem", fontWeight: "900", marginBottom: "1.5rem" }}>COMPANY</h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "2" }}>
+              <li>About Ajay</li>
+              <li>Case Studies</li>
+              <li>Privacy Policy</li>
+              <li>Contact</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style={{ fontSize: "0.9rem", fontWeight: "900", marginBottom: "1.5rem" }}>CONNECT</h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "2" }}>
+              <li>LinkedIn</li>
+              <li>Twitter</li>
+              <li>WhatsApp</li>
+            </ul>
+          </div>
+        </div>
+        <div style={{ textAlign: "center", borderTop: `1px solid ${COLORS.border}`, paddingTop: "2rem", color: COLORS.textMuted, fontSize: "0.8rem", letterSpacing: "1px" }}>
+          © 2026 SWARM COMMAND · BUILT FOR INDIA AND GLOBE
+        </div>
       </footer>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        html { scroll-behavior: smooth; }
+        .hover-shadow:hover {
+          box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.08);
+        }
+      ` }} />
     </div>
   );
 }

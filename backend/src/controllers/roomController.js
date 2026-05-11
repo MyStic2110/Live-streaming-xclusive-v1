@@ -3,7 +3,7 @@ import { AgentDispatchClient } from 'livekit-server-sdk';
 import { config } from '../config/livekit.js';
 
 const ROOM_NAME  = "ai_room_MURALI";
-const AGENT_NAME = "WEATHER AGENT FOR INDIA";
+const AGENT_NAME = "AURA";
 const USER_ID    = "MURALI";
 
 export const talkToAI = async (req, res) => {
@@ -13,7 +13,7 @@ export const talkToAI = async (req, res) => {
   const userId = userName || `Guest_${Math.floor(Math.random() * 9000) + 1000}`;
   
   let roomName = "ai_room_MURALI";
-  let agentName = "WEATHER AGENT FOR INDIA";
+  let agentName = "AURA";
 
   if (agentType === "lina") {
     roomName = `lina_session_${userId}`;
@@ -24,9 +24,15 @@ export const talkToAI = async (req, res) => {
   } else if (agentType === "bi") {
     roomName = `bi_session_${userId}`;
     agentName = "BI";
+  } else if (agentType === "bi2") {
+    roomName = `bi2_session_${userId}`;
+    agentName = "CORTEX2";
   } else if (agentType === "nova") {
     roomName = `nova_session_${userId}`;
     agentName = "NOVA";
+  } else if (agentType === "aura") {
+    roomName = `aura_session_${userId}`;
+    agentName = "AURA";
   }
 
   console.log(`[HTTP_CONTROLLER] --> POST /talk-to-ai | AGENT: ${agentName} | ROOM: ${roomName}`);

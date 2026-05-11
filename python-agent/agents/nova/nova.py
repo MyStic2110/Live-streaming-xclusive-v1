@@ -162,6 +162,47 @@ Be professional, enthusiastic about cricket, and sound like a high-end AI specia
                 )
                 chat_ctx.append(message=hint_msg)
 
+    # --- PILLAR 7: COST AUDIT & TOKEN TRACKING ---
+    usage = {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "stt_seconds": 0.0,
+        "tts_chars": 0,
+        "total_cost": 0.0
+    }
+
+    async def broadcast_usage():
+        metadata = {
+            "name": "NOVA",
+            "usage": usage
+        }
+        await ctx.room.local_participant.set_metadata(json.dumps(metadata))
+
+    @session.on("session_usage_updated")
+    def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
+        # We aggregate usage across LLM, STT, and TTS
+        for m in usage_data.usage.model_usage:
+            if m.type == "llm_usage":
+                usage["input_tokens"] = getattr(m, "input_tokens", 0)
+                usage["output_tokens"] = getattr(m, "output_tokens", 0)
+            elif m.type == "stt_usage":
+                usage["stt_seconds"] = getattr(m, "audio_duration", 0.0)
+            elif m.type == "tts_usage":
+                usage["tts_chars"] = getattr(m, "characters_count", 0)
+
+        # PRICING ENGINE (USD)
+        # GPT-4o-mini: $0.15/1M in, $0.60/1M out
+        llm_cost = (usage["input_tokens"] / 1_000_000 * 0.15) + (usage["output_tokens"] / 1_000_000 * 0.60)
+        # Deepgram STT: $0.0043/min
+        stt_cost = (usage["stt_seconds"] / 60 * 0.0043)
+        # Deepgram TTS (Aura): $0.015/1K chars
+        tts_cost = (usage["tts_chars"] / 1000 * 0.015)
+
+        usage["total_cost"] = round(llm_cost + stt_cost + tts_cost, 6)
+        
+        logger.info(f"[COST_AUDIT] Session Total: ${usage['total_cost']} | Tokens: {usage['input_tokens']+usage['output_tokens']}")
+        asyncio.create_task(broadcast_usage())
+
     @ctx.room.on("data_received")
     def on_data_received(dp):
         if dp.topic == "ui_control":
@@ -173,6 +214,7 @@ Be professional, enthusiastic about cricket, and sound like a high-end AI specia
                     logger.info(f"[LATENCY:ACK] UI finished action '{msg.get('key')}': {status} | Detail: {detail}")
             except: pass
 
+    await broadcast_usage() # Initial broadcast
     await session.start(room=ctx.room, agent=agent)
 
 if __name__ == "__main__":

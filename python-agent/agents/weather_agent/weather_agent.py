@@ -25,8 +25,41 @@ logger.setLevel(logging.INFO)
 # --- CONFIGURATION ---
 ROOM_NAME             = "ai_room_MURALI"
 TARGET_HUMAN_IDENTITY = "MURALI"
-AGENT_NAME            = "WEATHER AGENT"
+AGENT_NAME            = "AURA"
 # ---------------------
+
+class WeatherTools:
+    def __init__(self):
+        self.api_key = os.getenv("WEATHER_API_KEY", "YOUR_KEY_HERE")
+
+    @llm.function_tool(description="Get the current weather for a specific city or location.")
+    async def get_current_weather(self, location: str = "Chennai"):
+        # We use Open-Meteo coordinates for high-quality, no-auth data
+        # For a demo, we can map common city names to coordinates
+        coords = {"Chennai": (13.08, 80.27), "Bangalore": (12.97, 77.59), "Mumbai": (19.07, 72.87)}
+        lat, lon = coords.get(location, (13.08, 80.27))
+        
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,weather_code"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, ssl=ssl_ctx) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    current = data.get("current", {})
+                    temp = current.get("temperature_2m")
+                    hum = current.get("relative_humidity_2m")
+                    return f"Aura Intelligence Report for {location}: The current temperature is {temp}°C with {hum}% humidity. (Source: Open-Meteo No-Auth Engine)"
+                return "Aura could not reach the climate sensors at this time."
+
+    @llm.function_tool(description="Get a detailed hourly forecast and current metrics using coordinates.")
+    async def get_detailed_forecast(self, latitude: float = 13.08, longitude: float = 80.27):
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current=temperature_2m,relative_humidity_2m&hourly=temperature_2m"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, ssl=ssl_ctx) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    current = data.get("current", {})
+                    return f"Open-Meteo Data: Temp: {current.get('temperature_2m')}°C, Humidity: {current.get('relative_humidity_2m')}%."
+                return "Failed to fetch detailed forecast."
 
 class CustomAgent(Agent):
     def __init__(self, **kwargs):
@@ -55,10 +88,14 @@ async def entrypoint(ctx: JobContext):
             items=[
                 llm.ChatMessage(
                     role="system",
-                    content=["You are the Weather Agent for India, a professional and helpful AI assistant specializing in digital and real-world weather reporting."],
+                    content=["You are the Weather Agent for India. You have access to real-time weather APIs. Use your tools to fetch current conditions and detailed forecasts for Chennai (13.08, 80.27) or any requested location. Be precise with temperatures and humidity."],
                 )
             ]
         )
+
+        # Initialize Tools
+        weather_tools = WeatherTools()
+        fnc_ctx = llm.find_function_tools(weather_tools)
 
         # Create the AgentSession
         session = AgentSession(
@@ -77,8 +114,9 @@ async def entrypoint(ctx: JobContext):
 
         # Initialize the Agent logic
         agent = CustomAgent(
-            instructions="You are the Weather Agent for India, a professional and helpful AI assistant specializing in digital and real-world weather reporting.",
+            instructions="You are Aura, the climate intelligence assistant. Use your tools to provide accurate, real-time weather data for Chennai and other regions.",
             chat_ctx=chat_ctx,
+            tools=fnc_ctx,
         )
 
         # 1. Create a manual AudioSource for the greeting (MATCHING MISTRAL 24kHz)
@@ -99,7 +137,7 @@ async def entrypoint(ctx: JobContext):
             try:
                 # Initialize TTS directly
                 tts_plugin = mistralai.TTS(voice="en_paul_neutral")
-                audio_stream = tts_plugin.synthesize("Hello! I am Florence, your AI assistant. How can I help you today?")
+                audio_stream = tts_plugin.synthesize("Hello! I am Aura, your climate intelligence assistant. How can I help you today?")
                 
                 logger.info("Pushing audio frames to room...")
                 async for chunk in audio_stream:
@@ -154,8 +192,66 @@ async def entrypoint(ctx: JobContext):
 
         asyncio.create_task(greet())
 
+        # --- PILLAR: COST AUDIT & TOKEN TRACKING ---
+        usage = {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "stt_seconds": 0.0,
+            "tts_chars": 0,
+            "total_cost": 0.0
+        }
+
+        async def broadcast_usage():
+            metadata = {
+                "name": AGENT_NAME,
+                "usage": usage
+            }
+            await ctx.room.local_participant.set_metadata(json.dumps(metadata))
+
+        @session.on("session_usage_updated")
+        def on_usage(usage_data: llm.SessionUsageUpdatedEvent):
+            # Aggregate usage across Mistral models
+            for m in usage_data.usage.model_usage:
+                if m.type == "llm_usage":
+                    usage["input_tokens"] = getattr(m, "input_tokens", 0)
+                    usage["output_tokens"] = getattr(m, "output_tokens", 0)
+                elif m.type == "stt_usage":
+                    usage["stt_seconds"] = getattr(m, "audio_duration", 0.0)
+                elif m.type == "tts_usage":
+                    usage["tts_chars"] = getattr(m, "characters_count", 0)
+
+            # MISTRAL PRICING ENGINE (USD)
+            llm_cost = (usage["input_tokens"] / 1_000_000 * 2.00) + (usage["output_tokens"] / 1_000_000 * 6.00)
+            stt_cost = (usage["stt_seconds"] / 60 * 0.005)
+            tts_cost = (usage["tts_chars"] / 1000 * 0.02)
+
+            usage["total_cost"] = round(llm_cost + stt_cost + tts_cost, 6)
+            logger.info(f"[COST_AUDIT] Session Total: ${usage['total_cost']} | Tokens: {usage['input_tokens']+usage['output_tokens']}")
+            asyncio.create_task(broadcast_usage())
+
+        # --- REAL-TIME INPUT/OUTPUT LOGGERS ---
+        @session.on("user_input_transcribed")
+        def on_stt(event: voice.UserInputTranscribedEvent):
+            if event.is_final:
+                logger.info(f"--- [INPUT] {event.transcript} ---")
+
+        @session.on("conversation_item_added")
+        def on_conversation_item(event: voice.ConversationItemAddedEvent):
+            item = event.item
+            if isinstance(item, llm.ChatMessage):
+                content = item.content[0] if isinstance(item.content, list) else item.content
+                if item.role == "assistant":
+                    logger.info(f"AURA: {content}")
+                elif item.role == "user":
+                    logger.info(f"USER: {content}")
+
+        @session.on("agent_state_changed")
+        def on_state_changed(event: voice.AgentStateChangedEvent):
+            logger.info(f"[STATE] Aura is now: {event.new_state}")
+
+        await broadcast_usage() # Initial broadcast
         # Now start the AgentSession for the rest of the conversation
-        logger.info("Starting AgentSession for conversation...")
+        logger.info("--- [SESSION] Aura Intelligence Active ---")
         await session.start(room=ctx.room, agent=agent)
 
         # Agent leaves only when participant disconnects
