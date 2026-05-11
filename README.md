@@ -1,42 +1,42 @@
 # SWARM: Army of Agents 🤖🔥
 
-Welcome to **SWARM**, the future of decentralized AI agent interaction. SWARM is an elite platform designed to orchestrate a fleet of autonomous AI voice agents, each with a distinct persona, skill set, and purpose.
+Welcome to **SWARM**, the future of decentralized AI agent orchestration. SWARM is an elite platform designed to coordinate a fleet of autonomous AI agents, each with a distinct persona, database native skill set, and mission-critical purpose.
 
-Built on **LiveKit's** state-of-the-art SFU architecture, SWARM provides ultra-low latency voice interaction with AI entities that feel alive.
+Built on **LiveKit's** state-of-the-art SFU architecture, SWARM provides ultra-low latency voice and vision interaction with AI entities that feel alive and deeply integrated into your data ecosystem.
 
 ---
 
-## 🤖 Active Agents
+## 🤖 The Swarm Fleet
 
-### 💖 Lina — Warm Personal Partner
-Lina is a calm, emotionally close AI voice companion. She listens, reflects, and responds with warmth — making every conversation feel personal and human.
+### 👁️ V-One — Biometric Gatekeeper (NEW)
+V-One is a vision-first security agent. It performs 100% local biometric face verification using OpenCV's DNN engine. Perfect for secure attendance logging and identity-controlled access without a database.
+- **Stack**: OpenCV (YuNet + SFace) + Deepgram TTS + GPT-4o-mini
+- **Run**: `python agents/vision/vision_agent.py dev`
 
-- **Stack**: Deepgram STT + GPT-4o-mini (via OpenRouter) + Deepgram Aura TTS
-- **Voice**: Aura Luna (natural, feminine, warm)
+### 📊 Cortex BI — SQL Intelligence
+Your conversational MySQL analyst. Capable of querying complex relational schemas to provide real-time business insights on revenue, operations, and anomalies.
+- **Stack**: MySQL Connector + GPT-4o-mini + Deepgram Aura TTS
+- **Run**: `python agents/bi/bi_agent.py dev`
+
+### 🍃 Cortex II — NoSQL Nexus
+The MongoDB-native evolution of Cortex. Specialized in real-time schema discovery and aggregation for the IPL Nexus ecosystem (predictions, leaderboards, and user streaks).
+- **Stack**: Motor (Async MongoDB) + GPT-4o-mini + Deepgram Aura TTS
+- **Run**: `python agents/bi2/bi2_agent.py dev`
+
+### 🚀 Nova — Autonomous Copilot
+An advanced SaaS copilot designed for autonomous UI navigation. Nova helps users explore the Nexus platform, explain match multipliers, and manage their profiles.
+- **Stack**: Tool-Calling GPT-4o-mini + Deepgram TTS
+- **Run**: `python agents/nova/nova_agent.py dev`
+
+### 💖 Lina — Empathetic Partner
+Lina is a calm, emotionally intelligent AI voice companion. She specializes in conversational therapy patterns and mental wellness support.
+- **Stack**: GPT-4o-mini + Deepgram Aura Luna TTS
 - **Run**: `python agents/lina/lina.py dev`
 
-### 🌦️ Weather Agent for India
-A professional AI voice agent specializing in witty, localized weather reporting for India. From Bangalore's data-center heat to Mumbai's digital monsoons.
-
-- **Stack**: Silero VAD + Mistral STT + Mistral Large LLM + Mistral TTS
-- **Voice**: Paul Neutral (crisp, professional)
-- **Run**: `python agents/weather_agent/weather_agent.py dev`
-
 ### 🛡️ Vigil — Cybersecurity Auditor
-A serious, authoritative AI auditor that conducts professional 18-question maturity assessments. Vigil is designed to be persistent and ensure clear data capture for security scoring.
-
-- **Stack**: Deepgram STT + GPT-4o-mini + Deepgram Aura (Hera) TTS
-- **Voice**: Aura Hera (authoritative, expert)
+A professional, authoritative AI auditor that conducts deep IR maturity assessments and security governance audits.
+- **Stack**: Structured Audit Logic + GPT-4o-mini + Deepgram Aura Hera TTS
 - **Run**: `python agents/vigil/vigil.py dev`
-
----
-
-## 🌟 Key Features
-
-- **Multi-Agent Architecture**: Run specialized agents independently in separate rooms.
-- **Real-Time Voice Pipeline**: VAD → STT → LLM → TTS, all streaming in real-time.
-- **Persistent Audit Logic**: Vigil ensures clear 'Yes/No' answers through active validation.
-- **Dynamic Identity**: Agents no longer use hardcoded names; they capture your identity in real-time.
 
 ---
 
@@ -44,100 +44,46 @@ A serious, authoritative AI auditor that conducts professional 18-question matur
 
 ```text
 livekit-video-app/
-├── frontend/                    # React + Vite (SWARM Command Center UI)
+├── frontend/                    # React + Vite (OperateAI-Inspired Hub UI)
+│   └── src/components/
+│       ├── VisionRoom.jsx       # 👁️ Biometric UI
+│       └── LiveList.jsx         # 🚁 Swarm Command Center
 ├── backend/                     # Node.js (Agent Dispatch & Token Service)
-├── python-agent/                # Python (SWARM AI Voice Pipeline)
+├── python-agent/                # Python (The Swarm Intelligence Layer)
 │   ├── agents/
-│   │   ├── lina/                # 💖 Lina Agent (Warm Personal Partner)
-│   │   ├── weather_agent/       # 🌦️ Weather Agent (India)
-│   │   └── vigil/               # 🛡️ Vigil Agent (Cyber Auditor)
-│   │       └── vigil.py
-│   ├── tests/
-│   │   ├── shared/              # Generic STT/TTS tests
-│   │   ├── lina_specific/       # Lina brain & memory tests
-│   │   └── weather_specific/    # Mistral & LLM tests
-│   ├── .env                     # API keys (not committed)
+│   │   ├── vision/              # 👁️ V-One (Face Recognition)
+│   │   ├── bi2/                 # 🍃 Cortex II (MongoDB)
+│   │   ├── nova/                # 🚀 Nova (SaaS Copilot)
+│   │   ├── lina/                # 💖 Lina (Wellness)
+│   │   └── vigil/               # 🛡️ Vigil (Security)
+│   ├── .env                     # Multi-provider credentials
 │   └── requirements.txt
-├── docker-compose.yml           # Infrastructure (Redis + LiveKit Server)
-└── livekit.yaml                 # LiveKit Server Configuration
 ```
 
 ---
 
 ## 🛠 Installation & Setup
 
-### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- Docker Desktop
-
-### 1. Start the Infrastructure
-```bash
-docker-compose up -d
-```
-
-### 2. Configure Environment Variables
-Create a `.env` file inside `python-agent/`:
-```env
-# LiveKit (dev defaults)
-LIVEKIT_URL=ws://127.0.0.1:7880
-LIVEKIT_API_KEY=devkey
-LIVEKIT_API_SECRET=secret
-
-# Deepgram (for Lina STT + TTS)
-DEEPGRAM_API_KEY=your_deepgram_key
-
-# OpenRouter (for Lina LLM)
-OPENROUTER_API_KEY=your_openrouter_key
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-
-# Mistral (for Weather Agent)
-MISTRAL_API_KEY=your_mistral_key
-```
-
-### 3. Start an Agent
+### 1. Initialize Vision Models
+Before running **V-One**, you must download the local ONNX models:
 ```bash
 cd python-agent
-pip install -r requirements.txt
-
-# Run Lina
-python agents/lina/lina.py dev
-
-# OR Run the Weather Agent
-python agents/weather_agent/weather_agent.py dev
+python agents/vision/setup_models.py
 ```
 
-### 4. Start the Backend
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-### 5. Start the Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### 2. Start the Swarm
+The Swarm is a microservice ecosystem. Each layer must be active:
+- **Infrastructure**: `docker-compose up -d`
+- **Intelligence**: `python main.py dev` (Main worker)
+- **Specialized Units**: `python agents/vision/vision_agent.py dev`
+- **Command Center**: `npm run dev` (in /frontend)
 
 ---
 
-## ⚙️ Default Ports
-| Service | URL |
-|---|---|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:3002 |
-| LiveKit Server | ws://localhost:7880 |
+## 🎯 Swarm Roadmap
+- [x] **V-One Biometrics**: Local-first identity verification.
+- [x] **Cortex II**: NoSQL native intelligence.
+- [ ] **Aura v2**: Real-time satellite data integration.
+- [ ] **Swarm Memory**: Cross-agent long-term memory sync.
 
----
-
-## 🎯 Upcoming Agents
-- 🧠 Memory Agent (persistent long-term memory)
-- 🦾 Tech Support Agent
-- 📚 Study & Learning Guide
-- 🎨 Creative Writing Companion
-- ... and many more in the SWARM.
-
----
-**Building the Future Gen with SWARM.**
+**Building the Future of Autonomous Intelligence with SWARM.**
