@@ -1,5 +1,6 @@
 import asyncio
 import os
+from datetime import datetime
 import aiohttp
 import json
 import logging
@@ -9,6 +10,10 @@ from livekit import rtc
 from livekit.agents import AutoSubscribe, JobContext, JobRequest, WorkerOptions, cli, llm, AgentSession, room_io, stt
 from livekit.agents.voice import Agent, ModelSettings
 from livekit.plugins import mistralai, silero
+
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
+from utils.sentry import get_sentry
 
 # Load environment variables from the root directory
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -79,16 +84,21 @@ async def entrypoint(ctx: JobContext):
     shutdown_event = asyncio.Event()
     
     try:
+        # Initialize Sentry
+        sentry = get_sentry(AGENT_NAME)
+        sentry.log_transaction("session_start", {"room": ctx.room.name})
+
         # Initialize VAD (Voice Activity Detection)
         vad_plugin = silero.VAD.load(min_silence_duration=0.5)
         logger.info("Silero VAD loaded successfully")
 
-        # Initialize ChatContext with a system message
+        # Initialize ChatContext with a system message and current time
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         chat_ctx = llm.ChatContext(
             items=[
                 llm.ChatMessage(
                     role="system",
-                    content=["You are the Weather Agent for India. You have access to real-time weather APIs. Use your tools to fetch current conditions and detailed forecasts for Chennai (13.08, 80.27) or any requested location. Be precise with temperatures and humidity."],
+                    content=[f"You are the Weather Agent for India. CURRENT_TIME: {current_time}. You have access to real-time weather APIs. Use your tools to fetch current conditions and detailed forecasts for Chennai (13.08, 80.27) or any requested location. Be precise with temperatures and humidity."],
                 )
             ]
         )
@@ -226,6 +236,10 @@ async def entrypoint(ctx: JobContext):
             tts_cost = (usage["tts_chars"] / 1000 * 0.02)
 
             usage["total_cost"] = round(llm_cost + stt_cost + tts_cost, 6)
+            
+            # Sentry Cost Audit (Mistral model mapping)
+            sentry.calculate_cost("default", usage["input_tokens"], usage["output_tokens"])
+            
             logger.info(f"[COST_AUDIT] Session Total: ${usage['total_cost']} | Tokens: {usage['input_tokens']+usage['output_tokens']}")
             asyncio.create_task(broadcast_usage())
 
@@ -233,6 +247,12 @@ async def entrypoint(ctx: JobContext):
         @session.on("user_input_transcribed")
         def on_stt(event: voice.UserInputTranscribedEvent):
             if event.is_final:
+                # 1. Guardrail Check
+                if not sentry.check_guardrails(event.transcript):
+                    return
+                # 2. Semantic Endpointing
+                if not sentry.is_thought_complete(event.transcript):
+                    return
                 logger.info(f"--- [INPUT] {event.transcript} ---")
 
         @session.on("conversation_item_added")

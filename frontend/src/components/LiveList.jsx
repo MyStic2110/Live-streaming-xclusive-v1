@@ -258,7 +258,7 @@ export default function LiveList({ onJoin }) {
       features: [
         "End-to-end AI Agent Build",
         "Integration with existing stack",
-        "n8n / Make / Custom API setup",
+        "customized agents built for your cases powered claude deepgram openai",
         "Full Documentation & Loom Video",
         "30-day Support Period"
       ],
@@ -313,9 +313,6 @@ export default function LiveList({ onJoin }) {
           <a href="#work" style={{ textDecoration: "none", color: "inherit" }}>Our Work</a>
           <a href="#about" style={{ textDecoration: "none", color: "inherit" }}>About</a>
         </div>
-        <button style={{ padding: "0.8rem 1.5rem", background: COLORS.primary, color: "white", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}>
-          GET YOUR PLAN →
-        </button>
       </nav>
 
       {/* Hero Section */}
@@ -334,26 +331,12 @@ export default function LiveList({ onJoin }) {
           We build AI systems that go live in 1–2 weeks. Not just chatbots, but autonomous agents that handle manual data, security audits, and climate intelligence.
         </p>
         <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center" }}>
-          <button style={{ padding: "1.2rem 2.5rem", background: COLORS.primary, color: "white", border: "none", borderRadius: "12px", fontWeight: "800", fontSize: "1rem", cursor: "pointer" }}>
-            BOOK A FREE AUDIT →
-          </button>
           <button style={{ padding: "1.2rem 2.5rem", background: "white", color: COLORS.primary, border: `1px solid ${COLORS.border}`, borderRadius: "12px", fontWeight: "800", fontSize: "1rem", cursor: "pointer" }}>
             SEE OUR WORK ↓
           </button>
         </div>
       </header>
 
-      {/* Trust / Clients Section */}
-      <div style={{ padding: "0 5% 6rem", textAlign: "center" }}>
-        <p style={{ fontSize: "0.7rem", fontWeight: "900", color: COLORS.textMuted, letterSpacing: "2px", marginBottom: "2.5rem" }}>POWERING INTELLIGENCE FOR</p>
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "5rem", opacity: 0.4, filter: "grayscale(100%)", flexWrap: "wrap" }}>
-           <div style={{ fontSize: "1.5rem", fontWeight: "900" }}>NEXUS CORP</div>
-           <div style={{ fontSize: "1.5rem", fontWeight: "900" }}>IPL GLOBAL</div>
-           <div style={{ fontSize: "1.5rem", fontWeight: "900" }}>CLEARALIGN</div>
-           <div style={{ fontSize: "1.5rem", fontWeight: "900" }}>SWARM DEFENSE</div>
-           <div style={{ fontSize: "1.5rem", fontWeight: "900" }}>FUTURE GEN</div>
-        </div>
-      </div>
 
       {/* Stats Bar */}
       <div style={{ display: "flex", justifyContent: "center", gap: "8rem", padding: "4rem 0", background: COLORS.bgSoft, borderTop: `1px solid ${COLORS.border}`, borderBottom: `1px solid ${COLORS.border}` }}>
@@ -440,20 +423,10 @@ export default function LiveList({ onJoin }) {
         </div>
       </section>
 
-      {/* Call to Action */}
-      <section style={{ padding: "8rem 5%", textAlign: "center", background: COLORS.primary, color: "white" }}>
-        <h2 style={{ fontSize: "3rem", fontWeight: "900", marginBottom: "1.5rem", letterSpacing: "-1px" }}>Ready to automate your business?</h2>
-        <p style={{ fontSize: "1.2rem", opacity: 0.8, maxWidth: "600px", margin: "0 auto 3rem" }}>
-          Book a free 30-minute automation audit. No commitment, no pitch — just clarity on where AI gives your business the biggest ROI.
-        </p>
-        <button style={{ padding: "1.5rem 3.5rem", background: COLORS.accent, color: "white", border: "none", borderRadius: "12px", fontWeight: "900", fontSize: "1.1rem", cursor: "pointer" }}>
-          BOOK YOUR FREE AUDIT →
-        </button>
-      </section>
 
       {/* Footer */}
       <footer style={{ padding: "6rem 5% 3rem", borderTop: `1px solid ${COLORS.border}` }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "4rem", maxWidth: "1400px", margin: "0 auto", marginBottom: "4rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "4rem", maxWidth: "1400px", margin: "0 auto", marginBottom: "4rem" }}>
           <div>
             <div style={{ fontSize: "1.5rem", fontWeight: "900", letterSpacing: "2px", marginBottom: "1.5rem" }}>SWARM</div>
             <p style={{ color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "1.6" }}>
@@ -469,24 +442,7 @@ export default function LiveList({ onJoin }) {
               <li>Autonomous Copilots</li>
             </ul>
           </div>
-          <div>
-            <h4 style={{ fontSize: "0.9rem", fontWeight: "900", marginBottom: "1.5rem" }}>COMPANY</h4>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "2" }}>
-              <li>About Ajay</li>
-              <li>Case Studies</li>
-              <li>Privacy Policy</li>
-              <li>Contact</li>
-            </ul>
           </div>
-          <div>
-            <h4 style={{ fontSize: "0.9rem", fontWeight: "900", marginBottom: "1.5rem" }}>CONNECT</h4>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "2" }}>
-              <li>LinkedIn</li>
-              <li>Twitter</li>
-              <li>WhatsApp</li>
-            </ul>
-          </div>
-        </div>
         <div style={{ textAlign: "center", borderTop: `1px solid ${COLORS.border}`, paddingTop: "2rem", color: COLORS.textMuted, fontSize: "0.8rem", letterSpacing: "1px" }}>
           © 2026 SWARM COMMAND · BUILT FOR INDIA AND GLOBE
         </div>

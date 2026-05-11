@@ -1,5 +1,6 @@
 import os
 import asyncio
+from datetime import datetime
 import logging
 import json
 from dotenv import load_dotenv
@@ -15,6 +16,10 @@ from livekit.agents import (
     voice
 )
 from livekit.plugins import silero, openai, deepgram
+
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
+from utils.sentry import get_sentry
 
 # Load environment variables from the root directory
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -62,6 +67,10 @@ GOAL:
 Make the user feel calm, connected, comfortable, and gently cared for."""
 
 async def entrypoint(ctx: JobContext):
+    # 0. Initialize Sentry
+    sentry = get_sentry(AGENT_NAME)
+    sentry.log_transaction("session_start", {"room": ctx.room.name})
+
     logger.info(f"--- LINA STARTING SESSION (ROOM: {ctx.room.name}) ---")
 
     # 1. Initialize Plugins
@@ -85,9 +94,10 @@ async def entrypoint(ctx: JobContext):
     # Using 'Aura Luna' for a warm, natural feminine voice
     tts_plugin = deepgram.TTS(model="aura-luna-en")
 
-    # 2. Setup ChatContext
+    # 2. Setup ChatContext with current time awareness
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     chat_ctx = llm.ChatContext(
-        items=[llm.ChatMessage(role="system", content=[SYSTEM_PROMPT])]
+        items=[llm.ChatMessage(role="system", content=[f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}"])]
     )
 
     # 3. Create the Agent
@@ -119,6 +129,12 @@ async def entrypoint(ctx: JobContext):
     @session.on("user_input_transcribed")
     def on_stt(event: voice.UserInputTranscribedEvent):
         if event.is_final:
+            # 1. Guardrail Check
+            if not sentry.check_guardrails(event.transcript):
+                return
+            # 2. Semantic Endpointing
+            if not sentry.is_thought_complete(event.transcript):
+                return
             logger.info(f"--- [INPUT] {event.transcript} ---")
 
     @session.on("conversation_item_added")
@@ -134,6 +150,18 @@ async def entrypoint(ctx: JobContext):
     @session.on("agent_state_changed")
     def on_state_changed(event: voice.AgentStateChangedEvent):
         logger.info(f"[STATE] Lina is now: {event.new_state}")
+
+    @session.on("session_usage_updated")
+    def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
+        input_tokens = 0
+        output_tokens = 0
+        for m in usage_data.usage.model_usage:
+            if m.type == "llm_usage":
+                input_tokens = getattr(m, "input_tokens", 0)
+                output_tokens = getattr(m, "output_tokens", 0)
+        
+        # Sentry Cost Audit
+        sentry.calculate_cost("gpt-4o-mini", input_tokens, output_tokens)
 
     # 8. Start the pipeline
     await session.start(room=ctx.room, agent=agent)

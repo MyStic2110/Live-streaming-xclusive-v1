@@ -19,6 +19,10 @@ from livekit.agents import (
 )
 from livekit.plugins import silero, openai, deepgram
 
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
+from utils.sentry import get_sentry
+
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
 
@@ -55,6 +59,10 @@ class VisionAgent:
         self.verified = False
         self.processing = False
         self.participant_identity = ""
+        
+        # Initialize Sentry
+        self.sentry = get_sentry(AGENT_NAME)
+        self.sentry.log_transaction("vision_init", {"agent": AGENT_NAME})
         
         # Initialize OpenCV Face Models
         # YuNet for detection
@@ -116,7 +124,9 @@ class VisionAgent:
             ref_feature = self.recognizer.feature(ref_aligned)
 
             # Compare features (Cosine similarity)
+            t_compare = self.sentry.start_latency_timer()
             cosine_score = self.recognizer.match(live_feature, ref_feature, cv2.FaceRecognizerSF_FR_COSINE)
+            self.sentry.stop_latency_timer(t_compare, "biometric_compare")
             
             # Threshold for SFace (Cosine) is usually around 0.363
             threshold = 0.363
@@ -159,12 +169,14 @@ class VisionAgent:
                     writer.writerow([timestamp, self.participant_identity, "VERIFIED", f"{res['confidence']:.2f}", res["snapshot"]])
                 
                 await self.speak(f"Biometric confirmed. Welcome {self.participant_identity}. Logging shift and ending session.")
+                self.sentry.log_transaction("biometric_success", {"identity": self.participant_identity, "confidence": res["confidence"]})
                 await asyncio.sleep(3)
                 await self.ctx.room.disconnect()
                 break
             
             elif res["status"] == "NO_REF":
                 await self.speak("I can see you, but no reference profile exists for your identity.")
+                self.sentry.log_transaction("access_denied", {"reason": "no_reference", "identity": self.participant_identity})
                 self.processing = False
                 await asyncio.sleep(5)
             
@@ -196,7 +208,9 @@ async def entrypoint(ctx: JobContext):
     )
     tts_plugin = deepgram.TTS(model="aura-stella-en")
     vad_plugin = silero.VAD.load()
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     session = AgentSession(vad=vad_plugin, stt=deepgram.STT(), llm=llm_plugin, tts=tts_plugin)
+    session.chat_ctx.append(message=llm.ChatMessage(role="system", content=f"CURRENT_TIME: {current_time}"))
     
     vision = VisionAgent(ctx, session)
     vision.participant_identity = participant.identity

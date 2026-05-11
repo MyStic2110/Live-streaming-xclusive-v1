@@ -1,5 +1,6 @@
 import os
 import asyncio
+from datetime import datetime
 import logging
 import json
 from dotenv import load_dotenv
@@ -16,6 +17,10 @@ from livekit.agents import (
 )
 from livekit.plugins import silero, openai, deepgram
 from semantic_router import SemanticRouter
+
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
+from utils.sentry import get_sentry
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -45,6 +50,10 @@ ROUTER = SemanticRouter()
 async def entrypoint(ctx: JobContext):
     logger.info(f"--- NOVA (Optimized Pipeline) CONNECTING ---")
     
+    # Initialize Sentry
+    sentry = get_sentry("NOVA")
+    sentry.log_transaction("session_start", {"room": ctx.room.name})
+
     # Initialize plugins INSIDE the entrypoint (Fixes Windows loop errors)
     vad = silero.VAD.load(min_silence_duration=0.5)
     stt = deepgram.STT(model="nova-2-general")
@@ -53,8 +62,11 @@ async def entrypoint(ctx: JobContext):
     await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
     await ctx.room.local_participant.set_metadata(json.dumps({"name": "NOVA"}))
 
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     system_prompt = f"""You are Nova, the official Intelligence Copilot for Nexus IPL 2026.
 Your role is to guide users through the match arena, help them manage their squad, and explain their performance analytics.
+
+CURRENT_TIME: {current_time}
 
 AUTHENTICATION: You can physically log users out or take them to the Google sign-in page if they ask.
 
@@ -75,6 +87,10 @@ Be professional, enthusiastic about cricket, and sound like a high-end AI specia
         @llm.function_tool(description="Navigate to a specific route or page.")
         async def navigate(self, route_key: str):
             """Navigate to a route."""
+            # Sentry Guardrail
+            if not sentry.validate_tool_args("navigate", {"route": route_key}):
+                return "Error: Access to this navigation route is restricted by security policy."
+
             logger.info(f"[LATENCY:TOOL] Optimistic emit for {route_key}")
             
             payload = json.dumps({
@@ -138,8 +154,16 @@ Be professional, enthusiastic about cricket, and sound like a high-end AI specia
     def on_stt(event: voice.UserInputTranscribedEvent):
         if event.is_final:
             transcript = event.transcript
-            logger.info(f"[LATENCY:FAST_PATH] Testing intent: '{transcript}'")
+            # --- SENTRY GUARDRAIL (PRE-INTENT) ---
+            if not sentry.check_guardrails(transcript):
+                logger.warning(f"[SENTRY] Blocked potentially malicious transcript: {transcript}")
+                return
             
+            # --- SEMANTIC ENDPOINTING (TURN DETECTION) ---
+            if not sentry.is_thought_complete(transcript):
+                logger.info(f"[SENTRY] Thought incomplete, holding... ('{transcript}')")
+                return
+
             match = ROUTER.search(transcript)
             if match:
                 route = match['route']
@@ -199,6 +223,9 @@ Be professional, enthusiastic about cricket, and sound like a high-end AI specia
         tts_cost = (usage["tts_chars"] / 1000 * 0.015)
 
         usage["total_cost"] = round(llm_cost + stt_cost + tts_cost, 6)
+        
+        # Sentry Cost Audit
+        sentry.calculate_cost("gpt-4o-mini", usage["input_tokens"], usage["output_tokens"])
         
         logger.info(f"[COST_AUDIT] Session Total: ${usage['total_cost']} | Tokens: {usage['input_tokens']+usage['output_tokens']}")
         asyncio.create_task(broadcast_usage())

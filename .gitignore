@@ -15,4 +15,7 @@ python-agent/__pycache__/
 python-agent/.env
 python-agent/*.mp3
 python-agent/Voice sample/
+python-agent/swarm_logs/
+python-agent/agents/vision/models/
+python-agent/agents/vision/known_faces/
 

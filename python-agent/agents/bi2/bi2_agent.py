@@ -1,5 +1,6 @@
 import os
 import asyncio
+from datetime import datetime
 import logging
 import json
 from dotenv import load_dotenv
@@ -19,6 +20,10 @@ from livekit.plugins import silero, openai, deepgram
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
+
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
+from utils.sentry import get_sentry
 
 # Logger setup
 logger = logging.getLogger("cortex-bi2")
@@ -140,8 +145,13 @@ async def entrypoint(ctx: JobContext):
     await db.connect()
     await db.discover_schema()
 
-    # Inject schema into the system prompt
-    dynamic_prompt = f"{SYSTEM_PROMPT}\n\nLIVE SCHEMA SNAPSHOT:\n{json.dumps(SCHEMA_CACHE, indent=2)}"
+    # Initialize Sentry
+    sentry = get_sentry(AGENT_NAME)
+    sentry.log_transaction("session_start", {"room": ctx.room.name})
+
+    # Inject schema and current time into the system prompt
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    dynamic_prompt = f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}\n\nLIVE SCHEMA SNAPSHOT:\n{json.dumps(SCHEMA_CACHE, indent=2)}"
 
     chat_ctx = llm.ChatContext(
         items=[llm.ChatMessage(role="system", content=[dynamic_prompt])]
@@ -157,12 +167,20 @@ async def entrypoint(ctx: JobContext):
     class BI2Tools:
         @llm.function_tool(description="Find documents in a MongoDB collection. Use filter_json as a JSON string for filtering (e.g., '{\"status\": \"completed\"}'). Limit defaults to 10.")
         async def find_documents(self, collection: str, filter_json: str = "{}", limit: int = 10):
-            logger.info(f"[BI2_FIND] Collection: {collection} | Filter: {filter_json} | Limit: {limit}")
+            # Guardrail check
+            if not sentry.validate_tool_args("find", {"collection": collection, "filter": filter_json}):
+                return "Error: Security policy violation detected in query arguments."
+
+            t_start = sentry.start_latency_timer()
             try:
                 filter_dict = json.loads(filter_json)
             except Exception:
                 filter_dict = {}
-            return await db.find(collection, filter_dict, min(limit, 25))
+            
+            res = await db.find(collection, filter_dict, min(limit, 25))
+            sentry.stop_latency_timer(t_start, "mongo_find")
+            sentry.log_transaction("tool_call", {"tool": "find", "collection": collection, "results_count": len(res)})
+            return res
 
         @llm.function_tool(description="Run an aggregation pipeline on a MongoDB collection. pipeline_json must be a valid JSON array of pipeline stages.")
         async def aggregate_collection(self, collection: str, pipeline_json: str):
@@ -232,6 +250,9 @@ async def entrypoint(ctx: JobContext):
         tts_cost  = (usage["tts_chars"] / 1000 * 0.015)
         usage["total_cost"] = round(llm_cost + stt_cost + tts_cost, 6)
 
+        # Sentry Cost Audit
+        sentry.calculate_cost("gpt-4o-mini", usage["input_tokens"], usage["output_tokens"])
+        
         logger.info(f"[COST_AUDIT] Total: ${usage['total_cost']} | Tokens: {usage['input_tokens']+usage['output_tokens']}")
         asyncio.create_task(broadcast_usage())
 
@@ -239,6 +260,9 @@ async def entrypoint(ctx: JobContext):
     @session.on("user_input_transcribed")
     def on_stt(event: voice.UserInputTranscribedEvent):
         if event.is_final:
+            # --- SEMANTIC ENDPOINTING ---
+            if not sentry.is_thought_complete(event.transcript):
+                return
             logger.info(f"--- [INPUT] {event.transcript} ---")
 
     @session.on("conversation_item_added")

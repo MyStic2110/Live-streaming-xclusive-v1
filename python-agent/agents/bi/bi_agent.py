@@ -1,5 +1,6 @@
 import os
 import asyncio
+from datetime import datetime
 import logging
 import json
 import re
@@ -17,6 +18,10 @@ from livekit.agents import (
     voice
 )
 from livekit.plugins import silero, openai, deepgram
+
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
+from utils.sentry import get_sentry
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -106,22 +111,19 @@ class MySQLHandler:
             logger.error(f"[INIT] Warm Boot failed: {e}")
 
     async def execute_query(self, query):
-        # STAGE 1: HARD BLOCK ON NON-READ KEYWORDS
-        forbidden = ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE", "REPLACE", "CREATE", "GRANT"]
-        clean_query = query.strip().upper()
-        
-        if any(word in clean_query for word in forbidden):
-            logger.warning(f"[SECURITY_BLOCK] Illegal query attempt: {query}")
+        # Sentry Guardrail
+        if not get_sentry("BI").validate_tool_args("sql_query", {"query": query}):
+            logger.warning(f"[SENTRY_BLOCK] Illegal query attempt: {query}")
             return "ERROR: Security violation. Only read-only SELECT queries are permitted."
 
-        if not clean_query.startswith("SELECT") and not clean_query.startswith("SHOW"):
-             return "ERROR: Invalid query type. Please provide a SELECT statement."
-
         try:
+            t_start = get_sentry("BI").start_latency_timer()
             conn = await self.get_connection()
             async with conn.cursor(aiomysql.DictCursor) as cur:
                 await cur.execute(query)
                 result = await cur.fetchall()
+                get_sentry("BI").stop_latency_timer(t_start, "mysql_query")
+                get_sentry("BI").log_transaction("sql_success", {"query": query, "rows": len(result)})
                 return json.dumps(result, indent=2)
         except Exception as e:
             return f"Database Error: {str(e)}"
@@ -140,6 +142,10 @@ async def prewarm_schema():
     await db.initialize_schema()
 
 async def entrypoint(ctx: JobContext):
+    # Initialize Sentry
+    sentry = get_sentry("BI")
+    sentry.log_transaction("session_start", {"room": ctx.room.name})
+
     logger.info(f"--- CORTEX BI CONNECTING (ROOM: {ctx.room.name}) ---")
     
     # Schema is already loaded globally!
@@ -152,8 +158,9 @@ async def entrypoint(ctx: JobContext):
         base_url=os.getenv("OPENROUTER_BASE_URL"),
     )
 
-    # Inject the pre-warmed schema
-    dynamic_prompt = f"{SYSTEM_PROMPT}\n\nCURRENT DATABASE SCHEMA:\n{json.dumps(SCHEMA_CACHE, indent=2)}"
+    # Inject the pre-warmed schema and current time
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    dynamic_prompt = f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}\n\nCURRENT DATABASE SCHEMA:\n{json.dumps(SCHEMA_CACHE, indent=2)}"
     
     chat_ctx = llm.ChatContext(
         items=[llm.ChatMessage(role="system", content=[dynamic_prompt])]
@@ -215,6 +222,9 @@ async def entrypoint(ctx: JobContext):
         
         usage["total_cost"] = round(llm_cost + stt_cost + tts_cost, 6)
         
+        # Sentry Cost Audit
+        sentry.calculate_cost("gpt-4o-mini", usage["input_tokens"], usage["output_tokens"])
+        
         logger.info(f"[COST_AUDIT] Session Total: ${usage['total_cost']} | Tokens: {usage['input_tokens']+usage['output_tokens']} | Audio: {usage['stt_seconds']}s")
         asyncio.create_task(broadcast_usage())
 
@@ -228,6 +238,9 @@ async def entrypoint(ctx: JobContext):
     @session.on("user_input_transcribed")
     def on_stt(event: voice.UserInputTranscribedEvent):
         if event.is_final:
+            # --- SEMANTIC ENDPOINTING ---
+            if not sentry.is_thought_complete(event.transcript):
+                return
             logger.info(f"--- [INPUT] {event.transcript} ---")
 
     @session.on("conversation_item_added")
