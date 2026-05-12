@@ -60,6 +60,21 @@ const DashboardContent = ({ roomData, onLeave }) => {
         }
     });
 
+    // Capability: Predict (Relay to Iframe)
+    useNova({
+        actionName: "predict",
+        description: "Submit match predictions for a specific session (12 deliveries).",
+        execute: async (payload) => {
+            if (iframeRef.current) {
+                const message = { type: 'nova_command', key: 'predict', parameters: payload };
+                iframeRef.current.contentWindow.postMessage(message, '*');
+                return `Relayed prediction for match ${payload.match_id} to the portal.`;
+            }
+        }
+    });
+
+
+
     return (
         <div style={{ 
             height: '100dvh', 

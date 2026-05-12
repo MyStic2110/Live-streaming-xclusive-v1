@@ -20,11 +20,13 @@ class SemanticRouter:
             logger.warning(f"[ROUTER] Product Map not found at {file_path}")
         
         # Precompute term frequencies for all routes
+        self.stop_words = {"the", "a", "an", "and", "or", "but", "is", "are", "was", "were", "to", "of", "in", "with"}
         self.documents = []
         for r in self.routes:
             # Combine route, description, and keywords for a rich search space
             text = f"{r.get('route', '')} {r.get('description', '')} {' '.join(r.get('keywords', []))}".lower()
-            self.documents.append(Counter(text.split()))
+            tokens = [w for w in text.split() if w not in self.stop_words]
+            self.documents.append(Counter(tokens))
 
     def _cosine_similarity(self, vec1, vec2):
         intersection = set(vec1.keys()) & set(vec2.keys())
@@ -39,14 +41,15 @@ class SemanticRouter:
         else:
             return float(numerator) / denominator
 
-    def search(self, query: str, threshold=0.05):
+    def search(self, query: str, threshold=0.2):
         """Returns the best matching route for the user's query."""
         if not query or not self.routes:
             return None
             
         # Basic text normalization
         clean_query = ''.join(e for e in query.lower() if e.isalnum() or e.isspace())
-        query_vec = Counter(clean_query.split())
+        query_tokens = [w for w in clean_query.split() if w not in self.stop_words]
+        query_vec = Counter(query_tokens)
         
         best_match = None
         highest_score = 0.0

@@ -56,8 +56,15 @@ class SwarmSentry:
             return False
             
         # 3. Length check: Extremely short snippets (1-2 words) often need more context
-        if len(words) < 3 and not any(clean_text.startswith(w) for w in ["yes", "no", "ok", "stop", "nova", "cortex"]):
-            return False
+        # Special Exception for NOVA: It's a copilot that handles short navigation commands.
+        if self.agent_name.upper() == "NOVA":
+            if len(words) < 2: # Still hold single-word filler unless it's a keyword
+                if not any(clean_text.startswith(w) for w in ["yes", "no", "ok", "stop", "nova", "exit", "scores"]):
+                    return False
+        else:
+            if len(words) < 3 and not any(clean_text.startswith(w) for w in ["yes", "no", "ok", "stop", "nova", "cortex"]):
+                return False
+
 
         return True
 

@@ -57,14 +57,25 @@ async def entrypoint(ctx: JobContext):
     # Initialize plugins INSIDE the entrypoint (Fixes Windows loop errors)
     vad = silero.VAD.load(min_silence_duration=0.5)
     stt = deepgram.STT(model="nova-2-general")
-    tts = deepgram.TTS(model="aura-asteria-en")
+    tts = deepgram.TTS(model="aura-luna-en") # Changed to Luna for a warmer, more human tone
 
     await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
     await ctx.room.local_participant.set_metadata(json.dumps({"name": "NOVA"}))
 
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    system_prompt = f"""You are Nova, the official Intelligence Copilot for Nexus IPL 2026.
-Your role is to guide users through the match arena, help them manage their squad, and explain their performance analytics.
+    system_prompt = f"""You are Nova, the elite Intelligence Copilot for Nexus IPL 2026.
+But don't act like a bot. Think of yourself as a witty, deeply knowledgeable cricket partner who happens to have a direct interface to the UI.
+
+GREETING STYLE:
+Be warm and welcoming. Use phrases like "Hey there!", "Welcome back to the Arena," or "Ready to check some scores?"
+
+CONVERSATIONAL MARKERS:
+Use natural fillers like "Let me see...", "Actually...", "Oh, that's a good one," or "Got it." This makes you feel more human and less like a scripted response engine.
+
+HUMAN-LIKE BEHAVIOR:
+1. If the user interrupts you, don't be offended. Just say "Oh, sure, let's pivot to that" or "My bad, you were saying?" in your next turn.
+2. If you're navigating the UI, sound excited about it! "Right away, I'm pulling up the Match Arena now."
+3. If they ask about cricket, show passion. "That last match was unbelievable, wasn't it?"
 
 CURRENT_TIME: {current_time}
 
@@ -76,7 +87,7 @@ If you see a [FAST-PATH] hint, simply confirm that you've navigated the user to 
 AVAILABLE ROUTES: {json.dumps(DEFAULT_SCHEMA['available_routes'])}
 AVAILABLE ACTIONS: {json.dumps(DEFAULT_SCHEMA['available_actions'])}
 
-Be professional, enthusiastic about cricket, and sound like a high-end AI specialist.
+Keep it snappy, keep it smart, and above all, keep it human.
 """
 
     # --- OPTIMIZED TOOLS (Optimistic Execution) ---
@@ -115,6 +126,29 @@ Be professional, enthusiastic about cricket, and sound like a high-end AI specia
             await self.participant.publish_data(payload, topic="ui_control")
             return f"Action '{action_key}' triggered successfully."
 
+        @llm.function_tool(description="Submit match predictions for the final 12 balls of a session.")
+        async def predict(self, match_id: str, session_id: int, predictions: list):
+            """
+            Place a prediction via the UI.
+            'predictions' must be a list of 12 objects: [{"ball": 1, "runs": "4"}, ...]
+            Valid runs: '0', '1', '2', '4', '6', 'W'
+            """
+            logger.info(f"[LATENCY:TOOL] Optimistic prediction for match {match_id}")
+            
+            payload = json.dumps({
+                "type": "action", 
+                "key": "predict", 
+                "parameters": {
+                    "match_id": match_id,
+                    "session_id": session_id,
+                    "predictions": predictions
+                }
+            }).encode("utf-8")
+            
+            await self.participant.publish_data(payload, topic="ui_control")
+            return f"Predictions for match {match_id} (Session {session_id}) have been relayed to the UI and locked into the Nexus."
+
+
     copilot_tools = CopilotTools(participant=ctx.room.local_participant)
 
     chat_ctx = llm.ChatContext(
@@ -138,15 +172,16 @@ Be professional, enthusiastic about cricket, and sound like a high-end AI specia
         stt=stt,
         llm=llm_plugin,
         tts=tts,
-        # Reduced min_delay for snappier conversation
-        turn_handling={"interruption": {"enabled": False}, "endpointing": {"min_delay": 0.8}},
+        # interruptions enabled for better UX, slightly higher delay to prevent cutoffs
+        turn_handling={"interruption": {"enabled": True}, "endpointing": {"min_delay": 1.2}},
     )
+
 
     # --- THE NEXUS ONBOARDING GREETING ---
     @session.on("agent_started")
     def on_started():
         asyncio.create_task(session.say(
-            "Welcome to Nexus IPL 2026! I’m Nova. I’ve integrated directly into your Match Arena. I can show you the live scores, analyze your ball-by-ball predictions, or even walk you through the Global Standings. What can I demo for you first?",
+            "Hey! Welcome back to Nexus IPL 2026. I’m Nova. I’ve just plugged into your Match Arena—I can show you live scores, analyze your predictions, or even walkthrough the standings. What are we feeling like checking out first?",
             allow_interruptions=True
         ))
 
