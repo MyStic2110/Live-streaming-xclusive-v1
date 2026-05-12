@@ -1,6 +1,12 @@
 import { tokenService } from '../services/tokenService.js';
 import { AgentDispatchClient } from 'livekit-server-sdk';
 import { config } from '../config/livekit.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const ROOM_NAME  = "ai_room_MURALI";
 const AGENT_NAME = "AURA";
@@ -36,6 +42,9 @@ export const talkToAI = async (req, res) => {
   } else if (agentType === "aura") {
     roomName = `aura_session_${userId}`;
     agentName = "AURA";
+  } else if (agentType === "astra") {
+    roomName = `growth_session_${userId}`;
+    agentName = "ASTRA";
   }
 
   console.log(`[HTTP_CONTROLLER] --> POST /talk-to-ai | AGENT: ${agentName} | ROOM: ${roomName}`);
@@ -64,6 +73,32 @@ export const talkToAI = async (req, res) => {
     res.json({ token, roomName: roomName, identity: userId, isAI: true });
   } catch (err) {
     console.error("[HTTP_CONTROLLER] ❌ CRITICAL AI DISPATCH ERROR:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getAstraInsights = async (req, res) => {
+  try {
+    const blogsDir = path.join(__dirname, "../../../python-agent/agents/astra/blogs");
+    
+    if (!fs.existsSync(blogsDir)) {
+      return res.json([]);
+    }
+
+    const files = fs.readdirSync(blogsDir);
+    const insights = files
+      .filter(f => f.endsWith(".json"))
+      .map(f => {
+        const content = fs.readFileSync(path.join(blogsDir, f), "utf-8");
+        return JSON.parse(content);
+      });
+
+    // Sort by date (newest first)
+    insights.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    res.json(insights);
+  } catch (err) {
+    console.error("[HTTP_CONTROLLER] ❌ Error fetching insights:", err.message);
     res.status(500).json({ error: err.message });
   }
 };

@@ -151,7 +151,7 @@ const PricingCard = ({ tier, price, duration, bestFor, features, isFeatured }) =
 
 // --- MAIN PAGE ---
 
-export default function LiveList({ onJoin }) {
+export default function LiveList({ onJoin, onBlogClick }) {
   const agents = [
     {
       id: "bi", title: "Cortex BI", icon: "📊", color: "#059669",
@@ -232,6 +232,16 @@ export default function LiveList({ onJoin }) {
         "Capture my attendance.", "Verify my identity.", "Run biometric scan.",
         "Log shift start.", "Identity check."
       ]
+    },
+    {
+      id: "astra", title: "Astra Architect", icon: "✍️", color: "#6366f1",
+      desc: "Elite content strategist and insight generator. Transforming fleet data into high-impact narratives.",
+      btnText: "Consult Astra",
+      prompts: [
+        "Generate a report on fleet security.", "Write a blog post about Agentic AI.",
+        "Analyze the latest intelligence updates.", "Draft a newsletter for the swarm.",
+        "Show me the latest insights."
+      ]
     }
   ];
 
@@ -310,7 +320,7 @@ export default function LiveList({ onJoin }) {
         <div style={{ display: "flex", gap: "2.5rem", fontSize: "0.9rem", fontWeight: "600", color: COLORS.textMuted }}>
           <a href="#services" style={{ textDecoration: "none", color: "inherit" }}>Services</a>
           <a href="#pricing" style={{ textDecoration: "none", color: "inherit" }}>Pricing</a>
-          <a href="#work" style={{ textDecoration: "none", color: "inherit" }}>Our Work</a>
+          <div onClick={onBlogClick} style={{ cursor: "pointer", color: COLORS.accent, fontWeight: "800" }}>Insights</div>
           <a href="#about" style={{ textDecoration: "none", color: "inherit" }}>About</a>
         </div>
       </nav>

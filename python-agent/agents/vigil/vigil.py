@@ -149,17 +149,30 @@ async def entrypoint(ctx: JobContext):
     def on_state_changed(event: voice.AgentStateChangedEvent):
         logger.info(f"[STATE] Vigil is now: {event.new_state}")
 
+    # --- SESSION COST TRACKING ---
+    session_usage = {"input_tokens": 0, "output_tokens": 0, "stt_seconds": 0.0, "tts_chars": 0}
+
     @session.on("session_usage_updated")
     def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
-        input_tokens = 0
-        output_tokens = 0
         for m in usage_data.usage.model_usage:
             if m.type == "llm_usage":
-                input_tokens = getattr(m, "input_tokens", 0)
-                output_tokens = getattr(m, "output_tokens", 0)
-        
-        # Sentry Cost Audit
-        sentry.calculate_cost("gpt-4o-mini", input_tokens, output_tokens)
+                session_usage["input_tokens"] = getattr(m, "input_tokens", 0)
+                session_usage["output_tokens"] = getattr(m, "output_tokens", 0)
+            elif m.type == "stt_usage":
+                session_usage["stt_seconds"] = getattr(m, "audio_duration", 0.0)
+            elif m.type == "tts_usage":
+                session_usage["tts_chars"] = getattr(m, "characters_count", 0)
+
+        # --- UNIFIED SENTRY COST AUDIT (LLM + STT + TTS) ---
+        sentry.calculate_session_cost(
+            llm_model="gpt-4o-mini",
+            input_tokens=session_usage["input_tokens"],
+            output_tokens=session_usage["output_tokens"],
+            stt_model="nova-2-general",
+            stt_seconds=session_usage["stt_seconds"],
+            tts_model="aura-hera-en",
+            tts_characters=session_usage["tts_chars"]
+        )
 
     # 8. Start the pipeline
     await session.start(room=ctx.room, agent=agent)

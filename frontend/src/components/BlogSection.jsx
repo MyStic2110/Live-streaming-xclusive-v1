@@ -1,0 +1,321 @@
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  ArrowLeft, Sparkles, Shield, Activity, RefreshCw, Calendar, 
+  User, Tag, ChevronRight, Clock, Eye, Share2, List, ExternalLink 
+} from "lucide-react";
+
+const COLORS = {
+  primary: "#111827",
+  accent: "#3b82f6",
+  textMuted: "#6b7280",
+  bgLight: "#ffffff",
+  bgSoft: "#f9fafb",
+  border: "#e5e7eb",
+  white: "#ffffff"
+};
+
+const API = import.meta.env.VITE_API_URL || "";
+
+// --- ELITE AGENT-READY POST SCHEMA ---
+const INITIAL_POSTS = [];
+
+const BlogSection = ({ onBack, externalPosts = [] }) => {
+  const [posts, setPosts] = useState([...externalPosts, ...INITIAL_POSTS]);
+  const [selectedPost, setSelectedPost] = useState(null);
+
+  // Sync external posts and fetch persistent ones from backend
+  React.useEffect(() => {
+    const fetchPersistentInsights = async () => {
+      try {
+        const response = await fetch(`${API}/insights`);
+        const persistentPosts = await response.json();
+        
+        // Merge strategy: Persistent (Backend) + Live (props) + Static (Hardcoded)
+        // Ensure no duplicates by slug
+        const allPosts = [...externalPosts, ...persistentPosts, ...INITIAL_POSTS];
+        const uniquePosts = Array.from(new Map(allPosts.map(p => [p.slug, p])).values());
+        
+        setPosts(uniquePosts);
+      } catch (err) {
+        console.error("[BLOG] Failed to sync persistent insights:", err);
+        setPosts([...externalPosts, ...INITIAL_POSTS]);
+      }
+    };
+
+    fetchPersistentInsights();
+  }, [externalPosts]);
+
+  const getCategoryIcon = (category) => {
+    switch (category) {
+      case "Intelligence": return <Sparkles size={16} />;
+      case "Security": return <Shield size={16} />;
+      case "Operations": return <Activity size={16} />;
+      case "Update": return <RefreshCw size={16} />;
+      default: return <Tag size={16} />;
+    }
+  };
+
+  const formatDate = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+  };
+
+  if (selectedPost) {
+    return (
+      <div style={{ background: COLORS.bgLight, minHeight: "100vh", fontFamily: "'Outfit', sans-serif" }}>
+        <nav style={{ 
+          padding: "1.5rem 5%", background: "rgba(255,255,255,0.8)", 
+          backdropFilter: "blur(20px)", borderBottom: `1px solid ${COLORS.border}`,
+          position: "sticky", top: 0, zIndex: 100, display: "flex", justifyContent: "space-between", alignItems: "center"
+        }}>
+          <button 
+            onClick={() => setSelectedPost(null)}
+            style={{ 
+              background: "none", border: "none", color: COLORS.primary, 
+              fontWeight: "800", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px",
+              fontSize: "0.9rem", letterSpacing: "1px"
+            }}
+          >
+            <ArrowLeft size={18} /> BACK TO INSIGHTS
+          </button>
+          <div style={{ fontSize: "1rem", fontWeight: "800", color: COLORS.accent }}>
+            {selectedPost.slug}
+          </div>
+          <div style={{ display: "flex", gap: "1rem" }}>
+          </div>
+        </nav>
+
+        <article style={{ maxWidth: "1200px", margin: "0 auto", padding: "6rem 5%", display: "grid", gridTemplateColumns: "1fr 300px", gap: "4rem" }}>
+          <div>
+            <div style={{ 
+              width: "100%", height: "500px", borderRadius: "40px", 
+              overflow: "hidden", marginBottom: "4rem", boxShadow: "0 40px 80px rgba(0,0,0,0.1)"
+            }}>
+              <img src={selectedPost.featuredImage} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={selectedPost.imageAlt} />
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "2rem" }}>
+              {selectedPost.metadata.tags.map(tag => (
+                <span key={tag} style={{ fontSize: "0.7rem", fontWeight: "900", color: COLORS.accent, background: `${COLORS.accent}11`, padding: "4px 12px", borderRadius: "99px", letterSpacing: "1px" }}>
+                  #{tag.toUpperCase()}
+                </span>
+              ))}
+            </div>
+
+            <h1 style={{ fontSize: "4.5rem", fontWeight: "900", color: COLORS.primary, letterSpacing: "-3px", lineHeight: 0.95, marginBottom: "1.5rem" }}>
+              {selectedPost.title}
+            </h1>
+            <p style={{ fontSize: "1.75rem", color: COLORS.textMuted, marginBottom: "3rem", fontWeight: "400", lineHeight: 1.3 }}>
+              {selectedPost.subtitle}
+            </p>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "2rem", marginBottom: "4rem", paddingBottom: "2.5rem", borderBottom: `1px solid ${COLORS.border}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                <img src={selectedPost.author.avatar} style={{ width: "56px", height: "56px", borderRadius: "50%", background: COLORS.bgSoft, border: `1px solid ${COLORS.border}` }} alt={selectedPost.author.name} />
+                <div>
+                  <div style={{ fontWeight: "900", color: COLORS.primary, fontSize: "1.1rem" }}>{selectedPost.author.name}</div>
+                  <div style={{ fontSize: "0.85rem", color: COLORS.accent, fontWeight: "700" }}>{selectedPost.author.role}</div>
+                </div>
+              </div>
+              <div style={{ height: "30px", width: "1px", background: COLORS.border }}></div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <div style={{ fontSize: "0.7rem", fontWeight: "900", color: COLORS.textMuted, letterSpacing: "1px" }}>PUBLISHED</div>
+                <div style={{ fontSize: "1rem", fontWeight: "700", color: COLORS.primary }}>{formatDate(selectedPost.date)}</div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <div style={{ fontSize: "0.7rem", fontWeight: "900", color: COLORS.textMuted, letterSpacing: "1px" }}>READ TIME</div>
+                <div style={{ fontSize: "1rem", fontWeight: "700", color: COLORS.primary }}>{selectedPost.readTime}</div>
+              </div>
+            </div>
+
+            <div className="prose" style={{ fontSize: "1.35rem", lineHeight: 1.8, color: COLORS.primary, opacity: 0.9 }}>
+              {selectedPost.content.split('\n').map((para, i) => (
+                <p key={i} style={{ marginBottom: "2rem" }}>{para}</p>
+              ))}
+            </div>
+
+            {/* CTA Section */}
+            {selectedPost.cta && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                style={{ 
+                  marginTop: "6rem", padding: "4rem", background: COLORS.primary, 
+                  borderRadius: "40px", color: "white", textAlign: "center",
+                  boxShadow: `0 30px 60px ${COLORS.primary}44`
+                }}
+              >
+                <h3 style={{ fontSize: "2.5rem", fontWeight: "900", marginBottom: "1rem" }}>{selectedPost.cta.title}</h3>
+                <p style={{ fontSize: "1.2rem", opacity: 0.8, marginBottom: "2.5rem", maxWidth: "500px", margin: "0 auto 2.5rem" }}>{selectedPost.cta.description}</p>
+                <a 
+                  href={selectedPost.cta.buttonUrl} 
+                  style={{ 
+                    padding: "1.2rem 3rem", background: COLORS.accent, color: "white", 
+                    textDecoration: "none", borderRadius: "16px", fontWeight: "900", 
+                    display: "inline-flex", alignItems: "center", gap: "10px",
+                    transition: "transform 0.2s"
+                  }}
+                  onMouseEnter={(e) => e.target.style.transform = "scale(1.05)"}
+                  onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+                >
+                  {selectedPost.cta.buttonText} <ChevronRight size={20}/>
+                </a>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <aside>
+            <div style={{ position: "sticky", top: "120px", display: "grid", gap: "3rem" }}>
+              {/* Table of Contents */}
+              <div style={{ padding: "2rem", background: COLORS.bgSoft, borderRadius: "24px", border: `1px solid ${COLORS.border}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "1.5rem", color: COLORS.primary, fontWeight: "900", fontSize: "0.9rem", letterSpacing: "1px" }}>
+                  <List size={18}/> TABLE OF CONTENTS
+                </div>
+                <div style={{ display: "grid", gap: "12px" }}>
+                  {selectedPost.tableOfContents.map((item, i) => (
+                    <div key={i} style={{ fontSize: "0.95rem", color: COLORS.textMuted, cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={(e) => e.target.style.color = COLORS.accent} onMouseLeave={(e) => e.target.style.color = COLORS.textMuted}>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* SEO Tags / Metadata (Agent Helper) */}
+
+              {/* SEO Tags / Metadata (Agent Helper) */}
+              <div style={{ padding: "1.5rem", background: COLORS.primary, borderRadius: "24px", color: "white" }}>
+                 <div style={{ fontSize: "0.7rem", fontWeight: "900", opacity: 0.6, letterSpacing: "1px", marginBottom: "1rem" }}>AGENT METADATA</div>
+                 <div style={{ fontSize: "0.8rem", display: "grid", gap: "8px" }}>
+                    <div style={{ display: "flex", gap: "8px" }}><span style={{ opacity: 0.5 }}>CANONICAL:</span> {selectedPost.metadata.canonicalUrl}</div>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      <span style={{ opacity: 0.5 }}>KEYWORDS:</span>
+                      {selectedPost.metadata.keywords.slice(0, 3).map(k => (
+                        <span key={k} style={{ background: "rgba(255,255,255,0.1)", padding: "2px 6px", borderRadius: "4px" }}>{k}</span>
+                      ))}
+                    </div>
+                 </div>
+              </div>
+            </div>
+          </aside>
+        </article>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: COLORS.bgLight, minHeight: "100vh", padding: "0", fontFamily: "'Outfit', sans-serif" }}>
+      <nav style={{ 
+        padding: "1.5rem 5%", background: "rgba(255,255,255,0.8)", 
+        backdropFilter: "blur(20px)", borderBottom: `1px solid ${COLORS.border}`,
+        position: "sticky", top: 0, zIndex: 100, display: "flex", justifyContent: "space-between", alignItems: "center"
+      }}>
+        <button 
+          onClick={onBack}
+          style={{ 
+            background: "none", border: "none", color: COLORS.primary, 
+            fontWeight: "800", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px",
+            fontSize: "0.9rem", letterSpacing: "1px"
+          }}
+        >
+          <ArrowLeft size={18} /> BACK TO FLEET
+        </button>
+        <div style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "2px", color: COLORS.primary }}>
+          SWARM <span style={{ color: COLORS.accent }}>INSIGHTS</span>
+        </div>
+        <div style={{ width: "100px" }}></div>
+      </nav>
+
+      <main style={{ maxWidth: "1000px", margin: "0 auto", padding: "6rem 5%" }}>
+        <header style={{ textAlign: "center", marginBottom: "6rem" }}>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ 
+              display: "inline-block", padding: "6px 16px", background: `${COLORS.accent}11`, 
+              color: COLORS.accent, borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", 
+              marginBottom: "1.5rem", letterSpacing: "2px" 
+            }}
+          >
+            THE INTELLIGENCE FEED
+          </motion.div>
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            style={{ fontSize: "5rem", fontWeight: "900", color: COLORS.primary, letterSpacing: "-4px", lineHeight: 0.85 }}
+          >
+            Autonomous<br/> Insights <span style={{ color: COLORS.accent }}>Fleet.</span>
+          </motion.h1>
+        </header>
+
+        <div style={{ display: "grid", gap: "5rem" }}>
+          <AnimatePresence>
+            {posts.map((post, idx) => (
+              <motion.article 
+                key={post.id}
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.15, type: "spring", damping: 25 }}
+                style={{ cursor: "pointer" }}
+                onClick={() => setSelectedPost(post)}
+              >
+                <div style={{ 
+                  width: "100%", height: "480px", borderRadius: "40px", 
+                  overflow: "hidden", position: "relative",
+                  boxShadow: post.featured ? `0 40px 80px ${COLORS.accent}11` : "0 30px 60px rgba(0,0,0,0.08)",
+                  border: post.featured ? `1px solid ${COLORS.accent}22` : "none"
+                }}>
+                  <img src={post.featuredImage} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={post.title} />
+                  <div style={{ 
+                    position: "absolute", top: "2rem", left: "2rem", 
+                    background: "white", padding: "8px 18px", borderRadius: "99px",
+                    display: "flex", alignItems: "center", gap: "10px", 
+                    fontSize: "0.8rem", fontWeight: "900", color: COLORS.primary,
+                    boxShadow: "0 10px 20px rgba(0,0,0,0.1)"
+                  }}>
+                    {getCategoryIcon(post.category)} {post.category.toUpperCase()}
+                  </div>
+                  {post.featured && (
+                    <div style={{ position: "absolute", bottom: "2rem", right: "2rem", background: COLORS.accent, color: "white", padding: "6px 16px", borderRadius: "99px", fontSize: "0.7rem", fontWeight: "900", letterSpacing: "1px" }}>
+                      FEATURED
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ marginTop: "2.5rem", padding: "0 1rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginBottom: "1rem", fontSize: "0.8rem", fontWeight: "800", color: COLORS.textMuted, letterSpacing: "1px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><Clock size={14} color={COLORS.accent}/> {post.readTime.toUpperCase()}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><User size={14}/> {post.author.name.toUpperCase()}</div>
+                  </div>
+                  <h2 style={{ fontSize: "3.2rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem", letterSpacing: "-2px", lineHeight: 1 }}>{post.title}</h2>
+                  <p style={{ fontSize: "1.35rem", color: COLORS.textMuted, lineHeight: 1.5, marginBottom: "2rem", maxWidth: "800px" }}>{post.subtitle}</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", color: COLORS.accent, fontWeight: "900", fontSize: "0.95rem", letterSpacing: "1px" }}>
+                    LAUNCH PROTOCOL <ChevronRight size={20} />
+                  </div>
+                </div>
+              </motion.article>
+            ))}
+          </AnimatePresence>
+        </div>
+      </main>
+
+      <footer style={{ padding: "10rem 5% 5rem", background: COLORS.bgSoft, borderTop: `1px solid ${COLORS.border}`, marginTop: "10rem", textAlign: "center" }}>
+          <div style={{ fontSize: "2rem", fontWeight: "900", letterSpacing: "4px", color: COLORS.primary, marginBottom: "1.5rem" }}>SWARM COMMAND</div>
+          <div style={{ display: "flex", justifyContent: "center", gap: "3rem", marginBottom: "4rem", fontSize: "0.9rem", fontWeight: "700", color: COLORS.textMuted }}>
+            <span>NETWORK</span>
+            <span>PROTOCOLS</span>
+            <span>INTELLIGENCE</span>
+          </div>
+          <div style={{ color: COLORS.textMuted, fontSize: "0.8rem", letterSpacing: "1px", opacity: 0.6 }}>© 2026 NEXUS OPERATING SYSTEM · ELITE AGENTIC EDITION</div>
+      </footer>
+    </div>
+  );
+};
+
+export default BlogSection;

@@ -16,6 +16,24 @@ PRICING = {
     "default": {"input": 0.50, "output": 1.50}
 }
 
+# Deepgram pricing
+# STT: Nova-2 General @ $0.0043/min (Growth Plan)
+# TTS: Aura @ $0.015/1,000 characters (Standard Rate)
+DEEPGRAM_PRICING = {
+    "stt": {
+        "nova-2-general": 0.0043,
+        "nova-2": 0.0043,
+        "default": 0.0059
+    },
+    "tts": {
+        "aura-asteria-en": 0.015,
+        "aura-luna-en": 0.015,
+        "aura-hera-en": 0.015,
+        "aura-zeus-en": 0.015,
+        "default": 0.015
+    }
+}
+
 class SwarmSentry:
     def __init__(self, agent_name: str):
         self.agent_name = agent_name
@@ -87,13 +105,60 @@ class SwarmSentry:
         output_cost = (output_tokens / 1_000_000) * rates["output"]
         total = input_cost + output_cost
         
-        self.log_transaction("cost_audit", {
+        self.log_transaction("cost_audit_llm", {
             "model": model,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
-            "cost_usd": total
+            "cost_usd": round(total, 6)
         })
         return total
+
+    def calculate_stt_cost(self, model: str, duration_seconds: float) -> float:
+        """Calculate the cost of STT (Speech-to-Text) in USD."""
+        duration_minutes = duration_seconds / 60.0
+        rate = DEEPGRAM_PRICING["stt"].get(model, DEEPGRAM_PRICING["stt"]["default"])
+        total = duration_minutes * rate
+
+        self.log_transaction("cost_audit_stt", {
+            "model": model,
+            "duration_seconds": round(duration_seconds, 2),
+            "duration_minutes": round(duration_minutes, 4),
+            "rate_per_min": rate,
+            "cost_usd": round(total, 6)
+        })
+        return total
+
+    def calculate_tts_cost(self, model: str, characters: int) -> float:
+        """Calculate the cost of TTS (Text-to-Speech) in USD based on character count."""
+        rate = DEEPGRAM_PRICING["tts"].get(model, DEEPGRAM_PRICING["tts"]["default"])
+        total = (characters / 1000.0) * rate
+
+        self.log_transaction("cost_audit_tts", {
+            "model": model,
+            "characters": characters,
+            "rate_per_1k_chars": rate,
+            "cost_usd": round(total, 6)
+        })
+        return total
+
+    def calculate_session_cost(self, llm_model: str, input_tokens: int, output_tokens: int,
+                                stt_model: str, stt_seconds: float,
+                                tts_model: str, tts_characters: int) -> dict:
+        """Calculate the full session cost across LLM, STT, and TTS."""
+        llm_cost = self.calculate_cost(llm_model, input_tokens, output_tokens)
+        stt_cost = self.calculate_stt_cost(stt_model, stt_seconds)
+        tts_cost = self.calculate_tts_cost(tts_model, tts_characters)
+        total = llm_cost + stt_cost + tts_cost
+
+        summary = {
+            "llm_cost_usd": round(llm_cost, 6),
+            "stt_cost_usd": round(stt_cost, 6),
+            "tts_cost_usd": round(tts_cost, 6),
+            "total_cost_usd": round(total, 6)
+        }
+        self.log_transaction("cost_audit_session_total", summary)
+        self.logger.info(f"[COST] LLM=${llm_cost:.4f} | STT=${stt_cost:.4f} | TTS=${tts_cost:.4f} | TOTAL=${total:.4f}")
+        return summary
 
     def check_guardrails(self, text: str) -> bool:
         """

@@ -1,0 +1,14 @@
+{
+    "current_day": 2,
+    "total_days": 7,
+    "start_date": "2026-05-12",
+    "last_published_date": "2026-05-12",
+    "published_slugs": [
+        "shift-from-copilots-to-autonomous-agents"
+    ],
+    "cumulative_usage": {
+        "input_tokens": 11161,
+        "output_tokens": 1136,
+        "total_cost": 0.0023557499999999998
+    }
+}

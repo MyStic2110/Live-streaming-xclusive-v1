@@ -9,6 +9,7 @@ app.use(express.json());
 
 // --- HTTP Business Routes ---
 app.post("/talk-to-ai", roomController.talkToAI);
+app.get("/insights", roomController.getAstraInsights);
 
 app.listen(config.port, "0.0.0.0", () => {
   console.log(`[ENTERPRISE] Business Layers Active on ${config.port}`);

@@ -249,20 +249,21 @@ Keep it snappy, keep it smart, and above all, keep it human.
             elif m.type == "tts_usage":
                 usage["tts_chars"] = getattr(m, "characters_count", 0)
 
-        # PRICING ENGINE (USD)
-        # GPT-4o-mini: $0.15/1M in, $0.60/1M out
-        llm_cost = (usage["input_tokens"] / 1_000_000 * 0.15) + (usage["output_tokens"] / 1_000_000 * 0.60)
-        # Deepgram STT: $0.0043/min
-        stt_cost = (usage["stt_seconds"] / 60 * 0.0043)
-        # Deepgram TTS (Aura): $0.015/1K chars
-        tts_cost = (usage["tts_chars"] / 1000 * 0.015)
-
-        usage["total_cost"] = round(llm_cost + stt_cost + tts_cost, 6)
-        
-        # Sentry Cost Audit
-        sentry.calculate_cost("gpt-4o-mini", usage["input_tokens"], usage["output_tokens"])
-        
-        logger.info(f"[COST_AUDIT] Session Total: ${usage['total_cost']} | Tokens: {usage['input_tokens']+usage['output_tokens']}")
+        # --- UNIFIED SENTRY COST AUDIT (LLM + STT + TTS) ---
+        sentry.calculate_session_cost(
+            llm_model="gpt-4o-mini",
+            input_tokens=usage["input_tokens"],
+            output_tokens=usage["output_tokens"],
+            stt_model="nova-2-general",
+            stt_seconds=usage["stt_seconds"],
+            tts_model="aura-luna-en",
+            tts_characters=usage["tts_chars"]
+        )
+        usage["total_cost"] = round(
+            (usage["input_tokens"] / 1_000_000 * 0.15) + (usage["output_tokens"] / 1_000_000 * 0.60) +
+            (usage["stt_seconds"] / 60 * 0.0043) + (usage["tts_chars"] / 1000 * 0.015), 6
+        )
+        logger.info(f"[COST_AUDIT] LLM+STT+TTS Total: ${usage['total_cost']} | Tokens: {usage['input_tokens']+usage['output_tokens']}")
         asyncio.create_task(broadcast_usage())
 
     @ctx.room.on("data_received")
