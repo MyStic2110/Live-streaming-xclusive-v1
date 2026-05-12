@@ -232,7 +232,17 @@ async def entrypoint(ctx: JobContext):
         logger.info(f"[COST_AUDIT] LLM+STT+TTS Total: ${usage['total_cost']} | Tokens: {usage['input_tokens']+usage['output_tokens']}")
         asyncio.create_task(broadcast_usage())
 
-    await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
+            break
+        except Exception as e:
+            logger.warning(f"LiveKit connection attempt {attempt} failed: {e}")
+            if attempt == max_retries:
+                raise
+            await asyncio.sleep(2 ** attempt)
+
     await broadcast_usage() # Initial broadcast
 
     await session.start(room=ctx.room, agent=agent)

@@ -119,7 +119,17 @@ async def entrypoint(ctx: JobContext):
     )
 
     # 5. Connect to the room
-    await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
+            break
+        except Exception as e:
+            logger.warning(f"LiveKit connection attempt {attempt} failed: {e}")
+            if attempt == max_retries:
+                raise
+            await asyncio.sleep(2 ** attempt)
+
     logger.info(f"[ROOM] Joined as {ctx.room.local_participant.identity}")
 
     # 6. Sync Identity metadata
