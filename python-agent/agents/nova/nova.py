@@ -162,7 +162,7 @@ Keep it snappy, keep it smart, and above all, keep it human.
     copilot_tools = CopilotTools(participant=ctx.room.local_participant)
 
     chat_ctx = llm.ChatContext(
-        items=[llm.ChatMessage(role="system", content=[system_prompt])]
+        items=[llm.ChatMessage(role="system", content=system_prompt)]
     )
 
     llm_plugin = openai.LLM(
@@ -227,7 +227,7 @@ Keep it snappy, keep it smart, and above all, keep it human.
                 # Tell the LLM that it's already done
                 hint_msg = llm.ChatMessage(
                     role="system", 
-                    content=[f"[FAST-PATH] I have already navigated the UI to {route}. Just confirm this to the user."]
+                    content=f"[FAST-PATH] I have already navigated the UI to {route}. Just confirm this to the user."
                 )
                 chat_ctx.append(message=hint_msg)
 
@@ -241,22 +241,24 @@ Keep it snappy, keep it smart, and above all, keep it human.
     }
 
     async def broadcast_usage():
-        metadata = {
-            "name": "NOVA",
-            "usage": usage
-        }
-        await ctx.room.local_participant.set_metadata(json.dumps(metadata))
+        if ctx.room.local_participant:
+            metadata = {
+                "name": "NOVA",
+                "usage": usage
+            }
+            await ctx.room.local_participant.set_metadata(json.dumps(metadata))
 
     @session.on("session_usage_updated")
     def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
         # We aggregate usage across LLM, STT, and TTS
         for m in usage_data.usage.model_usage:
-            if m.type == "llm_usage":
+            m_type = getattr(m, "type", "")
+            if m_type == "llm_usage":
                 usage["input_tokens"] = getattr(m, "input_tokens", 0)
                 usage["output_tokens"] = getattr(m, "output_tokens", 0)
-            elif m.type == "stt_usage":
+            elif m_type == "stt_usage":
                 usage["stt_seconds"] = getattr(m, "audio_duration", 0.0)
-            elif m.type == "tts_usage":
+            elif m_type == "tts_usage":
                 usage["tts_chars"] = getattr(m, "characters_count", 0)
 
         # --- UNIFIED SENTRY COST AUDIT (LLM + STT + TTS) ---
@@ -289,6 +291,16 @@ Keep it snappy, keep it smart, and above all, keep it human.
 
     await broadcast_usage() # Initial broadcast
     await session.start(room=ctx.room, agent=agent)
+
+    # --- STAY ALIVE LOOP ---
+    # Prevents the entrypoint from returning and killing the worker process
+    try:
+        while ctx.room.is_connected():
+            await asyncio.sleep(1)
+    except Exception as e:
+        logger.error(f"Nova loop error: {e}")
+    finally:
+        logger.info("Nova session terminating.")
 
 if __name__ == "__main__":
     cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, agent_name="NOVA"))

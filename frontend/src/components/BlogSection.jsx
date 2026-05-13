@@ -64,6 +64,105 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
     });
   };
 
+  // --- DYNAMIC SEO INJECTION ---
+  React.useEffect(() => {
+    if (selectedPost) {
+      // Set Document Title
+      document.title = selectedPost.metadata.seoTitle || selectedPost.title;
+
+      // Helper to set/update meta tags
+      const setMetaTag = (name, content) => {
+        let meta = document.querySelector(`meta[name="${name}"]`);
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.name = name;
+          document.head.appendChild(meta);
+        }
+        meta.content = content;
+      };
+
+      setMetaTag('description', selectedPost.metadata.seoDesc);
+      setMetaTag('keywords', selectedPost.metadata.keywords.join(', '));
+      
+      // --- SOCIAL META (OpenGraph / Twitter) ---
+      const setOGTag = (property, content) => {
+        let meta = document.querySelector(`meta[property="${property}"]`);
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute('property', property);
+          document.head.appendChild(meta);
+        }
+        meta.content = content;
+      };
+
+      setOGTag('og:title', selectedPost.title);
+      setOGTag('og:description', selectedPost.metadata.seoDesc);
+      setOGTag('og:image', `https://yourdomain.com${selectedPost.featuredImage}`);
+      setOGTag('og:type', 'article');
+      setOGTag('og:url', `https://yourdomain.com/blog/${selectedPost.slug}`);
+
+      setMetaTag('twitter:card', 'summary_large_image');
+      setMetaTag('twitter:title', selectedPost.title);
+      setMetaTag('twitter:description', selectedPost.metadata.seoDesc);
+      setMetaTag('twitter:image', `https://yourdomain.com${selectedPost.featuredImage}`);
+
+      // --- JSON-LD SCHEMA.ORG AUTOMATION ---
+      const schemaData = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": selectedPost.title,
+        "description": selectedPost.metadata.seoDesc,
+        "image": `https://yourdomain.com${selectedPost.featuredImage}`,
+        "author": {
+          "@type": "Person",
+          "name": selectedPost.author.name,
+          "jobTitle": selectedPost.author.role
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Cortex Swarm",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://yourdomain.com/favicon.svg"
+          }
+        },
+        "datePublished": selectedPost.date,
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": `https://yourdomain.com/blog/${selectedPost.slug}`
+        }
+      };
+
+      let schemaScript = document.getElementById('astra-schema');
+      if (!schemaScript) {
+        schemaScript = document.createElement('script');
+        schemaScript.id = 'astra-schema';
+        schemaScript.type = 'application/ld+json';
+        document.head.appendChild(schemaScript);
+      }
+      schemaScript.text = JSON.stringify(schemaData);
+
+      // Handle Canonical URL
+      let canonical = document.querySelector('link[rel="canonical"]');
+      if (!canonical) {
+        canonical = document.createElement('link');
+        canonical.rel = 'canonical';
+        document.head.appendChild(canonical);
+      }
+      canonical.href = `https://yourdomain.com${selectedPost.metadata.canonicalUrl}`;
+
+    } else {
+      // Revert to default when closing the post
+      document.title = "Cortex Swarm | Future-Gen Intelligence";
+      const desc = document.querySelector('meta[name="description"]');
+      if (desc) desc.content = "Enterprise autonomous AI and Swarm Intelligence.";
+
+      // Cleanup Schema
+      const script = document.getElementById('astra-schema');
+      if (script) script.remove();
+    }
+  }, [selectedPost]);
+
   if (selectedPost) {
     return (
       <div style={{ background: COLORS.bgLight, minHeight: "100vh", fontFamily: "'Outfit', sans-serif" }}>
@@ -133,9 +232,28 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
             </div>
 
             <div className="prose" style={{ fontSize: "1.35rem", lineHeight: 1.8, color: COLORS.primary, opacity: 0.9 }}>
-              {selectedPost.content.split('\n').map((para, i) => (
-                <p key={i} style={{ marginBottom: "2rem" }}>{para}</p>
-              ))}
+              {selectedPost.content.split('\n').map((line, i) => {
+                if (line.startsWith('## ')) {
+                  return <h2 key={i} style={{ fontSize: "2.5rem", fontWeight: "900", marginTop: "4rem", marginBottom: "1.5rem", letterSpacing: "-1px" }}>{line.replace('## ', '')}</h2>;
+                }
+                if (line.startsWith('### ')) {
+                  return <h3 key={i} style={{ fontSize: "1.8rem", fontWeight: "800", marginTop: "3rem", marginBottom: "1rem", color: COLORS.accent }}>{line.replace('### ', '')}</h3>;
+                }
+                if (line.startsWith('- **') || line.includes('**')) {
+                  const parts = line.split('**');
+                  return (
+                    <p key={i} style={{ marginBottom: "1.5rem" }}>
+                      {parts.map((part, idx) => (
+                        <span key={idx} style={idx % 2 === 1 ? { fontWeight: "900", color: COLORS.accent } : {}}>
+                          {part}
+                        </span>
+                      ))}
+                    </p>
+                  );
+                }
+                if (line.trim() === "") return <div key={i} style={{ height: "1rem" }} />;
+                return <p key={i} style={{ marginBottom: "2rem" }}>{line}</p>;
+              })}
             </div>
 
             {/* CTA Section */}

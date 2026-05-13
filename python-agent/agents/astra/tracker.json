@@ -1,14 +1,17 @@
 {
-    "current_day": 2,
+    "current_day": 3,
     "total_days": 7,
     "start_date": "2026-05-12",
-    "last_published_date": "2026-05-12",
+    "last_published_date": "2026-05-13",
     "published_slugs": [
-        "shift-from-copilots-to-autonomous-agents"
+        "shift-from-copilots-to-autonomous-agents",
+        "autonomous-multi-agent-orchestration"
     ],
     "cumulative_usage": {
-        "input_tokens": 11161,
-        "output_tokens": 1136,
-        "total_cost": 0.0023557499999999998
+        "input_tokens": 67996,
+        "output_tokens": 5774,
+        "total_cost": 0.14836475,
+        "stt_cost": 0.016275,
+        "tts_cost": 0.01893
     }
 }

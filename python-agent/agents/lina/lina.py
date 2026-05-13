@@ -187,6 +187,15 @@ async def entrypoint(ctx: JobContext):
 
     # 8. Start the pipeline
     await session.start(room=ctx.room, agent=agent)
+    
+    # --- STAY ALIVE LOOP ---
+    try:
+        while ctx.room.is_connected():
+            await asyncio.sleep(1)
+    except Exception as e:
+        logger.error(f"Lina loop error: {e}")
+    finally:
+        logger.info("Lina session terminating.")
     logger.info(f"[PIPELINE] Session started for {TARGET_HUMAN_IDENTITY}. Lina is listening.")
 
 async def request_fnc(req: JobRequest):

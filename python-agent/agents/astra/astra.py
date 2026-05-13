@@ -1,5 +1,6 @@
 import os
 import asyncio
+import time
 from datetime import datetime
 import logging
 import json
@@ -111,6 +112,9 @@ CORE RESPONSIBILITIES:
 WRITING RULES:
 - Modern enterprise SaaS tone. Authoritative, futuristic, and conversion-oriented.
 - Focus on "Search & Answer Engine Optimization" (S/AEO).
+- FORMATTING: Use '### ' for all section headings.
+- HIGHLIGHTS: Use '- **[Key Point]**:' format for all benefits, steps, or features to ensure they are highlighted in the UI.
+- DO NOT repeat the blog title inside the 'content' field.
 - Each post must provide enough semantic depth for backlinking and domain authority growth.
 
 CURRENT_TIME: {current_time}
@@ -352,6 +356,15 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
         ))
 
     await session.start(room=ctx.room, agent=agent)
+    
+    # --- STAY ALIVE LOOP ---
+    try:
+        while ctx.room.is_connected():
+            await asyncio.sleep(1)
+    except Exception as e:
+        logger.error(f"Astra loop error: {e}")
+    finally:
+        logger.info("Astra session terminating.")
 
 if __name__ == "__main__":
     cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, agent_name="ASTRA"))
