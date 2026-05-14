@@ -1,59 +1,57 @@
-[
-  {
-    "route": "dashboard",
-    "description": "The Match Arena showing live IPL scores, the global leaderboard, and upcoming fixtures.",
-    "keywords": [
-      "arena", "matches", "scores", "live", "dashboard", "home", "upcoming", 
-      "standings", "leaderboard", "rankings", "top users", "who is winning", "table",
-      "current games", "ipl scorecard", "who is playing", "main screen", "go back", 
-      "fixtures", "schedule", "match list", "live scores", "points table", "rank"
-    ]
+{
+  "strategic_subject": "muralicruze121@gmail.com",
+  "ui_navigation": {
+    "dashboard": {
+      "description": "Main Arena: Live scores, leaderboards, and match schedule.",
+      "keywords": ["arena", "matches", "scores", "live", "home"]
+    },
+    "squad": {
+      "description": "Squad Hub: Referrals, multipliers, and team growth.",
+      "keywords": ["squad", "referrals", "invite", "multiplier", "team"]
+    },
+    "history": {
+      "description": "Performance History: Past predictions and analytical breakdowns.",
+      "keywords": ["history", "past results", "my performance", "previous"]
+    },
+    "changelog": {
+      "description": "Nexus Evolution: System updates and version history.",
+      "keywords": ["updates", "changelog", "new features", "roadmap"]
+    },
+    "logout": {
+      "description": "Secure Session Termination.",
+      "keywords": ["exit", "logout", "sign out"]
+    }
   },
-  {
-    "route": "squad",
-    "description": "The Squad Hub where users manage referrals, boost their multipliers, and see active friends.",
-    "keywords": [
-      "squad", "referrals", "friends", "multiplier", "invite", "team", "growth", 
-      "refer", "link", "my tribe", "boost", "points booster", "referral link", 
-      "my friends", "how to get points", "20x", "earn more", "sharing", "viral", 
-      "active squad", "invite code", "get more points", "increase multiplier"
-    ]
+  "ui_context_tabs": {
+    "all": "Comprehensive Match Overview",
+    "LIVE": "Real-Time Active Arena (Ball-by-Ball Intelligence)",
+    "UPCOMING": "Strategic Future Fixtures (Scheduled Matchups)",
+    "COMPLETED": "Historical Archive & Results (Finalized Scorecards)"
   },
-  {
-    "route": "history",
-    "description": "The Performance History showing past prediction results, ball-by-ball analysis, and points earned.",
-    "keywords": [
-      "history", "predictions", "performance", "past", "results", "analysis", 
-      "points", "how did i do", "my scores", "previous matches", "breakdown",
-      "how much i won", "my predictions", "past results", "analytical breakdown", 
-      "how i played", "records", "previous games", "stats", "metrics", "accuracy", 
-      "points earned", "match history", "old predictions"
-    ]
-  },
-  {
-    "route": "changelog",
-    "description": "The Nexus Evolution log showing system updates, version history, and new features.",
-    "keywords": [
-      "updates", "changelog", "new", "evolution", "system", "version", 
-      "what happened", "changes", "roadmap", "whats new", "latest version", 
-      "features", "dev log", "system changes", "bug fixes", "next steps", 
-      "new release", "patch notes"
-    ]
-  },
-  {
-    "route": "logout",
-    "description": "Signs the user out of the Nexus platform.",
-    "keywords": [
-      "logout", "signout", "exit", "log me out", "leave", "sign out", "goodbye",
-      "quit", "finish session", "close account", "leave platform", "disconnect"
-    ]
-  },
-  {
-    "route": "login",
-    "description": "Navigates to the login screen or shows the Google Auth button.",
-    "keywords": [
-      "login", "signin", "sign in", "google login", "authorize", "access my account",
-      "get in", "start", "google account", "access", "enter arena", "authenticate"
-    ]
+  "strategic_intelligence_api": {
+    "list_matches": {
+      "endpoint": "/matches",
+      "purpose": "Fetch real-time match data, IDs, and statuses."
+    },
+    "global_leaderboard": {
+      "endpoint": "/matches/leaderboard/global",
+      "purpose": "Audit the top performers across the entire Nexus ecosystem."
+    },
+    "session_leaderboard": {
+      "endpoint": "/matches/{match_id}/sessions/{session_id}/leaderboard",
+      "purpose": "Analyze competition for a specific match session."
+    },
+    "user_multiplier": {
+      "endpoint": "/auth/multiplier",
+      "purpose": "Check live points boost and active referral counts."
+    },
+    "score_analysis": {
+      "endpoint": "/matches/{match_id}/sessions/{session_id}/score-breakdown",
+      "purpose": "Deep-dive into how points were calculated for a prediction."
+    },
+    "prediction_history": {
+      "endpoint": "/matches/users/me/history",
+      "purpose": "Retrieve full historical performance for the current user."
+    }
   }
-]
+}

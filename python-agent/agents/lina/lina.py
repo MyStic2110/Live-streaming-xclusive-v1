@@ -96,9 +96,8 @@ async def entrypoint(ctx: JobContext):
 
     # 2. Setup ChatContext with current time awareness
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    chat_ctx = llm.ChatContext(
-        items=[llm.ChatMessage(role="system", content=[f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}"])]
-    )
+    chat_ctx = llm.ChatContext()
+    chat_ctx.append(role="system", text=f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}")
 
     # 3. Create the Agent
     agent = voice.Agent(

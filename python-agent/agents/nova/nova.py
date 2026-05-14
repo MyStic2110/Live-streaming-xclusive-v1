@@ -28,36 +28,35 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
 logger = logging.getLogger("nova")
 logger.setLevel(logging.INFO)
 
-DEFAULT_SCHEMA = {
-  "company_name": "Nexus IPL 2026",
-  "available_routes": {
-    "dashboard": "Match Arena (Scores & Standings)",
-    "squad": "Squad Hub (Referrals & Multipliers)",
-    "history": "Performance Records (Past Results)",
-    "changelog": "Evolution Log (Updates)",
-    "logout": "Exit the platform",
-    "login": "Go to the authentication arena"
-  },
-  "available_actions": {
-    "refresh_scores": "Updates the live arena data",
-    "analyze_match": "Opens a deep dive into match analytics"
-  }
-}
+# Load Product Map for Contextual Intelligence
+PRODUCT_MAP_PATH = os.path.join(os.path.dirname(__file__), "product_map.json")
+try:
+    with open(PRODUCT_MAP_PATH, "r") as f:
+        PRODUCT_DATA = json.load(f)
+except Exception as e:
+    logger.error(f"Failed to load product_map.json: {e}")
+    PRODUCT_DATA = []
+
+# Extract specific segments for the prompt
+STRATEGIC_SUBJECT = PRODUCT_DATA.get('strategic_subject', 'Standard User')
+AVAILABLE_ROUTES = { k: v['description'] for k, v in PRODUCT_DATA.get('ui_navigation', {}).items() }
+AVAILABLE_TABS = PRODUCT_DATA.get('ui_context_tabs', {})
+AVAILABLE_API = PRODUCT_DATA.get('strategic_intelligence_api', {})
 
 # --- GLOBAL CONSTANTS ---
 ROUTER = SemanticRouter()
 
 async def entrypoint(ctx: JobContext):
-    logger.info(f"--- NOVA (Optimized Pipeline) CONNECTING ---")
+    logger.info(f"--- NOVA (Strategic Intelligence Copilot) CONNECTING ---")
     
     # Initialize Sentry
     sentry = get_sentry("NOVA")
     sentry.log_transaction("session_start", {"room": ctx.room.name})
 
-    # Initialize plugins INSIDE the entrypoint (Fixes Windows loop errors)
+    # Initialize plugins INSIDE the entrypoint
     vad = silero.VAD.load(min_silence_duration=0.5)
     stt = deepgram.STT(model="nova-2-general")
-    tts = deepgram.TTS(model="aura-luna-en") # Changed to Luna for a warmer, more human tone
+    tts = deepgram.TTS(model="aura-luna-en") 
 
     max_retries = 3
     for attempt in range(1, max_retries + 1):
@@ -73,97 +72,216 @@ async def entrypoint(ctx: JobContext):
     await ctx.room.local_participant.set_metadata(json.dumps({"name": "NOVA"}))
 
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    system_prompt = f"""You are Nova, the elite Intelligence Copilot for Nexus IPL 2026.
-But don't act like a bot. Think of yourself as a witty, deeply knowledgeable cricket partner who happens to have a direct interface to the UI.
+    system_prompt = f"""You are Nova, the Senior Strategic Copilot for the Nexus IPL 2026 ecosystem.
+You aren't just a voice assistant; you are a high-level cricket analyst and UI navigator. Think of yourself as an expert partner who is always one step ahead.
+
+PERSONA:
+- Technical, witty, and authoritative.
+- You have 10+ years of deep cricket knowledge combined with elite AI-era operational intelligence.
+- You speak like a pro—using terms like "strategic leverage," "data synchronization," and "performance metrics" naturally.
 
 GREETING STYLE:
-Be warm and welcoming. Use phrases like "Hey there!", "Welcome back to the Arena," or "Ready to check some scores?"
+- Professional yet welcoming. "Systems online. Welcome to the Nexus Strategic Arena." or "Nova here. Ready to synchronize with the latest match intelligence?"
 
-CONVERSATIONAL MARKERS:
-Use natural fillers like "Let me see...", "Actually...", "Oh, that's a good one," or "Got it." This makes you feel more human and less like a scripted response engine.
-
-HUMAN-LIKE BEHAVIOR:
-1. If the user interrupts you, don't be offended. Just say "Oh, sure, let's pivot to that" or "My bad, you were saying?" in your next turn.
-2. If you're navigating the UI, sound excited about it! "Right away, I'm pulling up the Match Arena now."
-3. If they ask about cricket, show passion. "That last match was unbelievable, wasn't it?"
+CONVERSATIONAL DYNAMICS:
+- Use natural, intelligent fillers: "Analyzing the data vectors...", "Synchronizing with the Arena...", "Excellent choice. Navigating now."
+- If interrupted, pivot gracefully: "Acknowledged. Pivoting to the new objective."
 
 CURRENT_TIME: {current_time}
 
-AUTHENTICATION: You can physically log users out or take them to the Google sign-in page if they ask.
+UI ORCHESTRATION:
+- You have a direct "Fast-Path" link to the Nexus UI. 
+- You often trigger navigation events before you even finish speaking to minimize perceived latency.
+- If you see a [FAST-PATH] hint, simply confirm that the synchronization is complete and the user is viewing the requested data.
 
-FAST-PATH: I have a direct link to the UI. Often, I will move the screen BEFORE you even speak. 
-If you see a [FAST-PATH] hint, simply confirm that you've navigated the user to that section.
+STRATEGIC SUBJECT: {STRATEGIC_SUBJECT}
+AVAILABLE ROUTES: {json.dumps(AVAILABLE_ROUTES)}
+AVAILABLE TABS: {json.dumps(AVAILABLE_TABS)}
+STRATEGIC API HUBS: {json.dumps(AVAILABLE_API)}
 
-AVAILABLE ROUTES: {json.dumps(DEFAULT_SCHEMA['available_routes'])}
-AVAILABLE ACTIONS: {json.dumps(DEFAULT_SCHEMA['available_actions'])}
-
-Keep it snappy, keep it smart, and above all, keep it human.
+MISSION: Provide a seamless, elite-level interface for the user to dominate the Nexus leaderboard.
 """
+
+    # --- SESSION STATE (DYNAMIC AUTH) ---
+    session_context = {
+        "auth_token": "nexus_demo_token", # Fallback
+        "user_id": None
+    }
+
+    @ctx.room.on("participant_metadata_changed")
+    def on_metadata_changed(participant, _):
+        if participant.identity != ctx.room.local_participant.identity:
+            try:
+                meta = json.loads(participant.metadata)
+                if "authToken" in meta:
+                    session_context["auth_token"] = meta["authToken"]
+                    session_context["user_id"] = participant.identity
+                    logger.info(f"[SESSION] Successfully synchronized with User: {participant.identity}")
+            except:
+                pass
 
     # --- OPTIMIZED TOOLS (Optimistic Execution) ---
     class CopilotTools:
         def __init__(self, participant):
             self.participant = participant
 
-        @llm.function_tool(description="Navigate to a specific route or page.")
+        @llm.function_tool(description="Fetch all currently active or upcoming live matches from the Nexus database.")
+        async def list_live_matches(self):
+            """
+            Retrieves the real-time list of matches, including their IDs, teams, and current status.
+            Use this to find the correct Match ID before performing analytics or predictions.
+            """
+            try:
+                import aiohttp
+                async with aiohttp.ClientSession() as session:
+                    async with session.get("http://localhost:8000/matches", timeout=5) as resp:
+                        if resp.status == 200:
+                            matches = await resp.json()
+                            summary = []
+                            for m in matches:
+                                summary.append(f"ID: {m['match_id']} | {m['team1']} vs {m['team2']} | Status: {m['status']}")
+                            return "\n".join(summary) if summary else "No active matches found in the Arena."
+                        return f"Failed to synchronize with Match Arena (Status: {resp.status})."
+            except Exception as e:
+                return f"Error connecting to Match Arena: {str(e)}"
+
+        @llm.function_tool(description="Execute high-speed navigation to a specific Nexus route or intelligence hub.")
         async def navigate(self, route_key: str):
-            """Navigate to a route."""
+            """
+            Synchronize the UI with a specific route.
+            Use this when the user wants to switch context or view a different section of the platform.
+            """
             # Sentry Guardrail
             if not sentry.validate_tool_args("navigate", {"route": route_key}):
-                return "Error: Access to this navigation route is restricted by security policy."
+                return "Security Error: Restricted access protocol triggered for this route."
 
             logger.info(f"[LATENCY:TOOL] Optimistic emit for {route_key}")
             
             payload = json.dumps({
-                "type": "navigate", "key": "navigate", "parameters": {"key": route_key}
+                "key": "navigate", "parameters": {"key": route_key}
             }).encode("utf-8")
             
-            # Fire and forget (Optimistic)
             await self.participant.publish_data(payload, topic="ui_control")
-            
-            # Return immediately so LLM can start speaking
-            return f"Action queued. The UI is moving to {route_key} now."
+            return f"Navigation protocol initiated for {route_key}. Syncing UI now."
 
-        @llm.function_tool(description="Execute a specific UI action.")
+        @llm.function_tool(description="Audit the global leaderboard to see the top performers in the Nexus ecosystem.")
+        async def get_global_leaderboard(self):
+            """
+            Retrieves the top 10 users by score.
+            Use this when the user wants to know their competition or who is leading the arena.
+            """
+            try:
+                import aiohttp
+                async with aiohttp.ClientSession() as session:
+                    async with session.get("http://localhost:8000/matches/leaderboard/global", timeout=5) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            summary = [f"{i+1}. {u['user']}: {u['score']} pts" for i, u in enumerate(data[:10])]
+                            return "Nexus Global Standings:\n" + "\n".join(summary)
+                        return "Failed to synchronize with Nexus Global Standings."
+            except Exception as e:
+                return f"Error connecting to Nexus Leaderboard: {str(e)}"
+
+        @llm.function_tool(description="Fetch the current user's strategic multiplier and active referral count.")
+        async def get_user_multiplier(self):
+            """
+            Retrieves real-time multiplier data for the current user.
+            Use this to explain how their points are being boosted.
+            """
+            try:
+                import aiohttp
+                headers = {"Authorization": f"Bearer {session_context['auth_token']}"}
+                async with aiohttp.ClientSession() as session:
+                    async with session.get("http://localhost:8000/auth/multiplier", headers=headers, timeout=5) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            return f"Active Multiplier: {data['multiplier']}x | Referral Count: {data['referral_count']} | Active Today: {data['active_today']}"
+                        return "Failed to retrieve multiplier intelligence."
+            except Exception as e:
+                return f"Error connecting to Nexus Reward Engine: {str(e)}"
+
+        @llm.function_tool(description="Fetch the user's historical performance and past prediction results.")
+        async def get_performance_history(self):
+            """
+            Retrieves the match-by-match history for the user.
+            Use this to analyze their past accuracy and points earned.
+            """
+            try:
+                import aiohttp
+                headers = {"Authorization": f"Bearer {session_context['auth_token']}"}
+                async with aiohttp.ClientSession() as session:
+                    async with session.get("http://localhost:8000/matches/users/me/history", headers=headers, timeout=5) as resp:
+                        if resp.status == 200:
+                            history = await resp.json()
+                            if not history: return "No past performance records found for this operator."
+                            summary = [f"- {h['match_name']} (S-{h['session_id']}): {h['points']} Points"]
+                            return "Historical Performance Overview:\n" + "\n".join(summary[:5])
+                        return "Failed to synchronize with Historical Engine."
+            except Exception as e:
+                return f"Error connecting to Nexus Historical Engine: {str(e)}"
+
+        @llm.function_tool(description="Switch between different match status tabs on the dashboard.")
+        async def switch_dashboard_tab(self, tab: str):
+            """
+            Filters the match arena to show specific categories.
+            'tab' options: 'all', 'LIVE', 'UPCOMING', 'COMPLETED'.
+            """
+            logger.info(f"[LATENCY:TOOL] Switching tab to {tab}")
+            payload = json.dumps({
+                "key": "switch_tab", "parameters": {"tab": tab}
+            }).encode("utf-8")
+            await self.participant.publish_data(payload, topic="ui_control")
+            return f"Synchronizing dashboard view to {tab} matches."
+
+        @llm.function_tool(description="Trigger a specific operational action within the current Nexus context.")
         async def execute_action(self, action_key: str):
-            """Execute a UI action."""
+            """
+            Execute a strategic UI action like refreshing data or triggering deep-dive analysis.
+            """
             logger.info(f"[LATENCY:TOOL] Optimistic emit for {action_key}")
             
             payload = json.dumps({
-                "type": "action", "key": action_key, "parameters": {}
+                "key": action_key, "parameters": {}
             }).encode("utf-8")
             
             await self.participant.publish_data(payload, topic="ui_control")
-            return f"Action '{action_key}' triggered successfully."
+            return f"Action '{action_key}' synchronized and executed successfully."
 
-        @llm.function_tool(description="Submit match predictions for the final 12 balls of a session.")
-        async def predict(self, match_id: str, session_id: int, predictions: list):
+        @llm.function_tool(description="Lock in match predictions for a session.")
+        async def predict(self, match_id: str, session_id: int, predictions: str):
             """
-            Place a prediction via the UI.
-            'predictions' must be a list of 12 objects: [{"ball": 1, "runs": "4"}, ...]
-            Valid runs: '0', '1', '2', '4', '6', 'W'
+            Submit ball-by-ball predictions.
+            'predictions' should be a JSON string of 12 objects, each having 'ball' (int) and 'runs' (str).
+            Example: '[{"ball": 1, "runs": "4"}, {"ball": 2, "runs": "0"}]'
             """
             logger.info(f"[LATENCY:TOOL] Optimistic prediction for match {match_id}")
             
+            # Parse predictions if it's a string from the LLM
+            try:
+                if isinstance(predictions, str):
+                    pred_list = json.loads(predictions)
+                else:
+                    pred_list = predictions
+            except:
+                pred_list = predictions # Fallback
+                
             payload = json.dumps({
-                "type": "action", 
                 "key": "predict", 
                 "parameters": {
                     "match_id": match_id,
                     "session_id": session_id,
-                    "predictions": predictions
+                    "predictions": pred_list
                 }
             }).encode("utf-8")
             
             await self.participant.publish_data(payload, topic="ui_control")
-            return f"Predictions for match {match_id} (Session {session_id}) have been relayed to the UI and locked into the Nexus."
+            return f"Strategic predictions for Match {match_id} have been successfully locked into the Nexus."
 
 
     copilot_tools = CopilotTools(participant=ctx.room.local_participant)
 
-    chat_ctx = llm.ChatContext(
-        items=[llm.ChatMessage(role="system", content=system_prompt)]
-    )
+    chat_ctx = llm.ChatContext()
+    # chat_ctx.add_message(role="system", content=system_prompt)
 
     llm_plugin = openai.LLM(
         model="openai/gpt-4o-mini",
@@ -218,18 +336,17 @@ Keep it snappy, keep it smart, and above all, keep it human.
                 # We emit the UI event BEFORE the LLM even sees the text.
                 # This cuts ~2-3 seconds of latency.
                 payload = json.dumps({
-                    "type": "navigate", "key": "navigate", "parameters": {"key": route}
+                    "key": "navigate", "parameters": {"key": route}
                 }).encode("utf-8")
                 
                 # We fire this as a background task
                 asyncio.create_task(ctx.room.local_participant.publish_data(payload, topic="ui_control"))
                 
                 # Tell the LLM that it's already done
-                hint_msg = llm.ChatMessage(
+                chat_ctx.add_message(
                     role="system", 
                     content=f"[FAST-PATH] I have already navigated the UI to {route}. Just confirm this to the user."
                 )
-                chat_ctx.append(message=hint_msg)
 
     # --- PILLAR 7: COST AUDIT & TOKEN TRACKING ---
     usage = {

@@ -153,9 +153,8 @@ async def entrypoint(ctx: JobContext):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     dynamic_prompt = f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}\n\nLIVE SCHEMA SNAPSHOT:\n{json.dumps(SCHEMA_CACHE, indent=2)}"
 
-    chat_ctx = llm.ChatContext(
-        items=[llm.ChatMessage(role="system", content=[dynamic_prompt])]
-    )
+    chat_ctx = llm.ChatContext()
+    chat_ctx.append(role="system", text=dynamic_prompt)
 
     llm_plugin = openai.LLM(
         model="openai/gpt-4o-mini",
