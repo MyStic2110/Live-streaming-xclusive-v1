@@ -9,13 +9,24 @@ logger.setLevel(logging.INFO)
 
 class SemanticRouter:
     def __init__(self, map_file="product_map.json"):
+        self.raw_data = {}
         self.routes = []
         
         file_path = os.path.join(os.path.dirname(__file__), map_file)
         if os.path.exists(file_path):
             with open(file_path, "r") as f:
-                self.routes = json.load(f)
-            logger.info(f"[ROUTER] Loaded {len(self.routes)} routes from Product Map.")
+                self.raw_data = json.load(f)
+            
+            # Extract UI routes from the new structured format
+            ui_nav = self.raw_data.get("ui_navigation", {})
+            for route_id, info in ui_nav.items():
+                self.routes.append({
+                    "route": route_id,
+                    "description": info.get("description", ""),
+                    "keywords": info.get("keywords", [])
+                })
+            
+            logger.info(f"[ROUTER] Loaded {len(self.routes)} navigation hubs from Battle Map.")
         else:
             logger.warning(f"[ROUTER] Product Map not found at {file_path}")
         

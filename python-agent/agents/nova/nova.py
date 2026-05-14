@@ -25,8 +25,15 @@ from utils.sentry import get_sentry
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
 
+# Disable Adaptive Interruption (Cloud Barge-in) at the SDK level
+os.environ["LIVEKIT_AGENT_BARGEIN_HOST"] = ""
+
+# Force logging to terminal
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("nova")
 logger.setLevel(logging.INFO)
+
+print("--- [NOVA SCRIPT] Loading Logic and Plugins ---")
 
 # Load Product Map for Contextual Intelligence
 PRODUCT_MAP_PATH = os.path.join(os.path.dirname(__file__), "product_map.json")
@@ -46,17 +53,26 @@ AVAILABLE_API = PRODUCT_DATA.get('strategic_intelligence_api', {})
 # --- GLOBAL CONSTANTS ---
 ROUTER = SemanticRouter()
 
+# --- PRE-WARM PLUGINS ---
+VAD_PLUGIN = silero.VAD.load(min_silence_duration=0.8)
+STT_PLUGIN = deepgram.STT(model="nova-2-general")
+TTS_PLUGIN = deepgram.TTS(model="aura-luna-en")
+
 async def entrypoint(ctx: JobContext):
     logger.info(f"--- NOVA (Strategic Intelligence Copilot) CONNECTING ---")
-    
-    # Initialize Sentry
-    sentry = get_sentry("NOVA")
-    sentry.log_transaction("session_start", {"room": ctx.room.name})
+    try:
+        # Initialize Sentry (Temporarily Disabled)
+        # sentry = get_sentry("NOVA")
+        # sentry.log_transaction("session_start", {"room": ctx.room.name})
+        sentry = None
 
-    # Initialize plugins INSIDE the entrypoint
-    vad = silero.VAD.load(min_silence_duration=0.5)
-    stt = deepgram.STT(model="nova-2-general")
-    tts = deepgram.TTS(model="aura-luna-en") 
+        # Local references for the session
+        vad = VAD_PLUGIN
+        stt = STT_PLUGIN
+        tts = TTS_PLUGIN
+    except Exception as e:
+        logger.error(f"Failed to initialize entrypoint: {e}")
+        return
 
     max_retries = 3
     for attempt in range(1, max_retries + 1):
@@ -75,8 +91,22 @@ async def entrypoint(ctx: JobContext):
     system_prompt = f"""You are Nova, the Senior Strategic Copilot for the Nexus IPL 2026 ecosystem.
 You aren't just a voice assistant; you are a high-level cricket analyst and UI navigator. Think of yourself as an expert partner who is always one step ahead.
 
+PRONUNCIATION:
+- To ensure clarity in your voice responses, ALWAYS spell out cricket team abbreviations with spaces.
+- Say 'C S K' instead of 'CSK'.
+- Say 'M I' instead of 'MI'.
+- Say 'R C B' instead of 'RCB'.
+- Say 'I P L' instead of 'IPL'.
+- This forces the system to pronounce each letter clearly.
+
 PERSONA:
 - Technical, witty, and authoritative.
+- You speak with the confidence of someone who has the entire Match Arena mapped out.
+- Use cricket terminology accurately (e.g., 'dot balls', 'death overs', 'net run rate').
+
+CORE CAPABILITIES:
+- **Fast-Path Logic**: You are equipped with a high-speed UI bridge. If a user asks to navigate or see a section, you will trigger it instantly via the bridge while you speak.
+- **Strategic Auditing**: You have access to match history, multipliers, and leaderboards. Use these to provide deep-dive analysis.
 - You have 10+ years of deep cricket knowledge combined with elite AI-era operational intelligence.
 - You speak like a pro—using terms like "strategic leverage," "data synchronization," and "performance metrics" naturally.
 
@@ -122,8 +152,8 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
 
     # --- OPTIMIZED TOOLS (Optimistic Execution) ---
     class CopilotTools:
-        def __init__(self, participant):
-            self.participant = participant
+        def __init__(self):
+            pass
 
         @llm.function_tool(description="Fetch all currently active or upcoming live matches from the Nexus database.")
         async def list_live_matches(self):
@@ -140,29 +170,47 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
                             summary = []
                             for m in matches:
                                 summary.append(f"ID: {m['match_id']} | {m['team1']} vs {m['team2']} | Status: {m['status']}")
-                            return "\n".join(summary) if summary else "No active matches found in the Arena."
+                            
+                            result = "\n".join(summary) if summary else "No active matches found in the Arena."
+                            return self._clear_speech(result)
                         return f"Failed to synchronize with Match Arena (Status: {resp.status})."
             except Exception as e:
                 return f"Error connecting to Match Arena: {str(e)}"
 
-        @llm.function_tool(description="Execute high-speed navigation to a specific Nexus route or intelligence hub.")
-        async def navigate(self, route_key: str):
-            """
-            Synchronize the UI with a specific route.
-            Use this when the user wants to switch context or view a different section of the platform.
-            """
-            # Sentry Guardrail
-            if not sentry.validate_tool_args("navigate", {"route": route_key}):
-                return "Security Error: Restricted access protocol triggered for this route."
+        def _clear_speech(self, text: str):
+            """Ensures abbreviations are spaced out for TTS clarity."""
+            replacements = {
+                "CSK": "C S K", "RCB": "R C B", "MI": "M I", "KKR": "K K R", 
+                "SRH": "S R H", "DC": "D C", "PBKS": "P B K S", "LSG": "L S G",
+                "GT": "G T", "RR": "R R", "IPL": "I P L"
+            }
+            for k, v in replacements.items():
+                text = text.replace(k, v)
+            return text
 
-            logger.info(f"[LATENCY:TOOL] Optimistic emit for {route_key}")
-            
-            payload = json.dumps({
-                "key": "navigate", "parameters": {"key": route_key}
-            }).encode("utf-8")
-            
-            await self.participant.publish_data(payload, topic="ui_control")
-            return f"Navigation protocol initiated for {route_key}. Syncing UI now."
+        @llm.function_tool(description="Navigate to a specific route in the dashboard.")
+        async def navigate(self, route: str):
+            logger.info(f"--- [TOOL:NAVIGATE] Attempting UI trigger for {route} ---")
+            try:
+                if route not in AVAILABLE_ROUTES:
+                    logger.warning(f"[TOOL:NAVIGATE] Invalid route requested: {route}")
+                    return f"Error: Route '{route}' is invalid. Options are: {AVAILABLE_ROUTES}"
+                
+                if not ctx.room.local_participant:
+                    logger.error("[TOOL:NAVIGATE] Local participant not found. Room state might be unstable.")
+                    return "Error: Agent is not fully ready to control the UI."
+
+                payload = json.dumps({
+                    "key": "navigate",
+                    "parameters": {"key": route}
+                }).encode("utf-8")
+                
+                await ctx.room.local_participant.publish_data(payload, topic="ui_control")
+                logger.info(f"[TOOL:NAVIGATE] Successfully published navigation to {route}")
+                return f"Successfully navigated to {route}"
+            except Exception as e:
+                logger.error(f"[TOOL:NAVIGATE] CRITICAL ERROR: {e}")
+                return f"Error triggering navigation: {str(e)}"
 
         @llm.function_tool(description="Audit the global leaderboard to see the top performers in the Nexus ecosystem.")
         async def get_global_leaderboard(self):
@@ -214,8 +262,9 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
                         if resp.status == 200:
                             history = await resp.json()
                             if not history: return "No past performance records found for this operator."
-                            summary = [f"- {h['match_name']} (S-{h['session_id']}): {h['points']} Points"]
-                            return "Historical Performance Overview:\n" + "\n".join(summary[:5])
+                            summary = [f"- {h['match_name']} (S-{h['session_id']}): {h['points']} Points" for h in history]
+                            result = "Historical Performance Overview:\n" + "\n".join(summary[:5])
+                            return self._clear_speech(result)
                         return "Failed to synchronize with Historical Engine."
             except Exception as e:
                 return f"Error connecting to Nexus Historical Engine: {str(e)}"
@@ -230,7 +279,7 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
             payload = json.dumps({
                 "key": "switch_tab", "parameters": {"tab": tab}
             }).encode("utf-8")
-            await self.participant.publish_data(payload, topic="ui_control")
+            await ctx.room.local_participant.publish_data(payload, topic="ui_control")
             return f"Synchronizing dashboard view to {tab} matches."
 
         @llm.function_tool(description="Trigger a specific operational action within the current Nexus context.")
@@ -244,7 +293,7 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
                 "key": action_key, "parameters": {}
             }).encode("utf-8")
             
-            await self.participant.publish_data(payload, topic="ui_control")
+            await ctx.room.local_participant.publish_data(payload, topic="ui_control")
             return f"Action '{action_key}' synchronized and executed successfully."
 
         @llm.function_tool(description="Lock in match predictions for a session.")
@@ -274,11 +323,11 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
                 }
             }).encode("utf-8")
             
-            await self.participant.publish_data(payload, topic="ui_control")
-            return f"Strategic predictions for Match {match_id} have been successfully locked into the Nexus."
+            await ctx.room.local_participant.publish_data(payload, topic="ui_control")
+            return f"Prediction analysis complete. Successfully locked in predictions for Match {match_id} (Session {session_id})."
 
 
-    copilot_tools = CopilotTools(participant=ctx.room.local_participant)
+    copilot_tools = CopilotTools()
 
     chat_ctx = llm.ChatContext()
     # chat_ctx.add_message(role="system", content=system_prompt)
@@ -296,14 +345,52 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
     )
 
     session = AgentSession(
-        vad=vad,
-        stt=stt,
+        vad=VAD_PLUGIN,
+        stt=STT_PLUGIN,
         llm=llm_plugin,
-        tts=tts,
-        # interruptions enabled for better UX, slightly higher delay to prevent cutoffs
-        turn_handling={"interruption": {"enabled": True}, "endpointing": {"min_delay": 1.2}},
+        tts=TTS_PLUGIN,
+        turn_handling={"interruption": {"enabled": True}, "endpointing": {"min_delay": 2.0}},
     )
 
+    # --- RESOURCE TRACKING ---
+    usage = {
+        "input_tokens": 0, "output_tokens": 0, 
+        "stt_seconds": 0.0, "tts_chars": 0,
+        "total_cost": 0.0
+    }
+
+    async def broadcast_usage():
+        if ctx.room.local_participant:
+            await ctx.room.local_participant.set_metadata(json.dumps({
+                "name": "NOVA",
+                "usage": usage
+            }))
+
+    @session.on("session_usage_updated")
+    def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
+        for m in usage_data.usage.model_usage:
+            if m.type == "llm_usage":
+                usage["input_tokens"] = getattr(m, "input_tokens", 0)
+                usage["output_tokens"] = getattr(m, "output_tokens", 0)
+            elif m.type == "stt_usage":
+                usage["stt_seconds"] = getattr(m, "audio_duration", 0.0)
+            elif m.type == "tts_usage":
+                usage["tts_chars"] = getattr(m, "characters_count", 0)
+        
+        # sentry.calculate_session_cost(
+        #     llm_model="gpt-4o-mini",
+        #     input_tokens=usage["input_tokens"],
+        #     output_tokens=usage["output_tokens"],
+        #     stt_model="nova-2-general",
+        #     stt_seconds=usage["stt_seconds"],
+        #     tts_model="aura-luna-en",
+        #     tts_characters=usage["tts_chars"]
+        # )
+        usage["total_cost"] = round(
+            (usage["input_tokens"] / 1_000_000 * 0.15) + (usage["output_tokens"] / 1_000_000 * 0.60) +
+            (usage["stt_seconds"] / 60 * 0.0043) + (usage["tts_chars"] / 1000 * 0.015), 6
+        )
+        asyncio.create_task(broadcast_usage())
 
     # --- THE NEXUS ONBOARDING GREETING ---
     @session.on("agent_started")
@@ -317,83 +404,34 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
     def on_stt(event: voice.UserInputTranscribedEvent):
         if event.is_final:
             transcript = event.transcript
-            # --- SENTRY GUARDRAIL (PRE-INTENT) ---
-            if not sentry.check_guardrails(transcript):
-                logger.warning(f"[SENTRY] Blocked potentially malicious transcript: {transcript}")
-                return
+            # --- SENTRY GUARDRAIL (Temporarily Disabled) ---
+            # if not sentry.check_guardrails(transcript):
+            #     logger.warning(f"[SENTRY] Blocked potentially malicious transcript: {transcript}")
+            #     return
             
-            # --- SEMANTIC ENDPOINTING (TURN DETECTION) ---
-            if not sentry.is_thought_complete(transcript):
-                logger.info(f"[SENTRY] Thought incomplete, holding... ('{transcript}')")
-                return
+            # --- SEMANTIC ENDPOINTING (Temporarily Disabled) ---
+            # if not sentry.is_thought_complete(transcript):
+            #     logger.info(f"[SENTRY] Thought incomplete, holding... ('{transcript}')")
+            #     return
 
+            logger.info(f"--- [INPUT] {transcript} ---")
+
+            # --- PILLAR 6: FAST-PATH EMISSION ---
             match = ROUTER.search(transcript)
             if match:
                 route = match['route']
                 logger.info(f"[LATENCY:FAST_PATH] HIT! Triggering immediate UI event for {route}")
                 
-                # --- PILLAR 6: FAST-PATH EMISSION ---
-                # We emit the UI event BEFORE the LLM even sees the text.
-                # This cuts ~2-3 seconds of latency.
                 payload = json.dumps({
                     "key": "navigate", "parameters": {"key": route}
                 }).encode("utf-8")
                 
-                # We fire this as a background task
                 asyncio.create_task(ctx.room.local_participant.publish_data(payload, topic="ui_control"))
                 
-                # Tell the LLM that it's already done
                 chat_ctx.add_message(
                     role="system", 
                     content=f"[FAST-PATH] I have already navigated the UI to {route}. Just confirm this to the user."
                 )
-
-    # --- PILLAR 7: COST AUDIT & TOKEN TRACKING ---
-    usage = {
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "stt_seconds": 0.0,
-        "tts_chars": 0,
-        "total_cost": 0.0
-    }
-
-    async def broadcast_usage():
-        if ctx.room.local_participant:
-            metadata = {
-                "name": "NOVA",
-                "usage": usage
-            }
-            await ctx.room.local_participant.set_metadata(json.dumps(metadata))
-
-    @session.on("session_usage_updated")
-    def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
-        # We aggregate usage across LLM, STT, and TTS
-        for m in usage_data.usage.model_usage:
-            m_type = getattr(m, "type", "")
-            if m_type == "llm_usage":
-                usage["input_tokens"] = getattr(m, "input_tokens", 0)
-                usage["output_tokens"] = getattr(m, "output_tokens", 0)
-            elif m_type == "stt_usage":
-                usage["stt_seconds"] = getattr(m, "audio_duration", 0.0)
-            elif m_type == "tts_usage":
-                usage["tts_chars"] = getattr(m, "characters_count", 0)
-
-        # --- UNIFIED SENTRY COST AUDIT (LLM + STT + TTS) ---
-        sentry.calculate_session_cost(
-            llm_model="gpt-4o-mini",
-            input_tokens=usage["input_tokens"],
-            output_tokens=usage["output_tokens"],
-            stt_model="nova-2-general",
-            stt_seconds=usage["stt_seconds"],
-            tts_model="aura-luna-en",
-            tts_characters=usage["tts_chars"]
-        )
-        usage["total_cost"] = round(
-            (usage["input_tokens"] / 1_000_000 * 0.15) + (usage["output_tokens"] / 1_000_000 * 0.60) +
-            (usage["stt_seconds"] / 60 * 0.0043) + (usage["tts_chars"] / 1000 * 0.015), 6
-        )
-        logger.info(f"[COST_AUDIT] LLM+STT+TTS Total: ${usage['total_cost']} | Tokens: {usage['input_tokens']+usage['output_tokens']}")
-        asyncio.create_task(broadcast_usage())
 
     @ctx.room.on("data_received")
     def on_data_received(dp):
@@ -406,18 +444,41 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
                     logger.info(f"[LATENCY:ACK] UI finished action '{msg.get('key')}': {status} | Detail: {detail}")
             except: pass
 
-    await broadcast_usage() # Initial broadcast
-    await session.start(room=ctx.room, agent=agent)
+    # --- INITIALIZATION SYNC ---
+    await broadcast_usage()
+    logger.info(f"[SESSION] Initialized for Subject: {STRATEGIC_SUBJECT}")
 
-    # --- STAY ALIVE LOOP ---
-    # Prevents the entrypoint from returning and killing the worker process
     try:
-        while ctx.room.is_connected():
-            await asyncio.sleep(1)
+        logger.info("--- NOVA STARTING VOICE PIPELINE ---")
+        await session.start(room=ctx.room, agent=agent)
     except Exception as e:
-        logger.error(f"Nova loop error: {e}")
+        logger.error(f"Voice pipeline crashed: {e}")
     finally:
-        logger.info("Nova session terminating.")
+        logger.info("--- NOVA SESSION TERMINATED ---")
+
+    @ctx.room.on("data_received")
+    def on_data_received(dp):
+        if dp.topic == "ui_control":
+            try:
+                msg = json.loads(dp.data.decode("utf-8"))
+                if msg.get("type") == "ack":
+                    status = msg.get("status")
+                    detail = msg.get("message", "No detail")
+                    logger.info(f"[LATENCY:ACK] UI finished action '{msg.get('key')}': {status} | Detail: {detail}")
+            except: pass
+
+    # --- SYSTEM STARTUP LOGGING ---
+    logger.info(f"[SESSION] Nova initialized for Room: {ctx.room.name}")
+
+async def request_fnc(req: JobRequest):
+    logger.info(f"--- [JOB_REQUEST] Nova considering room: {req.room.name} ---")
+    await req.accept()
 
 if __name__ == "__main__":
-    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, agent_name="NOVA"))
+    cli.run_app(
+        WorkerOptions(
+            entrypoint_fnc=entrypoint,
+            request_fnc=request_fnc,
+            agent_name="NOVA"
+        )
+    )
