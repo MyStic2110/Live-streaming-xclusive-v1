@@ -5,7 +5,7 @@ import {
   useRemoteParticipants,
   useRoomContext
 } from "@livekit/components-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import BIOrb from "./BIOrb";
 
 // --- AUDIO ANALYSER HOOK ---
@@ -60,10 +60,13 @@ function useAgentAudioLevel() {
 function BIScene({ onLeave }) {
   const [agentState, setAgentState] = useState("idle");
   const [transcription, setTranscription] = useState("");
+  const [chartData, setChartData] = useState(null);
+  const [chartTitle, setChartTitle] = useState("");
   const amplitude = useAgentAudioLevel();
   const remoteParticipants = useRemoteParticipants();
   const room = useRoomContext();
 
+  // Listen for LiveKit Room Transcriptions
   useEffect(() => {
     const handleTranscription = (segments) => {
       const text = segments.map(s => s.text).join(" ");
@@ -77,6 +80,7 @@ function BIScene({ onLeave }) {
     return () => room.off("transcriptionReceived", handleTranscription);
   }, [room]);
 
+  // Listen for speaking changes from BI Agent Cortex II
   useEffect(() => {
     if (remoteParticipants.length === 0) {
       setAgentState("idle");
@@ -87,6 +91,25 @@ function BIScene({ onLeave }) {
     cortex.on("isSpeakingChanged", handleSpeakingChanged);
     return () => cortex.off("isSpeakingChanged", handleSpeakingChanged);
   }, [remoteParticipants]);
+
+  // Listen to incoming WebRTC Data Channel packets for dynamic charts
+  useEffect(() => {
+    const handleDataReceived = (payload) => {
+      try {
+        const text = new TextDecoder().decode(payload);
+        const message = JSON.parse(text);
+        if (message.type === "BI_DYNAMIC_CHART") {
+          setChartData(message.data);
+          setChartTitle(message.title);
+        }
+      } catch (e) {
+        console.error("[BI_ROOM] Failed to parse data channel packet:", e);
+      }
+    };
+
+    room.on("dataReceived", handleDataReceived);
+    return () => room.off("dataReceived", handleDataReceived);
+  }, [room]);
 
   return (
     <div style={{
@@ -130,7 +153,6 @@ function BIScene({ onLeave }) {
             <div style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.5rem", fontWeight: 900, marginBottom: "4px" }}>TOKENS</div>
             <div style={{ color: "#10b981", fontSize: "0.9rem", fontWeight: "bold", fontFamily: "monospace" }}>
               {(() => {
-                // Look for any participant broadcasting usage metadata
                 const activeAgent = remoteParticipants.find(p => {
                    try { return p.metadata && JSON.parse(p.metadata).usage; } catch(e) { return false; }
                 });
@@ -164,17 +186,159 @@ function BIScene({ onLeave }) {
       <div style={{
         position: "fixed", bottom: "40px", left: "40px",
         display: "flex", flexDirection: "column", gap: "8px",
-        color: "rgba(52, 211, 153, 0.4)", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "2px"
+        color: "rgba(52, 211, 153, 0.4)", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "2px",
+        zIndex: 5
       }}>
         <div>[01] SCHEMA SYNCED</div>
-        <div>[02] MYSQL CONNECTED</div>
+        <div>[02] MONGODB CONNECTED</div>
         <div>[03] READ-ONLY MODE ACTIVE</div>
         <div style={{ color: "#10b981" }}>[04] LISTENING FOR QUERIES...</div>
       </div>
 
-      {/* Orb Wrapper */}
-      <div style={{ position: "relative", width: 450, height: 450 }}>
-        <BIOrb amplitude={amplitude} agentState={agentState} />
+      {/* --- CENTRAL DYNAMIC HYBRID STAGE --- */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "4rem",
+        width: "90%",
+        maxWidth: "1400px",
+        height: "500px",
+        position: "relative",
+        zIndex: 2,
+        transition: "all 0.5s ease"
+      }}>
+        {/* LEFT PANEL: BI THREE.JS ORB */}
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          transition: "all 0.5s ease",
+          width: chartData ? "40%" : "100%",
+        }}>
+          <div style={{ 
+            position: "relative", 
+            width: chartData ? 320 : 450, 
+            height: chartData ? 320 : 450, 
+            transition: "all 0.5s ease" 
+          }}>
+            <BIOrb amplitude={amplitude} agentState={agentState} />
+          </div>
+          
+          <motion.div 
+            animate={{ opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            style={{ 
+              marginTop: "2rem", 
+              color: "#34d399", 
+              letterSpacing: "4px", 
+              fontSize: "0.85rem", 
+              fontWeight: 800, 
+              textTransform: "uppercase" 
+            }}
+          >
+            {remoteParticipants.length > 0 ? (agentState === "speaking" ? "Analyzing Data..." : "Awaiting Query") : "Establishing Data Link..."}
+          </motion.div>
+        </div>
+
+        {/* RIGHT PANEL: GLASSMORPHIC INTERACTIVE CHART PANEL */}
+        <AnimatePresence>
+          {chartData && (
+            <motion.div
+              initial={{ opacity: 0, x: 100, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 100, scale: 0.95 }}
+              transition={{ type: "spring", damping: 20, stiffness: 120 }}
+              style={{
+                width: "60%",
+                height: "100%",
+                background: "rgba(6, 40, 30, 0.4)",
+                backdropFilter: "blur(20px)",
+                border: "1px solid rgba(16, 185, 129, 0.25)",
+                borderRadius: "24px",
+                padding: "2.5rem",
+                display: "flex",
+                flexDirection: "column",
+                boxShadow: "0 40px 80px rgba(0,0,0,0.5), 0 0 50px rgba(16,185,129,0.05)",
+                position: "relative"
+              }}
+            >
+              {/* Chart Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2.5rem" }}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ color: "#34d399", fontSize: "0.6rem", fontWeight: 900, letterSpacing: "1.5px" }}>DYNAMIC VISUALIZATION</span>
+                  <h3 style={{ color: "white", fontSize: "1.3rem", fontWeight: 800, margin: 0, textTransform: "uppercase", letterSpacing: "1px" }}>{chartTitle}</h3>
+                </div>
+                <button 
+                  onClick={() => setChartData(null)}
+                  style={{
+                    background: "rgba(16,185,129,0.1)",
+                    border: "1px solid rgba(16,185,129,0.3)",
+                    borderRadius: "8px",
+                    color: "#34d399",
+                    padding: "6px 16px",
+                    cursor: "pointer",
+                    fontSize: "0.75rem",
+                    fontWeight: "bold",
+                    transition: "all 0.2s"
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = "rgba(16,185,129,0.25)"}
+                  onMouseLeave={(e) => e.target.style.background = "rgba(16,185,129,0.1)"}
+                >
+                  CLEAR ×
+                </button>
+              </div>
+
+              {/* Dynamic Vector Bars */}
+              <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-around", flex: 1, gap: "1.5rem", paddingBottom: "1.5rem" }}>
+                {chartData.map((item, idx) => {
+                  const maxValue = Math.max(...chartData.map(d => d.value), 1);
+                  const heightPct = (item.value / maxValue) * 80;
+                  return (
+                    <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, height: "100%", justifyContent: "flex-end" }}>
+                      {/* Floating Values */}
+                      <div style={{ color: "#34d399", fontSize: "0.85rem", fontWeight: "bold", marginBottom: "8px", fontFamily: "monospace" }}>
+                        {item.value.toLocaleString()}
+                      </div>
+                      {/* Animated Framer-Motion Column */}
+                      <motion.div
+                        initial={{ height: 0 }}
+                        animate={{ height: `${heightPct}%` }}
+                        transition={{ type: "spring", stiffness: 100, damping: 15, delay: idx * 0.06 }}
+                        style={{
+                          width: "100%",
+                          maxWidth: "45px",
+                          background: "linear-gradient(180deg, #34d399 0%, #10b981 100%)",
+                          borderRadius: "8px 8px 0 0",
+                          boxShadow: "0 0 25px rgba(16, 185, 129, 0.3)",
+                          cursor: "pointer"
+                        }}
+                        whileHover={{ scaleY: 1.05, filter: "brightness(1.15)" }}
+                      />
+                      {/* Sub-label */}
+                      <div style={{
+                        color: "rgba(255,255,255,0.5)",
+                        fontSize: "0.7rem",
+                        marginTop: "12px",
+                        textAlign: "center",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "1px",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        width: "100%"
+                      }}>
+                        {item.name}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* FIXED LIVE CONVERSATION FEED */}
@@ -220,18 +384,9 @@ function BIScene({ onLeave }) {
           {transcription || "Awaiting voice command..."}
         </div>
       </div>
-
-      {/* Status Indicators */}
-      <motion.div 
-        animate={{ opacity: [0.4, 1, 0.4] }}
-        transition={{ duration: 2, repeat: Infinity }}
-        style={{ marginTop: "3rem", color: "#34d399", letterSpacing: "4px", fontSize: "0.85rem", fontWeight: 800, textTransform: "uppercase" }}
-      >
-        {remoteParticipants.length > 0 ? (agentState === "speaking" ? "Analyzing Data..." : "Awaiting Query") : "Establishing Data Link..."}
-      </motion.div>
       
       <div style={{ position: "fixed", bottom: "40px", color: "rgba(255,255,255,0.2)", fontSize: "0.7rem", letterSpacing: "2px" }}>
-        MYSQL TLS ENCRYPTED • SSL-V3
+        MONGODB TLS ENCRYPTED • SSL-V3
       </div>
 
       <RoomAudioRenderer />

@@ -23,6 +23,16 @@ const INITIAL_POSTS = [];
 const BlogSection = ({ onBack, externalPosts = [] }) => {
   const [posts, setPosts] = useState([...externalPosts, ...INITIAL_POSTS]);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [showReelModal, setShowReelModal] = useState(false);
+  const [dismissReelPreview, setDismissReelPreview] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+
+  // Reset reel modal states on selectedPost transitions
+  React.useEffect(() => {
+    setShowReelModal(false);
+    setDismissReelPreview(false);
+    setVideoError(false);
+  }, [selectedPost]);
 
   // Sync external posts and fetch persistent ones from backend
   React.useEffect(() => {
@@ -233,6 +243,53 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
 
             <div className="prose" style={{ fontSize: "1.35rem", lineHeight: 1.8, color: COLORS.primary, opacity: 0.9 }}>
               {selectedPost.content.split('\n').map((line, i) => {
+                // --- ELITE KEY POINT CALLOUT PARSING ---
+                if (line.includes('[Key Point]')) {
+                  let cleanText = line
+                    .replace(/-\s*\*\*\[Key Point\]\*\*:\s*/gi, '')
+                    .replace(/\*\*\[Key Point\]\*\*:\s*/gi, '')
+                    .replace(/\[Key Point\]:\s*/gi, '')
+                    .replace(/-\s*\[Key Point\]:\s*/gi, '')
+                    .replace(/-\s*\*\*\[Key Point\]\*\*:\s*/gi, '')
+                    .trim();
+                  
+                  // Clean up potential starting brackets or extra colons/dashes
+                  cleanText = cleanText.replace(/^[:\-\s\*\s]+/, '');
+
+                  const parts = cleanText.split('**');
+
+                  return (
+                    <motion.div 
+                      key={i}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      style={{ 
+                        margin: "2.5rem 0", 
+                        padding: "1.5rem 2rem", 
+                        background: "linear-gradient(90deg, rgba(59,130,246,0.06) 0%, rgba(59,130,246,0.01) 100%)", 
+                        borderLeft: `4px solid ${COLORS.accent}`, 
+                        borderRadius: "0 16px 16px 0",
+                        boxShadow: "0 4px 20px rgba(59,130,246,0.03)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px"
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", fontWeight: "900", color: COLORS.accent, letterSpacing: "1.5px" }}>
+                        <Sparkles size={14} /> KEY INSIGHT
+                      </div>
+                      <p style={{ margin: 0, fontSize: "1.25rem", lineHeight: "1.6", fontWeight: "500", color: COLORS.primary }}>
+                        {parts.map((part, idx) => (
+                          <span key={idx} style={idx % 2 === 1 ? { fontWeight: "800", color: COLORS.accent } : {}}>
+                            {part}
+                          </span>
+                        ))}
+                      </p>
+                    </motion.div>
+                  );
+                }
+
                 if (line.startsWith('## ')) {
                   return <h2 key={i} style={{ fontSize: "2.5rem", fontWeight: "900", marginTop: "4rem", marginBottom: "1.5rem", letterSpacing: "-1px" }}>{line.replace('## ', '')}</h2>;
                 }
@@ -322,6 +379,187 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
             </div>
           </aside>
         </article>
+
+        {/* --- FLOATING VIDEO REEL PREVIEW BUBBLE --- */}
+        {!dismissReelPreview && !showReelModal && !videoError && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            style={{
+              position: "fixed",
+              bottom: "2.5rem",
+              right: "2.5rem",
+              width: "160px",
+              height: "284px",
+              borderRadius: "24px",
+              overflow: "hidden",
+              boxShadow: "0 25px 60px rgba(59, 130, 246, 0.4)",
+              border: `2px solid ${COLORS.accent}`,
+              background: COLORS.primary,
+              cursor: "pointer",
+              zIndex: 1000,
+            }}
+            onClick={() => setShowReelModal(true)}
+          >
+            {/* Miniature Video Auto-Player */}
+            <video
+              src={`/reels/${selectedPost.slug}_reel.mp4`}
+              muted
+              autoPlay
+              loop
+              playsInline
+              onError={() => setVideoError(true)}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+            {/* Pulse Glow Overlay */}
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              boxShadow: "inset 0 0 20px rgba(59, 130, 246, 0.5)",
+              pointerEvents: "none"
+            }} />
+            {/* Floating Visual Badge */}
+            <div style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: "linear-gradient(0deg, rgba(17,24,39,0.95) 0%, transparent 100%)",
+              padding: "10px",
+              color: "white",
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              gap: "2px"
+            }}>
+              <div style={{ fontSize: "0.6rem", fontWeight: "900", color: COLORS.accent, letterSpacing: "1.5px" }}>NEXUS REEL</div>
+              <div style={{ fontSize: "0.65rem", fontWeight: "700", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>30s Summary</div>
+            </div>
+            {/* Dismiss Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setDismissReelPreview(true);
+              }}
+              style={{
+                position: "absolute",
+                top: "8px",
+                right: "8px",
+                background: "rgba(0,0,0,0.6)",
+                border: "none",
+                borderRadius: "50%",
+                width: "24px",
+                height: "24px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                cursor: "pointer",
+                fontWeight: "bold",
+                fontSize: "0.8rem",
+                zIndex: 1001
+              }}
+            >
+              ×
+            </button>
+          </motion.div>
+        )}
+
+        {/* --- FULLSCREEN VERTICAL SMARTPHONE CINEMA MODAL --- */}
+        <AnimatePresence>
+          {showReelModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(17, 24, 39, 0.95)",
+                backdropFilter: "blur(20px)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 2000,
+              }}
+              onClick={() => setShowReelModal(false)}
+            >
+              {/* Close Label */}
+              <button
+                onClick={() => setShowReelModal(false)}
+                style={{
+                  position: "absolute",
+                  top: "2rem",
+                  right: "2rem",
+                  background: "none",
+                  border: "none",
+                  color: "white",
+                  fontSize: "1rem",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  fontWeight: "900",
+                  letterSpacing: "2px"
+                }}
+              >
+                CLOSE [X]
+              </button>
+
+              {/* Vertical Bezel Simulator */}
+              <motion.div
+                initial={{ scale: 0.9, y: 50 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 50 }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                style={{
+                  position: "relative",
+                  width: "414px",
+                  height: "736px",
+                  borderRadius: "44px",
+                  border: "12px solid #374151",
+                  background: COLORS.primary,
+                  boxShadow: "0 50px 100px rgba(0,0,0,0.8), 0 0 80px rgba(59, 130, 246, 0.25)",
+                  overflow: "hidden",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Simulator Status Bar */}
+                <div style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "30px",
+                  background: "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%)",
+                  zIndex: 2005,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "0 2rem",
+                  alignItems: "center",
+                  color: "rgba(255,255,255,0.7)",
+                  fontSize: "0.7rem",
+                }}>
+                  <span>12:00</span>
+                  <div style={{ width: "90px", height: "15px", background: "#374151", borderRadius: "0 0 12px 12px" }}></div>
+                  <span>100%</span>
+                </div>
+
+                {/* Unmuted Cinema Video */}
+                <video
+                  src={`/reels/${selectedPost.slug}_reel.mp4`}
+                  autoPlay
+                  controls
+                  loop
+                  playsInline
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }

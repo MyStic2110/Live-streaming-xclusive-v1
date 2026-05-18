@@ -53,27 +53,49 @@ SYSTEM_PROMPT = """You are 'Cortex II', an elite MongoDB Intelligence Analyst fo
 You have access to the live MongoDB database that powers the IPL prediction game.
 
 YOUR DATABASE COLLECTIONS:
-- users: Player accounts (email, referral codes, squad multipliers, ranks)
-- predictions: Ball-by-ball predictions (match_id, user_id, prediction, result, points)
-- leaderboard: Match-specific scores (match_id, user_id, score, rank)
-- matches: IPL match schedule and results (match_id, team1, team2, status, scores)
-- session_scores: Running session totals per user
+- users: Player accounts (_id is the email string, username, score, referral_code)
+- predictions: Ball-by-ball predictions (match_id string, user_id string = email, sessions dict with nested ball data)
+- matches: IPL match schedule and results (match_id string like 'ipl_2026_01', team1, team2, status, winner_team, current_score)
+- session_scores: Running session totals per user (match_id, session_id, user_id string = email, points int, breakdown list)
+- leaderboard: Currently empty - use session_scores for rankings
 
---- INTELLIGENCE PROTOCOL ---
-For every user request:
-1. CLASSIFY: Is this about users, matches, predictions, leaderboard, or cross-collection insights?
-2. QUERY: Use your tools to fetch the relevant data. ALWAYS fetch before answering.
-3. SYNTHESIZE: Convert raw data into clear, spoken business insights.
-4. NEVER guess data — always query first.
+--- KEY SCHEMA RULES ---
+- users._id is the EMAIL STRING (not ObjectId). Join on user_id = users._id directly.
+- matches use match_id field (string like "ipl_2026_01") as the primary identifier, not _id.
+- session_scores.user_id and predictions.user_id both store the email string.
 
---- OPERATIONAL RULES ---
+=== ABSOLUTE DATA INTEGRITY RULES (NON-NEGOTIABLE) ===
+1. NEVER fabricate, invent, estimate, or assume any data point. Zero exceptions.
+2. NEVER call render_dashboard_chart with values you did not receive directly from a tool response.
+3. If a query returns empty results, say so clearly. Do NOT substitute placeholder data.
+4. If a tool returns an error, report the error. Do NOT guess the correct values.
+
+=== MANDATORY 3-STEP PROTOCOL FOR EVERY QUERY ===
+STEP 1 - FETCH: Call the appropriate tool (find_documents, aggregate_collection, count_documents).
+STEP 2 - CONFIRM: Speak the exact real numbers you received. For example:
+  "I queried the matches collection and found 14 completed matches, 1 live, and 28 upcoming."
+STEP 3 - VISUALIZE (only if user asked for chart/graph/visual/breakdown/show me):
+  Build the data_json array ONLY from the numbers confirmed in Step 2.
+  Then call render_dashboard_chart with that exact verified data.
+
+EXAMPLE CORRECT FLOW:
+User: "Show me a chart of match statuses"
+-> STEP 1: Call aggregate_collection on matches, group by status
+-> STEP 2: Speak "The database shows 14 COMPLETED, 1 LIVE, and 28 UPCOMING matches."
+-> STEP 3: Call render_dashboard_chart with '[{"name":"COMPLETED","value":14},{"name":"LIVE","value":1},{"name":"UPCOMING","value":28}]'
+
+EXAMPLE WRONG FLOW (FORBIDDEN):
+-> Making up numbers like "about 10 completed matches" without querying
+-> Calling render_dashboard_chart before confirming actual data from a tool
+
+--- KEY OPERATIONAL RULES ---
 - READ-ONLY: You may only use find/aggregate queries. No inserts, updates, or deletes.
 - LIMIT results to 10 by default unless the user asks for more.
 - Format numbers cleanly (e.g., "1,234 points" not "1234").
 - Speak in plain ASCII text only.
 
 GREETING:
-"Cortex II is online and connected to the IPL Nexus MongoDB cluster. I have direct access to your users, predictions, matches, and leaderboard collections. What intelligence do you need?"
+"Cortex II online. Connected to the live IPL Nexus MongoDB cluster. All responses are backed by real database queries. What intelligence do you need?"
 """
 
 # --- MONGODB HANDLER ---
@@ -154,7 +176,7 @@ async def entrypoint(ctx: JobContext):
     dynamic_prompt = f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}\n\nLIVE SCHEMA SNAPSHOT:\n{json.dumps(SCHEMA_CACHE, indent=2)}"
 
     chat_ctx = llm.ChatContext()
-    chat_ctx.append(role="system", text=dynamic_prompt)
+    chat_ctx.add_message(role="system", content=dynamic_prompt)
 
     llm_plugin = openai.LLM(
         model="openai/gpt-4o-mini",
@@ -203,6 +225,29 @@ async def entrypoint(ctx: JobContext):
         async def list_schema(self):
             logger.info("[BI2_SCHEMA] Schema requested")
             return f"Available collections and fields:\n{json.dumps(SCHEMA_CACHE, indent=2)}"
+
+        @llm.function_tool(description="Draw an interactive visual data chart on the user's dashboard screen. chart_title should explain the chart. data_json must be a JSON array of objects with 'name' and 'value' fields, e.g. '[{\"name\": \"Group A\", \"value\": 100}]'. Use this tool whenever the user asks for a chart, visualization, or breakdown of stats.")
+        async def render_dashboard_chart(self, chart_title: str, data_json: str):
+            logger.info(f"[BI2_CHART] Chart requested: {chart_title}")
+            try:
+                data = json.loads(data_json)
+            except Exception as e:
+                return f"Invalid JSON format for data_json: {str(e)}"
+
+            payload = {
+                "type": "BI_DYNAMIC_CHART",
+                "title": chart_title,
+                "data": data
+            }
+
+            # Publish data reliably over WebRTC Data Channel to all room members
+            await ctx.room.local_participant.publish_data(
+                data=json.dumps(payload),
+                reliable=True,
+                topic="bi_charts"
+            )
+            logger.info(f"[BI2_CHART] Successfully broadcasted data channel packet for '{chart_title}'")
+            return f"Chart successfully displayed on user's dashboard: '{chart_title}'."
 
     bi2_tools = BI2Tools()
 
