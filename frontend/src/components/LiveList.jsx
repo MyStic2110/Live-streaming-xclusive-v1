@@ -322,11 +322,6 @@ export default function LiveList({ onJoin, onBlogClick }) {
 
   const galleryReels = [
     {
-      title: "LiveKit Voice Optimization",
-      slug: "livekit-voice-agents-and-latency-optimization",
-      desc: "30-second summary on latency profiling and WebRTC media parameters."
-    },
-    {
       title: "Autonomous Swarms",
       slug: "autonomous-multi-agent-orchestration",
       desc: "30-second vertical preview of multi-agent workflows."
