@@ -4,6 +4,7 @@ import { config } from '../config/livekit.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { spawn } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -99,6 +100,36 @@ export const getAstraInsights = async (req, res) => {
     res.json(insights);
   } catch (err) {
     console.error("[HTTP_CONTROLLER] ❌ Error fetching insights:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const deployShadow = async (req, res) => {
+  const { url } = req.body;
+  if (!url) {
+    return res.status(400).json({ error: "Meeting URL is required" });
+  }
+  console.log(`[HTTP_CONTROLLER] --> POST /deploy-shadow | URL: ${url}`);
+  
+  try {
+    const pythonPath = path.resolve(__dirname, "../../../python-agent/venv/Scripts/python.exe");
+    const scriptPath = path.resolve(__dirname, "../../../python-agent/agents/shadow_agent/shadow_bot.py");
+    
+    console.log(`[HTTP_CONTROLLER] Spawning Shadow Bot background process...`);
+    console.log(`Interpreter: ${pythonPath}`);
+    console.log(`Script: ${scriptPath}`);
+    
+    // Spawn Playwright process detached
+    const shadowProcess = spawn(pythonPath, [scriptPath, url], {
+      detached: true,
+      stdio: 'ignore'
+    });
+    
+    shadowProcess.unref(); // Prevent parent waiting for exit
+    
+    res.json({ success: true, message: "Shadow Agent deployed successfully in the background." });
+  } catch (err) {
+    console.error("[HTTP_CONTROLLER] ❌ Failed to spawn Shadow Bot:", err.message);
     res.status(500).json({ error: err.message });
   }
 };

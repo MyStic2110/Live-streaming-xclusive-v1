@@ -214,6 +214,9 @@ const PipelineCard = ({ agent, onAction }) => {
 export default function LiveList({ onJoin, onBlogClick }) {
   const [selectedReel, setSelectedReel] = React.useState(null);
   const [showReelsGallery, setShowReelsGallery] = React.useState(false);
+  const [showShadowInput, setShowShadowInput] = React.useState(false);
+  const [meetingUrl, setMeetingUrl] = React.useState("");
+  const [isDeployingShadow, setIsDeployingShadow] = React.useState(false);
   const agents = [
     {
       id: "bi", title: "Cortex BI", icon: "📊", color: "#059669",
@@ -314,9 +317,9 @@ export default function LiveList({ onJoin, onBlogClick }) {
       btnText: "Open Swarm Lab"
     },
     {
-      id: "shadow", title: "Shadow Agent", icon: "👥", color: "#6b7280", status: "STANDBY",
+      id: "shadow", title: "Shadow Agent", icon: "👥", color: "#4f46e5", status: "READY",
       desc: "Autonomous headless background observer. Automatically schedules and joins Zoom/Meet sessions to generate full transcriptions and meeting audits.",
-      btnText: "Configure Shadow"
+      btnText: "Deploy Shadow"
     }
   ];
 
@@ -391,6 +394,26 @@ export default function LiveList({ onJoin, onBlogClick }) {
   const handlePipelineAction = (agent) => {
     if (agent.id === "reels") {
       setShowReelsGallery(true);
+    } else if (agent.id === "shadow") {
+      setShowShadowInput(true);
+    }
+  };
+
+  const handleDeployShadow = async () => {
+    if (!meetingUrl) {
+      alert("Please enter a valid Google Meet or Zoom URL.");
+      return;
+    }
+    setIsDeployingShadow(true);
+    try {
+      await axios.post(`${API}/deploy-shadow`, { url: meetingUrl });
+      alert("Shadow Agent Observer has been successfully deployed to the meeting in the background!");
+      setShowShadowInput(false);
+      setMeetingUrl("");
+    } catch (err) {
+      alert("Failed to deploy Shadow Agent. Please try again.");
+    } finally {
+      setIsDeployingShadow(false);
     }
   };
 
@@ -723,26 +746,134 @@ export default function LiveList({ onJoin, onBlogClick }) {
                 }}
               />
 
-              {/* Close Button on Bezel */}
-              <button
-                onClick={() => setSelectedReel(null)}
+            {/* Close Button on Bezel */}
+            <button
+              onClick={() => setSelectedReel(null)}
+              style={{
+                position: "absolute", top: "20px", right: "20px",
+                background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.2)",
+                color: "white", width: "40px", height: "40px", borderRadius: "50%",
+                cursor: "pointer", fontSize: "1.2rem", fontWeight: "bold",
+                display: "flex", alignItems: "center", justifyContent: "center"
+              }}
+            >
+              ×
+            </button>
+          </div>
+          <div style={{ color: "rgba(255,255,255,0.5)", marginTop: "2rem", fontSize: "0.85rem", letterSpacing: "2px", fontWeight: "bold" }}>
+            NOW PLAYING: {selectedReel.title.toUpperCase()}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* --- SHADOW AGENT DEPLOY MODAL --- */}
+    <AnimatePresence>
+      {showShadowInput && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1100,
+            background: "rgba(11, 15, 25, 0.75)",
+            backdropFilter: "blur(15px)",
+            display: "flex", justifyContent: "center", alignItems: "center",
+            fontFamily: "'Outfit', sans-serif"
+          }}
+        >
+          <motion.div
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.9, y: 20 }}
+            style={{
+              background: "white",
+              width: "100%",
+              maxWidth: "500px",
+              padding: "3rem",
+              borderRadius: "32px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              border: `1px solid ${COLORS.border}`,
+              position: "relative"
+            }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setShowShadowInput(false);
+                setMeetingUrl("");
+              }}
+              style={{
+                position: "absolute", top: "24px", right: "24px",
+                background: "none", border: "none", color: COLORS.textMuted,
+                fontSize: "1.5rem", cursor: "pointer"
+              }}
+            >
+              ×
+            </button>
+
+            <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+              <div style={{ 
+                width: "60px", height: "60px", borderRadius: "16px", 
+                background: "rgba(79, 70, 229, 0.1)", display: "inline-flex", alignItems: "center", 
+                justifyContent: "center", fontSize: "2rem", color: "#4f46e5", marginBottom: "1.5rem"
+              }}>
+                👥
+              </div>
+              <h3 style={{ fontSize: "1.75rem", fontWeight: "900", color: COLORS.primary, marginBottom: "0.5rem" }}>Deploy Shadow Agent</h3>
+              <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.5" }}>
+                Pipes a headless browser observer directly into your meeting session to construct daily structural transcription audits.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: "2rem" }}>
+              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: "900", color: COLORS.primary, letterSpacing: "1px", marginBottom: "8px" }}>
+                OFFICIAL MEETING LINK
+              </label>
+              <input
+                type="text"
+                placeholder="https://meet.google.com/abc-defg-hij"
+                value={meetingUrl}
+                onChange={e => setMeetingUrl(e.target.value)}
                 style={{
-                  position: "absolute", top: "20px", right: "20px",
-                  background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.2)",
-                  color: "white", width: "40px", height: "40px", borderRadius: "50%",
-                  cursor: "pointer", fontSize: "1.2rem", fontWeight: "bold",
-                  display: "flex", alignItems: "center", justifyContent: "center"
+                  width: "100%",
+                  padding: "1rem",
+                  borderRadius: "12px",
+                  border: `1px solid ${COLORS.border}`,
+                  fontSize: "0.95rem",
+                  fontFamily: "inherit",
+                  outline: "none",
+                  transition: "border-color 0.2s"
                 }}
-              >
-                ×
-              </button>
+                onFocus={e => e.target.style.borderColor = "#4f46e5"}
+                onBlur={e => e.target.style.borderColor = COLORS.border}
+              />
             </div>
-            <div style={{ color: "rgba(255,255,255,0.5)", marginTop: "2rem", fontSize: "0.85rem", letterSpacing: "2px", fontWeight: "bold" }}>
-              NOW PLAYING: {selectedReel.title.toUpperCase()}
-            </div>
+
+            <button
+              onClick={handleDeployShadow}
+              disabled={isDeployingShadow}
+              style={{
+                width: "100%",
+                padding: "1.2rem",
+                background: "#4f46e5",
+                color: "white",
+                border: "none",
+                borderRadius: "12px",
+                fontWeight: "900",
+                fontSize: "0.95rem",
+                letterSpacing: "1px",
+                cursor: isDeployingShadow ? "not-allowed" : "pointer",
+                opacity: isDeployingShadow ? 0.7 : 1,
+                transition: "background 0.2s"
+              }}
+            >
+              {isDeployingShadow ? "SPAWNING VIRTUAL OBSERVER..." : "DEPLOY OBSERVER"}
+            </button>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </motion.div>
+      )}
+    </AnimatePresence>
 
       <style dangerouslySetInnerHTML={{ __html: `
         html { scroll-behavior: smooth; }
