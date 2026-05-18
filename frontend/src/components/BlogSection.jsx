@@ -434,7 +434,6 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
               flexDirection: "column",
               gap: "2px"
             }}>
-              <div style={{ fontSize: "0.6rem", fontWeight: "900", color: COLORS.accent, letterSpacing: "1.5px" }}>NEXUS REEL</div>
               <div style={{ fontSize: "0.65rem", fontWeight: "700", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>30s Summary</div>
             </div>
             {/* Dismiss Button */}

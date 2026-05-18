@@ -217,6 +217,126 @@ export default function LiveList({ onJoin, onBlogClick }) {
   const [showShadowInput, setShowShadowInput] = React.useState(false);
   const [meetingUrl, setMeetingUrl] = React.useState("");
   const [isDeployingShadow, setIsDeployingShadow] = React.useState(false);
+  const [showAuditPreview, setShowAuditPreview] = React.useState(false);
+  
+  const [swarmQuery, setSwarmQuery] = React.useState("");
+  const [isSwarmCalculating, setIsSwarmCalculating] = React.useState(false);
+  const [swarmLog, setSwarmLog] = React.useState([]);
+  const [calculatedProfile, setCalculatedProfile] = React.useState(null);
+  const [exitIntentCaptured, setExitIntentCaptured] = React.useState(false);
+  const [showExitIntentModal, setShowExitIntentModal] = React.useState(false);
+  const [leadEmail, setLeadEmail] = React.useState("");
+  const [leadSubmitted, setLeadSubmitted] = React.useState(false);
+  const [isVoiceActive, setIsVoiceActive] = React.useState(false);
+  const [liveEvent, setLiveEvent] = React.useState("[SYSTEM] Swarm Fleet initialized. All cognitive nodes: operational.");
+
+  React.useEffect(() => {
+    const events = [
+      "[Shadow-V1] Diarized transcript generated for Meet ID: 492-302",
+      "[Cortex-BI] MongoDB performance audit complete: index optimized",
+      "[Reels-Agent] MoviePy voice overlay rendered: 30s vertical ready",
+      "[Vigil-Security] Governance audit logged: 0 risk parameters exposed",
+      "[Aura-Weather] Southwest monsoon model successfully re-calculated",
+      "[Nova-UI] Autonomous squad leaderboard query executed flawlessly",
+      "[Swarm-Commander] Telemetry check: operational latency 120ms"
+    ];
+    let idx = 0;
+    const interval = setInterval(() => {
+      idx = (idx + 1) % events.length;
+      setLiveEvent(events[idx]);
+    }, 2800);
+    return () => clearInterval(interval);
+  }, []);
+
+  const hasGreeted = React.useRef(false);
+  React.useEffect(() => {
+    const speakGreeting = () => {
+      if (hasGreeted.current) return;
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(
+          "Welcome, Operator. Swarm Commander online. Select your bottleneck below, and let's calculate your agent configuration."
+        );
+        const voices = window.speechSynthesis.getVoices();
+        const engVoice = voices.find(v => v.lang.startsWith('en'));
+        if (engVoice) utterance.voice = engVoice;
+        utterance.rate = 1.0;
+        utterance.pitch = 0.95;
+        window.speechSynthesis.speak(utterance);
+        hasGreeted.current = true;
+      }
+    };
+
+    // Try immediately
+    setTimeout(() => {
+      speakGreeting();
+    }, 500);
+
+    // Fallback for browser autoplay policies
+    const handleFirstInteraction = () => {
+      speakGreeting();
+      document.removeEventListener("click", handleFirstInteraction);
+      document.removeEventListener("mousemove", handleFirstInteraction);
+    };
+    document.addEventListener("click", handleFirstInteraction);
+    document.addEventListener("mousemove", handleFirstInteraction);
+
+    return () => {
+      document.removeEventListener("click", handleFirstInteraction);
+      document.removeEventListener("mousemove", handleFirstInteraction);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const handleMouseLeave = (e) => {
+      if (e.clientY < 20 && !leadSubmitted && !exitIntentCaptured) {
+        setShowExitIntentModal(true);
+      }
+    };
+    document.addEventListener("mouseleave", handleMouseLeave);
+    return () => {
+      document.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, [leadSubmitted, exitIntentCaptured]);
+
+  const handleCalculateSwarm = async (queryText) => {
+    if (!queryText.trim()) return;
+    setIsSwarmCalculating(true);
+    setCalculatedProfile(null);
+    
+    setSwarmLog([
+      { sender: "system", text: "Initializing cognitive telemetry route..." }
+    ]);
+    
+    await new Promise(r => setTimeout(r, 600));
+    setSwarmLog(prev => [...prev, { sender: "system", text: "Analyzing operations frequency and token bandwidth..." }]);
+    
+    await new Promise(r => setTimeout(r, 700));
+    setSwarmLog(prev => [...prev, { sender: "system", text: "Optimal fleet configuration calculated." }]);
+    
+    setIsSwarmCalculating(false);
+    
+    const queryLower = queryText.toLowerCase();
+    if (queryLower.includes("meet") || queryLower.includes("zoom") || queryLower.includes("transcribe") || queryLower.includes("audit") || queryLower.includes("record") || queryLower.includes("call")) {
+      setCalculatedProfile({
+        name: "Shadow Observer V1",
+        desc: "Autonomous background agent designed to deploy headless observers into Zoom and Meet. Provides deep-linked diarized audits instantly.",
+        type: "shadow"
+      });
+    } else if (queryLower.includes("data") || queryLower.includes("db") || queryLower.includes("sql") || queryLower.includes("chart") || queryLower.includes("query") || queryLower.includes("bi") || queryLower.includes("mongo")) {
+      setCalculatedProfile({
+        name: "Cortex BI Analyst",
+        desc: "High-intelligence database companion designed to connect to NoSQL/SQL clusters and render live dashboard charts on demand.",
+        type: "bi"
+      });
+    } else {
+      setCalculatedProfile({
+        name: "Reels Content Agent",
+        desc: "Automated video synthesizer designed to read raw technical insights and compile high-tempo 30s vertical reels at zero cost.",
+        type: "reels"
+      });
+    }
+  };
   const agents = [
     {
       id: "bi", title: "Cortex BI", icon: "📊", color: "#059669",
@@ -437,27 +557,510 @@ export default function LiveList({ onJoin, onBlogClick }) {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <header style={{ padding: "8rem 5% 6rem", textAlign: "center", maxWidth: "1000px", margin: "0 auto" }}>
+      {/* Swarm Commander Conversational Landing Page Hero */}
+      <header style={{ padding: "6rem 5% 4rem", maxWidth: "1400px", margin: "0 auto" }}>
+        {/* Split Grid Layout */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1.1fr 1fr",
+          gap: "4rem",
+          alignItems: "center"
+        }} className="hero-split-grid">
+          
+          {/* Left Column: High-Impact Marketing Copy */}
+          <div style={{ textAlign: "left" }}>
+            <div style={{ 
+              display: "inline-block", padding: "6px 16px", background: "rgba(59, 130, 246, 0.1)", 
+              color: COLORS.accent, borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", 
+              marginBottom: "2rem", letterSpacing: "1px" 
+            }}>
+              B2B AI AUTOMATION & INTELLIGENCE
+            </div>
+            <h1 style={{ fontSize: "3.75rem", fontWeight: "900", color: COLORS.primary, lineHeight: "1.05", letterSpacing: "-2px", marginBottom: "2rem" }}>
+              Automate your operations.<br/>Connect your tools.<br/>Deploy your <span style={{ color: COLORS.accent }}>Fleet.</span>
+            </h1>
+            <p style={{ fontSize: "1.15rem", color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "3.5rem" }}>
+              We build AI systems that go live in 1–2 weeks. Not just chatbots, but autonomous agents that handle manual data, security audits, and climate intelligence.
+            </p>
+            <div style={{ display: "flex", gap: "1.5rem" }}>
+              <a href="#process" style={{ textDecoration: "none" }}>
+                <button style={{ padding: "1.2rem 2.5rem", background: "white", color: COLORS.primary, border: `1px solid ${COLORS.border}`, borderRadius: "12px", fontWeight: "800", fontSize: "1rem", cursor: "pointer" }}>
+                  SEE OUR WORK ↓
+                </button>
+              </a>
+            </div>
+          </div>
+
+          {/* Right Column: Swarm Commander Central Console */}
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            className="quantum-card"
+            style={{
+              background: "white",
+              border: "1px solid rgba(59, 130, 246, 0.15)",
+              borderRadius: "32px",
+              padding: "2.5rem",
+              boxShadow: "0 20px 50px rgba(59, 130, 246, 0.05), inset 0 0 40px rgba(59, 130, 246, 0.01)",
+              textAlign: "left",
+              position: "relative",
+              overflow: "hidden"
+            }}
+          >
+          {/* Decorative Corner Glow */}
+          <div style={{
+            position: "absolute", top: 0, right: 0,
+            width: "150px", height: "150px",
+            background: "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
+            pointerEvents: "none"
+          }} />
+
+          {/* Commander Active Header */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "1.5rem" }}>
+            <div style={{ 
+              width: "36px", height: "36px", borderRadius: "10px", 
+              background: "rgba(59, 130, 246, 0.1)", display: "flex", 
+              alignItems: "center", justifyContent: "center", fontSize: "1.2rem" 
+            }}>
+              🤖
+            </div>
+            <div>
+              <span style={{ fontSize: "0.65rem", fontWeight: "900", color: COLORS.accent, letterSpacing: "2px", textTransform: "uppercase" }}>Central Hub</span>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: "900", color: COLORS.primary, margin: 0 }}>SWARM COMMANDER</h3>
+            </div>
+            <span style={{ 
+              marginLeft: "auto", fontSize: "0.7rem", fontWeight: "800", color: COLORS.success,
+              background: "rgba(16, 185, 129, 0.1)", padding: "4px 12px", borderRadius: "99px",
+              border: "1px solid rgba(16, 185, 129, 0.2)", display: "flex", alignItems: "center", gap: "6px"
+            }}>
+              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: COLORS.success, display: "inline-block" }} />
+              ACTIVE OPERATOR
+            </span>
+          </div>
+
+          {/* Dialogue text */}
+          <p style={{ fontSize: "1.2rem", color: COLORS.primary, fontWeight: "500", lineHeight: "1.6", marginBottom: "2.5rem", maxWidth: "850px" }}>
+            "Welcome, Operator. I am the central orchestrator of the Swarm Agentic Fleet. Select the workflow bottleneck you wish to solve, or describe it below, and I will calculate your optimal agent fleet profile."
+          </p>
+
+          {/* Structured Heuristic Bottlenecks */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "2rem" }}>
+            {[
+              { label: "🎥 Automate meeting audits & summaries", val: "automate zoom/meet transcripts and daily structural audits" },
+              { label: "📊 Perform database telemetry analytics", val: "sql/nosql database performance monitoring and telemetry charts" },
+              { label: "🎬 Create high-tempo vertical video reels", val: "compile technical blog articles into 30s reels videos" }
+            ].map((btn, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setSwarmQuery(btn.label.slice(2));
+                  handleCalculateSwarm(btn.val);
+                }}
+                style={{
+                  background: COLORS.bgSoft,
+                  border: `1px solid ${COLORS.border}`,
+                  padding: "10px 18px",
+                  borderRadius: "12px",
+                  fontSize: "0.85rem",
+                  fontWeight: "700",
+                  color: COLORS.primary,
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={e => { e.target.style.borderColor = COLORS.accent; e.target.style.background = "white"; }}
+                onMouseLeave={e => { e.target.style.borderColor = COLORS.border; e.target.style.background = COLORS.bgSoft; }}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Glowing Live Telemetry Ticker Banner (Differentiator) */}
+          <div style={{
+            background: "rgba(16, 185, 129, 0.05)",
+            border: "1px solid rgba(16, 185, 129, 0.15)",
+            borderRadius: "12px",
+            padding: "12px 16px",
+            marginBottom: "1.5rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px"
+          }}>
+            <span style={{ 
+              fontSize: "0.6rem", fontWeight: "900", color: COLORS.success, 
+              letterSpacing: "1px", background: "rgba(16, 185, 129, 0.12)", 
+              padding: "2px 8px", borderRadius: "4px", textTransform: "uppercase" 
+            }}>
+              ● Live Fleet Telemetry
+            </span>
+            <div style={{ 
+              fontSize: "0.8rem", fontFamily: "monospace", color: COLORS.primary, 
+              fontWeight: "600", transition: "all 0.3s ease" 
+            }}>
+              {liveEvent}
+            </div>
+          </div>
+
+          {/* Unified Talk-or-Type command console */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            background: COLORS.bgSoft,
+            border: "1px solid rgba(59, 130, 246, 0.15)",
+            borderRadius: "18px",
+            padding: "8px 12px",
+            gap: "10px",
+            marginBottom: "2rem"
+          }}>
+            {/* Speak microphone button */}
+            <button
+              onClick={() => {
+                if (isVoiceActive) {
+                  setIsVoiceActive(false);
+                } else {
+                  setIsVoiceActive(true);
+                  // Simulate receiving voice and calculating profile
+                  setTimeout(() => {
+                    handleCalculateSwarm("automate meeting transcripts and audits");
+                    setIsVoiceActive(false);
+                  }, 4000);
+                }
+              }}
+              style={{
+                width: "48px", height: "48px", borderRadius: "12px",
+                background: isVoiceActive ? "#f43f5e" : "white",
+                border: `1px solid ${isVoiceActive ? "transparent" : COLORS.border}`,
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "1.2rem", transition: "all 0.2s",
+                boxShadow: isVoiceActive ? "0 0 20px rgba(244,63,94,0.4)" : "none"
+              }}
+            >
+              {isVoiceActive ? "🎙️" : "🎤"}
+            </button>
+
+            {/* Input bar */}
+            <input
+              type="text"
+              value={swarmQuery}
+              onChange={e => setSwarmQuery(e.target.value)}
+              placeholder={isVoiceActive ? "Listening to voice input stream..." : "Describe your workflow bottleneck (e.g. automate zoom audits, SQL analytics, reels)..."}
+              disabled={isVoiceActive}
+              style={{
+                flex: 1,
+                border: "none",
+                background: "transparent",
+                outline: "none",
+                fontSize: "1rem",
+                fontFamily: "inherit",
+                color: COLORS.primary
+              }}
+              onKeyDown={e => {
+                if (e.key === "Enter") {
+                  handleCalculateSwarm(swarmQuery);
+                }
+              }}
+            />
+
+            {/* Submit arrow button */}
+            <button
+              onClick={() => handleCalculateSwarm(swarmQuery)}
+              style={{
+                width: "44px", height: "44px", borderRadius: "12px",
+                background: COLORS.primary, border: "none", color: "white",
+                fontSize: "1.1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "background 0.2s"
+              }}
+              onMouseEnter={e => e.target.style.background = COLORS.accent}
+              onMouseLeave={e => e.target.style.background = COLORS.primary}
+            >
+              ➔
+            </button>
+          </div>
+
+          {/* Voice active animation bars */}
+          {isVoiceActive && (
+            <div style={{ display: "flex", gap: "4px", alignItems: "center", justifyContent: "center", marginBottom: "2rem" }}>
+              {[1, 2, 3, 4, 5].map(idx => (
+                <div 
+                  key={idx} 
+                  style={{ 
+                    width: "4px", height: "24px", background: "#f43f5e", borderRadius: "2px",
+                    animation: `bounce 0.6s ease-in-out infinite alternate`,
+                    animationDelay: `${idx * 0.1}s`
+                  }} 
+                />
+              ))}
+              <span style={{ marginLeft: "8px", fontSize: "0.85rem", fontWeight: "700", color: "#f43f5e" }}>SWARM VOICE CONTEXT STREAMING...</span>
+            </div>
+          )}
+
+          {/* Calculating Telemetry Stream */}
+          {isSwarmCalculating && (
+            <div style={{ background: COLORS.bgSoft, padding: "1.5rem", borderRadius: "16px", marginBottom: "2rem" }}>
+              <div style={{ fontSize: "0.7rem", fontWeight: "900", color: COLORS.accent, letterSpacing: "2px", textTransform: "uppercase", marginBottom: "1rem" }}>TELEMETRY LOGS</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {swarmLog.map((log, idx) => (
+                  <div key={idx} style={{ fontFamily: "monospace", fontSize: "0.8rem", color: COLORS.primary }}>
+                    <span style={{ color: COLORS.textMuted }}>[{new Date().toLocaleTimeString()}]</span> {log.text}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Calculated Agent Recommendation & Value-Wrap Lead Form */}
+          {calculatedProfile && (
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              style={{
+                background: "rgba(59, 130, 246, 0.02)",
+                border: "1px dashed rgba(59, 130, 246, 0.3)",
+                borderRadius: "24px",
+                padding: "2.5rem",
+                marginTop: "2rem"
+              }}
+            >
+              <span style={{ fontSize: "0.65rem", fontWeight: "900", color: COLORS.accent, letterSpacing: "2px", textTransform: "uppercase" }}>CALCULATED FLEET ARCHITECTURE</span>
+              <h4 style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginTop: "8px", marginBottom: "0.5rem" }}>
+                🎯 {calculatedProfile.name}
+              </h4>
+              <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6", marginBottom: "2rem" }}>
+                {calculatedProfile.desc}
+              </p>
+
+              {/* Lead Capture Form (Value-Wrap) */}
+              {!leadSubmitted ? (
+                <div>
+                  <p style={{ fontSize: "0.9rem", fontWeight: "700", color: COLORS.primary, marginBottom: "12px" }}>
+                    "Enter your business email to claim your calculated fleet blueprint specs and lock in credentials:"
+                  </p>
+                  <div style={{ display: "flex", gap: "10px", maxWidth: "500px" }}>
+                    <input
+                      type="email"
+                      value={leadEmail}
+                      onChange={e => setLeadEmail(e.target.value)}
+                      placeholder="name@company.com"
+                      style={{
+                        flex: 1, padding: "12px 18px", borderRadius: "12px", border: `1px solid ${COLORS.border}`,
+                        fontSize: "0.9rem", outline: "none"
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        if (leadEmail.includes("@")) {
+                          setLeadSubmitted(true);
+                          setExitIntentCaptured(true);
+                        } else {
+                          alert("Please enter a valid business email.");
+                        }
+                      }}
+                      style={{
+                        padding: "0 24px", background: COLORS.accent, color: "white", border: "none",
+                        borderRadius: "12px", fontWeight: "800", fontSize: "0.85rem", cursor: "pointer"
+                      }}
+                    >
+                      CLAIM BLUEPRINT
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                  <div style={{ 
+                    display: "flex", alignItems: "center", gap: "8px", color: COLORS.success, 
+                    fontWeight: "800", fontSize: "0.95rem" 
+                  }}>
+                    ✓ CREDENTIALS INSTANTLY DISPATCHED TO {leadEmail.toUpperCase()}
+                  </div>
+
+                  {/* Dynamic Launch CTAs based on calculation */}
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    {calculatedProfile.type === "shadow" && (
+                      <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                        <button
+                          onClick={() => setShowShadowInput(true)}
+                          style={{
+                            padding: "12px 24px", background: "#4f46e5", color: "white", border: "none",
+                            borderRadius: "12px", fontWeight: "800", cursor: "pointer", fontSize: "0.9rem"
+                          }}
+                        >
+                          🚀 DEPLOY SHADOW OBSERVER
+                        </button>
+                        <button
+                          onClick={() => setShowAuditPreview(true)}
+                          style={{
+                            padding: "12px 24px", background: "white", color: "#4f46e5", border: "1px solid rgba(79, 70, 229, 0.3)",
+                            borderRadius: "12px", fontWeight: "800", cursor: "pointer", fontSize: "0.9rem"
+                          }}
+                        >
+                          📄 VIEW SAMPLE AUDIT
+                        </button>
+                      </div>
+                    )}
+                    {calculatedProfile.type === "bi" && (
+                      <button
+                        onClick={() => initiateAITalk("bi2")}
+                        style={{
+                          padding: "12px 24px", background: "#10b981", color: "white", border: "none",
+                          borderRadius: "12px", fontWeight: "800", cursor: "pointer", fontSize: "0.9rem"
+                        }}
+                      >
+                        📊 LAUNCH CORTEX II ANALYSIS
+                      </button>
+                    )}
+                    {calculatedProfile.type === "reels" && (
+                      <button
+                        onClick={() => setShowReelsGallery(true)}
+                        style={{
+                          padding: "12px 24px", background: "#f43f5e", color: "white", border: "none",
+                          borderRadius: "12px", fontWeight: "800", cursor: "pointer", fontSize: "0.9rem"
+                        }}
+                      >
+                        🎬 OPEN REELS CINEMA
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </motion.div>
+      </div>
+    </header>
+
+      {/* --- THE ENTERPRISE AI TRIAD DIRECTIVE --- */}
+      <section style={{ 
+        padding: "6rem 5% 7rem", 
+        background: "white", 
+        textAlign: "center",
+        borderTop: `1px solid ${COLORS.border}`,
+        fontFamily: "'Outfit', sans-serif"
+      }}>
+        {/* Core Philosophy Header */}
+        <div style={{ maxWidth: "850px", margin: "0 auto", marginBottom: "4.5rem" }}>
+          <div style={{ 
+            display: "inline-block", padding: "6px 16px", background: "rgba(79, 70, 229, 0.08)", 
+            color: "#4f46e5", borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", 
+            marginBottom: "1.5rem", letterSpacing: "1.5px" 
+          }}>
+            THE CORE ENTERPRISE MANDATE
+          </div>
+          <h2 style={{ fontSize: "2.5rem", fontWeight: "900", color: COLORS.primary, lineHeight: "1.15", letterSpacing: "-1px", marginBottom: "1.5rem" }}>
+            AI engineered for the three things <br/>every enterprise needs.
+          </h2>
+          <p style={{ fontSize: "1.15rem", color: COLORS.textMuted, lineHeight: "1.6" }}>
+            "No gimmicks, no generic chatbots. An agent is only valuable if it directly moves your bottom line. We build specialized, autonomous systems centered entirely on three operational directives."
+          </p>
+        </div>
+
+        {/* 3-Column Grid */}
         <div style={{ 
-          display: "inline-block", padding: "6px 16px", background: "rgba(59, 130, 246, 0.1)", 
-          color: COLORS.accent, borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", 
-          marginBottom: "2rem", letterSpacing: "1px" 
+          display: "grid", 
+          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", 
+          gap: "2.5rem", 
+          maxWidth: "1200px", 
+          margin: "0 auto" 
         }}>
-          B2B AI AUTOMATION & INTELLIGENCE
+          
+          {/* Card 1: Reduce Cost */}
+          <div style={{
+            background: COLORS.bgSoft,
+            padding: "3rem 2.5rem",
+            borderRadius: "24px",
+            border: `1px solid ${COLORS.border}`,
+            textAlign: "left",
+            transition: "all 0.3s ease",
+            cursor: "default"
+          }}
+          className="hover-shadow"
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(244, 63, 94, 0.3)"; e.currentTarget.style.boxShadow = "0 20px 40px rgba(244, 63, 94, 0.04)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.boxShadow = "none"; }}
+          >
+            <div style={{ 
+              width: "50px", height: "50px", borderRadius: "12px", 
+              background: "rgba(244, 63, 94, 0.1)", display: "flex", alignItems: "center", 
+              justifyContent: "center", fontSize: "1.5rem", color: "#f43f5e", marginBottom: "1.5rem"
+            }}>
+              📉
+            </div>
+            <h3 style={{ fontSize: "1.65rem", fontWeight: "900", color: "#f43f5e", marginBottom: "0.25rem" }}>
+              Save ₹1 Lakh / Month
+            </h3>
+            <div style={{ fontSize: "0.75rem", fontWeight: "900", color: COLORS.textMuted, letterSpacing: "1px", textTransform: "uppercase", marginBottom: "1.25rem" }}>
+              Reduce Operational Cost
+            </div>
+            <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6" }}>
+              Bypass expensive third-party SaaS licenses. Our background observer tools run 100% locally with zero-cost headless pipelines, directly slashing administrative overhead.
+            </p>
+          </div>
+
+          {/* Card 2: Increase Revenue */}
+          <div style={{
+            background: COLORS.bgSoft,
+            padding: "3rem 2.5rem",
+            borderRadius: "24px",
+            border: `1px solid ${COLORS.border}`,
+            textAlign: "left",
+            transition: "all 0.3s ease",
+            cursor: "default"
+          }}
+          className="hover-shadow"
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(16, 185, 129, 0.3)"; e.currentTarget.style.boxShadow = "0 20px 40px rgba(16, 185, 129, 0.04)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.boxShadow = "none"; }}
+          >
+            <div style={{ 
+              width: "50px", height: "50px", borderRadius: "12px", 
+              background: "rgba(16, 185, 129, 0.1)", display: "flex", alignItems: "center", 
+              justifyContent: "center", fontSize: "1.5rem", color: "#10b981", marginBottom: "1.5rem"
+            }}>
+              📈
+            </div>
+            <h3 style={{ fontSize: "1.65rem", fontWeight: "900", color: "#10b981", marginBottom: "0.25rem" }}>
+              Take Profit: ₹2 Crore+
+            </h3>
+            <div style={{ fontSize: "0.75rem", fontWeight: "900", color: COLORS.textMuted, letterSpacing: "1px", textTransform: "uppercase", marginBottom: "1.25rem" }}>
+              Increase Revenue Velocity
+            </div>
+            <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6" }}>
+              Act instantly on database insights, programmatically launch high-converting marketing reels, and capture valuable corporate leads automatically before prospects disconnect.
+            </p>
+          </div>
+
+          {/* Card 3: Save Critical Time */}
+          <div style={{
+            background: COLORS.bgSoft,
+            padding: "3rem 2.5rem",
+            borderRadius: "24px",
+            border: `1px solid ${COLORS.border}`,
+            textAlign: "left",
+            transition: "all 0.3s ease",
+            cursor: "default"
+          }}
+          className="hover-shadow"
+          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(59, 130, 246, 0.3)"; e.currentTarget.style.boxShadow = "0 20px 40px rgba(59, 130, 246, 0.04)"; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.boxShadow = "none"; }}
+          >
+            <div style={{ 
+              width: "50px", height: "50px", borderRadius: "12px", 
+              background: "rgba(59, 130, 246, 0.1)", display: "flex", alignItems: "center", 
+              justifyContent: "center", fontSize: "1.5rem", color: COLORS.accent, marginBottom: "1.5rem"
+            }}>
+              ⏱️
+            </div>
+            <h3 style={{ fontSize: "1.65rem", fontWeight: "900", color: COLORS.accent, marginBottom: "0.25rem" }}>
+              Save 700+ Hours
+            </h3>
+            <div style={{ fontSize: "0.75rem", fontWeight: "900", color: COLORS.textMuted, letterSpacing: "1px", textTransform: "uppercase", marginBottom: "1.25rem" }}>
+              Save Time in 4 Months
+            </div>
+            <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6" }}>
+              Liberate your workforce from administrative friction. Let autonomous background agents handle scheduled Zoom session scheduling, transcription summaries, and telemetry reporting 24/7.
+            </p>
+          </div>
+
         </div>
-        <h1 style={{ fontSize: "4.5rem", fontWeight: "900", color: COLORS.primary, lineHeight: "1.05", letterSpacing: "-3px", marginBottom: "2rem" }}>
-          Automate your operations.<br/>Connect your tools.<br/>Deploy your <span style={{ color: COLORS.accent }}>Fleet.</span>
-        </h1>
-        <p style={{ fontSize: "1.25rem", color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "3.5rem" }}>
-          We build AI systems that go live in 1–2 weeks. Not just chatbots, but autonomous agents that handle manual data, security audits, and climate intelligence.
-        </p>
-        <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center" }}>
-          <button style={{ padding: "1.2rem 2.5rem", background: "white", color: COLORS.primary, border: `1px solid ${COLORS.border}`, borderRadius: "12px", fontWeight: "800", fontSize: "1rem", cursor: "pointer" }}>
-            SEE OUR WORK ↓
-          </button>
-        </div>
-      </header>
+      </section>
 
 
       {/* Stats Bar */}
@@ -562,6 +1165,20 @@ export default function LiveList({ onJoin, onBlogClick }) {
                 <p style={{ color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "2rem", fontSize: "1rem" }}>{agent.desc}</p>
               </div>
               
+              {agent.id === "shadow" && (
+                <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+                  <span 
+                    onClick={() => setShowAuditPreview(true)}
+                    style={{ 
+                      color: "#4f46e5", cursor: "pointer", fontWeight: "900", fontSize: "0.85rem", 
+                      textDecoration: "underline", display: "inline-block", letterSpacing: "0.5px"
+                    }}
+                  >
+                    📄 VIEW SAMPLE MEETING AUDIT (PDF)
+                  </span>
+                </div>
+              )}
+
               <button 
                 onClick={() => handlePipelineAction(agent)}
                 style={{ 
@@ -616,26 +1233,143 @@ export default function LiveList({ onJoin, onBlogClick }) {
 
 
       {/* Footer */}
-      <footer style={{ padding: "6rem 5% 3rem", borderTop: `1px solid ${COLORS.border}` }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "4rem", maxWidth: "1400px", margin: "0 auto", marginBottom: "4rem" }}>
+      <footer style={{ 
+        padding: "6rem 5% 4rem", 
+        borderTop: `1px solid ${COLORS.border}`, 
+        background: COLORS.bgSoft,
+        fontFamily: "'Outfit', sans-serif"
+      }}>
+        <div style={{ 
+          display: "grid", 
+          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
+          gap: "3.5rem", 
+          maxWidth: "1400px", 
+          margin: "0 auto", 
+          marginBottom: "5rem" 
+        }}>
+          
+          {/* Column 1: Branding & Pulse */}
           <div>
-            <div style={{ fontSize: "1.5rem", fontWeight: "900", letterSpacing: "2px", marginBottom: "1.5rem" }}>SWARM</div>
-            <p style={{ color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "1.6" }}>
-              The future of work is agentic. We bridge the gap between complex AI capabilities and real-world business ROI.
+            <div style={{ fontSize: "1.5rem", fontWeight: "900", letterSpacing: "2px", marginBottom: "1.5rem", color: COLORS.primary }}>
+              SWARM <span style={{ color: COLORS.accent }}>AGENTIC</span>
+            </div>
+            <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6", marginBottom: "2rem" }}>
+              The future of business operations is agentic. We bridge complex multi-agent frameworks directly into production SaaS structures with verified 2-week deployments.
             </p>
+            <div style={{ 
+              display: "inline-flex", alignItems: "center", gap: "8px", 
+              background: "rgba(16, 185, 129, 0.08)", color: COLORS.success, 
+              padding: "6px 16px", borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", letterSpacing: "1px"
+            }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: COLORS.success, display: "inline-block", animation: "pulse 2s infinite" }} />
+              ALL OPERATIONAL NODES ONLINE
+            </div>
           </div>
+
+          {/* Column 2: Fleet Active Nodes */}
           <div>
-            <h4 style={{ fontSize: "0.9rem", fontWeight: "900", marginBottom: "1.5rem" }}>SERVICES</h4>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "2" }}>
-              <li>Cortex Analytics</li>
-              <li>Security Audits</li>
-              <li>Climate Intel</li>
-              <li>Autonomous Copilots</li>
+            <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: COLORS.primary, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "1.5rem" }}>
+              Fleet Active Nodes
+            </h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "2.2" }}>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>🤖 Swarm Commander (Central)</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>👥 Shadow Observer V1 (Audits)</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>📊 Cortex BI Analyst (SQL)</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>🚀 Nova Copilot (UI Guide)</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>✍️ Astra Architect (Insights)</li>
             </ul>
           </div>
+
+          {/* Column 3: Resources */}
+          <div>
+            <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: COLORS.primary, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "1.5rem" }}>
+              Swarm Resources
+            </h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "2.2" }}>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted} onClick={() => { const el = document.getElementById("swarm-lab"); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}>🛠️ Swarm Lab (Pipeline)</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted} onClick={onBlogClick}>✍️ Insights & Sprint Blog</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted} onClick={() => { const el = document.getElementById("pricing"); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}>💰 Operational Pricing</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted} onClick={() => setShowAuditPreview(true)}>📄 Sample Meeting Audit (PDF)</li>
+            </ul>
           </div>
-        <div style={{ textAlign: "center", borderTop: `1px solid ${COLORS.border}`, paddingTop: "2rem", color: COLORS.textMuted, fontSize: "0.8rem", letterSpacing: "1px" }}>
-          © 2026 SWARM COMMAND · BUILT FOR INDIA AND GLOBE
+
+          {/* Column 4: Secondary Email Lead Capture */}
+          <div>
+            <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: COLORS.primary, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "1.5rem" }}>
+              Join Swarm Fleet
+            </h4>
+            <p style={{ color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "1.5", marginBottom: "1.25rem" }}>
+              Claim your customized B2B operational AI blueprint and lock in dashboard credentials.
+            </p>
+            {!leadSubmitted ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <input 
+                  type="email" 
+                  placeholder="name@company.com" 
+                  value={leadEmail}
+                  onChange={e => setLeadEmail(e.target.value)}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: `1px solid ${COLORS.border}`,
+                    fontSize: "0.85rem",
+                    outline: "none"
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (leadEmail.includes("@")) {
+                      setLeadSubmitted(true);
+                      setExitIntentCaptured(true);
+                      alert("Corporate blueprint credentials successfully dispatched to your email!");
+                    } else {
+                      alert("Please enter a valid corporate email.");
+                    }
+                  }}
+                  style={{
+                    padding: "10px",
+                    background: COLORS.accent,
+                    color: "white",
+                    border: "none",
+                    borderRadius: "10px",
+                    fontWeight: "800",
+                    fontSize: "0.85rem",
+                    cursor: "pointer"
+                  }}
+                >
+                  CLAIM BLUEPRINT
+                </button>
+              </div>
+            ) : (
+              <div style={{ color: COLORS.success, fontWeight: "800", fontSize: "0.85rem", background: "rgba(16, 185, 129, 0.08)", padding: "12px", borderRadius: "10px", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
+                ✓ CREDENTIALS SENT TO {leadEmail.toUpperCase()}
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        {/* Bottom Bar Divider & Copyrights */}
+        <div style={{ 
+          borderTop: `1px solid ${COLORS.border}`, 
+          paddingTop: "2.5rem", 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "1.5rem",
+          color: COLORS.textMuted, 
+          fontSize: "0.8rem", 
+          letterSpacing: "0.5px" 
+        }}>
+          <div>
+            © 2026 SWARM COMMAND · BUILT FOR B2B ENTERPRISE EXCELLENCE
+          </div>
+          <div style={{ display: "flex", gap: "2rem" }}>
+            <span style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>OPERATOR POLICY</span>
+            <span style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>SWARM TOS</span>
+            <span style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>CONSOLE ACCESS</span>
+          </div>
         </div>
       </footer>
 
@@ -875,10 +1609,288 @@ export default function LiveList({ onJoin, onBlogClick }) {
       )}
     </AnimatePresence>
 
+    {/* --- EXIT INTENT SWARM CATCH MODAL --- */}
+    <AnimatePresence>
+      {showExitIntentModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1200,
+            background: "rgba(11, 15, 25, 0.4)",
+            backdropFilter: "blur(15px)",
+            display: "flex", justifyContent: "center", alignItems: "center",
+            fontFamily: "'Outfit', sans-serif"
+          }}
+        >
+          <motion.div
+            initial={{ scale: 0.95, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.95, y: 20 }}
+            style={{
+              background: "white",
+              width: "100%",
+              maxWidth: "500px",
+              padding: "3rem",
+              borderRadius: "32px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+              border: `1px solid rgba(59, 130, 246, 0.15)`,
+              position: "relative"
+            }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setShowExitIntentModal(false);
+                setExitIntentCaptured(true);
+              }}
+              style={{
+                position: "absolute", top: "24px", right: "24px",
+                background: "none", border: "none", color: COLORS.textMuted,
+                fontSize: "1.5rem", cursor: "pointer"
+              }}
+            >
+              ×
+            </button>
+
+            <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+              <div style={{ 
+                width: "60px", height: "60px", borderRadius: "16px", 
+                background: "rgba(59, 130, 246, 0.1)", display: "inline-flex", alignItems: "center", 
+                justifyContent: "center", fontSize: "2rem", color: COLORS.accent, marginBottom: "1.5rem"
+              }}>
+                🚪
+              </div>
+              <h3 style={{ fontSize: "1.75rem", fontWeight: "900", color: COLORS.primary, marginBottom: "0.5rem" }}>
+                Wait, Operator!
+              </h3>
+              <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6" }}>
+                "Don't lose your calculated swarm coordinates. Enter your corporate email, and I will dispatch your custom multi-agent architecture specs instantly before you disconnect."
+              </p>
+            </div>
+
+            <div style={{ marginBottom: "2rem" }}>
+              <input
+                type="email"
+                placeholder="name@company.com"
+                value={leadEmail}
+                onChange={e => setLeadEmail(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "1rem 1.25rem",
+                  borderRadius: "12px",
+                  border: `1px solid ${COLORS.border}`,
+                  fontSize: "0.95rem",
+                  outline: "none"
+                }}
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                if (leadEmail.includes("@")) {
+                  setLeadSubmitted(true);
+                  setExitIntentCaptured(true);
+                  setShowExitIntentModal(false);
+                  alert("Fleet blueprint specs successfully dispatched to your email!");
+                } else {
+                  alert("Please enter a valid business email.");
+                }
+              }}
+              style={{
+                width: "100%",
+                padding: "1.2rem",
+                background: COLORS.accent,
+                color: "white",
+                border: "none",
+                borderRadius: "12px",
+                fontWeight: "900",
+                fontSize: "0.95rem",
+                letterSpacing: "1px",
+                cursor: "pointer"
+              }}
+            >
+              CLAIM FLEET COORDINATES
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* --- SHADOW MEETING AUDIT PREVIEW MODAL --- */}
+    <AnimatePresence>
+      {showAuditPreview && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1200,
+            background: "rgba(11, 15, 25, 0.4)",
+            backdropFilter: "blur(15px)",
+            display: "flex", justifyContent: "center", alignItems: "center",
+            padding: "2rem",
+            fontFamily: "'Outfit', sans-serif"
+          }}
+        >
+          <motion.div
+            initial={{ scale: 0.95, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.95, y: 20 }}
+            style={{
+              background: "white",
+              width: "100%",
+              maxWidth: "750px",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              padding: "3.5rem",
+              borderRadius: "32px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+              border: `1px solid rgba(79, 70, 229, 0.15)`,
+              position: "relative"
+            }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setShowAuditPreview(false)}
+              style={{
+                position: "absolute", top: "28px", right: "28px",
+                background: "none", border: "none", color: COLORS.textMuted,
+                fontSize: "1.75rem", cursor: "pointer", fontWeight: "300"
+              }}
+            >
+              ×
+            </button>
+
+            {/* Header branding */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "2rem", borderBottom: `1px solid ${COLORS.border}`, paddingBottom: "1.5rem" }}>
+              <div style={{ 
+                width: "40px", height: "40px", borderRadius: "10px", 
+                background: "rgba(79, 70, 229, 0.1)", display: "flex", 
+                alignItems: "center", justifyContent: "center", fontSize: "1.2rem", color: "#4f46e5"
+              }}>
+                👥
+              </div>
+              <div style={{ textAlign: "left" }}>
+                <span style={{ fontSize: "0.65rem", fontWeight: "900", color: "#4f46e5", letterSpacing: "2px", textTransform: "uppercase" }}>Shadow Observer Output</span>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: "900", color: COLORS.primary, margin: 0 }}>SAMPLE DAILY STRUCTURAL AUDIT</h3>
+              </div>
+              <span style={{ 
+                marginLeft: "auto", fontSize: "0.7rem", fontWeight: "900", color: COLORS.success,
+                background: "rgba(16, 185, 129, 0.1)", padding: "4px 12px", borderRadius: "99px",
+                border: "1px solid rgba(16, 185, 129, 0.2)"
+              }}>
+                100% COMPLETED
+              </span>
+            </div>
+
+            {/* Document Body */}
+            <div style={{ textAlign: "left", fontFamily: "monospace", color: COLORS.primary, fontSize: "0.9rem", lineHeight: "1.6", background: COLORS.bgSoft, padding: "2.5rem", borderRadius: "20px", border: `1px solid ${COLORS.border}` }}>
+              
+              <div style={{ color: "#4f46e5", fontWeight: "900", fontSize: "1.1rem", marginBottom: "1rem" }}>
+                # DAILY STRUCTURAL AUDIT: SWARM OBSERVABILITY & SENTRY ALIGNMENT
+              </div>
+              
+              <div style={{ color: COLORS.textMuted, marginBottom: "1.5rem" }}>
+                <strong>Session ID</strong>: <span style={{ color: COLORS.primary }}>`SWARM-OBS-9082`</span> | <strong>Date</strong>: <span style={{ color: COLORS.primary }}>May 18, 2026</span><br/>
+                <strong>Duration</strong>: <span style={{ color: COLORS.primary }}>34 minutes</span> | <strong>Host</strong>: <span style={{ color: COLORS.primary }}>Operator</span><br/>
+                <strong>Active Agents</strong>: <span style={{ color: "#4f46e5" }}>Shadow Observer V1</span>, <span style={{ color: "#10b981" }}>Cortex BI Analyst</span>
+              </div>
+
+              <div style={{ borderTop: `1px dashed ${COLORS.border}`, paddingTop: "1.5rem", marginBottom: "1.5rem" }}>
+                <div style={{ fontWeight: "900", color: COLORS.accent, marginBottom: "0.5rem" }}>## 📌 EXECUTIVE SUMMARY</div>
+                <div style={{ color: COLORS.textMuted }}>
+                  This session finalized the deployment of the local-first observability and guardrail framework ("Sentry"). The team successfully integrated real-time token cost auditing, latency telemetry, and semantic output validation across all active agents without relying on third-party cloud services.
+                </div>
+              </div>
+
+              <div style={{ borderTop: `1px dashed ${COLORS.border}`, paddingTop: "1.5rem", marginBottom: "1.5rem" }}>
+                <div style={{ fontWeight: "900", color: COLORS.accent, marginBottom: "0.5rem" }}>## 💬 DIARIZED SPEECH HIGHLIGHTS</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
+                  <div>
+                    <span style={{ color: "#4f46e5", fontWeight: "900" }}>● SPEAKER_01 (Operator)</span>: <span style={{ color: COLORS.textMuted }}>"We must keep the Express web server spawning detached. This ensures the background Playwright browser process doesn't block frontend cycles when launching meeting monitors."</span>
+                  </div>
+                  <div>
+                    <span style={{ color: "#10b981", fontWeight: "900" }}>● SHADOW_OBSERVER_V1</span>: <span style={{ color: COLORS.textMuted }}>"Stabilized the Zoom Web Client direct bypass parameters. Link formats are dynamically mutated from /j/ to /wc/join/ to bypass native prompt blocks instantly."</span>
+                  </div>
+                  <div>
+                    <span style={{ color: "#f59e0b", fontWeight: "900" }}>● SPEAKER_02 (Partner)</span>: <span style={{ color: COLORS.textMuted }}>"Can we format the daily reports into structured markdown checklists? Our backend needs to parse decisions and actions automatically."</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ borderTop: `1px dashed ${COLORS.border}`, paddingTop: "1.5rem" }}>
+                <div style={{ fontWeight: "900", color: COLORS.accent, marginBottom: "0.5rem" }}>## 📋 KEY DECISIONS & ACTIONS</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "10px" }}>
+                  <div style={{ color: COLORS.textMuted }}>[x] Consolidate Reels gallery to exactly one high-fidelity preview item.</div>
+                  <div style={{ color: COLORS.textMuted }}>[x] Strip "NEXUS REEL" text label overlay from the floating cinema preview in BlogSection.</div>
+                  <div style={{ color: COLORS.textMuted }}>[ ] Connect LiveKit WebRTC mic inputs directly to the Swarm Commander voice trigger.</div>
+                  <div style={{ color: COLORS.textMuted }}>[ ] Deploy Sentry local-first cost telemetry checks into the production MongoDB cluster.</div>
+                </div>
+              </div>
+
+            </div>
+
+            <button
+              onClick={() => {
+                setShowAuditPreview(false);
+                alert("Sample PDF layout printed and ready for integration!");
+              }}
+              style={{
+                width: "100%",
+                padding: "1.2rem",
+                background: "#4f46e5",
+                color: "white",
+                border: "none",
+                borderRadius: "12px",
+                fontWeight: "900",
+                fontSize: "0.95rem",
+                letterSpacing: "1px",
+                cursor: "pointer",
+                marginTop: "2rem"
+              }}
+            >
+              DOWNLOAD SAMPLE AUDIT PDF
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
       <style dangerouslySetInnerHTML={{ __html: `
         html { scroll-behavior: smooth; }
         .hover-shadow:hover {
           box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.08);
+        }
+        .quantum-card {
+          animation: quantum-glow 6s infinite ease-in-out;
+          transition: all 0.4s ease;
+        }
+        .quantum-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 30px 70px rgba(59, 130, 246, 0.12), 0 0 50px rgba(59, 130, 246, 0.3) !important;
+          border-color: rgba(59, 130, 246, 0.4) !important;
+        }
+        @keyframes quantum-glow {
+          0% { box-shadow: 0 20px 50px rgba(59, 130, 246, 0.05), 0 0 25px rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.15); }
+          50% { box-shadow: 0 20px 50px rgba(16, 185, 129, 0.05), 0 0 45px rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.25); }
+          100% { box-shadow: 0 20px 50px rgba(59, 130, 246, 0.05), 0 0 25px rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.15); }
+        }
+        @keyframes pulse {
+          0% { transform: scale(0.95); opacity: 0.5; }
+          50% { transform: scale(1.05); opacity: 1; }
+          100% { transform: scale(0.95); opacity: 0.5; }
+        }
+        @keyframes bounce {
+          0% { transform: scaleY(0.3); }
+          100% { transform: scaleY(1.3); }
+        }
+        @media (max-width: 1024px) {
+          .hero-split-grid {
+            grid-template-columns: 1fr !important;
+            gap: 3rem !important;
+          }
         }
       ` }} />
     </div>
