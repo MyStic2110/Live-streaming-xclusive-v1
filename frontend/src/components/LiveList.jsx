@@ -149,9 +149,71 @@ const PricingCard = ({ tier, price, duration, bestFor, features, isFeatured }) =
   </div>
 );
 
+const PipelineCard = ({ agent, onAction }) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+
+  return (
+    <motion.div 
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{ 
+        background: "white", 
+        padding: "2.5rem", 
+        borderRadius: "24px", 
+        border: `1px solid ${isHovered ? agent.color : COLORS.border}`,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        transition: "all 0.3s ease",
+        height: "100%",
+        boxShadow: isHovered ? `0 20px 40px ${agent.color}15` : "none"
+      }}
+      className="hover-shadow"
+    >
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem" }}>
+          <div style={{ 
+            width: "60px", height: "60px", borderRadius: "16px", 
+            background: `${agent.color}11`, display: "flex", alignItems: "center", 
+            justifyContent: "center", fontSize: "2rem", border: `1px solid ${agent.color}22`
+          }}>
+            {agent.icon}
+          </div>
+          <span style={{ 
+            fontSize: "0.65rem", fontWeight: "900", color: agent.status === "READY" ? COLORS.success : COLORS.textMuted,
+            background: agent.status === "READY" ? `${COLORS.success}11` : "rgba(107, 114, 128, 0.1)",
+            padding: "4px 12px", borderRadius: "99px", letterSpacing: "1px",
+            border: `1px solid ${agent.status === "READY" ? `${COLORS.success}22` : "rgba(107, 114, 128, 0.2)"}`
+          }}>
+            {agent.status}
+          </span>
+        </div>
+        <h3 style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem" }}>{agent.title}</h3>
+        <p style={{ color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "2rem", fontSize: "1rem" }}>{agent.desc}</p>
+      </div>
+      
+      <button 
+        onClick={() => onAction(agent)}
+        style={{ 
+          width: "100%", padding: "1.2rem", background: isHovered ? agent.color : COLORS.primary, 
+          color: "white", border: "none", borderRadius: "12px", 
+          fontWeight: "800", cursor: agent.status === "READY" ? "pointer" : "not-allowed", fontSize: "0.9rem",
+          letterSpacing: "1px", transition: "all 0.3s ease",
+          opacity: agent.status === "READY" ? 1 : 0.5
+        }}
+        disabled={agent.status !== "READY"}
+      >
+        {agent.btnText.toUpperCase()}
+      </button>
+    </motion.div>
+  );
+};
+
 // --- MAIN PAGE ---
 
 export default function LiveList({ onJoin, onBlogClick }) {
+  const [selectedReel, setSelectedReel] = React.useState(null);
+  const [showReelsGallery, setShowReelsGallery] = React.useState(false);
   const agents = [
     {
       id: "bi", title: "Cortex BI", icon: "📊", color: "#059669",
@@ -245,6 +307,32 @@ export default function LiveList({ onJoin, onBlogClick }) {
     }
   ];
 
+  const pipelineAgents = [
+    {
+      id: "reels", title: "Reels Agent", icon: "🎬", color: "#f43f5e", status: "READY",
+      desc: "Digests blog content and compiles high-tempo, 30s vertical reels programmatically using Pillow subtitle overlays and zero-cost Speech Synthesis.",
+      btnText: "Open Swarm Lab"
+    },
+    {
+      id: "shadow", title: "Shadow Agent", icon: "👥", color: "#6b7280", status: "STANDBY",
+      desc: "Autonomous headless background observer. Automatically schedules and joins Zoom/Meet sessions to generate full transcriptions and meeting audits.",
+      btnText: "Configure Shadow"
+    }
+  ];
+
+  const galleryReels = [
+    {
+      title: "LiveKit Voice Optimization",
+      slug: "livekit-voice-agents-and-latency-optimization",
+      desc: "30-second summary on latency profiling and WebRTC media parameters."
+    },
+    {
+      title: "Autonomous Swarms",
+      slug: "autonomous-multi-agent-orchestration",
+      desc: "30-second vertical preview of multi-agent workflows."
+    }
+  ];
+
   const pricing = [
     {
       tier: "Audit + Roadmap",
@@ -302,6 +390,12 @@ export default function LiveList({ onJoin, onBlogClick }) {
       });
     } catch (err) {
       alert("AI Assistant is offline");
+    }
+  };
+
+  const handlePipelineAction = (agent) => {
+    if (agent.id === "reels") {
+      setShowReelsGallery(true);
     }
   };
 
@@ -399,6 +493,74 @@ export default function LiveList({ onJoin, onBlogClick }) {
         </div>
       </section>
 
+      {/* Swarm Lab Section */}
+      <section id="swarm-lab" style={{ padding: "8rem 5%", background: "#0b0f19", borderTop: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ textAlign: "center", marginBottom: "4rem" }}>
+          <div style={{ display: "inline-block", padding: "6px 16px", background: "rgba(244, 63, 94, 0.1)", color: "#f43f5e", borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", marginBottom: "1rem", letterSpacing: "2px" }}>
+            PIPELINE & EVENT-DRIVEN FLEET
+          </div>
+          <h2 style={{ fontSize: "2.5rem", fontWeight: "900", color: "#ffffff", marginBottom: "1rem", letterSpacing: "-1px" }}>
+            The Swarm Lab
+          </h2>
+          <p style={{ fontSize: "1.1rem", color: "rgba(255,255,255,0.5)", maxWidth: "600px", margin: "0 auto" }}>
+            Utility agents that run autonomously in the background to handle data synthesis, document composition, and scheduled pipeline tasks.
+          </p>
+        </div>
+        
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))", gap: "2.5rem", maxWidth: "1400px", margin: "0 auto" }}>
+          {pipelineAgents.map(agent => (
+            <div key={agent.id} style={{ 
+              background: "rgba(17, 24, 39, 0.6)", 
+              backdropFilter: "blur(20px)",
+              padding: "2.5rem", 
+              borderRadius: "24px", 
+              border: `1px solid rgba(255,255,255,0.08)`,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              height: "100%",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.3)"
+            }}>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem" }}>
+                  <div style={{ 
+                    width: "60px", height: "60px", borderRadius: "16px", 
+                    background: `${agent.color}15`, display: "flex", alignItems: "center", 
+                    justifyContent: "center", fontSize: "2rem", border: `1px solid ${agent.color}33`
+                  }}>
+                    {agent.icon}
+                  </div>
+                  <span style={{ 
+                    fontSize: "0.65rem", fontWeight: "900", color: agent.status === "READY" ? "#10b981" : "#6b7280",
+                    background: agent.status === "READY" ? "rgba(16, 185, 129, 0.1)" : "rgba(107, 114, 128, 0.1)",
+                    padding: "4px 12px", borderRadius: "99px", letterSpacing: "1px",
+                    border: `1px solid ${agent.status === "READY" ? "rgba(16, 185, 129, 0.2)" : "rgba(107, 114, 128, 0.2)"}`
+                  }}>
+                    {agent.status}
+                  </span>
+                </div>
+                <h3 style={{ fontSize: "1.5rem", fontWeight: "900", color: "#ffffff", marginBottom: "1rem" }}>{agent.title}</h3>
+                <p style={{ color: "rgba(255,255,255,0.5)", lineHeight: "1.6", marginBottom: "2rem", fontSize: "1rem" }}>{agent.desc}</p>
+              </div>
+              
+              <button 
+                onClick={() => handlePipelineAction(agent)}
+                style={{ 
+                  width: "100%", padding: "1.2rem", background: agent.status === "READY" ? agent.color : "rgba(255,255,255,0.05)", 
+                  color: agent.status === "READY" ? "white" : "rgba(255,255,255,0.3)", border: "none", borderRadius: "12px", 
+                  fontWeight: "800", cursor: agent.status === "READY" ? "pointer" : "not-allowed", fontSize: "0.9rem",
+                  letterSpacing: "1px", transition: "all 0.3s ease",
+                  border: agent.status === "READY" ? "none" : "1px solid rgba(255,255,255,0.1)"
+                }}
+                disabled={agent.status !== "READY"}
+              >
+                {agent.btnText.toUpperCase()}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" style={{ padding: "8rem 5%", background: COLORS.bgSoft }}>
         <SectionHeader 
@@ -457,6 +619,134 @@ export default function LiveList({ onJoin, onBlogClick }) {
           © 2026 SWARM COMMAND · BUILT FOR INDIA AND GLOBE
         </div>
       </footer>
+
+      {/* --- PIPELINE REELS GALLERY MODAL --- */}
+      <AnimatePresence>
+        {showReelsGallery && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed", inset: 0, zIndex: 1000,
+              background: "rgba(11, 15, 25, 0.95)",
+              backdropFilter: "blur(25px)",
+              display: "flex", flexDirection: "column",
+              padding: "4rem 2rem", overflowY: "auto",
+              fontFamily: "'Outfit', sans-serif"
+            }}
+          >
+            {/* Gallery Header */}
+            <div style={{ maxWidth: "1200px", width: "100%", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4rem" }}>
+              <div>
+                <span style={{ color: "#f43f5e", fontSize: "0.75rem", fontWeight: "900", letterSpacing: "3px" }}>SWARM LAB PRODUCTION</span>
+                <h2 style={{ color: "white", fontSize: "2.5rem", fontWeight: "900", margin: "8px 0 0 0" }}>Pipeline Reels Gallery</h2>
+              </div>
+              <button
+                onClick={() => setShowReelsGallery(false)}
+                style={{
+                  background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                  color: "white", width: "50px", height: "50px", borderRadius: "50%",
+                  fontSize: "1.5rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={e => e.target.style.background = "rgba(255,255,255,0.15)"}
+                onMouseLeave={e => e.target.style.background = "rgba(255,255,255,0.05)"}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Gallery Cards Grid */}
+            <div style={{ maxWidth: "1200px", width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "2.5rem" }}>
+              {galleryReels.map((reel, index) => (
+                <motion.div
+                  key={index}
+                  whileHover={{ y: -8, borderColor: "rgba(244, 63, 94, 0.4)" }}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: "24px",
+                    padding: "2rem",
+                    display: "flex", flexDirection: "column", justifyContent: "space-between",
+                    minHeight: "220px", transition: "all 0.3s ease",
+                    cursor: "pointer"
+                  }}
+                  onClick={() => setSelectedReel(reel)}
+                >
+                  <div>
+                    <div style={{ fontSize: "2.5rem", marginBottom: "1.5rem" }}>🎬</div>
+                    <h3 style={{ color: "white", fontSize: "1.3rem", fontWeight: "800", marginBottom: "0.5rem" }}>{reel.title}</h3>
+                    <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.9rem", lineHeight: "1.5", margin: 0 }}>{reel.desc}</p>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2rem", color: "#f43f5e", fontWeight: "800", fontSize: "0.85rem" }}>
+                    WATCH PREVIEW <span>→</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- SMARTPHONE CINEMA OVERLAY --- */}
+      <AnimatePresence>
+        {selectedReel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed", inset: 0, zIndex: 1100,
+              background: "rgba(0,0,0,0.9)", backdropFilter: "blur(30px)",
+              display: "flex", justifyContent: "center", alignItems: "center",
+              flexDirection: "column"
+            }}
+          >
+            {/* Smartphone Wrapper */}
+            <div style={{
+              position: "relative",
+              width: "360px",
+              height: "640px",
+              borderRadius: "44px",
+              border: "14px solid #1f2937",
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5), 0 0 80px rgba(244,63,94,0.15)",
+              background: "black",
+              overflow: "hidden",
+              display: "flex", justifyContent: "center", alignItems: "center"
+            }}>
+              {/* Dynamic Video */}
+              <video
+                src={`reels/${selectedReel.slug}_reel.mp4`}
+                controls
+                autoPlay
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover"
+                }}
+              />
+
+              {/* Close Button on Bezel */}
+              <button
+                onClick={() => setSelectedReel(null)}
+                style={{
+                  position: "absolute", top: "20px", right: "20px",
+                  background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.2)",
+                  color: "white", width: "40px", height: "40px", borderRadius: "50%",
+                  cursor: "pointer", fontSize: "1.2rem", fontWeight: "bold",
+                  display: "flex", alignItems: "center", justifyContent: "center"
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ color: "rgba(255,255,255,0.5)", marginTop: "2rem", fontSize: "0.85rem", letterSpacing: "2px", fontWeight: "bold" }}>
+              NOW PLAYING: {selectedReel.title.toUpperCase()}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style dangerouslySetInnerHTML={{ __html: `
         html { scroll-behavior: smooth; }
