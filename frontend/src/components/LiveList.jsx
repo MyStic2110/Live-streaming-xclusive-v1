@@ -494,15 +494,15 @@ export default function LiveList({ onJoin, onBlogClick }) {
       </section>
 
       {/* Swarm Lab Section */}
-      <section id="swarm-lab" style={{ padding: "8rem 5%", background: "#0b0f19", borderTop: "1px solid rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+      <section id="swarm-lab" style={{ padding: "8rem 5%", background: "white", borderTop: `1px solid ${COLORS.border}`, borderBottom: `1px solid ${COLORS.border}` }}>
         <div style={{ textAlign: "center", marginBottom: "4rem" }}>
           <div style={{ display: "inline-block", padding: "6px 16px", background: "rgba(244, 63, 94, 0.1)", color: "#f43f5e", borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", marginBottom: "1rem", letterSpacing: "2px" }}>
             PIPELINE & EVENT-DRIVEN FLEET
           </div>
-          <h2 style={{ fontSize: "2.5rem", fontWeight: "900", color: "#ffffff", marginBottom: "1rem", letterSpacing: "-1px" }}>
+          <h2 style={{ fontSize: "2.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem", letterSpacing: "-1px" }}>
             The Swarm Lab
           </h2>
-          <p style={{ fontSize: "1.1rem", color: "rgba(255,255,255,0.5)", maxWidth: "600px", margin: "0 auto" }}>
+          <p style={{ fontSize: "1.1rem", color: COLORS.textMuted, maxWidth: "600px", margin: "0 auto" }}>
             Utility agents that run autonomously in the background to handle data synthesis, document composition, and scheduled pipeline tasks.
           </p>
         </div>
@@ -510,47 +510,48 @@ export default function LiveList({ onJoin, onBlogClick }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))", gap: "2.5rem", maxWidth: "1400px", margin: "0 auto" }}>
           {pipelineAgents.map(agent => (
             <div key={agent.id} style={{ 
-              background: "rgba(17, 24, 39, 0.6)", 
-              backdropFilter: "blur(20px)",
+              background: "white", 
               padding: "2.5rem", 
               borderRadius: "24px", 
-              border: `1px solid rgba(255,255,255,0.08)`,
+              border: `1px solid ${COLORS.border}`,
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
               height: "100%",
-              boxShadow: "0 20px 40px rgba(0,0,0,0.3)"
-            }}>
+              boxShadow: "none"
+            }}
+            className="hover-shadow"
+            >
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem" }}>
                   <div style={{ 
                     width: "60px", height: "60px", borderRadius: "16px", 
-                    background: `${agent.color}15`, display: "flex", alignItems: "center", 
-                    justifyContent: "center", fontSize: "2rem", border: `1px solid ${agent.color}33`
+                    background: `${agent.color}11`, display: "flex", alignItems: "center", 
+                    justifyContent: "center", fontSize: "2rem", border: `1px solid ${agent.color}22`
                   }}>
                     {agent.icon}
                   </div>
                   <span style={{ 
-                    fontSize: "0.65rem", fontWeight: "900", color: agent.status === "READY" ? "#10b981" : "#6b7280",
-                    background: agent.status === "READY" ? "rgba(16, 185, 129, 0.1)" : "rgba(107, 114, 128, 0.1)",
+                    fontSize: "0.65rem", fontWeight: "900", color: agent.status === "READY" ? COLORS.success : COLORS.textMuted,
+                    background: agent.status === "READY" ? `${COLORS.success}11` : "rgba(107, 114, 128, 0.1)",
                     padding: "4px 12px", borderRadius: "99px", letterSpacing: "1px",
-                    border: `1px solid ${agent.status === "READY" ? "rgba(16, 185, 129, 0.2)" : "rgba(107, 114, 128, 0.2)"}`
+                    border: `1px solid ${agent.status === "READY" ? `${COLORS.success}22` : "rgba(107, 114, 128, 0.2)"}`
                   }}>
                     {agent.status}
                   </span>
                 </div>
-                <h3 style={{ fontSize: "1.5rem", fontWeight: "900", color: "#ffffff", marginBottom: "1rem" }}>{agent.title}</h3>
-                <p style={{ color: "rgba(255,255,255,0.5)", lineHeight: "1.6", marginBottom: "2rem", fontSize: "1rem" }}>{agent.desc}</p>
+                <h3 style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem" }}>{agent.title}</h3>
+                <p style={{ color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "2rem", fontSize: "1rem" }}>{agent.desc}</p>
               </div>
               
               <button 
                 onClick={() => handlePipelineAction(agent)}
                 style={{ 
-                  width: "100%", padding: "1.2rem", background: agent.status === "READY" ? agent.color : "rgba(255,255,255,0.05)", 
-                  color: agent.status === "READY" ? "white" : "rgba(255,255,255,0.3)", border: "none", borderRadius: "12px", 
+                  width: "100%", padding: "1.2rem", background: agent.status === "READY" ? agent.color : COLORS.bgSoft, 
+                  color: agent.status === "READY" ? "white" : COLORS.textMuted, border: agent.status === "READY" ? "none" : `1px solid ${COLORS.border}`, borderRadius: "12px", 
                   fontWeight: "800", cursor: agent.status === "READY" ? "pointer" : "not-allowed", fontSize: "0.9rem",
                   letterSpacing: "1px", transition: "all 0.3s ease",
-                  border: agent.status === "READY" ? "none" : "1px solid rgba(255,255,255,0.1)"
+                  opacity: agent.status === "READY" ? 1 : 0.6
                 }}
                 disabled={agent.status !== "READY"}
               >
