@@ -1,18 +1,12 @@
 {
-    "current_day": 4,
-    "total_days": 7,
-    "start_date": "2026-05-12",
-    "last_published_date": "2026-05-14",
-    "published_slugs": [
-        "shift-from-copilots-to-autonomous-agents",
-        "autonomous-multi-agent-orchestration",
-        "optimizing-for-answer-engines"
-    ],
-    "cumulative_usage": {
-        "input_tokens": 81661,
-        "output_tokens": 6891,
-        "total_cost": 0.17112275,
-        "stt_cost": 0.005293,
-        "tts_cost": 0.014745
-    }
+  "current_day": 1,
+  "total_days": 7,
+  "start_date": "2026-05-20",
+  "last_published_date": null,
+  "published_slugs": [],
+  "cumulative_usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "total_cost": 0.0
+  }
 }

@@ -97,34 +97,30 @@ Increase organic visibility, search rankings, AI search discoverability, engagem
 CORE RESPONSIBILITIES:
 
 1. Trend Research
-- Research trending topics related to: AI Agents, Workflow Automation, Enterprise AI, Autonomous Systems, AI Copilots, Multi-Agent Systems, SaaS Automation, Operational Intelligence.
-- Identify high-intent and high-relevance topics.
+- Target specific, high-signal intelligence from ArXiv, GitHub Trending, and enterprise tech hubs.
+- Identify deeply technical, architectural trends.
 
 2. Topic Planning
-- Generate blog ideas based on search demand, emerging industry discussions, AI search trends.
-- Avoid duplicate topics.
+- Formulate an architectural thesis based on the high-signal data.
+- Ensure the topic addresses a specific enterprise ROI or architectural bottleneck.
 
 3. Blog Generation
-- Generate high-authority, technical deep-dives (600-800 words).
-- EXPERT HEADINGS: You MUST generate creative, keyword-rich, and authoritative headings for every section. NEVER use generic labels like "Elite Hero Intro" or "Conclusion" as literal headings.
-- Examples of Expert Headings: "The Neural Fabric: Decoding Swarm Intelligence Architecture" (instead of "Architecture"), "Strategic Outcomes: Global Benchmarks in AEO" (instead of "Case Studies").
-- LOGICAL STRUCTURE (Use for flow, but invent your own expert headings):
-    1. Hook & Paradigm Shift (The Intro)
-    2. Deep Problem Analysis (The 'Why')
-    3. Technical Framework/Solution (The 'How')
-    4. Operational Workflow (The Process)
-    5. Enterprise Validation (Real-world outcomes)
-    6. Future Predictive Vector (Trends)
-    7. Synthesis (Conclusion)
-    8. High-Intent Activation (CTA)
+- You are a Senior Solutions Architect designing Agentic OS paradigms.
+- Generate high-authority, technical architectural blogs (MAXIMUM 800 WORDS). Do not exceed 800 words. Keep it dense and highly readable.
+- EXPERT HEADINGS: You MUST generate creative, authoritative headings.
+- STRICT ARCHITECTURAL FRAMEWORK (Use for flow, but invent your own headings):
+    1. The Paradigm Shift (Why traditional tech is failing here).
+    2. Core Primitives (Deep definitions of the new capabilities).
+    3. Architecture Stack (Layer-by-layer technical breakdown).
+    4. Execution Flow (Step-by-step lifecycle of the system).
+- INFOGRAPHIC DATA: You MUST generate a structured JSON infographic schema representing the architecture in your tool call.
 
 WRITING RULES:
-- Persona: You are a Senior Content Strategist with 5+ years of experience in AI automation, RAG systems, and AEO.
-- Tone: Technical, authoritative, futuristic, and conversion-oriented. Use industry jargon correctly (e.g., semantic proximity, RAG, citation velocity, latent space).
+- Persona: Senior Technical Architect & AI Systems Designer.
+- Tone: Technical, authoritative, paradigm-shifting, and precise. Use strict architectural nomenclature (e.g., vector embeddings, orchestration, semantic routing).
 - FORMATTING: Use '### ' for all section headings.
-- HIGHLIGHTS: Use '- **[Key Point]**:' format for all benefits, steps, or features to ensure they are highlighted in the UI.
+- HIGHLIGHTS: Use '- **[Key Point]**:' format for all benefits, steps, or features.
 - DO NOT repeat the blog title inside the 'content' field.
-- Ensure every insight provides enough semantic depth for LLM discovery and domain authority growth.
 
 CURRENT_TIME: {current_time}
 
@@ -160,16 +156,44 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
             
             self.sentry.log_transaction("research_start", {"scope": "trends"})
             
-            trends = {
-                "trends": [
-                    "Autonomous Multi-Agent Orchestration",
-                    "AEO: Optimizing for Answer Engines",
-                    "Enterprise Workflow Automation in 2026",
-                    "The shift from Copilots to Autonomous Agents",
-                    "Security protocols for Swarm Intelligence"
-                ],
-                "gaps": ["Deep dives into local-first biometric agents", "Cost-auditing for multi-LLM fleets"]
-            }
+            import urllib.request
+            import xml.etree.ElementTree as ET
+            
+            trends_data = {"trends": [], "gaps": ["Deep architectural breakdowns", "Execution workflows for agents"]}
+            
+            try:
+                # High-signal fetch: ArXiv cs.AI latest papers
+                req = urllib.request.Request("http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=3&sortBy=submittedDate&sortOrder=descending", headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    xml_data = response.read()
+                    root = ET.fromstring(xml_data)
+                    ns = {'atom': 'http://www.w3.org/2005/Atom'}
+                    for entry in root.findall('atom:entry', ns):
+                        title = entry.find('atom:title', ns).text.replace('\n', ' ')
+                        trends_data["trends"].append(f"[ArXiv Research] {title}")
+            except Exception as e:
+                logger.error(f"[ASTRA] Failed to fetch ArXiv: {e}")
+                
+            try:
+                # High-signal fetch: HackerNews top stories via RSS
+                req = urllib.request.Request("https://hnrss.org/frontpage?points=100", headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    xml_data = response.read()
+                    root = ET.fromstring(xml_data)
+                    for item in root.findall('.//item')[:3]:
+                        title = item.find('title').text
+                        trends_data["trends"].append(f"[HN Trending] {title}")
+            except Exception as e:
+                logger.error(f"[ASTRA] Failed to fetch HN: {e}")
+                
+            if not trends_data["trends"]:
+                trends_data["trends"] = [
+                    "[Fallback] Agentic OS: The Operating System for AI Agents",
+                    "[Fallback] Multi-Agent Swarm Orchestration Architectures",
+                    "[Fallback] Semantic Routing in Large Language Models"
+                ]
+            
+            trends = trends_data
             
             await self.ui_log(f"✅ MILESTONE [{datetime.now().strftime('%H:%M:%S')}]: Sector Research Completed", "success")
             await self.ui_log(f"Intelligence Update: {len(trends['trends'])} trend vectors identified.")
@@ -183,14 +207,23 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
                                             category: str, 
                                             excerpt: str, 
                                             content: str,
+                                            infographicData: str,
                                             featuredImage: str,
                                             tags: List[str],
                                             keywords: List[str],
                                             seoTitle: str,
                                             seoDesc: str):
             """
-            Publishes a fully optimized blog post. 
-            This fulfills Astra's core responsibility of growth and visibility.
+            Publishes a fully optimized blog post (Max 800 words).
+            
+            Args:
+                infographicData: A JSON string containing the infographic schema. Format MUST be:
+                {
+                    "title": "...",
+                    "coreCapabilities": [{"icon": "...", "title": "...", "desc": "..."}],
+                    "architectureLayers": [{"name": "...", "components": ["..."]}],
+                    "executionSteps": ["..."]
+                }
             """
             await self.ui_log(f"✍️ MILESTONE: Drafting Strategic Insight - '{title}'", "milestone")
             
@@ -221,6 +254,7 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
                     "category": category,
                     "excerpt": excerpt,
                     "content": content,
+                    "infographicData": json.loads(infographicData) if isinstance(infographicData, str) else infographicData,
                     "featured": True,
                     "featuredImage": featuredImage,
                     "imageAlt": f"Enterprise visualization for {title}",
