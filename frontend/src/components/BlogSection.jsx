@@ -26,6 +26,15 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
   const [showReelModal, setShowReelModal] = useState(false);
   const [dismissReelPreview, setDismissReelPreview] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  
+  // --- PAGINATION STATES ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 3;
+
+  // Reset page when post count changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [posts.length]);
 
   // Reset reel modal states on selectedPost transitions
   React.useEffect(() => {
@@ -563,6 +572,12 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
     );
   }
 
+  // --- DERIVED PAGINATION MATH ---
+  const totalPages = Math.ceil(posts.length / postsPerPage);
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
+
   return (
     <div style={{ background: COLORS.bgLight, minHeight: "100vh", padding: "0", fontFamily: "'Outfit', sans-serif" }}>
       <nav style={{ 
@@ -610,8 +625,8 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
         </header>
 
         <div style={{ display: "grid", gap: "5rem" }}>
-          <AnimatePresence>
-            {posts.map((post, idx) => (
+          <AnimatePresence mode="wait">
+            {currentPosts.map((post, idx) => (
               <motion.article 
                 key={post.id}
                 initial={{ opacity: 0, y: 40 }}
@@ -658,6 +673,98 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
             ))}
           </AnimatePresence>
         </div>
+
+        {/* --- PREMIUM DYNAMIC PAGINATION --- */}
+        {totalPages > 1 && (
+          <div style={{ 
+            display: "flex", 
+            justifyContent: "center", 
+            alignItems: "center", 
+            gap: "10px", 
+            marginTop: "6rem",
+            padding: "2rem 0",
+            borderTop: `1px solid ${COLORS.border}`
+          }}>
+            <button
+              onClick={() => {
+                if (currentPage > 1) {
+                  setCurrentPage(currentPage - 1);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              }}
+              disabled={currentPage === 1}
+              style={{
+                background: "none",
+                border: `1px solid ${currentPage === 1 ? COLORS.border : COLORS.primary}`,
+                color: currentPage === 1 ? COLORS.textMuted : COLORS.primary,
+                padding: "10px 20px",
+                borderRadius: "12px",
+                fontWeight: "800",
+                cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                transition: "all 0.3s ease",
+                opacity: currentPage === 1 ? 0.4 : 1,
+                fontSize: "0.85rem",
+                letterSpacing: "1px"
+              }}
+            >
+              PREVIOUS
+            </button>
+
+            <div style={{ display: "flex", gap: "8px" }}>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                const isActive = pageNum === currentPage;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => {
+                      setCurrentPage(pageNum);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      borderRadius: "12px",
+                      border: `1px solid ${isActive ? COLORS.accent : COLORS.border}`,
+                      background: isActive ? COLORS.accent : "none",
+                      color: isActive ? COLORS.white : COLORS.primary,
+                      fontWeight: "900",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                      boxShadow: isActive ? `0 10px 20px ${COLORS.accent}33` : "none"
+                    }}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => {
+                if (currentPage < totalPages) {
+                  setCurrentPage(currentPage + 1);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              }}
+              disabled={currentPage === totalPages}
+              style={{
+                background: "none",
+                border: `1px solid ${currentPage === totalPages ? COLORS.border : COLORS.primary}`,
+                color: currentPage === totalPages ? COLORS.textMuted : COLORS.primary,
+                padding: "10px 20px",
+                borderRadius: "12px",
+                fontWeight: "800",
+                cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                transition: "all 0.3s ease",
+                opacity: currentPage === totalPages ? 0.4 : 1,
+                fontSize: "0.85rem",
+                letterSpacing: "1px"
+              }}
+            >
+              NEXT
+            </button>
+          </div>
+        )}
       </main>
 
       <footer style={{ padding: "10rem 5% 5rem", background: COLORS.bgSoft, borderTop: `1px solid ${COLORS.border}`, marginTop: "10rem", textAlign: "center" }}>

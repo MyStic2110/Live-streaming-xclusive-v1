@@ -9,6 +9,24 @@ from moviepy import (
     VideoClip
 )
 
+def wrap_text(text, max_chars=22):
+    """Utility to wrap text cleanly by maximum character count."""
+    words = text.split()
+    lines = []
+    current_line = []
+    current_len = 0
+    for word in words:
+        if current_len + len(word) + 1 > max_chars:
+            lines.append(" ".join(current_line))
+            current_line = [word]
+            current_len = len(word)
+        else:
+            current_line.append(word)
+            current_len += len(word) + 1
+    if current_line:
+        lines.append(" ".join(current_line))
+    return lines
+
 class VideoComposer:
     def __init__(self, width=1080, height=1920):
         self.width = width
@@ -18,101 +36,213 @@ class VideoComposer:
         if not os.path.exists(self.font_path):
             self.font_path = "arial.ttf" # Local directory fallback
 
-    def create_gradient_bg(self, duration) -> ImageClip:
+    def create_dynamic_grid_bg(self, duration) -> VideoClip:
         """
-        Creates a dark slate-to-indigo vertical gradient background clip.
+        Generates a beautiful slowly shifting slate-indigo gradient background
+        with dynamic floating glowing particles to make the backdrop feel alive.
         """
         w, h = self.width, self.height
-        bg = Image.new("RGB", (w, h))
-        draw = ImageDraw.Draw(bg)
         
-        # Draw gradient
-        for y in range(h):
-            # Gradient transition from (17, 24, 39) slate-900 to (30, 27, 75) indigo-950
-            r = int(17 + (30 - 17) * (y / h))
-            g = int(24 + (27 - 24) * (y / h))
-            b = int(39 + (75 - 39) * (y / h))
-            draw.line([(0, y), (w, y)], fill=(r, g, b))
+        def make_frame(t):
+            # Slow color wave translation
+            phase = t * 0.3
+            b_shift = int(25 * np.sin(phase))
+            g_shift = int(12 * np.cos(phase * 0.8))
+            
+            img = Image.new("RGB", (w, h))
+            draw = ImageDraw.Draw(img)
+            
+            # Step by 6 pixels vertically to optimize MoviePy rendering speed significantly
+            for y in range(0, h, 6):
+                r = int(15 + (28 - 15) * (y / h))
+                g = int(22 + (25 - 22 + g_shift) * (y / h))
+                b = int(35 + (68 - 35 + b_shift) * (y / h))
+                
+                # Clip values securely to RGB boundaries
+                r = max(0, min(255, r))
+                g = max(0, min(255, g))
+                b = max(0, min(255, b))
+                
+                draw.rectangle([0, y, w, y + 6], fill=(r, g, b))
+                
+            # Render a cyber grid layer (horizontal & vertical lines)
+            grid_color = (59, 130, 246, 15) # very transparent blue
+            for gx in range(100, w, 100):
+                draw.line([(gx, 0), (gx, h)], fill=grid_color, width=1)
+            for gy in range(100, h, 100):
+                draw.line([(0, gy), (w, gy)], fill=grid_color, width=1)
+                
+            # Draw glowing floating constellation particles
+            for i in range(16):
+                # Deterministic math based on time t & node index
+                seed_x = int((w * (i * 0.13 + t * 0.025)) % w)
+                seed_y = int((h * (i * 0.19 + t * 0.015)) % h)
+                
+                size = int(8 + 5 * np.sin(t * 1.8 + i))
+                alpha = int(110 + 90 * np.sin(t * 2.2 + i))
+                alpha = max(0, min(255, alpha))
+                
+                # Outer glow ring
+                draw.ellipse(
+                    [seed_x - size - 4, seed_y - size - 4, seed_x + size + 4, seed_y + size + 4],
+                    fill=(59, 130, 246, int(alpha * 0.3))
+                )
+                # Inner bright dot
+                draw.ellipse(
+                    [seed_x - size, seed_y - size, seed_x + size, seed_y + size],
+                    fill=(6, 182, 212, alpha)
+                )
 
-        # Add decorative grid lines or glowing borders
-        draw.rectangle([20, 20, w - 20, h - 20], outline=(59, 130, 246, 50), width=2)
-        
-        # Save temp bg frame
-        temp_bg_path = "scratch_temp_bg.png"
-        bg.save(temp_bg_path)
-        
-        clip = ImageClip(temp_bg_path).with_duration(duration)
+            # Draw outer glow boundary border
+            draw.rectangle([30, 30, w - 30, h - 30], outline=(59, 130, 246, 75), width=3)
+            return np.array(img)
+            
+        clip = VideoClip(make_frame, duration=duration)
         return clip
 
-    def create_scrolling_logs_overlay(self, duration) -> VideoClip:
+    def create_header_overlay(self, duration, title="", category="") -> VideoClip:
         """
-        Creates an overlay of scrolling terminal status logs for a futuristic swarm look.
+        Creates an elegant, glassmorphic card header containing a glowing category
+        badge and a beautifully word-wrapped, anti-aliased title.
         """
-        log_lines = [
-            "[SENTRY] system operational check OK",
-            "[ASTRA] digesting content vectors...",
-            "[CORTEX] BI intelligence link live",
-            "[SENTRY] latency budget 380ms enforced",
-            "[VONE] biometric verification active",
-            "[ASTRA] script narration generated successfully",
-            "[SENTRY] dynamic token cost tracking synced",
-            "[REELS] compiling local open-source composition",
-            "[SENTRY] cost transaction recorded: $0.0004",
-            "[SWARM] all nodes in sync. ready for execution."
-        ]
-
+        w, h = self.width, self.height
+        category = (category or "SWARM TECH").upper()
+        title = title or "Autonomous Swarm Intelligence"
+        
+        # Wrap title to avoid clipping
+        title_lines = wrap_text(title, max_chars=22)
+        
         def make_frame(t):
-            img = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
+            img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
             draw = ImageDraw.Draw(img)
             
             try:
-                font = ImageFont.truetype("C:\\Windows\\Fonts\\consola.ttf", 24)
+                badge_font = ImageFont.truetype("C:\\Windows\\Fonts\\consola.ttf", 26)
+                title_font = ImageFont.truetype(self.font_path, 46)
             except:
-                font = ImageFont.load_default()
+                badge_font = ImageFont.load_default()
+                title_font = ImageFont.load_default()
 
-            # Scrolling logic based on time t
-            scroll_offset = int((t * 50) % 300)
+            y_start = 100
+            card_height = 290
             
-            y_start = 250
-            draw.text((60, y_start - 40), "SWARM LOG FEED // OPERATIONAL STATE", fill=(59, 130, 246, 180), font=font)
-            draw.line([(60, y_start - 10), (900, y_start - 10)], fill=(59, 130, 246, 80), width=1)
-
-            for i, line in enumerate(log_lines):
-                y = y_start + (i * 35) - scroll_offset
-                if y_start - 10 < y < 650:
-                    # Fade out toward borders
-                    alpha = int(255 * (1.0 - abs(y - 450) / 250))
-                    alpha = max(0, min(255, alpha))
-                    draw.text((80, y), line, fill=(16, 185, 129, alpha), font=font) # neon green
-
-            # Renders a sleek header text
+            # 1. Draw modern Glassmorphic Card
+            draw.rounded_rectangle(
+                [60, y_start, w - 60, y_start + card_height],
+                radius=24,
+                fill=(17, 24, 39, 175), # Dark slate translucent
+                outline=(59, 130, 246, 100), # Neon blue border
+                width=2
+            )
+            
+            # 2. Draw glowing Category Badge Pill
+            badge_text = f" {category} "
             try:
-                header_font = ImageFont.truetype(self.font_path, 40)
+                bbox = draw.textbbox((0, 0), badge_text, font=badge_font)
+                b_w = bbox[2] - bbox[0]
             except:
-                header_font = ImageFont.load_default()
+                b_w = len(badge_text) * 16
+                
+            draw.rounded_rectangle(
+                [90, y_start + 35, 90 + b_w + 10, y_start + 80],
+                radius=10,
+                fill=(30, 58, 138, 220), # Deep solid blue
+                outline=(6, 182, 212, 220), # Bright cyan border
+                width=2
+            )
+            draw.text((95, y_start + 42), badge_text, fill=(6, 182, 212, 255), font=badge_font)
             
-            draw.text((60, 80), "SWARM INSIGHTS", fill=(255, 255, 255, 255), font=header_font)
-            draw.text((60, 135), "DAY 5 // AUTONOMOUS REEL", fill=(59, 130, 246, 255), font=header_font)
-
+            # 3. Draw wrapped Title Lines
+            for idx, line in enumerate(title_lines[:2]):
+                draw.text(
+                    (90, y_start + 105 + idx * 60), 
+                    line, 
+                    fill=(255, 255, 255, 255), 
+                    font=title_font,
+                    stroke_width=2,
+                    stroke_fill=(0, 0, 0, 200)
+                )
+                
             return np.array(img)
 
         clip = VideoClip(make_frame, duration=duration)
         return clip
 
-    def create_caption_overlay(self, word_timings, duration) -> VideoClip:
+    def create_image_card_clip(self, img_path, duration) -> VideoClip:
         """
-        Pillow-based word-by-word dynamic kinetic caption overlay to bypass ImageMagick.
+        Creates a centered image clip inside a styled rounded card with drop shadows
+        and a smooth Ken Burns scale zoom effect.
+        """
+        if not os.path.exists(img_path):
+            print(f"[VIDEO] Warning: Visual asset {img_path} not found.")
+            return VideoClip(lambda t: np.zeros((self.height, self.width, 4)), duration=duration)
+
+        pil_img = Image.open(img_path).convert("RGBA")
+        
+        # Dimensions matching a premium vertical layout
+        target_width = 900
+        aspect_ratio = pil_img.height / pil_img.width
+        target_height = int(target_width * aspect_ratio)
+        pil_img_resized = pil_img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+
+        def make_frame(t):
+            overlay = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(overlay)
+            
+            # Smooth scale zoom (1.0 to 1.12 over duration)
+            zoom = 1.0 + 0.12 * (t / duration)
+            w_zoom = int(target_width * zoom)
+            h_zoom = int(target_height * zoom)
+            
+            zoomed_img = pil_img_resized.resize((w_zoom, h_zoom), Image.Resampling.LANCZOS)
+            
+            # Center-crop zoomed image
+            dx = (w_zoom - target_width) // 2
+            dy = (h_zoom - target_height) // 2
+            cropped_img = zoomed_img.crop((dx, dy, dx + target_width, dy + target_height))
+            
+            # Create rounded card with transparent borders
+            mask = Image.new("L", (target_width, target_height), 0)
+            mask_draw = ImageDraw.Draw(mask)
+            mask_draw.rounded_rectangle([0, 0, target_width, target_height], radius=24, fill=255)
+            
+            rounded_card = Image.new("RGBA", (target_width, target_height))
+            rounded_card.paste(cropped_img, (0, 0), mask=mask)
+            
+            x_start = (self.width - target_width) // 2
+            y_start = 750
+            
+            # Draw premium glass border behind the image card
+            draw.rounded_rectangle(
+                [x_start - 6, y_start - 6, x_start + target_width + 6, y_start + target_height + 6],
+                radius=28,
+                fill=(0, 0, 0, 80),
+                outline=(59, 130, 246, 120), # Cyan-blue outline
+                width=3
+            )
+
+            # Paste card
+            overlay.paste(rounded_card, (x_start, y_start), mask=rounded_card)
+            return np.array(overlay)
+
+        clip = VideoClip(make_frame, duration=duration)
+        return clip
+
+    def create_kinetic_captions(self, word_timings, duration) -> VideoClip:
+        """
+        Pillow-based single-word + next-word karaoke kinetic caption engine.
+        Applies a tactile pop scale transition and thick readable outlines.
         """
         def make_frame(t):
             img = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
             draw = ImageDraw.Draw(img)
             
             try:
-                font = ImageFont.truetype(self.font_path, 54)
+                base_font = ImageFont.truetype(self.font_path, 68)
             except:
-                font = ImageFont.load_default()
+                base_font = ImageFont.load_default()
 
-            # Find currently active word
+            # Find active spoken word
             active_idx = -1
             for idx, wt in enumerate(word_timings):
                 if wt["start"] <= t <= wt["end"]:
@@ -120,123 +250,110 @@ class VideoComposer:
                     break
 
             if active_idx == -1:
-                # If no word matches precisely, find the closest previous word
                 for idx, wt in enumerate(word_timings):
                     if wt["start"] <= t:
                         active_idx = idx
 
             if active_idx != -1:
-                # Get a window of 4 words (2 before, active, 1 after) to keep center aligned
-                start_win = max(0, active_idx - 2)
-                end_win = min(len(word_timings), start_win + 4)
-                word_window = word_timings[start_win:end_win]
+                active_wt = word_timings[active_idx]
+                w_start = active_wt["start"]
                 
-                # Render subtitle centered horizontally
-                total_text_width = 0
-                word_positions = []
+                # Pop scale factor: bounces to 1.25x and settles back in 0.15 seconds
+                time_into_word = t - w_start
+                pop_factor = 1.0
+                if 0 <= time_into_word < 0.15:
+                    pop_factor = 1.25 - 0.25 * (time_into_word / 0.15)
                 
-                for wt in word_window:
-                    w = wt["word"]
+                active_word = active_wt["word"].upper()
+                next_word = ""
+                if active_idx + 1 < len(word_timings):
+                    next_word = word_timings[active_idx + 1]["word"].upper()
+
+                # Dynamic sizing for active popping word
+                active_font_size = int(84 * pop_factor)
+                try:
+                    a_font = ImageFont.truetype(self.font_path, active_font_size)
+                    a_bbox = draw.textbbox((0, 0), active_word, font=a_font)
+                    a_w = a_bbox[2] - a_bbox[0]
+                    a_h = a_bbox[3] - a_bbox[1]
+                except:
+                    a_w = len(active_word) * 45
+                    a_h = 75
+                    a_font = base_font
+
+                y_pos = 1480
+                
+                if next_word:
+                    # Space out active word and next word (karaoke flow)
                     try:
-                        bbox = draw.textbbox((0, 0), w, font=font)
-                        w_width = bbox[2] - bbox[0]
+                        n_bbox = draw.textbbox((0, 0), next_word, font=base_font)
+                        n_w = n_bbox[2] - n_bbox[0]
+                        n_h = n_bbox[3] - n_bbox[1]
                     except:
-                        w_width = len(w) * 30
-                    word_positions.append((w, w_width, wt == word_timings[active_idx]))
-                    total_text_width += w_width + 20 # 20px word spacing
+                        n_w = len(next_word) * 35
+                        n_h = 60
 
-                # Draw subtitle background container
-                y_pos = 1450
-                draw.rounded_rectangle(
-                    [self.width // 2 - total_text_width // 2 - 30, y_pos - 20, 
-                     self.width // 2 + total_text_width // 2 + 30, y_pos + 80],
-                    radius=15,
-                    fill=(17, 24, 39, 200) # Dark gray glassmorphic pill
-                )
-
-                # Draw words
-                current_x = self.width // 2 - total_text_width // 2
-                for word, w_width, is_active in word_positions:
-                    fill_color = (6, 182, 212, 255) if is_active else (255, 255, 255, 255) # Cyan if active, else White
-                    draw.text((current_x, y_pos), word, fill=fill_color, font=font)
-                    current_x += w_width + 20
+                    spacing = 50
+                    total_w = a_w + n_w + spacing
+                    start_x = (self.width - total_w) // 2
+                    
+                    # 1. Spoken Word (Popping Energetic Gold)
+                    draw.text(
+                        (start_x, y_pos - a_h // 2), 
+                        active_word, 
+                        fill=(255, 230, 0, 255), 
+                        font=a_font,
+                        stroke_width=7,
+                        stroke_fill=(0, 0, 0, 255)
+                    )
+                    
+                    # 2. Next Spoken Word (Semi-transparent white)
+                    draw.text(
+                        (start_x + a_w + spacing, y_pos - n_h // 2), 
+                        next_word, 
+                        fill=(255, 255, 255, 150), 
+                        font=base_font,
+                        stroke_width=5,
+                        stroke_fill=(0, 0, 0, 255)
+                    )
+                else:
+                    # Single final word centered
+                    start_x = (self.width - a_w) // 2
+                    draw.text(
+                        (start_x, y_pos - a_h // 2), 
+                        active_word, 
+                        fill=(255, 230, 0, 255), 
+                        font=a_font,
+                        stroke_width=7,
+                        stroke_fill=(0, 0, 0, 255)
+                    )
 
             return np.array(img)
 
         clip = VideoClip(make_frame, duration=duration)
         return clip
 
-    def create_image_zoom_clip(self, img_path, duration) -> VideoClip:
+    def compile_reel(self, bg_img_path, voice_audio_path, word_timings, output_path, title="", category=""):
         """
-        Creates a centered image clip with a smooth Ken Burns scale zoom effect.
-        """
-        if not os.path.exists(img_path):
-            print(f"[VIDEO] Warning: Visual asset {img_path} not found.")
-            # Fallback black container
-            return VideoClip(lambda t: np.zeros((540, 960, 3)), duration=duration)
-
-        pil_img = Image.open(img_path).convert("RGBA")
-        # Resize to fit vertical screen center nicely
-        target_width = 900
-        aspect_ratio = pil_img.height / pil_img.width
-        target_height = int(target_width * aspect_ratio)
-        pil_img_resized = pil_img.resize((target_width, target_height), Image.Resampling.LANCZOS)
-
-        def make_frame(t):
-            # Create a transparent overlay of full canvas size
-            overlay = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
-            draw = ImageDraw.Draw(overlay)
-            
-            # Linear Zoom Factor: scales from 1.0 to 1.15 over the video
-            zoom = 1.0 + 0.15 * (t / duration)
-            w_zoom = int(target_width * zoom)
-            h_zoom = int(target_height * zoom)
-            
-            zoomed_img = pil_img_resized.resize((w_zoom, h_zoom), Image.Resampling.LANCZOS)
-            
-            # Crop to original resized dimensions to keep boundary clean
-            dx = (w_zoom - target_width) // 2
-            dy = (h_zoom - target_height) // 2
-            cropped_img = zoomed_img.crop((dx, dy, dx + target_width, dy + target_height))
-            
-            # Draw premium drop shadow & glowing border around image container
-            x_start = (self.width - target_width) // 2
-            y_start = 750
-            
-            draw.rectangle(
-                [x_start - 8, y_start - 8, x_start + target_width + 8, y_start + target_height + 8],
-                outline=(59, 130, 246, 150), width=4 # glowing neon blue border
-            )
-
-            # Paste image in the center
-            overlay.paste(cropped_img, (x_start, y_start))
-            return np.array(overlay)
-
-        clip = VideoClip(make_frame, duration=duration)
-        return clip
-
-    def compile_reel(self, bg_img_path, voice_audio_path, word_timings, output_path):
-        """
-        Assembles all components into a vertical MP4 reel using MoviePy and FFmpeg.
+        Synthesizes all layers into a stunning high-fidelity vertical MP4 reel using MoviePy and FFmpeg.
         """
         print("[VIDEO] Loading voice audio track...")
         voice_audio = AudioFileClip(voice_audio_path)
         duration = voice_audio.duration
 
-        print("[VIDEO] Creating visual assets...")
-        bg_clip = self.create_gradient_bg(duration)
-        log_clip = self.create_scrolling_logs_overlay(duration)
-        img_clip = self.create_image_zoom_clip(bg_img_path, duration)
-        caption_clip = self.create_caption_overlay(word_timings, duration)
+        print("[VIDEO] Rendering premium visual layers...")
+        bg_clip = self.create_dynamic_grid_bg(duration)
+        header_clip = self.create_header_overlay(duration, title=title, category=category)
+        img_clip = self.create_image_card_clip(bg_img_path, duration)
+        caption_clip = self.create_kinetic_captions(word_timings, duration)
 
         print("[VIDEO] Mixing audio tracks...")
-        # Clean background audio mix (MoviePy supports mixing automatically)
         final_audio = CompositeAudioClip([voice_audio])
         
         print("[VIDEO] Composing full vertical video layers...")
         final_video = CompositeVideoClip([
             bg_clip,
-            log_clip,
+            header_clip,
             img_clip,
             caption_clip
         ]).with_audio(final_audio)
@@ -250,9 +367,5 @@ class VideoComposer:
             threads=4,
             logger='bar'
         )
-
-        # Cleanup temporary background image
-        if os.path.exists("scratch_temp_bg.png"):
-            os.remove("scratch_temp_bg.png")
 
         print("[VIDEO] Compilation complete!")

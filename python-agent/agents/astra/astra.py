@@ -207,6 +207,9 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
             
             self.sentry.log_transaction("blog_publish_attempt", {"title": title, "slug": slug})
             
+            if not featuredImage or featuredImage == "image-link-here":
+                featuredImage = f"/insights/{slug}.png"
+
             post_id = f"astra-{int(time.time())}"
             post_data = {
                 "type": "publish_blog",
@@ -247,6 +250,25 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
                 }
             }
             
+            # --- HUMAN-IN-THE-LOOP: Telegram Gatekeeper ---
+            sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+            from utils import telegram_gateway
+            
+            if telegram_gateway.is_configured():
+                await self.ui_log(f"🛰️ HITL GATEWAY: Requesting publication approval via Telegram...", "milestone")
+                msg_id = await telegram_gateway.send_approval_request(slug, title, category, excerpt)
+                if msg_id != -1:
+                    await self.ui_log(f"Waiting for Swarm Commander's authorization on Telegram...", "system")
+                    approved = await telegram_gateway.poll_approval(slug, msg_id)
+                    if not approved:
+                        await self.ui_log(f"❌ HITL GATEWAY: Draft rejected by Swarm Commander.", "error")
+                        return f"Mission Aborted: The strategic insight draft '{title}' was rejected by the human-in-the-loop Commander on Telegram. Please draft a different approach or terminate session."
+                    await self.ui_log(f"✅ HITL GATEWAY: Draft approved! Finalizing publication...", "success")
+                else:
+                    await self.ui_log("⚠️ HITL Warning: Failed to send Telegram approval card, bypassing gatekeeper.", "warning")
+            else:
+                await self.ui_log("ℹ️ HITL: Telegram Bot not configured. Bypassing approval loop.", "system")
+
             # Persist to local storage
             blog_path = os.path.join(os.path.dirname(__file__), "blogs", f"{slug}.json")
             with open(blog_path, "w") as f:
@@ -264,6 +286,48 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
             await self.ui_log(f"🏆 MILESTONE [{datetime.now().strftime('%H:%M:%S')}]: INSIGHT DEPLOYED", "success")
             await self.ui_log(f"Insight '{title}' is now LIVE at /blog/{slug}")
             self.sentry.log_transaction("blog_publish_success", {"title": title, "slug": slug})
+
+            # --- AUTO REELS GENERATION (Background Task) ---
+            if telegram_gateway.is_configured():
+                async def compile_and_send_reel():
+                    try:
+                        await self.ui_log("🎬 REELS AGENT: Commencing vertical video compilation in background...", "milestone")
+                        
+                        # Resolve path relative to python-agent root
+                        import sys
+                        agent_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+                        if agent_root not in sys.path:
+                            sys.path.insert(0, agent_root)
+                        
+                        from agents.reels.reels_agent import ReelsAgent
+                        reels_agent = ReelsAgent()
+                        
+                        await self.ui_log("Synthesizing neural Jenny voice and rendering video frames...", "system")
+                        
+                        # Await the async generator
+                        video_path = await reels_agent.generate_reel(blog_path)
+                        
+                        if video_path and os.path.exists(video_path):
+                            await self.ui_log("✅ REELS AGENT: Vertical video compiled successfully!", "success")
+                            caption = (
+                                f"🎬 *Your Reel is Ready for Social Channels!*\n\n"
+                                f"📰 *Insight*: *{title}*\n"
+                                f"🔗 *Web URL*: /blog/{slug}\n\n"
+                                f"This high-fidelity short is fully optimized for monetization."
+                            )
+                            delivered = await telegram_gateway.send_video_reel(video_path, caption)
+                            if delivered:
+                                await self.ui_log("📨 delivered vertical Reel video directly to your Telegram chat!", "success")
+                            else:
+                                await self.ui_log("⚠️ Warning: Failed to deliver Reel video over Telegram.", "warning")
+                        else:
+                            await self.ui_log("❌ REELS AGENT: Compilation completed but no output video path returned.", "error")
+                    except Exception as e:
+                        logger.error(f"[REELS_TASK] Error compiling background reel: {e}")
+                        await self.ui_log(f"⚠️ Reels compilation failed: {e}", "warning")
+
+                # Spawn background task
+                asyncio.create_task(compile_and_send_reel())
 
             return f"Strategic Insight '{title}' published autonomously. SEO/AEO optimization complete."
 
@@ -297,7 +361,7 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
     astra_tools = AstraTools(participant=ctx.room.local_participant)
 
     chat_ctx = llm.ChatContext()
-    chat_ctx.append(role="system", text=system_prompt)
+    chat_ctx.add_message(role="system", content=system_prompt)
 
     llm_plugin = openai.LLM(
         model="openai/gpt-4o-mini",
