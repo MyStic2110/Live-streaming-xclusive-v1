@@ -85,6 +85,7 @@ async def entrypoint(ctx: JobContext):
 
     analyser = SpeechAnalyser()
     review_triggered = False
+    welcome_spoken = [False]  # mutable flag: welcome TTS fires exactly once on agent→listening
 
     agent = SilentRehearsalAgent(instructions=SYSTEM_PROMPT)
 
@@ -172,11 +173,14 @@ async def entrypoint(ctx: JobContext):
                 await ctx.room.local_participant.publish_data(payload, topic="rehearsal_critique")
                 logger.info("[CRITIQUE] Published visual critique JSON payload to topic 'rehearsal_critique'")
 
-                # 2. Speak the critique via TTS
+                # 2. Speak the critique via TTS (wrapped so playout errors are non-fatal)
                 tts_script = analyser.tts_critique(critique)
                 logger.info(f"[CRITIQUE] Synthesizing speech for critique script:\n{tts_script}")
-                await session.say(tts_script, allow_interruptions=False)
-                logger.info("[CRITIQUE] Speech synthesis finished.")
+                try:
+                    await session.say(tts_script, allow_interruptions=False)
+                    logger.info("[CRITIQUE] Speech synthesis finished ✅")
+                except Exception as tts_err:
+                    logger.warning(f"[CRITIQUE] TTS playout failed (non-fatal, visual critique already sent): {tts_err}")
 
         except Exception as e:
             logger.error(f"[CRITIQUE] Critique generation crashed: {e}", exc_info=True)
@@ -275,7 +279,24 @@ async def entrypoint(ctx: JobContext):
         """Logs when the agent switches between initializing / listening / speaking / thinking."""
         logger.info(f"[AGENT_STATE] Agent state: {event.old_state} → {event.new_state}")
         if event.new_state == "listening":
-            logger.info("[AGENT_STATE] ✅ Agent is now listening — microphone audio is being processed.")
+            logger.info("[AGENT_STATE] ✅ Agent is now LISTENING — audio pipeline is warm.")
+            # Fire welcome speech the FIRST time the agent reaches 'listening'.
+            # Using create_task so a playout error cannot crash the entrypoint.
+            if not welcome_spoken[0]:
+                welcome_spoken[0] = True
+                logger.info("[AGENT_STATE] Scheduling welcome TTS via create_task...")
+                async def _speak_welcome():
+                    try:
+                        logger.info("[TTS] Speaking welcome message...")
+                        await session.say(
+                            "The Rehearsal is ready. Start speaking whenever you like. "
+                            "Press Stop and Review when you are done and I will give you a full breakdown.",
+                            allow_interruptions=False
+                        )
+                        logger.info("[TTS] Welcome message playout complete ✅")
+                    except Exception as e:
+                        logger.warning(f"[TTS] Welcome playout failed (non-fatal): {e}")
+                asyncio.create_task(_speak_welcome())
         elif event.new_state == "speaking":
             logger.info("[AGENT_STATE] 🔊 Agent is now speaking via TTS.")
 
@@ -299,15 +320,9 @@ async def entrypoint(ctx: JobContext):
     try:
         logger.info("[SESSION] Invoking session.start(room, agent)...")
         await session.start(room=ctx.room, agent=agent)
-        logger.info("[SESSION] session.start has completed setup. Entering stay alive loop...")
+        logger.info("[SESSION] session.start complete. Welcome TTS will fire on first agent_state_changed→listening.")
 
-        await session.say(
-            "The Rehearsal is ready. Start speaking whenever you like. Press Stop and Review when you are done and I will give you a full breakdown.",
-            allow_interruptions=False
-        )
-        logger.info("[SESSION] Broadcasted welcome prompt speech.")
-        
-        # Keep the room job alive until the user explicitly leaves/end-session disconnects.
+        # Keep the room job alive until the user explicitly leaves or disconnects.
         await shutdown_event.wait()
             
     except Exception as e:
