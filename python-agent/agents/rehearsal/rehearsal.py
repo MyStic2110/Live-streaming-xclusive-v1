@@ -192,17 +192,20 @@ async def entrypoint(ctx: JobContext):
 
     @session.on("user_input_transcribed")
     def on_stt(event: voice.UserInputTranscribedEvent):
+        """HOP-3: Deepgram STT fires this after transcribing audio frames from VAD."""
         if review_triggered:
+            logger.info("[HOP-3][STT_EVENT] Skipping — review already triggered.")
             return
 
         now = time.time()
         text = event.transcript.strip()
-        logger.debug(f"[STT_EVENT] user_input_transcribed fired: text='{text}', is_final={event.is_final}")
+        # Promoted to INFO so this is always visible in console
+        logger.info(f"[HOP-3][STT_EVENT] user_input_transcribed fired | is_final={event.is_final} | text='{text}'")
 
         if not event.is_final:
             # Interim: detect pause onset + stream caption
             if not _interim_seen[0]:
-                logger.debug("[STT_EVENT] Interim start detected. Triggering analyser pause check.")
+                logger.info("[HOP-3][STT_EVENT] First interim of new utterance — triggering pause detector.")
                 analyser.on_interim_start(now)
                 _interim_seen[0] = True
 
@@ -211,16 +214,17 @@ async def entrypoint(ctx: JobContext):
                 "text": text,
                 "is_final": False
             }).encode("utf-8")
-            
-            logger.debug(f"[STT_EVENT] Streaming interim caption: {text}")
+
+            logger.info(f"[HOP-3→4][STT_EVENT] Publishing INTERIM caption to topic='caption': '{text}'")
             asyncio.create_task(
                 ctx.room.local_participant.publish_data(caption_payload, topic="caption")
             )
         else:
             # Final: feed analyser + send final caption
             if text:
-                logger.info(f"[STT_EVENT] FINAL segment received: '{text}'")
+                logger.info(f"[HOP-3][STT_EVENT] FINAL segment confirmed: '{text}'")
                 start_est = _last_final_end[0] if _last_final_end[0] else now - 1.0
+                logger.info(f"[HOP-3→ANALYSER] Feeding segment to SpeechAnalyser: start={start_est:.2f}, end={now:.2f}")
                 analyser.on_final(text, start_est, now)
                 _last_final_end[0] = now
                 _interim_seen[0] = False
@@ -230,12 +234,14 @@ async def entrypoint(ctx: JobContext):
                     "text": text,
                     "is_final": True
                 }).encode("utf-8")
-                
-                logger.info(f"[STT_EVENT] Broadcasting final caption to frontend.")
+
+                logger.info(f"[HOP-3→4][STT_EVENT] Publishing FINAL caption to topic='caption'.")
                 asyncio.create_task(
                     ctx.room.local_participant.publish_data(caption_payload, topic="caption")
                 )
-                logger.info(f"[STT_EVENT] Segment processed. Current session total words: {analyser.total_words()}")
+                logger.info(f"[HOP-3][STT_EVENT] Session total words so far: {analyser.total_words()}")
+            else:
+                logger.info("[HOP-3][STT_EVENT] Final event had empty transcript — skipping.")
 
     @ctx.room.on("data_received")
     def on_data(dp):
@@ -257,7 +263,21 @@ async def entrypoint(ctx: JobContext):
 
     @session.on("user_state_changed")
     def on_user_state_changed(event: voice.UserStateChangedEvent):
-        logger.info(f"[AGENT_EVENT] User state changed: {event.old_state} -> {event.new_state}")
+        """HOP-2: VAD triggers this when user starts/stops speaking."""
+        logger.info(f"[HOP-2][VAD_EVENT] User state: {event.old_state} → {event.new_state}")
+        if event.new_state == "speaking":
+            logger.info("[HOP-2][VAD_EVENT] ✅ VAD confirmed: user IS speaking. Waiting for HOP-3 (STT).")
+        elif event.new_state == "listening":
+            logger.info("[HOP-2][VAD_EVENT] User stopped speaking. STT final segment should follow.")
+
+    @session.on("agent_state_changed")
+    def on_agent_state_changed(event: voice.AgentStateChangedEvent):
+        """Logs when the agent switches between initializing / listening / speaking / thinking."""
+        logger.info(f"[AGENT_STATE] Agent state: {event.old_state} → {event.new_state}")
+        if event.new_state == "listening":
+            logger.info("[AGENT_STATE] ✅ Agent is now listening — microphone audio is being processed.")
+        elif event.new_state == "speaking":
+            logger.info("[AGENT_STATE] 🔊 Agent is now speaking via TTS.")
 
     @ctx.room.on("participant_disconnected")
     def on_participant_disconnected(participant):

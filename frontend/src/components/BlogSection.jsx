@@ -20,12 +20,97 @@ const API = import.meta.env.VITE_API_URL || "";
 // --- ELITE AGENT-READY POST SCHEMA ---
 const INITIAL_POSTS = [];
 
+const ArchitecturalInfographic = ({ data }) => {
+  if (!data || !data.architecture) return null;
+  const { layers, primitives, flow } = data.architecture;
+
+  return (
+    <div style={{
+      width: "100%",
+      background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)",
+      borderRadius: "40px",
+      padding: "3rem",
+      color: "white",
+      boxShadow: "0 40px 80px rgba(0,0,0,0.2)",
+      marginBottom: "4rem",
+      position: "relative",
+      overflow: "hidden"
+    }}>
+      <div style={{ position: "absolute", top: "-50%", left: "-10%", width: "50%", height: "200%", background: "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)" }}></div>
+      
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "3rem", position: "relative", zIndex: 10 }}>
+        <div>
+          <div style={{ fontSize: "0.75rem", fontWeight: "900", color: "#60a5fa", letterSpacing: "2px", marginBottom: "0.5rem" }}>RUNTIME ARCHITECTURE</div>
+          <h3 style={{ fontSize: "2rem", fontWeight: "900", letterSpacing: "-1px", margin: 0 }}>System Topology</h3>
+        </div>
+        <Activity color="#60a5fa" size={32} />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3rem", position: "relative", zIndex: 10 }}>
+        
+        {/* Left Column: Stack & Primitives */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "2.5rem" }}>
+          
+          {/* Primitives */}
+          <div style={{ background: "rgba(255,255,255,0.05)", padding: "1.5rem", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <h4 style={{ fontSize: "1.1rem", fontWeight: "800", marginBottom: "1rem", color: "#93c5fd", marginTop: 0 }}>Core Primitives</h4>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+              {primitives?.map((prim, i) => (
+                <span key={i} style={{ fontSize: "0.8rem", fontWeight: "700", background: "rgba(59, 130, 246, 0.2)", padding: "6px 12px", borderRadius: "8px", border: "1px solid rgba(59, 130, 246, 0.3)" }}>
+                  {prim}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Architecture Layers */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <h4 style={{ fontSize: "1.1rem", fontWeight: "800", marginBottom: "0.5rem", color: "#93c5fd", marginTop: 0 }}>Architecture Stack</h4>
+            {layers?.map((layer, i) => (
+              <div key={i} style={{ 
+                background: "rgba(255,255,255,0.03)", borderLeft: `4px solid ${["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b"][i % 4] || "#3b82f6"}`,
+                padding: "1.2rem", borderRadius: "0 12px 12px 0"
+              }}>
+                <div style={{ fontWeight: "800", fontSize: "0.95rem", marginBottom: "6px" }}>{layer.name}</div>
+                <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)", lineHeight: "1.5" }}>{layer.description}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Column: Execution Flow */}
+        <div style={{ background: "rgba(0,0,0,0.2)", padding: "2rem", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.05)" }}>
+          <h4 style={{ fontSize: "1.1rem", fontWeight: "800", marginBottom: "2rem", color: "#93c5fd", marginTop: 0 }}>Execution Flow</h4>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", position: "relative" }}>
+            <div style={{ position: "absolute", left: "15px", top: "20px", bottom: "20px", width: "2px", background: "rgba(255,255,255,0.1)", zIndex: 0 }}></div>
+            {flow?.map((step, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "1.5rem", position: "relative", zIndex: 1 }}>
+                <div style={{ 
+                  width: "32px", height: "32px", borderRadius: "50%", background: "#1e1b4b", border: "2px solid #60a5fa",
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem", fontWeight: "900", color: "#60a5fa", flexShrink: 0
+                }}>
+                  {i + 1}
+                </div>
+                <div style={{ paddingTop: "6px", fontWeight: "700", fontSize: "0.95rem", color: "rgba(255,255,255,0.9)", lineHeight: "1.4" }}>
+                  {step}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
 const BlogSection = ({ onBack, externalPosts = [] }) => {
   const [posts, setPosts] = useState([...externalPosts, ...INITIAL_POSTS]);
   const [selectedPost, setSelectedPost] = useState(null);
   const [showReelModal, setShowReelModal] = useState(false);
   const [dismissReelPreview, setDismissReelPreview] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [videoSrc, setVideoSrc] = useState("");
   
   // --- PAGINATION STATES ---
   const [currentPage, setCurrentPage] = useState(1);
@@ -41,6 +126,9 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
     setShowReelModal(false);
     setDismissReelPreview(false);
     setVideoError(false);
+    if (selectedPost) {
+      setVideoSrc(`/reels/${selectedPost.slug}_face_reel.mp4`);
+    }
   }, [selectedPost]);
 
   // Sync external posts and fetch persistent ones from backend
@@ -209,12 +297,16 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
 
         <article style={{ maxWidth: "1200px", margin: "0 auto", padding: "6rem 5%", display: "grid", gridTemplateColumns: "1fr 300px", gap: "4rem" }}>
           <div>
-            <div style={{ 
-              width: "100%", height: "500px", borderRadius: "40px", 
-              overflow: "hidden", marginBottom: "4rem", boxShadow: "0 40px 80px rgba(0,0,0,0.1)"
-            }}>
-              <img src={selectedPost.featuredImage} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={selectedPost.imageAlt} />
-            </div>
+            {selectedPost.infographicData ? (
+              <ArchitecturalInfographic data={selectedPost.infographicData} />
+            ) : (
+              <div style={{ 
+                width: "100%", height: "500px", borderRadius: "40px", 
+                overflow: "hidden", marginBottom: "4rem", boxShadow: "0 40px 80px rgba(0,0,0,0.1)"
+              }}>
+                <img src={selectedPost.featuredImage} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={selectedPost.imageAlt} />
+              </div>
+            )}
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "2rem" }}>
               {selectedPost.metadata.tags.map(tag => (
@@ -414,12 +506,18 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
           >
             {/* Miniature Video Auto-Player */}
             <video
-              src={`/reels/${selectedPost.slug}_reel.mp4`}
+              src={videoSrc}
               muted
               autoPlay
               loop
               playsInline
-              onError={() => setVideoError(true)}
+              onError={() => {
+                if (videoSrc.includes('_face_reel')) {
+                  setVideoSrc(`/reels/${selectedPost.slug}_reel.mp4`);
+                } else {
+                  setVideoError(true);
+                }
+              }}
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
             {/* Pulse Glow Overlay */}
@@ -557,7 +655,7 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
 
                 {/* Unmuted Cinema Video */}
                 <video
-                  src={`/reels/${selectedPost.slug}_reel.mp4`}
+                  src={videoSrc}
                   autoPlay
                   controls
                   loop
@@ -641,7 +739,16 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
                   boxShadow: post.featured ? `0 40px 80px ${COLORS.accent}11` : "0 30px 60px rgba(0,0,0,0.08)",
                   border: post.featured ? `1px solid ${COLORS.accent}22` : "none"
                 }}>
-                  <img src={post.featuredImage} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={post.title} />
+                  {post.infographicData ? (
+                    <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", color: "white", position: "relative" }}>
+                      <div style={{ position: "absolute", top: "-50%", left: "-10%", width: "50%", height: "200%", background: "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)" }}></div>
+                      <Activity size={64} color="#60a5fa" style={{ marginBottom: "1.5rem", position: "relative", zIndex: 10 }} />
+                      <div style={{ fontSize: "2rem", fontWeight: "900", letterSpacing: "1px", position: "relative", zIndex: 10 }}>INTERACTIVE SYSTEM TOPOLOGY</div>
+                      <div style={{ fontSize: "1rem", color: "rgba(255,255,255,0.6)", position: "relative", zIndex: 10 }}>Click to launch architectural payload</div>
+                    </div>
+                  ) : (
+                    <img src={post.featuredImage} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={post.title} />
+                  )}
                   <div style={{ 
                     position: "absolute", top: "2rem", left: "2rem", 
                     background: "white", padding: "8px 18px", borderRadius: "99px",

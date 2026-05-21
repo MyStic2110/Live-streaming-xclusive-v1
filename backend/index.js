@@ -11,6 +11,7 @@ app.use(express.json());
 app.post("/talk-to-ai", roomController.talkToAI);
 app.post("/deploy-shadow", roomController.deployShadow);
 app.get("/insights", roomController.getAstraInsights);
+app.get("/weather", roomController.getWeather);
 
 app.listen(config.port, "0.0.0.0", () => {
   console.log(`[ENTERPRISE] Business Layers Active on ${config.port}`);

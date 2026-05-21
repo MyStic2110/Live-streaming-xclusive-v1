@@ -463,9 +463,11 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
 
     await session.start(room=ctx.room, agent=agent)
     
+    from livekit import rtc
+
     # --- STAY ALIVE LOOP ---
     try:
-        while ctx.room.is_connected():
+        while ctx.room.connection_state != rtc.ConnectionState.CONN_DISCONNECTED:
             await asyncio.sleep(1)
     except Exception as e:
         logger.error(f"Astra loop error: {e}")

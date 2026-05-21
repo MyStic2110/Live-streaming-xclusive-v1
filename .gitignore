@@ -11,7 +11,7 @@ livekit/server.exe
 
 # Python Agent
 python-agent/venv/
-python-agent/__pycache__/
+**/__pycache__/
 python-agent/.env
 python-agent/*.mp3
 python-agent/Voice sample/
@@ -19,4 +19,18 @@ python-agent/swarm_logs/
 python-agent/agents/vision/models/
 python-agent/agents/vision/known_faces/
 python-agent/scratch/
+
+# Reel / video output artefacts
+python-agent/agents/reels/Wav2Lip/
+python-agent/agents/reels/output/
+python-agent/agents/reels/influencers/
+python-agent/agents/reels/temp_wav2lip_output.mp4
+frontend/public/reels/
+
+# Test / scratch artefacts at project root
+test.mp3
+test.vtt
+
+# Uploaded PDFs in frontend
+frontend/*.pdf
 

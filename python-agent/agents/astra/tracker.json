@@ -1,12 +1,14 @@
 {
-  "current_day": 1,
-  "total_days": 7,
-  "start_date": "2026-05-20",
-  "last_published_date": null,
-  "published_slugs": [],
-  "cumulative_usage": {
-    "input_tokens": 0,
-    "output_tokens": 0,
-    "total_cost": 0.0
-  }
+    "current_day": 2,
+    "total_days": 7,
+    "start_date": "2026-05-21",
+    "last_published_date": "2026-05-21",
+    "published_slugs": ["rethinking-ai-architectures-agent-execution"],
+    "cumulative_usage": {
+        "input_tokens": 15320,
+        "output_tokens": 1098,
+        "total_cost": 0.050022,
+        "stt_cost": 0.0334,
+        "tts_cost": 0.013665
+    }
 }

@@ -9,6 +9,7 @@ Pipeline:
 """
 import os
 import json
+# requests import removed – using Gemini‑generated image fallback
 import asyncio
 import sys
 
@@ -46,7 +47,8 @@ class ReelsAgent:
         # ── Step 1: Generate LLM-powered narration script ─────────────────────
         print("[REELS_AGENT] Generating narrative script via LLM...")
         script = await generate_reel_script(blog_data)
-        print(f"[REELS_AGENT] Script ({len(script.split())} words):\n--> \"{script}\"")
+        safe_script = script.encode('ascii', 'ignore').decode('ascii')
+        print(f"[REELS_AGENT] Script ({len(script.split())} words):\n--> \"{safe_script}\"")
 
         # ── Define temp and output paths ───────────────────────────────────────
         temp_audio = os.path.join(self.scratch_dir, f"temp_{slug}_narration.mp3")
@@ -64,6 +66,13 @@ class ReelsAgent:
         featured_image = blog_data.get("featuredImage", "")
         public_dir = os.path.abspath(os.path.join(self.base_dir, "../../../frontend/public"))
         img_path = os.path.abspath(os.path.join(public_dir, featured_image.lstrip("/")))
+        
+        # If the featured image is missing or the file does not exist,
+        # fall back to the Gemini-generated image prepared earlier.
+        if not featured_image or not os.path.exists(img_path):
+            img_path = r"C:\\Users\\Acer\\.gemini\\antigravity\\brain\\cda27265-3c7f-4279-8c71-d20ff46ed2dd\\abstract_tech_bg_1779277336065.png"
+            print(f"[REELS_AGENT] Using Gemini-generated fallback image for reel: {img_path}")
+        
         print(f"[REELS_AGENT] Resolving visual asset:\n--> {img_path}")
 
         # ── Step 4: Compile vertical reel ─────────────────────────────────────

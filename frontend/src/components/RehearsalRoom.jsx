@@ -196,30 +196,51 @@ function RehearsalContent({ onLeave }) {
 
   const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-  // LiveKit data channel
+  // LiveKit data channel — HOP-4: Agent publishes data, browser receives it here
   useEffect(() => {
-    if (!room) return;
+    if (!room) {
+      console.warn("[HOP-4][REHEARSAL] room is null — data listener not attached yet.");
+      return;
+    }
+    console.log("[HOP-4][REHEARSAL] Attaching dataReceived listener to LiveKit room.", room.name);
+
     const onData = (payload, _p, _k, topic) => {
       try {
         const data = JSON.parse(new TextDecoder().decode(payload));
+        console.log(`[HOP-4][REHEARSAL] dataReceived | topic='${topic}' | data=`, data);
+
         if (topic === "caption") {
           if (!data.is_final) {
+            console.log(`[HOP-4→UI][REHEARSAL] INTERIM caption: '${data.text}'`);
             setInterimText(data.text);
           } else {
+            console.log(`[HOP-4→UI][REHEARSAL] FINAL caption committed: '${data.text}'`);
             setInterimText("");
             if (data.text) setCaptions(prev => [...prev.slice(-10), { text: data.text, id: Date.now() }]);
           }
         } else if (topic === "rehearsal_metrics") {
+          console.log("[HOP-4→UI][REHEARSAL] Metrics update received:", data);
           setMetrics(data);
         } else if (topic === "rehearsal_critique") {
-          if (data.type === "critique_status") return; // generating signal, ignore
+          if (data.type === "critique_status") {
+            console.log("[HOP-4][REHEARSAL] critique_status signal received (generating...). Waiting for full critique.");
+            return;
+          }
+          console.log("[HOP-4→UI][REHEARSAL] 🎉 Full critique received! Score:", data.score);
           setCritique(data);
           setReviewing(false);
+        } else {
+          console.warn(`[HOP-4][REHEARSAL] Unknown topic: '${topic}'`, data);
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error("[HOP-4][REHEARSAL] Failed to parse data packet:", e, payload);
+      }
     };
     room.on("dataReceived", onData);
-    return () => room.off("dataReceived", onData);
+    return () => {
+      console.log("[HOP-4][REHEARSAL] Removing dataReceived listener.");
+      room.off("dataReceived", onData);
+    };
   }, [room]);
 
   // Auto-scroll captions
@@ -228,22 +249,29 @@ function RehearsalContent({ onLeave }) {
   }, [captions, interimText]);
 
   const handleStopReview = useCallback(() => {
-    if (!room || reviewing) return;
+    if (!room || reviewing) {
+      console.warn("[HOP-5][REHEARSAL] Stop & Review blocked — room:", !!room, "reviewing:", reviewing);
+      return;
+    }
+    console.log("[HOP-5][REHEARSAL] Stop & Review clicked. Publishing stop_review to agent.");
     setReviewing(true);
-    room.localParticipant.publishData(
-      new TextEncoder().encode(JSON.stringify({ key: "stop_review" })),
-      { reliable: true }
-    );
+    const payload = new TextEncoder().encode(JSON.stringify({ key: "stop_review" }));
+    room.localParticipant.publishData(payload, { reliable: true });
+    console.log("[HOP-5][REHEARSAL] stop_review published ✅. Waiting for critique response on topic='rehearsal_critique'.");
   }, [room, reviewing]);
 
   const handleLeave = useCallback(async () => {
+    console.log("[REHEARSAL] handleLeave called. Sending end_session to agent.");
     if (room) {
       try {
         await room.localParticipant.publishData(
           new TextEncoder().encode(JSON.stringify({ key: "end_session" })),
           { reliable: true }
         );
-      } catch (e) {}
+        console.log("[REHEARSAL] end_session published ✅.");
+      } catch (e) {
+        console.error("[REHEARSAL] Failed to publish end_session:", e);
+      }
     }
     onLeave();
   }, [room, onLeave]);
@@ -481,6 +509,12 @@ export default function RehearsalRoom({ roomData, onLeave }) {
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
   const serverUrl = `${protocol}://${window.location.host}/livekit`;
 
+  console.log("[HOP-1][REHEARSAL] RehearsalRoom mounting.", {
+    room: roomData.roomName,
+    serverUrl,
+    token: roomData.token ? `${roomData.token.slice(0, 20)}...` : "MISSING",
+  });
+
   return (
     <LiveKitRoom
       audio={true}
@@ -488,6 +522,8 @@ export default function RehearsalRoom({ roomData, onLeave }) {
       token={roomData.token}
       serverUrl={serverUrl}
       onDisconnected={onLeave}
+      onConnected={() => console.log("[HOP-1][REHEARSAL] ✅ LiveKit room connected.")}
+      onError={(err) => console.error("[HOP-1][REHEARSAL] ❌ LiveKit connection error:", err)}
     >
       <RoomAudioRenderer />
       <RehearsalContent onLeave={onLeave} />

@@ -46,6 +46,9 @@ export const talkToAI = async (req, res) => {
   } else if (agentType === "astra") {
     roomName = `growth_session_${userId}`;
     agentName = "ASTRA";
+  } else if (agentType === "rehearsal") {
+    roomName = `rehearsal_session_${userId}`;
+    agentName = "REHEARSAL";
   }
 
   console.log(`[HTTP_CONTROLLER] --> POST /talk-to-ai | AGENT: ${agentName} | ROOM: ${roomName}`);
@@ -130,6 +133,32 @@ export const deployShadow = async (req, res) => {
     res.json({ success: true, message: "Shadow Agent deployed successfully in the background." });
   } catch (err) {
     console.error("[HTTP_CONTROLLER] ❌ Failed to spawn Shadow Bot:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getWeather = async (req, res) => {
+  const { latitude, longitude } = req.query;
+  if (!latitude || !longitude) {
+    return res.status(400).json({ error: "latitude and longitude are required" });
+  }
+  
+  try {
+    const url = `https://www.weatherunion.com/gw/weather/external/v0/get_weather_data?latitude=${latitude}&longitude=${longitude}`;
+    const response = await fetch(url, {
+      headers: {
+        "X-Zomato-Api-Key": "f2751361b695deef5c9f03f5a7f33bc9"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`WeatherUnion responded with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error("[WEATHER_CONTROLLER] ❌ Error fetching weather:", err.message);
     res.status(500).json({ error: err.message });
   }
 };

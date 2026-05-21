@@ -369,3 +369,44 @@ class VideoComposer:
         )
 
         print("[VIDEO] Compilation complete!")
+
+    def compile_face_reel(self, avatar_clip, voice_audio_path, word_timings, output_path, title="", category=""):
+        """
+        Synthesizes layers into a vertical MP4 reel featuring an animated talking face avatar.
+        """
+        print("[VIDEO] Loading voice audio track...")
+        voice_audio = AudioFileClip(voice_audio_path)
+        duration = voice_audio.duration
+
+        print("[VIDEO] Rendering premium visual layers...")
+        bg_clip = self.create_dynamic_grid_bg(duration)
+        header_clip = self.create_header_overlay(duration, title=title, category=category)
+        
+        # Position the avatar clip nicely in the center/upper-center
+        avatar_positioned = avatar_clip.with_position(("center", 600)).with_duration(duration)
+        
+        caption_clip = self.create_kinetic_captions(word_timings, duration)
+
+        print("[VIDEO] Mixing audio tracks...")
+        final_audio = CompositeAudioClip([voice_audio])
+        
+        print("[VIDEO] Composing full vertical video layers (with Face Avatar)...")
+        final_video = CompositeVideoClip([
+            bg_clip,
+            header_clip,
+            avatar_positioned,
+            caption_clip
+        ]).with_audio(final_audio)
+
+        print(f"[VIDEO] Compiling final vertical face reel to: {output_path}")
+        final_video.write_videofile(
+            output_path,
+            fps=24,
+            codec="libx264",
+            audio_codec="aac",
+            threads=4,
+            logger='bar'
+        )
+
+        print("[VIDEO] Compilation complete!")
+

@@ -6,10 +6,10 @@ import LinaRoom from "./components/LinaRoom";
 import VigilRoom from "./components/VigilRoom";
 import BIRoom from "./components/BIRoom";
 import NovaRoom from "./components/NovaRoom";
-import WeatherRoom from "./components/WeatherRoom";
 import VisionRoom from "./components/VisionRoom";
 import BlogSection from "./components/BlogSection";
 import AstraRoom from "./components/AstraRoom";
+import RehearsalRoom from "./components/RehearsalRoom";
 import '@livekit/components-styles/index.css';
 import "./index.css";
 
@@ -33,14 +33,15 @@ function App() {
     setShowBlog(!showBlog);
   };
 
-  const isLina = roomData?.creatorId === "LINA";
-  const isVigil = roomData?.creatorId === "VIGIL";
-  const isBI = roomData?.creatorId === "BI";
-  const isBI2 = roomData?.creatorId === "BI2";
-  const isNova = roomData?.creatorId === "NOVA";
-  const isAura = roomData?.creatorId === "AURA";
-  const isVision = roomData?.creatorId === "VONE";
-  const isAstra = roomData?.creatorId === "ASTRA";
+  const isLina      = roomData?.creatorId === "LINA";
+  const isVigil     = roomData?.creatorId === "VIGIL";
+  const isBI        = roomData?.creatorId === "BI";
+  const isBI2       = roomData?.creatorId === "BI2";
+  const isNova      = roomData?.creatorId === "NOVA";
+  const isAura      = roomData?.creatorId === "AURA";
+  const isVision    = roomData?.creatorId === "VONE";
+  const isAstra     = roomData?.creatorId === "ASTRA";
+  const isRehearsal = roomData?.creatorId === "REHEARSAL";
 
   if (showBlog) {
     return <BlogSection onBack={() => setShowBlog(false)} />;
@@ -60,11 +61,13 @@ function App() {
         ) : isNova ? (
           <NovaRoom roomData={roomData} onLeave={handleLeave} />
         ) : isAura ? (
-          <WeatherRoom roomData={roomData} onLeave={handleLeave} />
+          <VideoRoom roomData={roomData} onLeave={handleLeave} />
         ) : isVision ? (
           <VisionRoom roomData={roomData} onLeave={handleLeave} />
         ) : isAstra ? (
           <AstraRoom roomData={roomData} onLeave={handleLeave} />
+        ) : isRehearsal ? (
+          <RehearsalRoom roomData={roomData} onLeave={handleLeave} />
         ) : (
           <VideoRoom roomData={roomData} onLeave={handleLeave} />
         )
@@ -76,4 +79,3 @@ function App() {
 }
 
 export default App;
-
