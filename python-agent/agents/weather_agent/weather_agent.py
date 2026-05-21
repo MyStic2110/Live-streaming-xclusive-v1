@@ -52,7 +52,7 @@ class WeatherTools:
                     current = data.get("current", {})
                     temp = current.get("temperature_2m")
                     hum = current.get("relative_humidity_2m")
-                    return f"Aura Intelligence Report for {location}: The current temperature is {temp}°C with {hum}% humidity. (Source: Open-Meteo No-Auth Engine)"
+                    return f"Aura Intelligence Report for {location}: The current temperature is {temp} degreesC with {hum}% humidity. (Source: Open-Meteo No-Auth Engine)"
                 return "Aura could not reach the climate sensors at this time."
 
     @llm.function_tool(description="Get a detailed hourly forecast and current metrics using coordinates.")
@@ -63,7 +63,7 @@ class WeatherTools:
                 if resp.status == 200:
                     data = await resp.json()
                     current = data.get("current", {})
-                    return f"Open-Meteo Data: Temp: {current.get('temperature_2m')}°C, Humidity: {current.get('relative_humidity_2m')}%."
+                    return f"Open-Meteo Data: Temp: {current.get('temperature_2m')} degreesC, Humidity: {current.get('relative_humidity_2m')}%."
                 return "Failed to fetch detailed forecast."
 
 class CustomAgent(Agent):
@@ -138,7 +138,7 @@ async def entrypoint(ctx: JobContext):
         options = rtc.TrackPublishOptions()
         options.source = rtc.TrackSource.SOURCE_MICROPHONE
         publication = await ctx.room.local_participant.publish_track(track, options)
-        logger.info(f"✅ Audio track published: {publication.sid}")
+        logger.info(f"[OK] Audio track published: {publication.sid}")
 
         # Greet the user manually
         async def greet():
@@ -156,12 +156,12 @@ async def entrypoint(ctx: JobContext):
                     else:
                         await audio_source.push_frame(chunk.frame)
                 
-                logger.info("✅ Manual greeting completed.")
+                logger.info("[OK] Manual greeting completed.")
                 
                 # --- NEW: Funny Weather Report after Greeting ---
                 await weather_report()
             except Exception as e:
-                logger.error(f"❌ Manual greeting error: {e}")
+                logger.error(f"[ERROR] Manual greeting error: {e}")
 
         async def weather_report():
             logger.info("Asking LLM for a funny weather report...")
@@ -196,9 +196,9 @@ async def entrypoint(ctx: JobContext):
                         await audio_source.capture_frame(chunk.frame)
                     else:
                         await audio_source.push_frame(chunk.frame)
-                logger.info("✅ Weather report completed.")
+                logger.info("[OK] Weather report completed.")
             except Exception as e:
-                logger.error(f"❌ Weather report error: {e}")
+                logger.error(f"[ERROR] Weather report error: {e}")
 
         asyncio.create_task(greet())
 
@@ -278,11 +278,14 @@ async def entrypoint(ctx: JobContext):
         @ctx.room.on("participant_disconnected")
         def on_participant_disconnected(p):
             if p.identity.startswith(TARGET_HUMAN_IDENTITY):
-                logger.info(f"Participant {p.identity} left — agent shutting down.")
+                logger.info(f"Participant {p.identity} left - agent shutting down.")
                 shutdown_event.set()
 
-        # Handle explicit shutdown
-        ctx.add_shutdown_callback(lambda: shutdown_event.set())
+        async def _on_shutdown():
+            logger.info("[SHUTDOWN] LiveKit shutdown callback triggered. Setting shutdown event.")
+            shutdown_event.set()
+
+        ctx.add_shutdown_callback(_on_shutdown)
         
         # Wait for shutdown event
         await shutdown_event.wait()

@@ -85,7 +85,7 @@ async def entrypoint(ctx: JobContext):
 
     analyser = SpeechAnalyser()
     review_triggered = False
-    welcome_spoken = [False]  # mutable flag: welcome TTS fires exactly once on agent→listening
+    welcome_spoken = [False]  # mutable flag: welcome TTS fires exactly once on agent->listening
 
     agent = SilentRehearsalAgent(instructions=SYSTEM_PROMPT)
 
@@ -178,7 +178,7 @@ async def entrypoint(ctx: JobContext):
                 logger.info(f"[CRITIQUE] Synthesizing speech for critique script:\n{tts_script}")
                 try:
                     await session.say(tts_script, allow_interruptions=False)
-                    logger.info("[CRITIQUE] Speech synthesis finished ✅")
+                    logger.info("[CRITIQUE] Speech synthesis finished [OK]")
                 except Exception as tts_err:
                     logger.warning(f"[CRITIQUE] TTS playout failed (non-fatal, visual critique already sent): {tts_err}")
 
@@ -190,7 +190,7 @@ async def entrypoint(ctx: JobContext):
             }).encode("utf-8")
             await ctx.room.local_participant.publish_data(err_payload, topic="rehearsal_critique")
 
-    # ── Timing state
+    # -- Timing state
     _last_final_end = [None]
     _interim_seen = [False]
 
@@ -198,7 +198,7 @@ async def entrypoint(ctx: JobContext):
     def on_stt(event: voice.UserInputTranscribedEvent):
         """HOP-3: Deepgram STT fires this after transcribing audio frames from VAD."""
         if review_triggered:
-            logger.info("[HOP-3][STT_EVENT] Skipping — review already triggered.")
+            logger.info("[HOP-3][STT_EVENT] Skipping - review already triggered.")
             return
 
         now = time.time()
@@ -209,7 +209,7 @@ async def entrypoint(ctx: JobContext):
         if not event.is_final:
             # Interim: detect pause onset + stream caption
             if not _interim_seen[0]:
-                logger.info("[HOP-3][STT_EVENT] First interim of new utterance — triggering pause detector.")
+                logger.info("[HOP-3][STT_EVENT] First interim of new utterance - triggering pause detector.")
                 analyser.on_interim_start(now)
                 _interim_seen[0] = True
 
@@ -219,7 +219,7 @@ async def entrypoint(ctx: JobContext):
                 "is_final": False
             }).encode("utf-8")
 
-            logger.info(f"[HOP-3→4][STT_EVENT] Publishing INTERIM caption to topic='caption': '{text}'")
+            logger.info(f"[HOP-3->4][STT_EVENT] Publishing INTERIM caption to topic='caption': '{text}'")
             asyncio.create_task(
                 ctx.room.local_participant.publish_data(caption_payload, topic="caption")
             )
@@ -228,7 +228,7 @@ async def entrypoint(ctx: JobContext):
             if text:
                 logger.info(f"[HOP-3][STT_EVENT] FINAL segment confirmed: '{text}'")
                 start_est = _last_final_end[0] if _last_final_end[0] else now - 1.0
-                logger.info(f"[HOP-3→ANALYSER] Feeding segment to SpeechAnalyser: start={start_est:.2f}, end={now:.2f}")
+                logger.info(f"[HOP-3->ANALYSER] Feeding segment to SpeechAnalyser: start={start_est:.2f}, end={now:.2f}")
                 analyser.on_final(text, start_est, now)
                 _last_final_end[0] = now
                 _interim_seen[0] = False
@@ -239,13 +239,13 @@ async def entrypoint(ctx: JobContext):
                     "is_final": True
                 }).encode("utf-8")
 
-                logger.info(f"[HOP-3→4][STT_EVENT] Publishing FINAL caption to topic='caption'.")
+                logger.info(f"[HOP-3->4][STT_EVENT] Publishing FINAL caption to topic='caption'.")
                 asyncio.create_task(
                     ctx.room.local_participant.publish_data(caption_payload, topic="caption")
                 )
                 logger.info(f"[HOP-3][STT_EVENT] Session total words so far: {analyser.total_words()}")
             else:
-                logger.info("[HOP-3][STT_EVENT] Final event had empty transcript — skipping.")
+                logger.info("[HOP-3][STT_EVENT] Final event had empty transcript - skipping.")
 
     @ctx.room.on("data_received")
     def on_data(dp):
@@ -268,18 +268,18 @@ async def entrypoint(ctx: JobContext):
     @session.on("user_state_changed")
     def on_user_state_changed(event: voice.UserStateChangedEvent):
         """HOP-2: VAD triggers this when user starts/stops speaking."""
-        logger.info(f"[HOP-2][VAD_EVENT] User state: {event.old_state} → {event.new_state}")
+        logger.info(f"[HOP-2][VAD_EVENT] User state: {event.old_state} -> {event.new_state}")
         if event.new_state == "speaking":
-            logger.info("[HOP-2][VAD_EVENT] ✅ VAD confirmed: user IS speaking. Waiting for HOP-3 (STT).")
+            logger.info("[HOP-2][VAD_EVENT] [OK] VAD confirmed: user IS speaking. Waiting for HOP-3 (STT).")
         elif event.new_state == "listening":
             logger.info("[HOP-2][VAD_EVENT] User stopped speaking. STT final segment should follow.")
 
     @session.on("agent_state_changed")
     def on_agent_state_changed(event: voice.AgentStateChangedEvent):
         """Logs when the agent switches between initializing / listening / speaking / thinking."""
-        logger.info(f"[AGENT_STATE] Agent state: {event.old_state} → {event.new_state}")
+        logger.info(f"[AGENT_STATE] Agent state: {event.old_state} -> {event.new_state}")
         if event.new_state == "listening":
-            logger.info("[AGENT_STATE] ✅ Agent is now LISTENING — audio pipeline is warm.")
+            logger.info("[AGENT_STATE] [OK] Agent is now LISTENING - audio pipeline is warm.")
             # Fire welcome speech the FIRST time the agent reaches 'listening'.
             # Using create_task so a playout error cannot crash the entrypoint.
             if not welcome_spoken[0]:
@@ -293,12 +293,12 @@ async def entrypoint(ctx: JobContext):
                             "Press Stop and Review when you are done and I will give you a full breakdown.",
                             allow_interruptions=False
                         )
-                        logger.info("[TTS] Welcome message playout complete ✅")
+                        logger.info("[TTS] Welcome message playout complete [OK]")
                     except Exception as e:
                         logger.warning(f"[TTS] Welcome playout failed (non-fatal): {e}")
                 asyncio.create_task(_speak_welcome())
         elif event.new_state == "speaking":
-            logger.info("[AGENT_STATE] 🔊 Agent is now speaking via TTS.")
+            logger.info("[AGENT_STATE] [AUDIO] Agent is now speaking via TTS.")
 
     @ctx.room.on("participant_disconnected")
     def on_participant_disconnected(participant):
@@ -312,7 +312,11 @@ async def entrypoint(ctx: JobContext):
 
         asyncio.create_task(shutdown_if_empty())
 
-    ctx.add_shutdown_callback(lambda: shutdown_event.set())
+    async def _on_shutdown():
+        logger.info("[SHUTDOWN] LiveKit shutdown callback triggered. Setting shutdown event.")
+        shutdown_event.set()
+
+    ctx.add_shutdown_callback(_on_shutdown)
 
     # Start metrics broadcast loop
     asyncio.create_task(publish_metrics_loop())
@@ -320,7 +324,7 @@ async def entrypoint(ctx: JobContext):
     try:
         logger.info("[SESSION] Invoking session.start(room, agent)...")
         await session.start(room=ctx.room, agent=agent)
-        logger.info("[SESSION] session.start complete. Welcome TTS will fire on first agent_state_changed→listening.")
+        logger.info("[SESSION] session.start complete. Welcome TTS will fire on first agent_state_changed->listening.")
 
         # Keep the room job alive until the user explicitly leaves or disconnects.
         await shutdown_event.wait()

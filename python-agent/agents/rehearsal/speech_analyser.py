@@ -19,7 +19,7 @@ class SpeechAnalyser:
         self._interim_started = False
         logger.info("[ANALYSER] SpeechAnalyser initialized.")
 
-    # ── Called when first interim word arrives (signals start of new utterance)
+    # -- Called when first interim word arrives (signals start of new utterance)
     def on_interim_start(self, timestamp: float):
         if self._last_final_end is not None and not self._interim_started:
             pause = timestamp - self._last_final_end
@@ -28,7 +28,7 @@ class SpeechAnalyser:
                 logger.info(f"[ANALYSER] Detected silence pause: {pause:.2f}s")
         self._interim_started = True
 
-    # ── Called on every final STT segment
+    # -- Called on every final STT segment
     def on_final(self, text: str, start_time: float, end_time: float):
         text = text.strip()
         if not text:
@@ -56,7 +56,7 @@ class SpeechAnalyser:
         self._last_final_end = end_time
         self._interim_started = False
 
-    # ── Metrics ────────────────────────────────────────────────────────────────
+    # -- Metrics ----------------------------------------------------------------
 
     def total_words(self) -> int:
         return sum(s["words"] for s in self.segments)
