@@ -4,6 +4,7 @@ import {
   ArrowLeft, Sparkles, Shield, Activity, RefreshCw, Calendar, 
   User, Tag, ChevronRight, Clock, Eye, Share2, List, ExternalLink 
 } from "lucide-react";
+import LegalModal from "./LegalModal";
 
 const COLORS = {
   primary: "#111827",
@@ -107,6 +108,9 @@ const ArchitecturalInfographic = ({ data }) => {
 const BlogSection = ({ onBack, externalPosts = [] }) => {
   const [posts, setPosts] = useState([...externalPosts, ...INITIAL_POSTS]);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [legalModalType, setLegalModalType] = useState(null);
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [subscribedNewsletter, setSubscribedNewsletter] = useState(false);
   const [showReelModal, setShowReelModal] = useState(false);
   const [dismissReelPreview, setDismissReelPreview] = useState(false);
   const [videoError, setVideoError] = useState(false);
@@ -876,13 +880,99 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
 
       <footer style={{ padding: "10rem 5% 5rem", background: COLORS.bgSoft, borderTop: `1px solid ${COLORS.border}`, marginTop: "10rem", textAlign: "center" }}>
           <div style={{ fontSize: "2rem", fontWeight: "900", letterSpacing: "4px", color: COLORS.primary, marginBottom: "1.5rem" }}>SWARM COMMAND</div>
-          <div style={{ display: "flex", justifyContent: "center", gap: "3rem", marginBottom: "4rem", fontSize: "0.9rem", fontWeight: "700", color: COLORS.textMuted }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: "3rem", marginBottom: "3rem", fontSize: "0.9rem", fontWeight: "700", color: COLORS.textMuted }}>
             <span>NETWORK</span>
             <span>PROTOCOLS</span>
             <span>INTELLIGENCE</span>
           </div>
-          <div style={{ color: COLORS.textMuted, fontSize: "0.8rem", letterSpacing: "1px", opacity: 0.6 }}>© 2026 NEXUS OPERATING SYSTEM · ELITE AGENTIC EDITION</div>
+
+          {/* Newsletter Signup Form */}
+          <div style={{ maxWidth: "450px", margin: "0 auto 3rem auto", padding: "1.75rem", background: "#ffffff", borderRadius: "16px", border: `1px solid ${COLORS.border}`, boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)" }}>
+            <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: COLORS.primary, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+              Newsletter
+            </h4>
+            <p style={{ color: COLORS.textMuted, fontSize: "0.85rem", lineHeight: "1.5", marginBottom: "1.25rem" }}>
+              Join our newsletter for exclusive updates and tech premium insights.
+            </p>
+            {!subscribedNewsletter ? (
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input 
+                  type="email" 
+                  placeholder="Your email" 
+                  value={newsletterEmail}
+                  onChange={e => setNewsletterEmail(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: `1px solid ${COLORS.border}`,
+                    fontSize: "0.85rem",
+                    outline: "none",
+                    fontFamily: "'Outfit', sans-serif"
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (newsletterEmail.includes("@")) {
+                      setSubscribedNewsletter(true);
+                      alert("Successfully subscribed to our newsletter!");
+                    } else {
+                      alert("Please enter a valid email address.");
+                    }
+                  }}
+                  style={{
+                    padding: "10px 20px",
+                    background: COLORS.accent,
+                    color: "white",
+                    border: "none",
+                    borderRadius: "10px",
+                    fontWeight: "800",
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    transition: "background 0.2s"
+                  }}
+                  onMouseEnter={e => e.target.style.background = "#2563eb"}
+                  onMouseLeave={e => e.target.style.background = COLORS.accent}
+                >
+                  Join
+                </button>
+              </div>
+            ) : (
+              <div style={{ color: COLORS.success, fontWeight: "800", fontSize: "0.85rem", background: "rgba(16, 185, 129, 0.08)", padding: "12px", borderRadius: "10px", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
+                ✓ SUBSCRIBED WITH {newsletterEmail.toUpperCase()}
+              </div>
+            )}
+          </div>
+          <div style={{ display: "flex", justifyContent: "center", gap: "2rem", marginBottom: "3rem", fontSize: "0.8rem", color: COLORS.textMuted, fontWeight: "600" }}>
+            <span 
+              onClick={() => setLegalModalType("privacy")}
+              style={{ cursor: "pointer", transition: "color 0.2s" }} 
+              onMouseEnter={e => e.target.style.color = COLORS.accent} 
+              onMouseLeave={e => e.target.style.color = COLORS.textMuted}
+            >
+              PRIVACY POLICY
+            </span>
+            <span 
+              onClick={() => setLegalModalType("terms")}
+              style={{ cursor: "pointer", transition: "color 0.2s" }} 
+              onMouseEnter={e => e.target.style.color = COLORS.accent} 
+              onMouseLeave={e => e.target.style.color = COLORS.textMuted}
+            >
+              TERMS & CONDITIONS
+            </span>
+          </div>
+          <div style={{ color: COLORS.textMuted, fontSize: "0.8rem", letterSpacing: "1px", opacity: 0.6 }}>© 2026 SWARM COMMAND · ALL RIGHTS RESERVED · MADE IN INDIA 🇮🇳</div>
       </footer>
+
+      {/* --- LEGAL MODAL --- */}
+      <AnimatePresence>
+        {legalModalType && (
+          <LegalModal 
+            type={legalModalType} 
+            onClose={() => setLegalModalType(null)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -13,9 +13,10 @@ from livekit.agents import (
     llm, 
     AgentSession, 
     AutoSubscribe, 
-    voice
+    voice,
+    RoomOutputOptions
 )
-from livekit.plugins import silero, openai, deepgram
+from livekit.plugins import silero, openai, deepgram, runway
 
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
@@ -135,6 +136,20 @@ async def entrypoint(ctx: JobContext):
     await ctx.room.local_participant.set_metadata(json.dumps({"name": AGENT_NAME}))
 
     # 7. Event Listeners
+    @session.on("agent_started")
+    def on_started():
+        logger.info("[LINA] Agent started. Saying onboarding greeting...")
+        greeting = "Hey, I'm here. It's really good to connect with you. How are you feeling today?"
+        asyncio.create_task(session.say(greeting, allow_interruptions=True))
+        
+        # Publish greeting to chat transcript
+        payload = json.dumps({
+            "sender": "Lina",
+            "text": greeting,
+            "timestamp": datetime.now().isoformat()
+        }).encode("utf-8")
+        asyncio.create_task(ctx.room.local_participant.publish_data(payload, topic="chat_message"))
+
     @session.on("user_input_transcribed")
     def on_stt(event: voice.UserInputTranscribedEvent):
         if event.is_final:
@@ -145,15 +160,30 @@ async def entrypoint(ctx: JobContext):
             if not sentry.is_thought_complete(event.transcript):
                 return
             logger.info(f"--- [INPUT] {event.transcript} ---")
+            
+            # Publish user final transcript to the room
+            payload = json.dumps({
+                "sender": "You",
+                "text": event.transcript,
+                "timestamp": datetime.now().isoformat()
+            }).encode("utf-8")
+            asyncio.create_task(ctx.room.local_participant.publish_data(payload, topic="chat_message"))
 
     @session.on("conversation_item_added")
     def on_conversation_item(event: voice.ConversationItemAddedEvent):
         item = event.item
         if isinstance(item, llm.ChatMessage):
             content = item.content[0] if isinstance(item.content, list) else item.content
-            if item.role == "assistant":
+            if item.role == "assistant" and content:
                 logger.info(f"LINA: {content}")
-            elif item.role == "user":
+                # Publish assistant final speech to the room
+                payload = json.dumps({
+                    "sender": "Lina",
+                    "text": content,
+                    "timestamp": datetime.now().isoformat()
+                }).encode("utf-8")
+                asyncio.create_task(ctx.room.local_participant.publish_data(payload, topic="chat_message"))
+            elif item.role == "user" and content:
                 logger.info(f"MURALI: {content}")
 
     @session.on("agent_state_changed")
@@ -185,7 +215,32 @@ async def entrypoint(ctx: JobContext):
         )
 
     # 8. Start the pipeline
-    await session.start(room=ctx.room, agent=agent)
+    runway_avatar_id = os.getenv("RUNWAY_AVATAR_ID")
+    runway_preset_id = os.getenv("RUNWAY_PRESET_ID")
+    
+    avatar = None
+    if os.getenv("RUNWAYML_API_SECRET"):
+        if runway_avatar_id:
+            avatar = runway.AvatarSession(avatar_id=runway_avatar_id)
+        else:
+            preset = runway_preset_id or "lina-preset"
+            avatar = runway.AvatarSession(preset_id=preset)
+
+    if avatar:
+        try:
+            logger.info("[RUNWAY] Starting Runway Avatar Session...")
+            await avatar.start(session, room=ctx.room)
+            await session.start(
+                room=ctx.room, 
+                agent=agent, 
+                room_output_options=RoomOutputOptions(audio_enabled=False)
+            )
+        except Exception as e:
+            logger.error(f"[RUNWAY] Failed to start Runway Avatar Session: {e}. Falling back to standard voice-only agent.")
+            avatar = None
+
+    if not avatar:
+        await session.start(room=ctx.room, agent=agent)
     
     # --- STAY ALIVE LOOP ---
     try:

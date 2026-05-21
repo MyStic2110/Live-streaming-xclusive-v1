@@ -34,3 +34,5 @@ test.vtt
 # Uploaded PDFs in frontend
 frontend/*.pdf
 
+# Lina agent source video assets
+python-agent/agents/lina/Video/

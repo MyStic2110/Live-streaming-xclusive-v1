@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
+import LegalModal from "./LegalModal";
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -214,6 +215,7 @@ const PipelineCard = ({ agent, onAction }) => {
 export default function LiveList({ onJoin, onBlogClick }) {
   const [selectedReel, setSelectedReel] = React.useState(null);
   const [showReelsGallery, setShowReelsGallery] = React.useState(false);
+  const [legalModalType, setLegalModalType] = React.useState(null);
   const [showShadowInput, setShowShadowInput] = React.useState(false);
   const [meetingUrl, setMeetingUrl] = React.useState("");
   const [isDeployingShadow, setIsDeployingShadow] = React.useState(false);
@@ -1405,19 +1407,19 @@ export default function LiveList({ onJoin, onBlogClick }) {
             </ul>
           </div>
 
-          {/* Column 4: Secondary Email Lead Capture */}
+          {/* Column 4: Newsletter */}
           <div>
             <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: COLORS.primary, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "1.5rem" }}>
-              Join Swarm Fleet
+              Newsletter
             </h4>
             <p style={{ color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "1.5", marginBottom: "1.25rem" }}>
-              Claim your customized B2B operational AI blueprint and lock in dashboard credentials.
+              Join our newsletter for exclusive updates and tech premium insights.
             </p>
             {!leadSubmitted ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <input 
                   type="email" 
-                  placeholder="name@company.com" 
+                  placeholder="Your email" 
                   value={leadEmail}
                   onChange={e => setLeadEmail(e.target.value)}
                   style={{
@@ -1425,17 +1427,17 @@ export default function LiveList({ onJoin, onBlogClick }) {
                     borderRadius: "10px",
                     border: `1px solid ${COLORS.border}`,
                     fontSize: "0.85rem",
-                    outline: "none"
+                    outline: "none",
+                    fontFamily: "'Outfit', sans-serif"
                   }}
                 />
                 <button
                   onClick={() => {
                     if (leadEmail.includes("@")) {
                       setLeadSubmitted(true);
-                      setExitIntentCaptured(true);
-                      alert("Corporate blueprint credentials successfully dispatched to your email!");
+                      alert("Successfully subscribed to our newsletter!");
                     } else {
-                      alert("Please enter a valid corporate email.");
+                      alert("Please enter a valid email address.");
                     }
                   }}
                   style={{
@@ -1446,15 +1448,18 @@ export default function LiveList({ onJoin, onBlogClick }) {
                     borderRadius: "10px",
                     fontWeight: "800",
                     fontSize: "0.85rem",
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    transition: "background 0.2s"
                   }}
+                  onMouseEnter={e => e.target.style.background = "#2563eb"}
+                  onMouseLeave={e => e.target.style.background = COLORS.accent}
                 >
-                  CLAIM BLUEPRINT
+                  Join
                 </button>
               </div>
             ) : (
               <div style={{ color: COLORS.success, fontWeight: "800", fontSize: "0.85rem", background: "rgba(16, 185, 129, 0.08)", padding: "12px", borderRadius: "10px", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
-                ✓ CREDENTIALS SENT TO {leadEmail.toUpperCase()}
+                ✓ SUBSCRIBED WITH {leadEmail.toUpperCase()}
               </div>
             )}
           </div>
@@ -1475,11 +1480,25 @@ export default function LiveList({ onJoin, onBlogClick }) {
           letterSpacing: "0.5px" 
         }}>
           <div>
-            © 2026 SWARM COMMAND · BUILT FOR B2B ENTERPRISE EXCELLENCE
+            © 2026 SWARM COMMAND · ALL RIGHTS RESERVED · MADE IN INDIA 🇮🇳
           </div>
           <div style={{ display: "flex", gap: "2rem" }}>
-            <span style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>OPERATOR POLICY</span>
-            <span style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>SWARM TOS</span>
+            <span 
+              onClick={() => setLegalModalType("privacy")}
+              style={{ cursor: "pointer", transition: "color 0.2s" }} 
+              onMouseEnter={e => e.target.style.color = COLORS.accent} 
+              onMouseLeave={e => e.target.style.color = COLORS.textMuted}
+            >
+              PRIVACY POLICY
+            </span>
+            <span 
+              onClick={() => setLegalModalType("terms")}
+              style={{ cursor: "pointer", transition: "color 0.2s" }} 
+              onMouseEnter={e => e.target.style.color = COLORS.accent} 
+              onMouseLeave={e => e.target.style.color = COLORS.textMuted}
+            >
+              TERMS & CONDITIONS
+            </span>
             <span style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>CONSOLE ACCESS</span>
           </div>
         </div>
@@ -2046,6 +2065,16 @@ export default function LiveList({ onJoin, onBlogClick }) {
               </span>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- LEGAL MODAL --- */}
+      <AnimatePresence>
+        {legalModalType && (
+          <LegalModal 
+            type={legalModalType} 
+            onClose={() => setLegalModalType(null)} 
+          />
         )}
       </AnimatePresence>
 
