@@ -60,11 +60,10 @@ class AvatarHelper:
         
         # Run inference
         try:
-            result = subprocess.run(command, cwd=wav2lip_dir, check=True, capture_output=True, text=True)
+            result = subprocess.run(command, cwd=wav2lip_dir, check=True)
             print("[AVATAR_HELPER] Wav2Lip rendering complete!")
         except subprocess.CalledProcessError as e:
-            print(f"[AVATAR_HELPER] ERROR running Wav2Lip:")
-            print(e.stderr)
+            print(f"[AVATAR_HELPER] ERROR running Wav2Lip: {e}")
             raise RuntimeError("Wav2Lip failed to generate the lip-sync video.")
             
         if not os.path.exists(output_mp4):

@@ -22,8 +22,30 @@ const API = import.meta.env.VITE_API_URL || "";
 const INITIAL_POSTS = [];
 
 const ArchitecturalInfographic = ({ data }) => {
-  if (!data || !data.architecture) return null;
-  const { layers, primitives, flow } = data.architecture;
+  if (!data) return null;
+
+  let parsedData = data;
+  if (typeof data === "string") {
+    try {
+      parsedData = JSON.parse(data);
+    } catch (e) {
+      console.error("[BlogSection] Failed to parse infographicData string:", e);
+      return null;
+    }
+  }
+
+  const arch = parsedData.architecture || parsedData;
+  if (!arch) return null;
+
+  const rawLayers = arch.architectureLayers || arch.layers || [];
+  const rawPrimitives = arch.primitives || arch.coreCapabilities || [];
+  const rawFlow = arch.flow || arch.execution_flow || arch.executionSteps || [];
+
+  const actualLayers = Array.isArray(rawLayers) ? rawLayers : [];
+  const actualPrimitives = Array.isArray(rawPrimitives) 
+    ? rawPrimitives.map(p => typeof p === "object" ? (p.title || p.name || "") : p).filter(Boolean)
+    : [];
+  const actualFlow = Array.isArray(rawFlow) ? rawFlow : [];
 
   return (
     <div style={{
@@ -47,58 +69,66 @@ const ArchitecturalInfographic = ({ data }) => {
         <Activity color="#60a5fa" size={32} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3rem", position: "relative", zIndex: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: actualFlow.length > 0 ? "1fr 1fr" : "1fr", gap: "3rem", position: "relative", zIndex: 10 }}>
         
         {/* Left Column: Stack & Primitives */}
         <div style={{ display: "flex", flexDirection: "column", gap: "2.5rem" }}>
           
           {/* Primitives */}
-          <div style={{ background: "rgba(255,255,255,0.05)", padding: "1.5rem", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <h4 style={{ fontSize: "1.1rem", fontWeight: "800", marginBottom: "1rem", color: "#93c5fd", marginTop: 0 }}>Core Primitives</h4>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-              {primitives?.map((prim, i) => (
-                <span key={i} style={{ fontSize: "0.8rem", fontWeight: "700", background: "rgba(59, 130, 246, 0.2)", padding: "6px 12px", borderRadius: "8px", border: "1px solid rgba(59, 130, 246, 0.3)" }}>
-                  {prim}
-                </span>
-              ))}
+          {actualPrimitives.length > 0 && (
+            <div style={{ background: "rgba(255,255,255,0.05)", padding: "1.5rem", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <h4 style={{ fontSize: "1.1rem", fontWeight: "800", marginBottom: "1rem", color: "#93c5fd", marginTop: 0 }}>Core Primitives</h4>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                {actualPrimitives.map((prim, i) => (
+                  <span key={i} style={{ fontSize: "0.8rem", fontWeight: "700", background: "rgba(59, 130, 246, 0.2)", padding: "6px 12px", borderRadius: "8px", border: "1px solid rgba(59, 130, 246, 0.3)" }}>
+                    {prim}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Architecture Layers */}
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <h4 style={{ fontSize: "1.1rem", fontWeight: "800", marginBottom: "0.5rem", color: "#93c5fd", marginTop: 0 }}>Architecture Stack</h4>
-            {layers?.map((layer, i) => (
-              <div key={i} style={{ 
-                background: "rgba(255,255,255,0.03)", borderLeft: `4px solid ${["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b"][i % 4] || "#3b82f6"}`,
-                padding: "1.2rem", borderRadius: "0 12px 12px 0"
-              }}>
-                <div style={{ fontWeight: "800", fontSize: "0.95rem", marginBottom: "6px" }}>{layer.name}</div>
-                <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)", lineHeight: "1.5" }}>{layer.description}</div>
-              </div>
-            ))}
+            {actualLayers.map((layer, i) => {
+              const layerName = layer.name || layer.title || `Layer ${i + 1}`;
+              const layerDesc = layer.description || (Array.isArray(layer.components) ? layer.components.join(', ') : layer.components) || "";
+              return (
+                <div key={i} style={{ 
+                  background: "rgba(255,255,255,0.03)", borderLeft: `4px solid ${["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b"][i % 4] || "#3b82f6"}`,
+                  padding: "1.2rem", borderRadius: "0 12px 12px 0"
+                }}>
+                  <div style={{ fontWeight: "800", fontSize: "0.95rem", marginBottom: "6px" }}>{layerName}</div>
+                  {layerDesc && <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)", lineHeight: "1.5" }}>{layerDesc}</div>}
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Right Column: Execution Flow */}
-        <div style={{ background: "rgba(0,0,0,0.2)", padding: "2rem", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.05)" }}>
-          <h4 style={{ fontSize: "1.1rem", fontWeight: "800", marginBottom: "2rem", color: "#93c5fd", marginTop: 0 }}>Execution Flow</h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", position: "relative" }}>
-            <div style={{ position: "absolute", left: "15px", top: "20px", bottom: "20px", width: "2px", background: "rgba(255,255,255,0.1)", zIndex: 0 }}></div>
-            {flow?.map((step, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "1.5rem", position: "relative", zIndex: 1 }}>
-                <div style={{ 
-                  width: "32px", height: "32px", borderRadius: "50%", background: "#1e1b4b", border: "2px solid #60a5fa",
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem", fontWeight: "900", color: "#60a5fa", flexShrink: 0
-                }}>
-                  {i + 1}
+        {actualFlow.length > 0 && (
+          <div style={{ background: "rgba(0,0,0,0.2)", padding: "2rem", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.05)" }}>
+            <h4 style={{ fontSize: "1.1rem", fontWeight: "800", marginBottom: "2rem", color: "#93c5fd", marginTop: 0 }}>Execution Flow</h4>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", position: "relative" }}>
+              <div style={{ position: "absolute", left: "15px", top: "20px", bottom: "20px", width: "2px", background: "rgba(255,255,255,0.1)", zIndex: 0 }}></div>
+              {actualFlow.map((step, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "1.5rem", position: "relative", zIndex: 1 }}>
+                  <div style={{ 
+                    width: "32px", height: "32px", borderRadius: "50%", background: "#1e1b4b", border: "2px solid #60a5fa",
+                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem", fontWeight: "900", color: "#60a5fa", flexShrink: 0
+                  }}>
+                    {i + 1}
+                  </div>
+                  <div style={{ paddingTop: "6px", fontWeight: "700", fontSize: "0.95rem", color: "rgba(255,255,255,0.9)", lineHeight: "1.4" }}>
+                    {step}
+                  </div>
                 </div>
-                <div style={{ paddingTop: "6px", fontWeight: "700", fontSize: "0.95rem", color: "rgba(255,255,255,0.9)", lineHeight: "1.4" }}>
-                  {step}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>
@@ -396,10 +426,10 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
                 }
 
                 if (line.startsWith('## ')) {
-                  return <h2 key={i} style={{ fontSize: "2.5rem", fontWeight: "900", marginTop: "4rem", marginBottom: "1.5rem", letterSpacing: "-1px" }}>{line.replace('## ', '')}</h2>;
+                  return <h2 key={i} style={{ fontSize: "2.5rem", fontWeight: "900", marginTop: "4rem", marginBottom: "1.5rem", letterSpacing: "-1px" }}>{line.replace('## ', '').replace(/\*\*/g, '').trim()}</h2>;
                 }
                 if (line.startsWith('### ')) {
-                  return <h3 key={i} style={{ fontSize: "1.8rem", fontWeight: "800", marginTop: "3rem", marginBottom: "1rem", color: COLORS.accent }}>{line.replace('### ', '')}</h3>;
+                  return <h3 key={i} style={{ fontSize: "1.8rem", fontWeight: "800", marginTop: "3rem", marginBottom: "1rem", color: COLORS.accent }}>{line.replace('### ', '').replace(/\*\*/g, '').trim()}</h3>;
                 }
                 if (line.startsWith('- **') || line.includes('**')) {
                   const parts = line.split('**');
@@ -460,7 +490,7 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
                 <div style={{ display: "grid", gap: "12px" }}>
                   {selectedPost.tableOfContents.map((item, i) => (
                     <div key={i} style={{ fontSize: "0.95rem", color: COLORS.textMuted, cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={(e) => e.target.style.color = COLORS.accent} onMouseLeave={(e) => e.target.style.color = COLORS.textMuted}>
-                      {item}
+                      {item.replace(/\*\*/g, '').trim()}
                     </div>
                   ))}
                 </div>

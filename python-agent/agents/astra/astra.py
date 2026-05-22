@@ -31,6 +31,14 @@ logger.setLevel(logging.INFO)
 
 TRACKER_PATH = os.path.join(os.path.dirname(__file__), "tracker.json")
 
+import traceback
+def log_error(msg):
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "astra_error.log"), "a", encoding="utf-8") as f:
+            f.write(f"[{datetime.now().isoformat()}] {msg}\n{traceback.format_exc()}\n")
+    except Exception as ex:
+        print(f"Error logging to astra_error.log: {ex}", file=sys.stderr)
+
 def get_tracker():
     try:
         with open(TRACKER_PATH, "r") as f:
@@ -55,26 +63,30 @@ def save_tracker(data):
 
 async def entrypoint(ctx: JobContext):
     logger.info(f"--- ASTRA (Autonomous Growth Agent) CONNECTING ---")
-    
-    sentry = get_sentry("ASTRA")
-    sentry.log_transaction("session_start", {"room": ctx.room.name})
+    log_error("--- Astra entrypoint connecting ---")
+    try:
+        sentry = get_sentry("ASTRA")
+        sentry.log_transaction("session_start", {"room": ctx.room.name})
 
-    vad = silero.VAD.load(min_silence_duration=0.5)
-    stt = deepgram.STT(model="nova-2-general")
-    tts = deepgram.TTS(model="aura-asteria-en")
+        vad = silero.VAD.load(min_silence_duration=0.5)
+        stt = deepgram.STT(model="nova-2-general")
+        tts = deepgram.TTS(model="aura-asteria-en")
 
-    max_retries = 3
-    for attempt in range(1, max_retries + 1):
-        try:
-            await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
-            break
-        except Exception as e:
-            logger.warning(f"LiveKit connection attempt {attempt} failed: {e}")
-            if attempt == max_retries:
-                raise
-            await asyncio.sleep(2 ** attempt)
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
+                break
+            except Exception as e:
+                logger.warning(f"LiveKit connection attempt {attempt} failed: {e}")
+                if attempt == max_retries:
+                    raise
+                await asyncio.sleep(2 ** attempt)
 
-    await ctx.room.local_participant.set_metadata(json.dumps({"name": "ASTRA"}))
+        await ctx.room.local_participant.set_metadata(json.dumps({"name": "ASTRA"}))
+    except Exception as e:
+        log_error(f"Error in initialization: {e}")
+        raise
 
     tracker = get_tracker()
     current_day = tracker.get("current_day", 1)
@@ -272,7 +284,7 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
                         "canonicalUrl": f"/blog/{slug}",
                         "tags": tags
                     },
-                    "tableOfContents": [line[4:] for line in content.split('\n') if line.startswith('### ')],
+                    "tableOfContents": [line[4:].replace("**", "").replace("*", "").strip() for line in content.split('\n') if line.startswith('### ')],
                     "cta": {
                         "title": "Deploy Your Fleet",
                         "description": "Transform your enterprise with autonomous intelligence.",
@@ -424,55 +436,97 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
 
     @session.on("session_usage_updated")
     def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
-        for m in usage_data.usage.model_usage:
-            if m.type == "llm_usage":
-                session_usage["input_tokens"] = getattr(m, "input_tokens", 0)
-                session_usage["output_tokens"] = getattr(m, "output_tokens", 0)
-            elif m.type == "stt_usage":
-                session_usage["stt_seconds"] = getattr(m, "audio_duration", 0.0)
-            elif m.type == "tts_usage":
-                session_usage["tts_chars"] = getattr(m, "characters_count", 0)
+        try:
+            log_error(f"on_usage event received: {usage_data}")
+            for m in usage_data.usage.model_usage:
+                if m.type == "llm_usage":
+                    session_usage["input_tokens"] = getattr(m, "input_tokens", 0)
+                    session_usage["output_tokens"] = getattr(m, "output_tokens", 0)
+                elif m.type == "stt_usage":
+                    session_usage["stt_seconds"] = getattr(m, "audio_duration", 0.0)
+                elif m.type == "tts_usage":
+                    session_usage["tts_chars"] = getattr(m, "characters_count", 0)
 
-        # --- UNIFIED SENTRY COST AUDIT (LLM + STT + TTS) ---
-        costs = sentry.calculate_session_cost(
-            llm_model="gpt-4o-mini",
-            input_tokens=session_usage["input_tokens"],
-            output_tokens=session_usage["output_tokens"],
-            stt_model="nova-2-general",
-            stt_seconds=session_usage["stt_seconds"],
-            tts_model="aura-asteria-en",
-            tts_characters=session_usage["tts_chars"]
-        )
+            # --- UNIFIED SENTRY COST AUDIT (LLM + STT + TTS) ---
+            costs = sentry.calculate_session_cost(
+                llm_model="gpt-4o-mini",
+                input_tokens=session_usage["input_tokens"],
+                output_tokens=session_usage["output_tokens"],
+                stt_model="nova-2-general",
+                stt_seconds=session_usage["stt_seconds"],
+                tts_model="aura-asteria-en",
+                tts_characters=session_usage["tts_chars"]
+            )
 
-        # Persist full cost breakdown to tracker
-        t = get_tracker()
-        t["cumulative_usage"]["input_tokens"] = pre_session_usage["input_tokens"] + session_usage["input_tokens"]
-        t["cumulative_usage"]["output_tokens"] = pre_session_usage["output_tokens"] + session_usage["output_tokens"]
-        t["cumulative_usage"]["total_cost"] = pre_session_usage["total_cost"] + costs["total_cost_usd"]
-        t["cumulative_usage"]["stt_cost"] = round(costs["stt_cost_usd"], 6)
-        t["cumulative_usage"]["tts_cost"] = round(costs["tts_cost_usd"], 6)
-        save_tracker(t)
+            # Persist full cost breakdown to tracker
+            t = get_tracker()
+            t["cumulative_usage"]["input_tokens"] = pre_session_usage["input_tokens"] + session_usage["input_tokens"]
+            t["cumulative_usage"]["output_tokens"] = pre_session_usage["output_tokens"] + session_usage["output_tokens"]
+            t["cumulative_usage"]["total_cost"] = pre_session_usage["total_cost"] + costs["total_cost_usd"]
+            t["cumulative_usage"]["stt_cost"] = round(costs["stt_cost_usd"], 6)
+            t["cumulative_usage"]["tts_cost"] = round(costs["tts_cost_usd"], 6)
+            save_tracker(t)
+        except Exception as e:
+            log_error(f"Error in on_usage: {e}")
 
-    @session.on("agent_started")
-    def on_started():
+    agent_ready = False
+    greeting_spoken = False
+
+    async def speak_greeting():
+        nonlocal greeting_spoken
+        if greeting_spoken or not agent_ready:
+            return
+        greeting_spoken = True
         logger.info("[ASTRA] Astra is now online. Claiming strategic channel.")
-        asyncio.create_task(session.say(
-            f"Greetings. I am Astra, your Content Architect. Day {current_day} of our 7-day sprint has begun. I am now establishing a link to the Swarm Intelligence fleet and analyzing today's growth vectors.",
-            allow_interruptions=True
-        ))
+        try:
+            # Wait for user's WebRTC audio connection to fully initialize
+            await asyncio.sleep(2.0)
+            await session.say(
+                f"Greetings. I am Astra, your Content Architect. Day {current_day} of our 7-day sprint has begun. I am now establishing a link to the Swarm Intelligence fleet and analyzing today's growth vectors.",
+                allow_interruptions=True
+            )
+        except Exception as err:
+            log_error(f"Error speaking greeting: {err}")
+            greeting_spoken = False
 
-    await session.start(room=ctx.room, agent=agent)
+    @ctx.room.on("participant_connected")
+    def on_participant_connected(participant):
+        logger.info(f"[ROOM] Participant connected: {participant.identity}")
+        asyncio.create_task(speak_greeting())
+
+    @session.on("agent_state_changed")
+    def on_state_changed(event: voice.AgentStateChangedEvent):
+        nonlocal agent_ready
+        try:
+            log_error(f"[ASTRA] State changed: {event.old_state} -> {event.new_state}")
+            if event.new_state == "listening":
+                agent_ready = True
+                if ctx.room.remote_participants:
+                    asyncio.create_task(speak_greeting())
+        except Exception as e:
+            log_error(f"Error in on_state_changed: {e}")
+
+    try:
+        log_error("Starting agent session")
+        await session.start(room=ctx.room, agent=agent)
+        log_error("Agent session started successfully")
+    except Exception as e:
+        log_error(f"Error during session.start: {e}")
+        raise
     
     from livekit import rtc
 
     # --- STAY ALIVE LOOP ---
     try:
+        log_error(f"Entering stay-alive loop. Room connection state: {ctx.room.connection_state}")
         while ctx.room.connection_state != rtc.ConnectionState.CONN_DISCONNECTED:
             await asyncio.sleep(1)
     except Exception as e:
         logger.error(f"Astra loop error: {e}")
+        log_error(f"Astra loop error: {e}")
     finally:
         logger.info("Astra session terminating.")
+        log_error("Astra session terminating.")
 
 if __name__ == "__main__":
     cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint, agent_name="ASTRA"))

@@ -163,7 +163,7 @@ async def entrypoint(ctx: JobContext):
     dynamic_prompt = f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}\n\nCURRENT DATABASE SCHEMA:\n{json.dumps(SCHEMA_CACHE, indent=2)}"
     
     chat_ctx = llm.ChatContext()
-    chat_ctx.append(role="system", text=dynamic_prompt)
+    chat_ctx.add_message(role="system", content=dynamic_prompt)
 
     # --- TOOL REGISTRATION ---
     class BITools:

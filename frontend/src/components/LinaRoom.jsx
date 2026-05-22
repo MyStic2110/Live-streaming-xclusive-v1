@@ -7,12 +7,13 @@ import {
   useRoomContext,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
+import LinaAvatarEngine from "./LinaAvatarEngine";
 
 // --- INNER SCENE COMPONENT ---
 // Rendered inside <LiveKitRoom> to access Room context and hooks
 function LinaOrbScene({ onLeave }) {
   const [agentState, setAgentState] = useState("idle");
-  const [remoteVideoTrack, setRemoteVideoTrack] = useState(null);
+  const [remoteAudioTrack, setRemoteAudioTrack] = useState(null);
   const [messages, setMessages] = useState([]);
   const [activeTranscription, setActiveTranscription] = useState("");
   const [activeSpeaker, setActiveSpeaker] = useState("");
@@ -22,8 +23,7 @@ function LinaOrbScene({ onLeave }) {
   const remoteParticipants = useRemoteParticipants();
   const { localParticipant } = useLocalParticipant();
   const room = useRoomContext();
-  const videoRef = useRef(null);
-  const messagesEndRef = useRef(null);
+  const scrollContainerRef = useRef(null);
 
   // Layout resize listener
   useEffect(() => {
@@ -39,8 +39,17 @@ function LinaOrbScene({ onLeave }) {
 
   // Auto-scroll chat log to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, activeTranscription]);
+    const container = scrollContainerRef.current;
+    if (container) {
+      const timer = setTimeout(() => {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: "smooth"
+        });
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [messages]);
 
   // Synchronize Lina's speaking state and metadata
   useEffect(() => {
@@ -82,10 +91,10 @@ function LinaOrbScene({ onLeave }) {
     };
   }, [remoteParticipants]);
 
-  // Listen to remote participant's published video track
+  // Listen to remote participant's published audio track
   useEffect(() => {
     if (remoteParticipants.length === 0) {
-      setRemoteVideoTrack(null);
+      setRemoteAudioTrack(null);
       return;
     }
 
@@ -98,45 +107,27 @@ function LinaOrbScene({ onLeave }) {
       }
     }) || remoteParticipants[0];
 
-    const updateVideoTrack = () => {
-      const videoPubs = Array.from(lina.videoTrackPublications.values());
-      const firstSubscribedPub = videoPubs.find(pub => pub.isSubscribed && pub.track);
-      if (firstSubscribedPub && firstSubscribedPub.track) {
-        setRemoteVideoTrack(firstSubscribedPub.track);
+    const updateTracks = () => {
+      // Update Audio Track
+      const audioPubs = Array.from(lina.audioTrackPublications.values());
+      const firstSubscribedAudioPub = audioPubs.find(pub => pub.isSubscribed && pub.track);
+      if (firstSubscribedAudioPub && firstSubscribedAudioPub.track) {
+        setRemoteAudioTrack(firstSubscribedAudioPub.track);
       } else {
-        setRemoteVideoTrack(null);
+        setRemoteAudioTrack(null);
       }
     };
 
-    lina.on("trackSubscribed", updateVideoTrack);
-    lina.on("trackUnsubscribed", updateVideoTrack);
+    lina.on("trackSubscribed", updateTracks);
+    lina.on("trackUnsubscribed", updateTracks);
 
-    updateVideoTrack();
+    updateTracks();
 
     return () => {
-      lina.off("trackSubscribed", updateVideoTrack);
-      lina.off("trackUnsubscribed", updateVideoTrack);
+      lina.off("trackSubscribed", updateTracks);
+      lina.off("trackUnsubscribed", updateTracks);
     };
   }, [remoteParticipants]);
-
-  // Attach/Detach live remote video track to the HTML5 video element or handle fallback
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (remoteVideoTrack) {
-      remoteVideoTrack.attach(video);
-      return () => {
-        remoteVideoTrack.detach(video);
-      };
-    } else {
-      // For local fallback video, make sure it has the source and is playing/looping continuously
-      if (!video.src.includes("/reels/lina_video.mp4")) {
-        video.src = "/reels/lina_video.mp4";
-      }
-      video.play().catch(err => console.log("Local fallback video play error:", err));
-    }
-  }, [remoteVideoTrack]);
 
   // Sync finalized chat messages from the Python agent over the data channel
   useEffect(() => {
@@ -295,14 +286,20 @@ function LinaOrbScene({ onLeave }) {
       </div>
 
       {/* Messages Scroll Feed */}
-      <div style={{
-        flex: 1,
-        overflowY: "auto",
-        padding: "1.5rem",
-        display: "flex",
-        flexDirection: "column",
-        gap: "1rem"
-      }}>
+      <div
+        ref={scrollContainerRef}
+        className="transcript-feed"
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "1.5rem",
+          display: "flex",
+          flexDirection: "column",
+          gap: "1rem",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.05) 3%, rgba(0,0,0,0.3) 8%, black 20%)",
+          maskImage: "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.05) 3%, rgba(0,0,0,0.3) 8%, black 20%)"
+        }}
+      >
         {messages.length === 0 ? (
           <div style={{
             flex: 1,
@@ -368,7 +365,6 @@ function LinaOrbScene({ onLeave }) {
                 </div>
               );
             })}
-            <div ref={messagesEndRef} />
           </>
         )}
       </div>
@@ -529,20 +525,12 @@ function LinaOrbScene({ onLeave }) {
               pointerEvents: "none"
             }} />
 
-            {/* Live Video Element */}
-            <video
-              ref={videoRef}
-              autoPlay
-              loop={!remoteVideoTrack}
-              muted
-              playsInline
-              src={remoteVideoTrack ? undefined : "/reels/lina_video.mp4"}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                zIndex: 0
-              }}
+            {/* Live Avatar Engine */}
+            <LinaAvatarEngine
+              audioTrack={remoteAudioTrack}
+              isSpeaking={agentState === "speaking"}
+              activeTranscription={activeTranscription}
+              avatarImageUrl="/reels/lina_avatar.png"
             />
 
             {/* Live real-time subtitle overlay */}
@@ -719,6 +707,13 @@ function LinaOrbScene({ onLeave }) {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(6px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        .transcript-feed::-webkit-scrollbar {
+          display: none;
+        }
+        .transcript-feed {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       ` }} />
     </div>

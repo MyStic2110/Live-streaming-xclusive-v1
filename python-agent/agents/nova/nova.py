@@ -393,12 +393,38 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
         asyncio.create_task(broadcast_usage())
 
     # --- THE NEXUS ONBOARDING GREETING ---
-    @session.on("agent_started")
-    def on_started():
-        asyncio.create_task(session.say(
-            "Hey! Welcome back to Nexus IPL 2026. I’m Nova. I’ve just plugged into your Match Arena—I can show you live scores, analyze your predictions, or even walkthrough the standings. What are we feeling like checking out first?",
-            allow_interruptions=True
-        ))
+    agent_ready = False
+    greeting_spoken = False
+
+    async def speak_greeting():
+        nonlocal greeting_spoken
+        if greeting_spoken or not agent_ready:
+            return
+        greeting_spoken = True
+        logger.info("[NOVA] Saying onboarding greeting...")
+        try:
+            # Wait for user's WebRTC audio connection to fully initialize
+            await asyncio.sleep(2.0)
+            await session.say(
+                "Hey! Welcome back to Nexus IPL 2026. I’m Nova. I’ve just plugged into your Match Arena—I can show you live scores, analyze your predictions, or even walkthrough the standings. What are we feeling like checking out first?",
+                allow_interruptions=True
+            )
+        except Exception as err:
+            logger.error(f"Error speaking greeting: {err}")
+            greeting_spoken = False
+
+    @ctx.room.on("participant_connected")
+    def on_participant_connected(participant):
+        logger.info(f"[ROOM] Participant connected: {participant.identity}")
+        asyncio.create_task(speak_greeting())
+
+    @session.on("agent_state_changed")
+    def on_state_changed(event: voice.AgentStateChangedEvent):
+        nonlocal agent_ready
+        if event.new_state == "listening":
+            agent_ready = True
+            if ctx.room.remote_participants:
+                asyncio.create_task(speak_greeting())
 
     @session.on("user_input_transcribed")
     def on_stt(event: voice.UserInputTranscribedEvent):

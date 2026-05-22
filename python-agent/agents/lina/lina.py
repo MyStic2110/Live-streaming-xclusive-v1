@@ -13,10 +13,9 @@ from livekit.agents import (
     llm, 
     AgentSession, 
     AutoSubscribe, 
-    voice,
-    RoomOutputOptions
+    voice
 )
-from livekit.plugins import silero, openai, deepgram, runway
+from livekit.plugins import silero, openai, deepgram
 
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
@@ -98,7 +97,7 @@ async def entrypoint(ctx: JobContext):
     # 2. Setup ChatContext with current time awareness
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     chat_ctx = llm.ChatContext()
-    chat_ctx.append(role="system", text=f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}")
+    chat_ctx.add_message(role="system", content=f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}")
 
     # 3. Create the Agent
     agent = voice.Agent(
@@ -136,19 +135,36 @@ async def entrypoint(ctx: JobContext):
     await ctx.room.local_participant.set_metadata(json.dumps({"name": AGENT_NAME}))
 
     # 7. Event Listeners
-    @session.on("agent_started")
-    def on_started():
-        logger.info("[LINA] Agent started. Saying onboarding greeting...")
+    agent_ready = False
+    greeting_spoken = False
+
+    async def speak_greeting():
+        nonlocal greeting_spoken
+        if greeting_spoken or not agent_ready:
+            return
+        greeting_spoken = True
+        logger.info("[LINA] Saying onboarding greeting...")
         greeting = "Hey, I'm here. It's really good to connect with you. How are you feeling today?"
-        asyncio.create_task(session.say(greeting, allow_interruptions=True))
-        
-        # Publish greeting to chat transcript
-        payload = json.dumps({
-            "sender": "Lina",
-            "text": greeting,
-            "timestamp": datetime.now().isoformat()
-        }).encode("utf-8")
-        asyncio.create_task(ctx.room.local_participant.publish_data(payload, topic="chat_message"))
+        try:
+            # Wait for user's WebRTC audio connection to fully initialize
+            await asyncio.sleep(2.0)
+            await session.say(greeting, allow_interruptions=True)
+            
+            # Publish greeting to chat transcript
+            payload = json.dumps({
+                "sender": "Lina",
+                "text": greeting,
+                "timestamp": datetime.now().isoformat()
+            }).encode("utf-8")
+            asyncio.create_task(ctx.room.local_participant.publish_data(payload, topic="chat_message"))
+        except Exception as err:
+            logger.error(f"Error speaking greeting: {err}")
+            greeting_spoken = False
+
+    @ctx.room.on("participant_connected")
+    def on_participant_connected(participant):
+        logger.info(f"[ROOM] Participant connected: {participant.identity}")
+        asyncio.create_task(speak_greeting())
 
     @session.on("user_input_transcribed")
     def on_stt(event: voice.UserInputTranscribedEvent):
@@ -189,6 +205,11 @@ async def entrypoint(ctx: JobContext):
     @session.on("agent_state_changed")
     def on_state_changed(event: voice.AgentStateChangedEvent):
         logger.info(f"[STATE] Lina is now: {event.new_state}")
+        nonlocal agent_ready
+        if event.new_state == "listening":
+            agent_ready = True
+            if ctx.room.remote_participants:
+                asyncio.create_task(speak_greeting())
 
     session_usage = {"input_tokens": 0, "output_tokens": 0, "stt_seconds": 0.0, "tts_chars": 0}
 
@@ -215,32 +236,7 @@ async def entrypoint(ctx: JobContext):
         )
 
     # 8. Start the pipeline
-    runway_avatar_id = os.getenv("RUNWAY_AVATAR_ID")
-    runway_preset_id = os.getenv("RUNWAY_PRESET_ID")
-    
-    avatar = None
-    if os.getenv("RUNWAYML_API_SECRET"):
-        if runway_avatar_id:
-            avatar = runway.AvatarSession(avatar_id=runway_avatar_id)
-        else:
-            preset = runway_preset_id or "lina-preset"
-            avatar = runway.AvatarSession(preset_id=preset)
-
-    if avatar:
-        try:
-            logger.info("[RUNWAY] Starting Runway Avatar Session...")
-            await avatar.start(session, room=ctx.room)
-            await session.start(
-                room=ctx.room, 
-                agent=agent, 
-                room_output_options=RoomOutputOptions(audio_enabled=False)
-            )
-        except Exception as e:
-            logger.error(f"[RUNWAY] Failed to start Runway Avatar Session: {e}. Falling back to standard voice-only agent.")
-            avatar = None
-
-    if not avatar:
-        await session.start(room=ctx.room, agent=agent)
+    await session.start(room=ctx.room, agent=agent)
     
     # --- STAY ALIVE LOOP ---
     try:

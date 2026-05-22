@@ -2,5 +2,4 @@ livekit-agents
 livekit-plugins-mistralai
 livekit-plugins-silero
 python-dotenv
-livekit-plugins-runway
 httpx

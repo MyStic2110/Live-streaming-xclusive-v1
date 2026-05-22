@@ -69,7 +69,7 @@ post_data = {
             "canonicalUrl": f"/blog/{slug}",
             "tags": payload["tags"]
         },
-        "tableOfContents": [line[4:] for line in payload["content"].split("\n") if line.startswith("### ")],
+        "tableOfContents": [line[4:].replace("**", "").replace("*", "").strip() for line in payload["content"].split("\n") if line.startswith("### ")],
         "cta": {
             "title": "Deploy Your Fleet",
             "description": "Transform your enterprise with autonomous intelligence.",
