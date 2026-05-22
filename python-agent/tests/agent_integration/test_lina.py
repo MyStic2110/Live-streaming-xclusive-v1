@@ -1,0 +1,50 @@
+import os
+import sys
+import asyncio
+
+# Set path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
+from tests.agent_integration.helpers import get_openai_client
+from agents.lina.lina import SYSTEM_PROMPT
+
+async def run_test():
+    try:
+        client = get_openai_client()
+        user_question = "Hi Lina, I had a very stressful day at work."
+        
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_question}
+        ]
+        
+        response = await client.chat.completions.create(
+            model="openai/gpt-4o-mini",
+            messages=messages,
+            max_tokens=150
+        )
+        
+        response_text = response.choices[0].message.content
+        
+        # Verify response matches Lina's constraints
+        # 1. Warmth, calm presence
+        # 2. No smart quotes, emojis, or non-ASCII characters
+        # 3. Relatively short (Lina is instructed to speak in very short, soft sentences)
+        
+        is_ascii = all(ord(c) < 128 for c in response_text)
+        if not is_ascii:
+            return False, f"Response contains non-ASCII characters or emojis: {response_text}"
+            
+        sentences = [s.strip() for s in response_text.replace("!", ".").replace("?", ".").split(".") if s.strip()]
+        if len(sentences) > 4:
+            return False, f"Response is too long/verbose for Lina (expected 1-3 sentences): {response_text}"
+            
+        return True, f"Success! Lina's response: {response_text.strip()}"
+        
+    except Exception as e:
+        return False, str(e)
+
+if __name__ == "__main__":
+    success, msg = asyncio.run(run_test())
+    print(f"Status: {'PASS' if success else 'FAIL'} | Details: {msg}")
+    sys.exit(0 if success else 1)
