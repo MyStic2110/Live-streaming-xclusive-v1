@@ -10,6 +10,7 @@ import VisionRoom from "./components/VisionRoom";
 import BlogSection from "./components/BlogSection";
 import AstraRoom from "./components/AstraRoom";
 import RehearsalRoom from "./components/RehearsalRoom";
+import SevaRoom from "./components/SevaRoom";
 import '@livekit/components-styles/index.css';
 import "./index.css";
 
@@ -42,6 +43,7 @@ function App() {
   const isVision    = roomData?.creatorId === "VONE";
   const isAstra     = roomData?.creatorId === "ASTRA";
   const isRehearsal = roomData?.creatorId === "REHEARSAL";
+  const isSeva      = roomData?.creatorId === "SEVA";
 
   if (showBlog) {
     return <BlogSection onBack={() => setShowBlog(false)} />;
@@ -68,6 +70,8 @@ function App() {
           <AstraRoom roomData={roomData} onLeave={handleLeave} />
         ) : isRehearsal ? (
           <RehearsalRoom roomData={roomData} onLeave={handleLeave} />
+        ) : isSeva ? (
+          <SevaRoom roomData={roomData} onLeave={handleLeave} />
         ) : (
           <VideoRoom roomData={roomData} onLeave={handleLeave} />
         )

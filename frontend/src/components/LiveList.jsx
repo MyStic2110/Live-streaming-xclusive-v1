@@ -353,6 +353,7 @@ export default function LiveList({ onJoin, onBlogClick }) {
       "[Vigil-Security] Governance audit logged: 0 risk parameters exposed",
       "[Aura-Weather] Southwest monsoon model successfully re-calculated",
       "[Nova-UI] Autonomous squad leaderboard query executed flawlessly",
+      "[SEVA] Plumbing booking confirmed: SEVA-1748023400 · Tomorrow 10AM",
       "[Swarm-Commander] Telemetry check: operational latency 120ms"
     ];
     let idx = 0;
@@ -538,6 +539,21 @@ export default function LiveList({ onJoin, onBlogClick }) {
       prompts: [
         "Assess my public speaking pace.", "Practice elevator pitch.",
         "Check my filler word count.", "Help me reduce speaking pauses."
+      ]
+    },
+    {
+      id: "seva", title: "SEVA Service OS", icon: "🏠", color: "#22c55e",
+      desc: "AI-powered multilingual voice assistant for home services. Book plumbers, electricians, cleaners, carpenters, laundry and repairs — just speak naturally in English or Hindi.",
+      btnText: "Book a Service",
+      prompts: [
+        "Book a plumber for tomorrow morning.",
+        "Kal deep cleaning karwani hai.",
+        "Schedule an electrician on Saturday.",
+        "What are my active bookings?",
+        "Cancel my last booking.",
+        "Book laundry pickup today evening.",
+        "AC repair karna hai jaldi.",
+        "Reschedule my carpenter to Sunday."
       ]
     }
   ];
