@@ -6,7 +6,7 @@ import time
 # Set path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from tests.agent_integration import test_bi, test_lina, test_astra, test_vigil, test_nova
+from tests.agent_integration import test_bi, test_bi2, test_lina, test_astra, test_vigil, test_nova
 
 async def main():
     print("=" * 70)
@@ -19,6 +19,7 @@ async def main():
     # Run all tests concurrently
     results = await asyncio.gather(
         test_bi.run_test(),
+        test_bi2.run_test(),
         test_lina.run_test(),
         test_astra.run_test(),
         test_vigil.run_test(),
@@ -28,7 +29,7 @@ async def main():
     
     elapsed = time.time() - t_start
     
-    agents = ["BI (Cortex)", "Lina", "Astra", "Vigil", "Nova"]
+    agents = ["BI (Cortex I)", "BI2 (Cortex II)", "Lina", "Astra", "Vigil", "Nova"]
     
     print("\n" + "-" * 70)
     print(f"{'AGENT NAME':<18} | {'STATUS':<6} | {'MESSAGE'}")
