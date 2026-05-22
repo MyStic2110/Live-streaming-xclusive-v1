@@ -6,7 +6,7 @@ import time
 # Set path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
-from swarm_commander_in_action import test_bi, test_bi2, test_lina, test_astra, test_vigil, test_nova
+from swarm_commander_in_action import test_bi, test_bi2, test_lina, test_astra, test_vigil, test_nova, test_rehearsal
 
 async def main():
     # Prompt user for input if no cmd-line argument is passed
@@ -23,11 +23,12 @@ async def main():
         print("4. Astra (Growth Sprint Agent)")
         print("5. Vigil (Cybersecurity Auditor)")
         print("6. Nova (IPL Strategic Copilot)")
-        print("7. All (Run all tests concurrently)")
+        print("7. Rehearsal (Speech Coaching Agent)")
+        print("8. All (Run all tests concurrently)")
         print("-" * 70)
         
         try:
-            choice_input = input("Enter choice (1-7 or agent name) [default: 7]: ").strip().lower()
+            choice_input = input("Enter choice (1-8 or agent name) [default: 8]: ").strip().lower()
         except (KeyboardInterrupt, EOFError):
             print("\nAborting.")
             sys.exit(1)
@@ -46,7 +47,9 @@ async def main():
             choice = "vigil"
         elif choice_input in ["6", "nova"]:
             choice = "nova"
-        elif choice_input in ["7", "all"]:
+        elif choice_input in ["7", "rehearsal"]:
+            choice = "rehearsal"
+        elif choice_input in ["8", "all"]:
             choice = "all"
         else:
             choice = choice_input
@@ -59,6 +62,7 @@ async def main():
         "astra": (test_astra.run_test, "Astra"),
         "vigil": (test_vigil.run_test, "Vigil"),
         "nova": (test_nova.run_test, "Nova"),
+        "rehearsal": (test_rehearsal.run_test, "Rehearsal"),
     }
     
     print("\n" + "=" * 70)
