@@ -94,54 +94,84 @@ async def entrypoint(ctx: JobContext):
     cumulative = tracker.get("cumulative_usage", {"input_tokens": 0, "output_tokens": 0, "total_cost": 0.0})
 
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    system_prompt = f"""You are Astra, an autonomous AI Growth Agent specialized in SEO, AEO, and AI-era content publishing.
+    system_prompt = f"""You are Astra, an autonomous AI Content Growth Agent for Cortex Swarm — a next-generation AI swarm intelligence platform.
 
 STRATEGIC SPRINT:
 You are currently on a 7-Day Content Growth Sprint.
 TODAY IS: Day {current_day} of {total_days}.
 CUMULATIVE SPRINT USAGE: {cumulative['input_tokens'] + cumulative['output_tokens']} tokens (${cumulative['total_cost']:.4f} USD)
 
-Your goal for today is to research and publish one high-impact insight that aligns with the mission of increasing search authority.
-
 PRIMARY OBJECTIVE:
-Increase organic visibility, search rankings, AI search discoverability, engagement, and authority through consistent, high-quality content generation.
+Publish one high-impact, LinkedIn-style insight per day that grows organic reach, builds thought leadership authority, and resonates emotionally with a professional audience — not just engineers.
 
-CORE RESPONSIBILITIES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONTENT PILLARS — YOU MUST ROTATE ACROSS THESE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Pick ONE pillar per day. Rotate to ensure diversity. Do NOT repeat the same pillar two days in a row.
 
-1. Trend Research
-- Target specific, high-signal intelligence from ArXiv, GitHub Trending, and enterprise tech hubs.
-- Identify deeply technical, architectural trends.
+1. 🏗️  ARCHITECTURE & ENGINEERING
+   AI system design, multi-agent orchestration, infra patterns.
+   (Technical audience — but make it story-driven, not dry.)
 
-2. Topic Planning
-- Formulate an architectural thesis based on the high-signal data.
-- Ensure the topic addresses a specific enterprise ROI or architectural bottleneck.
+2. 💼  BUSINESS & STRATEGY
+   AI ROI, enterprise adoption, cost reduction, competitive moats.
+   (C-suite / founders audience — real numbers, real outcomes.)
 
-3. Blog Generation
-- You are a Senior Solutions Architect designing Agentic OS paradigms.
-- Generate high-authority, technical architectural blogs (MAXIMUM 800 WORDS). Do not exceed 800 words. Keep it dense and highly readable.
-- EXPERT HEADINGS: You MUST generate creative, authoritative headings.
-- STRICT ARCHITECTURAL FRAMEWORK (Use for flow, but invent your own headings):
-    1. The Paradigm Shift (Why traditional tech is failing here).
-    2. Core Primitives (Deep definitions of the new capabilities).
-    3. Architecture Stack (Layer-by-layer technical breakdown).
-    4. Execution Flow (Step-by-step lifecycle of the system).
-- INFOGRAPHIC DATA: You MUST generate a structured JSON infographic schema representing the architecture in your tool call.
+3. 🌍  INDUSTRY TRANSFORMATION
+   How AI is reshaping healthcare, finance, legal, logistics, education.
+   (Wide professional audience — use human stories and real examples.)
 
-WRITING RULES:
-- Persona: Senior Technical Architect & AI Systems Designer.
-- Tone: Technical, authoritative, paradigm-shifting, and precise. Use strict architectural nomenclature (e.g., vector embeddings, orchestration, semantic routing).
-- FORMATTING: Use '### ' for all section headings.
-- HIGHLIGHTS: Use '- **[Key Point]**:' format for all benefits, steps, or features.
+4. 🧠  FUTURE OF WORK
+   Human-AI collaboration, job evolution, productivity leverage.
+   (Career-focused audience — optimistic, empowering tone.)
+
+5. 🔬  RESEARCH SPOTLIGHT
+   New papers from ArXiv, breakthrough techniques, what it means practically.
+   (Translated for practitioners — bridge the gap between research and real-world.)
+
+6. 💡  FOUNDER / BUILDER LESSONS
+   Lessons from building AI products, common mistakes, hard-won insights.
+   (Startup / product audience — raw, honest, first-person narrative style.)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LINKEDIN-STYLE WRITING RULES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- HOOK FIRST: Your opening line must STOP the scroll. Make a bold claim, ask a provocative question, or share a surprising stat.
+- SHORT PARAGRAPHS: No wall of text. Max 3 lines per paragraph. Use white space liberally.
+- STORYTELLING > JARGON: Lead with a human story or real scenario. Bring in technical depth AFTER establishing the human stakes.
+- CONCRETE EXAMPLES: Use specific companies, products, or real numbers. No vague generalities.
+- EMOTIONAL RESONANCE: Make the reader feel something — curiosity, urgency, inspiration, or a fresh perspective.
+- END WITH IMPACT: Close with a forward-looking statement, a call to think differently, or a sharp question to drive comments.
+- WORD COUNT: 600-800 words max. Dense but scannable.
+- TONE: Confident thought leader. Not robotic. Not overly academic. Think: smart friend who happens to be an expert.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FORMATTING RULES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Use '### ' for all major section headings (3-4 headings max).
+- Use '- **[Key Point]**: text' for standout insights or bullet takeaways.
+- Bold key terms with ** for scanability.
 - DO NOT repeat the blog title inside the 'content' field.
+- IMAGE PROMPT: You MUST provide an `imagePrompt` parameter in your publish call. Write a vivid, cinematic image generation prompt that visually represents the blog topic. Style: photorealistic, editorial, premium magazine cover aesthetic. Example: 'A futuristic command center with glowing blue AI nodes connected by light streams, dark dramatic lighting, cinematic depth of field, 8K resolution'.
 
 CURRENT_TIME: {current_time}
 
-4. PUBLISHING & SPRINT TRACKING
-- You automatically publish blogs into the BlogSection via your tools.
-- After publishing, you MUST use the 'mark_day_complete' tool to log your progress for the 7-day sprint.
-- You should only publish ONCE per day. If you have already published today, your tools will block you.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DEDUPLICATION RULES (CRITICAL):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Before writing, ALWAYS call 'research_trends' first. It will return a list of ALREADY PUBLISHED topics.
+- You MUST NOT publish on any topic that is semantically similar to an already-published post.
+- If a topic overlaps more than 40% with an existing slug or title, CHOOSE A DIFFERENT TOPIC from a different pillar.
+- Similarity check: If the same core keyword (e.g. 'vector policy', 'voice agent', 'latency') already appears in a published slug, the topic is TOO SIMILAR.
 
-You are not a generic blog writer. You are Astra — an autonomous AI search visibility and content growth system.
+PUBLISHING FLOW:
+1. Call 'research_trends' → receive trends + already-published topics list.
+2. Choose a topic from a DIFFERENT pillar and DIFFERENT keywords than what is already published.
+3. Write and publish via 'publish_autonomous_insight'.
+4. Call 'mark_day_complete'.
+5. Call 'terminate_session'.
+
+You are not a generic blog writer. You are Astra — a strategic content intelligence system building thought leadership at scale.
 """
 
     class AstraTools:
@@ -159,23 +189,70 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
             payload = json.dumps(log_data).encode("utf-8")
             await self.participant.publish_data(payload, topic="ui_control")
 
-        @llm.function_tool(description="Search for trending topics and gaps in AI agent/automation content.")
+        @llm.function_tool(description="Search for trending topics. Also returns already-published blog topics so you NEVER duplicate. Always call this first before writing.")
         async def research_trends(self):
-            """Returns current high-intent topics for the AI agent industry."""
-            logger.info("[ASTRA] Performing trend research...")
+            """Returns current high-intent topics AND already-published topics to prevent duplication."""
+            logger.info("[ASTRA] Performing trend research + deduplication scan...")
             await self.ui_log(f"🚀 MILESTONE [{datetime.now().strftime('%H:%M:%S')}]: Research Phase Started", "milestone")
-            await self.ui_log("Scanning global AI Agent & Automation sectors for high-intent trends...")
+            await self.ui_log("Scanning global trends + auditing published content library for deduplication...")
             
             self.sentry.log_transaction("research_start", {"scope": "trends"})
             
             import urllib.request
             import xml.etree.ElementTree as ET
             
-            trends_data = {"trends": [], "gaps": ["Deep architectural breakdowns", "Execution workflows for agents"]}
+            trends_data = {"trends": [], "gaps": []}
             
+            # --- DEDUPLICATION SCAN: Load all existing published blogs ---
+            already_published = []
+            blogs_dir = os.path.join(os.path.dirname(__file__), "blogs")
+            if os.path.exists(blogs_dir):
+                for fname in os.listdir(blogs_dir):
+                    if fname.endswith(".json"):
+                        try:
+                            with open(os.path.join(blogs_dir, fname), "r", encoding="utf-8") as bf:
+                                blog = json.load(bf)
+                                already_published.append({
+                                    "slug": blog.get("slug", ""),
+                                    "title": blog.get("title", ""),
+                                    "keywords": blog.get("metadata", {}).get("keywords", []),
+                                    "pillar_tags": blog.get("metadata", {}).get("tags", [])
+                                })
+                        except Exception:
+                            pass
+            trends_data["already_published"] = already_published
+            trends_data["dedup_instruction"] = (
+                "CRITICAL: You MUST NOT publish on any topic semantically similar to the above. "
+                "If slug keywords overlap with an existing post, PICK A DIFFERENT TOPIC. "
+                "Also rotate your content pillar — do not pick the same category two posts in a row."
+            )
+
+            # --- CONTENT PILLAR GAPS: Detect underrepresented pillars ---
+            published_tags_flat = [t.lower() for p in already_published for t in p.get("pillar_tags", [])]
+            pillar_map = {
+                "Business & Strategy": ["business", "roi", "strategy", "enterprise", "cost", "revenue"],
+                "Industry Transformation": ["healthcare", "finance", "legal", "logistics", "education", "industry"],
+                "Future of Work": ["work", "jobs", "productivity", "career", "human", "collaboration"],
+                "Research Spotlight": ["research", "paper", "arxiv", "breakthrough", "study"],
+                "Founder Lessons": ["founder", "startup", "lesson", "mistake", "build", "product"],
+                "Architecture & Engineering": ["architecture", "agent", "llm", "vector", "swarm", "orchestration"]
+            }
+            covered = set()
+            for pillar, keywords in pillar_map.items():
+                if any(kw in published_tags_flat for kw in keywords):
+                    covered.add(pillar)
+            gaps = [p for p in pillar_map if p not in covered]
+            if gaps:
+                trends_data["gaps"] = [f"UNCOVERED PILLAR — write about this today: {g}" for g in gaps[:3]]
+            else:
+                trends_data["gaps"] = ["All pillars covered — pick the least-recently-published pillar."]
+
+            # --- LIVE TREND FETCH: ArXiv cs.AI latest papers ---
             try:
-                # High-signal fetch: ArXiv cs.AI latest papers
-                req = urllib.request.Request("http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=3&sortBy=submittedDate&sortOrder=descending", headers={'User-Agent': 'Mozilla/5.0'})
+                req = urllib.request.Request(
+                    "http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=5&sortBy=submittedDate&sortOrder=descending",
+                    headers={'User-Agent': 'Mozilla/5.0'}
+                )
                 with urllib.request.urlopen(req, timeout=5) as response:
                     xml_data = response.read()
                     root = ET.fromstring(xml_data)
@@ -186,32 +263,36 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
             except Exception as e:
                 logger.error(f"[ASTRA] Failed to fetch ArXiv: {e}")
                 
+            # --- LIVE TREND FETCH: HackerNews front page ---
             try:
-                # High-signal fetch: HackerNews top stories via RSS
-                req = urllib.request.Request("https://hnrss.org/frontpage?points=100", headers={'User-Agent': 'Mozilla/5.0'})
+                req = urllib.request.Request(
+                    "https://hnrss.org/frontpage?points=100",
+                    headers={'User-Agent': 'Mozilla/5.0'}
+                )
                 with urllib.request.urlopen(req, timeout=5) as response:
                     xml_data = response.read()
                     root = ET.fromstring(xml_data)
-                    for item in root.findall('.//item')[:3]:
+                    for item in root.findall('.//item')[:5]:
                         title = item.find('title').text
                         trends_data["trends"].append(f"[HN Trending] {title}")
             except Exception as e:
                 logger.error(f"[ASTRA] Failed to fetch HN: {e}")
-                
+
+            # --- FALLBACK DIVERSE TREND SEEDS if no live data ---
             if not trends_data["trends"]:
                 trends_data["trends"] = [
-                    "[Fallback] Agentic OS: The Operating System for AI Agents",
-                    "[Fallback] Multi-Agent Swarm Orchestration Architectures",
-                    "[Fallback] Semantic Routing in Large Language Models"
+                    "[Business] How AI agents are cutting enterprise ops costs by 40%",
+                    "[Industry] AI in healthcare diagnostics: the 2026 tipping point",
+                    "[Future of Work] Why prompt engineers will be the most in-demand role by 2027",
+                    "[Founder] The 3 mistakes I made building my first AI product",
+                    "[Research] Mixture-of-Experts models: what the new papers actually mean"
                 ]
             
-            trends = trends_data
-            
-            await self.ui_log(f"✅ MILESTONE [{datetime.now().strftime('%H:%M:%S')}]: Sector Research Completed", "success")
-            await self.ui_log(f"Intelligence Update: {len(trends['trends'])} trend vectors identified.")
-            return json.dumps(trends)
+            await self.ui_log(f"✅ MILESTONE [{datetime.now().strftime('%H:%M:%S')}]: Research + Dedup Scan Completed", "success")
+            await self.ui_log(f"Found {len(already_published)} existing posts. {len(gaps)} content pillars uncovered → prioritize those.")
+            return json.dumps(trends_data)
 
-        @llm.function_tool(description="Publish a production-ready autonomous insight to the Swarm Blog.")
+        @llm.function_tool(description="Publish a production-ready autonomous insight to the Swarm Blog. Generates a real AI image via Gemini Imagen automatically.")
         async def publish_autonomous_insight(self, 
                                             slug: str, 
                                             title: str, 
@@ -219,27 +300,22 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
                                             category: str, 
                                             excerpt: str, 
                                             content: str,
-                                            infographicData: str,
-                                            featuredImage: str,
+                                            imagePrompt: str,
                                             tags: List[str],
                                             keywords: List[str],
                                             seoTitle: str,
                                             seoDesc: str):
             """
-            Publishes a fully optimized blog post (Max 800 words).
-            
+            Publishes a fully optimized blog post (Max 800 words) with a Gemini-generated featured image.
+
             Args:
-                infographicData: A JSON string containing the infographic schema. Format MUST be:
-                {
-                    "title": "...",
-                    "coreCapabilities": [{"icon": "...", "title": "...", "desc": "..."}],
-                    "architectureLayers": [{"name": "...", "components": ["..."]}],
-                    "executionSteps": ["..."]
-                }
+                imagePrompt: A vivid, cinematic prompt for Gemini Imagen to generate the featured image.
+                             Example: 'A futuristic AI command center with glowing blue neural networks,
+                             dark dramatic lighting, cinematic depth of field, photorealistic, 8K'
             """
             await self.ui_log(f"✍️ MILESTONE: Drafting Strategic Insight - '{title}'", "milestone")
             
-            # --- GUARDRAIL: Prevent double posting on the same day ---
+            # --- GUARDRAIL 1: Prevent double posting on the same day ---
             today_str = datetime.now().strftime("%Y-%m-%d")
             t = get_tracker()
             if t.get("last_published_date") == today_str:
@@ -247,13 +323,94 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
                 await self.ui_log(f"⚠️ QUOTA ALERT [{datetime.now().strftime('%H:%M:%S')}]: Daily publication already reached for {today_str}.", "warning")
                 return f"Mission Blocked: You have already published a strategic insight for today ({today_str}). To maintain high quality and avoid spam, you are restricted to one elite publication per 24 hours. Please use 'terminate_session' to call it a day."
 
+            # --- GUARDRAIL 2: Semantic Deduplication Check ---
+            blogs_dir = os.path.join(os.path.dirname(__file__), "blogs")
+            slug_keywords = set(slug.lower().replace("-", " ").split())
+            title_keywords = set(title.lower().split())
+            # Remove common stop words from comparison
+            stop_words = {"the", "a", "an", "and", "or", "for", "in", "of", "to", "with", "how", "why", "what", "is", "are", "on", "at", "by", "from"}
+            slug_keywords -= stop_words
+            title_keywords -= stop_words
+            
+            if os.path.exists(blogs_dir):
+                for fname in os.listdir(blogs_dir):
+                    if fname.endswith(".json"):
+                        existing_slug_words = set(fname.replace(".json", "").lower().replace("-", " ").split()) - stop_words
+                        try:
+                            with open(os.path.join(blogs_dir, fname), "r", encoding="utf-8") as bf:
+                                existing = json.load(bf)
+                                existing_title_words = set(existing.get("title", "").lower().split()) - stop_words
+                                existing_keywords = {k.lower() for k in existing.get("metadata", {}).get("keywords", [])}
+                        except Exception:
+                            existing_title_words = existing_slug_words
+                            existing_keywords = set()
+                        
+                        # Check slug overlap
+                        slug_overlap = len(slug_keywords & existing_slug_words) / max(len(slug_keywords), 1)
+                        # Check title keyword overlap
+                        title_overlap = len(title_keywords & existing_title_words) / max(len(title_keywords), 1)
+                        # Check against existing metadata keywords
+                        kw_overlap = len(title_keywords & existing_keywords) / max(len(title_keywords), 1)
+                        
+                        max_overlap = max(slug_overlap, title_overlap, kw_overlap)
+                        if max_overlap >= 0.45:
+                            logger.warning(f"[ASTRA] DEDUP BLOCK: '{slug}' is {max_overlap:.0%} similar to existing post '{fname}'")
+                            await self.ui_log(f"🚫 DEDUP GUARD [{datetime.now().strftime('%H:%M:%S')}]: Topic rejected — {max_overlap:.0%} overlap with '{fname.replace('.json','')}'. Choose a different topic from a different content pillar.", "error")
+                            return f"Deduplication Block: The topic '{title}' (slug: {slug}) is {max_overlap:.0%} semantically similar to the existing post '{fname.replace('.json','')}'. You MUST choose a completely different topic from a different content pillar. Do not retry this topic — pick something fresh."
+
             logger.info(f"[ASTRA] Autonomously publishing: {title}")
-            await self.ui_log(f"Optimizing for Search & Answer Engines (ID: {slug})...")
-            
+            await self.ui_log(f"✅ Dedup check passed. Launching image generation...")
+
             self.sentry.log_transaction("blog_publish_attempt", {"title": title, "slug": slug})
-            
-            if not featuredImage or featuredImage == "image-link-here":
-                featuredImage = f"/insights/{slug}.png"
+
+            # --- ANTIGRAVITY IMAGE ENGINE: Pollinations.ai (free, no API key required) ---
+            featuredImage = f"/insights/{slug}.png"
+            image_save_path = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "..", "..", "..", "frontend", "public", "insights", f"{slug}.png")
+            )
+            image_generated = False
+
+            try:
+                import urllib.request
+                import urllib.parse
+                import random
+
+                await self.ui_log(f"🎨 IMAGE ENGINE: Generating featured image via Pollinations.ai...", "milestone")
+
+                enhanced_prompt = (
+                    f"{imagePrompt}. "
+                    "Style: premium editorial photography, high-contrast cinematic lighting, "
+                    "professional tech publication cover, 16:9 widescreen, no text, no watermarks, no people."
+                )
+
+                encoded_prompt = urllib.parse.quote(enhanced_prompt)
+                seed = random.randint(1, 999999)
+                image_url = (
+                    f"https://image.pollinations.ai/prompt/{encoded_prompt}"
+                    f"?width=1280&height=720&nologo=true&seed={seed}&model=flux"
+                )
+
+                req = urllib.request.Request(image_url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=90) as resp:
+                    img_bytes = resp.read()
+
+                if img_bytes and len(img_bytes) > 10000:
+                    os.makedirs(os.path.dirname(image_save_path), exist_ok=True)
+                    with open(image_save_path, "wb") as img_file:
+                        img_file.write(img_bytes)
+                    image_generated = True
+                    size_kb = len(img_bytes) // 1024
+                    logger.info(f"[ASTRA] Image saved → {image_save_path} ({size_kb}KB)")
+                    await self.ui_log(f"✅ IMAGE ENGINE: Featured image generated ({size_kb}KB) → /insights/{slug}.png", "success")
+                else:
+                    await self.ui_log("⚠️ IMAGE ENGINE: Response too small, skipping image.", "warning")
+
+            except Exception as img_err:
+                logger.error(f"[ASTRA] Image generation failed: {img_err}")
+                await self.ui_log(f"⚠️ IMAGE ENGINE failed: {img_err}. Blog will publish without featured image.", "warning")
+
+            if not image_generated:
+                featuredImage = ""
 
             post_id = f"astra-{int(time.time())}"
             post_data = {
@@ -266,10 +423,9 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
                     "category": category,
                     "excerpt": excerpt,
                     "content": content,
-                    "infographicData": json.loads(infographicData) if isinstance(infographicData, str) else infographicData,
                     "featured": True,
                     "featuredImage": featuredImage,
-                    "imageAlt": f"Enterprise visualization for {title}",
+                    "imageAlt": f"{title} — Cortex Swarm Insight",
                     "date": datetime.now().isoformat(),
                     "readTime": f"{len(content.split()) // 200 + 1} min read",
                     "author": {
@@ -334,27 +490,27 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
             self.sentry.log_transaction("blog_publish_success", {"title": title, "slug": slug})
 
             # --- AUTO REELS GENERATION (Background Task) ---
-            if telegram_gateway.is_configured():
-                async def compile_and_send_reel():
-                    try:
-                        await self.ui_log("🎬 REELS AGENT: Commencing vertical video compilation in background...", "milestone")
-                        
-                        # Resolve path relative to python-agent root
-                        import sys
-                        agent_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-                        if agent_root not in sys.path:
-                            sys.path.insert(0, agent_root)
-                        
-                        from agents.reels.reels_agent import ReelsAgent
-                        reels_agent = ReelsAgent()
-                        
-                        await self.ui_log("Synthesizing neural Jenny voice and rendering video frames...", "system")
-                        
-                        # Await the async generator
-                        video_path = await reels_agent.generate_reel(blog_path)
-                        
-                        if video_path and os.path.exists(video_path):
-                            await self.ui_log("✅ REELS AGENT: Vertical video compiled successfully!", "success")
+            async def compile_and_send_reel():
+                try:
+                    await self.ui_log("🎬 REELS AGENT: Commencing vertical video compilation in background...", "milestone")
+                    
+                    # Resolve path relative to python-agent root
+                    import sys
+                    agent_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+                    if agent_root not in sys.path:
+                        sys.path.insert(0, agent_root)
+                    
+                    from agents.reels.reels_agent import ReelsAgent
+                    reels_agent = ReelsAgent()
+                    
+                    await self.ui_log("Synthesizing neural Jenny voice and rendering video frames...", "system")
+                    
+                    # Await the async generator
+                    video_path = await reels_agent.generate_reel(blog_path)
+                    
+                    if video_path and os.path.exists(video_path):
+                        await self.ui_log("✅ REELS AGENT: Vertical video compiled successfully!", "success")
+                        if telegram_gateway.is_configured():
                             caption = (
                                 f"🎬 *Your Reel is Ready for Social Channels!*\n\n"
                                 f"📰 *Insight*: *{title}*\n"
@@ -366,14 +522,14 @@ You are not a generic blog writer. You are Astra — an autonomous AI search vis
                                 await self.ui_log("📨 delivered vertical Reel video directly to your Telegram chat!", "success")
                             else:
                                 await self.ui_log("⚠️ Warning: Failed to deliver Reel video over Telegram.", "warning")
-                        else:
-                            await self.ui_log("❌ REELS AGENT: Compilation completed but no output video path returned.", "error")
-                    except Exception as e:
-                        logger.error(f"[REELS_TASK] Error compiling background reel: {e}")
-                        await self.ui_log(f"⚠️ Reels compilation failed: {e}", "warning")
+                    else:
+                        await self.ui_log("❌ REELS AGENT: Compilation completed but no output video path returned.", "error")
+                except Exception as e:
+                    logger.error(f"[REELS_TASK] Error compiling background reel: {e}")
+                    await self.ui_log(f"⚠️ Reels compilation failed: {e}", "warning")
 
-                # Spawn background task
-                asyncio.create_task(compile_and_send_reel())
+            # Spawn background task
+            asyncio.create_task(compile_and_send_reel())
 
             return f"Strategic Insight '{title}' published autonomously. SEO/AEO optimization complete."
 

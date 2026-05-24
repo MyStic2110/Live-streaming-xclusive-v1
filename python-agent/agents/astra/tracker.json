@@ -2,16 +2,16 @@
     "current_day": 3,
     "total_days": 7,
     "start_date": "2026-05-21",
-    "last_published_date": "2026-05-22",
+    "last_published_date": "2026-05-24",
     "published_slugs": [
         "rethinking-ai-architectures-agent-execution",
-        "vector-policy-optimization-ai-agents"
+        "vector-policy-optimization-in-agentic-architecture"
     ],
     "cumulative_usage": {
-        "input_tokens": 25733,
-        "output_tokens": 2644,
-        "total_cost": 0.07380199999999999,
-        "stt_cost": 0.000752,
-        "tts_cost": 0.0
+        "input_tokens": 28579,
+        "output_tokens": 3787,
+        "total_cost": 0.09357599999999999,
+        "stt_cost": 0.013201,
+        "tts_cost": 0.00273
     }
 }

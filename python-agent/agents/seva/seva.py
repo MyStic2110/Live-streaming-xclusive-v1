@@ -113,7 +113,7 @@ CONVERSATION RULES
 1. ALWAYS ask for the user's phone number first before booking anything.
 2. Use the get_user_profile tool to check if they are a returning user.
    - If returning: greet them by name, confirm their saved address. Do NOT ask for address again.
-   - If new: ask for their name and full address, then call save_user_profile.
+   - If new: ask for their name and full address, instructing them that they can either tell you by voice or type them into the profile details form on their screen. Then call save_user_profile.
 3. Parse the user's intent (service, date, time) from natural speech.
    - "tomorrow morning" → tomorrow, 10:00 AM slot
    - "evening" → 17:00 or 18:00 slot
@@ -122,6 +122,10 @@ CONVERSATION RULES
 5. After collecting all details, call create_booking and confirm aloud with Booking ID.
 6. You can update or cancel bookings by Booking ID or by describing the service.
 7. Never make up a Booking ID. Always use the one returned by create_booking.
+8. ALWAYS repeat and confirm the phone number and the address (checking local/regional spellings and pronunciations) back to the user kindly and clearly before proceeding to save a profile or confirm a booking. Since these details are often regional, be extra patient, courteous, and double-check to ensure accuracy.
+9. Be highly resilient to slow, fast, or broken English, Hindi, and Hinglish. Many users speak slowly, hesitate, pause mid-sentence, or use broken phrases. Be patient, wait for them to finish, and do not cut them off prematurely.
+10. Pay close attention to the *last spoken word* and general context of their input. Even if a user speaks in disjointed fragments or stops mid-sentence (e.g., "I want plumber for..."), use the last spoken word or overall context to understand the intent and guide them kindly to complete it, rather than simply stating that you didn't understand.
+11. Once a booking is created, state the service charge clearly (Plumbing: ₹499, Electrical: ₹399, Cleaning: ₹999, Carpentry: ₹599, Laundry: ₹299, Repairs: ₹799) and ask if they want to pay for it now. If they confirm they can pay, call request_gpay_payment with their phone number, the corresponding amount, and the Booking ID to directly generate a Google Pay UPI intent request.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 MULTILINGUAL RULES
@@ -182,9 +186,35 @@ class SevaTools:
             profiles["profiles"][phone] = profile
             save_profiles(profiles)
             await self._ui_log(f"👤 Returning user: {profile.get('name', 'User')} ({phone})", "info")
+            
+            # Send profile update to UI
+            try:
+                payload = json.dumps({
+                    "type": "profile_update",
+                    "phone": phone,
+                    "name": profile.get("name", ""),
+                    "address": profile.get("address", "")
+                }).encode("utf-8")
+                await self.participant.publish_data(payload, topic="ui_control")
+            except Exception as e:
+                logger.error(f"[SEVA] Error sending profile_update to UI: {e}")
+
             return json.dumps({"found": True, "profile": profile})
         else:
             await self._ui_log(f"👤 New user detected: {phone}", "info")
+            
+            # Send profile update to UI
+            try:
+                payload = json.dumps({
+                    "type": "profile_update",
+                    "phone": phone,
+                    "name": "",
+                    "address": ""
+                }).encode("utf-8")
+                await self.participant.publish_data(payload, topic="ui_control")
+            except Exception as e:
+                logger.error(f"[SEVA] Error sending profile_update to UI: {e}")
+
             return json.dumps({"found": False, "message": "No profile found. Ask for name and address."})
 
     @llm.function_tool(description=(
@@ -216,6 +246,19 @@ class SevaTools:
         save_profiles(profiles)
         logger.info(f"[SEVA] Saved profile for {name} ({phone})")
         await self._ui_log(f"✅ Profile saved: {name} at {address}", "success")
+        
+        # Send profile update to UI
+        try:
+            payload = json.dumps({
+                "type": "profile_update",
+                "phone": phone,
+                "name": name,
+                "address": address
+            }).encode("utf-8")
+            await self.participant.publish_data(payload, topic="ui_control")
+        except Exception as e:
+            logger.error(f"[SEVA] Error sending profile_update to UI: {e}")
+
         return json.dumps({"success": True, "message": f"Profile for {name} saved successfully."})
 
     # ------------------------------------------------------------------
@@ -420,7 +463,41 @@ class SevaTools:
                     "message": f"Booking {booking_id} has been cancelled."
                 })
 
-        return json.dumps({"success": False, "message": f"Booking ID {booking_id} not found."})
+    @llm.function_tool(description=(
+        "Send a Google Pay payment request / UPI intent request to the user's GPay ID (constructed from their phone number as phone@okaxis). "
+        "Call this when the user confirms they want to pay for the service."
+    ))
+    async def request_gpay_payment(self, phone: str, amount: float, booking_id: str) -> str:
+        """
+        Args:
+            phone: The user's phone number (digits only).
+            amount: The billing amount in Rupees (INR).
+            booking_id: The SEVA Booking ID.
+        """
+        gpay_id = f"{phone}@okaxis"
+        logger.info(f"[SEVA] Sending GPay payment request of Rs. {amount} to {gpay_id} for Booking {booking_id}")
+        await self._ui_log(f"💳 GPay payment request generated: ₹{amount} to {gpay_id}", "info")
+        
+        # Broadcast payment request to the UI
+        payload = json.dumps({
+            "type": "payment_request",
+            "phone": phone,
+            "gpay_id": gpay_id.upper(),
+            "amount": amount,
+            "booking_id": booking_id
+        }).encode("utf-8")
+        try:
+            await self.participant.publish_data(payload, topic="ui_control")
+        except Exception as e:
+            logger.error(f"[SEVA] Error sending payment_request to UI: {e}")
+            
+        return json.dumps({
+            "success": True,
+            "gpay_id": gpay_id,
+            "amount": amount,
+            "booking_id": booking_id,
+            "message": f"Payment request of Rs. {amount} sent successfully to GPay ID {gpay_id}."
+        })
 
 
 def time_ns() -> int:
@@ -490,7 +567,7 @@ async def entrypoint(ctx: JobContext):
         tts=tts,
         turn_handling={
             "interruption": {"enabled": True},
-            "endpointing": {"min_delay": 1.2}
+            "endpointing": {"min_delay": 1.6}
         },
     )
 
@@ -537,6 +614,7 @@ async def entrypoint(ctx: JobContext):
     # ------------------------------------------------------------------
     agent_ready = False
     greeting_spoken = False
+    user_typing = False
 
     async def speak_greeting():
         nonlocal greeting_spoken
@@ -571,6 +649,10 @@ async def entrypoint(ctx: JobContext):
                 agent_ready = True
                 if ctx.room.remote_participants:
                     asyncio.create_task(speak_greeting())
+            elif event.new_state in ("speaking", "thinking"):
+                if user_typing:
+                    logger.info("[SEVA] Agent tried to speak/think while user is typing. Interrupting.")
+                    session.interrupt(force=True)
         except Exception as e:
             log_error(f"Error in on_state_changed: {e}")
 
@@ -591,6 +673,73 @@ async def entrypoint(ctx: JobContext):
                 logger.info(f"SEVA: {content}")
             elif item.role == "user":
                 logger.info(f"USER: {content}")
+
+    # ------------------------------------------------------------------
+    # UI actions listener
+    # ------------------------------------------------------------------
+    @ctx.room.on("data_received")
+    def on_data_received(dp):
+        nonlocal user_typing
+        try:
+            msg = json.loads(dp.data.decode("utf-8"))
+            logger.info(f"[SEVA][DATA_RECEIVED] Received UI action: {msg}")
+            key = msg.get("key")
+            if key == "typing_started":
+                user_typing = True
+                logger.info("[SEVA] User started typing in UI. Interrupting agent.")
+                session.interrupt(force=True)
+            elif key == "typing_cancelled":
+                user_typing = False
+                logger.info("[SEVA] User typing cancelled. Restoring conversation.")
+                asyncio.create_task(session.say("Sure! Let's continue booking your service by voice. What service do you need?"))
+            elif key == "confirm_details":
+                user_typing = False
+                chat_ctx.add_message(role="user", content="[User clicked the CONFIRM DETAILS button in the UI]")
+                asyncio.create_task(session.say("Perfect, thank you for confirming! Your details are confirmed. How can I help you with your booking?"))
+            elif key == "change_details":
+                user_typing = True
+                chat_ctx.add_message(role="user", content="[User clicked the CHANGE DETAILS button in the UI]")
+                asyncio.create_task(session.say("No worries, please update the details in the form on your screen, or let me know what needs to be changed."))
+            elif key == "update_details_from_ui":
+                user_typing = False
+                phone = msg.get("phone", "")
+                name = msg.get("name", "")
+                address = msg.get("address", "")
+                if phone:
+                    profiles = load_profiles()
+                    profiles["profiles"][phone] = {
+                        "name": name,
+                        "address": address,
+                        "preferred_language": "en",
+                        "created_at": datetime.now().isoformat(),
+                        "last_seen": datetime.now().isoformat()
+                    }
+                    save_profiles(profiles)
+                    # Inject user message
+                    chat_ctx.add_message(role="user", content=f"[User manually updated details in UI: Name={name}, Phone={phone}, Address={address}]")
+                    # Make agent confirm via TTS
+                    asyncio.create_task(session.say(f"Got it! I have updated your name to {name}, phone number to {phone}, and address to {address}. Proceeding with these details!"))
+            elif key == "payment_completed":
+                booking_id = msg.get("booking_id", "")
+                amount = msg.get("amount", 0)
+                async def handle_payment():
+                    data = load_bookings()
+                    updated = False
+                    for b in data["bookings"]:
+                        if b["id"] == booking_id:
+                            b["status"] = "paid"
+                            b["updated_at"] = datetime.now().isoformat()
+                            updated = True
+                            break
+                    if updated:
+                        save_bookings(data)
+                    logger.info(f"[SEVA] Payment of ₹{amount} received for booking {booking_id}.")
+                    await seva_tools._ui_log(f"✅ PAYMENT SUCCESSFUL: Received ₹{amount} for Booking ID {booking_id}", "success")
+                    chat_ctx.add_message(role="user", content=f"[User completed payment of ₹{amount} via GPay.]")
+                    await session.say(f"Awesome! I have received your Google Pay payment of {amount} rupees. Your booking is now fully paid and confirmed!")
+                asyncio.create_task(handle_payment())
+        except Exception as e:
+            logger.warning(f"[SEVA][DATA_RECEIVED] Error handling UI action: {e}")
 
     # ------------------------------------------------------------------
     # Start session

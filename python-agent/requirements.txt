@@ -3,3 +3,4 @@ livekit-plugins-mistralai
 livekit-plugins-silero
 python-dotenv
 httpx
+google-genai

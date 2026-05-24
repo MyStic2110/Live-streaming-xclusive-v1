@@ -21,119 +21,6 @@ const API = import.meta.env.VITE_API_URL || "";
 // --- ELITE AGENT-READY POST SCHEMA ---
 const INITIAL_POSTS = [];
 
-const ArchitecturalInfographic = ({ data }) => {
-  if (!data) return null;
-
-  let parsedData = data;
-  if (typeof data === "string") {
-    try {
-      parsedData = JSON.parse(data);
-    } catch (e) {
-      console.error("[BlogSection] Failed to parse infographicData string:", e);
-      return null;
-    }
-  }
-
-  const arch = parsedData.architecture || parsedData;
-  if (!arch) return null;
-
-  const rawLayers = arch.architectureLayers || arch.layers || [];
-  const rawPrimitives = arch.primitives || arch.coreCapabilities || [];
-  const rawFlow = arch.flow || arch.execution_flow || arch.executionSteps || [];
-
-  const actualLayers = Array.isArray(rawLayers) ? rawLayers : [];
-  const actualPrimitives = Array.isArray(rawPrimitives) 
-    ? rawPrimitives.map(p => typeof p === "object" ? (p.title || p.name || "") : p).filter(Boolean)
-    : [];
-  const actualFlow = Array.isArray(rawFlow) ? rawFlow : [];
-
-  return (
-    <div style={{
-      width: "100%",
-      background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)",
-      borderRadius: "40px",
-      padding: "3rem",
-      color: "white",
-      boxShadow: "0 40px 80px rgba(0,0,0,0.2)",
-      marginBottom: "4rem",
-      position: "relative",
-      overflow: "hidden"
-    }}>
-      <div style={{ position: "absolute", top: "-50%", left: "-10%", width: "50%", height: "200%", background: "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)" }}></div>
-      
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "3rem", position: "relative", zIndex: 10 }}>
-        <div>
-          <div style={{ fontSize: "0.75rem", fontWeight: "900", color: "#60a5fa", letterSpacing: "2px", marginBottom: "0.5rem" }}>RUNTIME ARCHITECTURE</div>
-          <h3 style={{ fontSize: "2rem", fontWeight: "900", letterSpacing: "-1px", margin: 0 }}>System Topology</h3>
-        </div>
-        <Activity color="#60a5fa" size={32} />
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: actualFlow.length > 0 ? "1fr 1fr" : "1fr", gap: "3rem", position: "relative", zIndex: 10 }}>
-        
-        {/* Left Column: Stack & Primitives */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "2.5rem" }}>
-          
-          {/* Primitives */}
-          {actualPrimitives.length > 0 && (
-            <div style={{ background: "rgba(255,255,255,0.05)", padding: "1.5rem", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.1)" }}>
-              <h4 style={{ fontSize: "1.1rem", fontWeight: "800", marginBottom: "1rem", color: "#93c5fd", marginTop: 0 }}>Core Primitives</h4>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                {actualPrimitives.map((prim, i) => (
-                  <span key={i} style={{ fontSize: "0.8rem", fontWeight: "700", background: "rgba(59, 130, 246, 0.2)", padding: "6px 12px", borderRadius: "8px", border: "1px solid rgba(59, 130, 246, 0.3)" }}>
-                    {prim}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Architecture Layers */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <h4 style={{ fontSize: "1.1rem", fontWeight: "800", marginBottom: "0.5rem", color: "#93c5fd", marginTop: 0 }}>Architecture Stack</h4>
-            {actualLayers.map((layer, i) => {
-              const layerName = layer.name || layer.title || `Layer ${i + 1}`;
-              const layerDesc = layer.description || (Array.isArray(layer.components) ? layer.components.join(', ') : layer.components) || "";
-              return (
-                <div key={i} style={{ 
-                  background: "rgba(255,255,255,0.03)", borderLeft: `4px solid ${["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b"][i % 4] || "#3b82f6"}`,
-                  padding: "1.2rem", borderRadius: "0 12px 12px 0"
-                }}>
-                  <div style={{ fontWeight: "800", fontSize: "0.95rem", marginBottom: "6px" }}>{layerName}</div>
-                  {layerDesc && <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)", lineHeight: "1.5" }}>{layerDesc}</div>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right Column: Execution Flow */}
-        {actualFlow.length > 0 && (
-          <div style={{ background: "rgba(0,0,0,0.2)", padding: "2rem", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.05)" }}>
-            <h4 style={{ fontSize: "1.1rem", fontWeight: "800", marginBottom: "2rem", color: "#93c5fd", marginTop: 0 }}>Execution Flow</h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", position: "relative" }}>
-              <div style={{ position: "absolute", left: "15px", top: "20px", bottom: "20px", width: "2px", background: "rgba(255,255,255,0.1)", zIndex: 0 }}></div>
-              {actualFlow.map((step, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "1.5rem", position: "relative", zIndex: 1 }}>
-                  <div style={{ 
-                    width: "32px", height: "32px", borderRadius: "50%", background: "#1e1b4b", border: "2px solid #60a5fa",
-                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem", fontWeight: "900", color: "#60a5fa", flexShrink: 0
-                  }}>
-                    {i + 1}
-                  </div>
-                  <div style={{ paddingTop: "6px", fontWeight: "700", fontSize: "0.95rem", color: "rgba(255,255,255,0.9)", lineHeight: "1.4" }}>
-                    {step}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-      </div>
-    </div>
-  );
-};
 
 const BlogSection = ({ onBack, externalPosts = [] }) => {
   const [posts, setPosts] = useState([...externalPosts, ...INITIAL_POSTS]);
@@ -331,14 +218,22 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
 
         <article style={{ maxWidth: "1200px", margin: "0 auto", padding: "6rem 5%", display: "grid", gridTemplateColumns: "1fr 300px", gap: "4rem" }}>
           <div>
-            {selectedPost.infographicData ? (
-              <ArchitecturalInfographic data={selectedPost.infographicData} />
-            ) : (
+            {selectedPost.featuredImage ? (
               <div style={{ 
                 width: "100%", height: "500px", borderRadius: "40px", 
                 overflow: "hidden", marginBottom: "4rem", boxShadow: "0 40px 80px rgba(0,0,0,0.1)"
               }}>
                 <img src={selectedPost.featuredImage} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={selectedPost.imageAlt} />
+              </div>
+            ) : (
+              <div style={{
+                width: "100%", height: "500px", borderRadius: "40px",
+                marginBottom: "4rem", background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)",
+                display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column",
+                color: "white", boxShadow: "0 40px 80px rgba(0,0,0,0.1)"
+              }}>
+                <Sparkles size={48} color="#60a5fa" style={{ marginBottom: "1rem" }} />
+                <div style={{ fontSize: "1.2rem", fontWeight: "800", opacity: 0.7 }}>Cortex Swarm Insight</div>
               </div>
             )}
 
@@ -773,15 +668,14 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
                   boxShadow: post.featured ? `0 40px 80px ${COLORS.accent}11` : "0 30px 60px rgba(0,0,0,0.08)",
                   border: post.featured ? `1px solid ${COLORS.accent}22` : "none"
                 }}>
-                  {post.infographicData ? (
+                  {post.featuredImage ? (
+                    <img src={post.featuredImage} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={post.title} />
+                  ) : (
                     <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", color: "white", position: "relative" }}>
                       <div style={{ position: "absolute", top: "-50%", left: "-10%", width: "50%", height: "200%", background: "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)" }}></div>
-                      <Activity size={64} color="#60a5fa" style={{ marginBottom: "1.5rem", position: "relative", zIndex: 10 }} />
-                      <div style={{ fontSize: "2rem", fontWeight: "900", letterSpacing: "1px", position: "relative", zIndex: 10 }}>INTERACTIVE SYSTEM TOPOLOGY</div>
-                      <div style={{ fontSize: "1rem", color: "rgba(255,255,255,0.6)", position: "relative", zIndex: 10 }}>Click to launch architectural payload</div>
+                      <Sparkles size={64} color="#60a5fa" style={{ marginBottom: "1.5rem", position: "relative", zIndex: 10 }} />
+                      <div style={{ fontSize: "1.5rem", fontWeight: "900", letterSpacing: "1px", position: "relative", zIndex: 10, opacity: 0.8 }}>Cortex Swarm Insight</div>
                     </div>
-                  ) : (
-                    <img src={post.featuredImage} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={post.title} />
                   )}
                   <div style={{ 
                     position: "absolute", top: "2rem", left: "2rem", 
