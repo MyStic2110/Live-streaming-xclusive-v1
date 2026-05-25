@@ -52,6 +52,12 @@ export const talkToAI = async (req, res) => {
   } else if (agentType === "seva") {
     roomName = `seva_session_${userId}`;
     agentName = "SEVA";
+  } else if (agentType === "martech") {
+    roomName = `martech_session_${userId}`;
+    agentName = "MARTECH";
+  } else if (agentType === "aivyuh") {
+    roomName = `security_session_${userId}`;
+    agentName = "AIVYUH";
   }
 
   console.log(`[HTTP_CONTROLLER] --> POST /talk-to-ai | AGENT: ${agentName} | ROOM: ${roomName}`);
@@ -165,3 +171,71 @@ export const getWeather = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// --- Agent aivyuh Security Controller Operations ---
+const runScanner = (args) => {
+  return new Promise((resolve, reject) => {
+    const pythonPath = path.resolve(__dirname, "../../../python-agent/venv/Scripts/python.exe");
+    const scannerPath = path.resolve(__dirname, "../../../python-agent/agents/aivyuh/scanner.py");
+    
+    console.log(`[SECURITY] Running scanner: ${pythonPath} ${scannerPath} ${args.join(" ")}`);
+    const proc = spawn(pythonPath, [scannerPath, ...args]);
+    let stdout = "";
+    let stderr = "";
+    
+    proc.stdout.on("data", (data) => { stdout += data.toString(); });
+    proc.stderr.on("data", (data) => { stderr += data.toString(); });
+    
+    proc.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`Scanner exited with code ${code}. Error: ${stderr}`));
+      } else {
+        try {
+          resolve(JSON.parse(stdout));
+        } catch (e) {
+          resolve({ raw: stdout });
+        }
+      }
+    });
+  });
+};
+
+export const getSecurityStatus = async (req, res) => {
+  try {
+    const result = await runScanner(["status"]);
+    res.json(result);
+  } catch (err) {
+    console.error("[SECURITY_CONTROLLER] ❌ Status error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const runSecurityScan = async (req, res) => {
+  try {
+    const result = await runScanner(["scan"]);
+    res.json(result);
+  } catch (err) {
+    console.error("[SECURITY_CONTROLLER] ❌ Scan error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const updateSecurityConstraint = async (req, res) => {
+  const { vulnId, status } = req.body;
+  try {
+    if (vulnId === "all") {
+      const keys = ["llm01", "llm02", "llm03", "llm04", "llm05", "llm06", "llm07", "llm08", "llm09", "llm10"];
+      for (const k of keys) {
+        await runScanner(["update", k, status]);
+      }
+    } else {
+      await runScanner(["update", vulnId, status]);
+    }
+    const result = await runScanner(["scan"]);
+    res.json(result);
+  } catch (err) {
+    console.error("[SECURITY_CONTROLLER] ❌ Update error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+

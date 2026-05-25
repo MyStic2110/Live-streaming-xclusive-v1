@@ -11,6 +11,8 @@ import BlogSection from "./components/BlogSection";
 import AstraRoom from "./components/AstraRoom";
 import RehearsalRoom from "./components/RehearsalRoom";
 import SevaRoom from "./components/SevaRoom";
+import SwarmTelemetryPage from "./components/SwarmTelemetryPage";
+import MartechRoom from "./components/MartechRoom";
 import '@livekit/components-styles/index.css';
 import "./index.css";
 
@@ -19,6 +21,29 @@ const API = import.meta.env.VITE_API_URL || "";
 function App() {
   const [roomData, setRoomData] = useState(null);
   const [showBlog, setShowBlog] = useState(false);
+  const [currentPath, setCurrentPath] = useState(window.location.hash || window.location.pathname);
+
+  React.useEffect(() => {
+    const handleLocationChange = () => {
+      setCurrentPath(window.location.hash || window.location.pathname);
+    };
+    window.addEventListener("popstate", handleLocationChange);
+    window.addEventListener("hashchange", handleLocationChange);
+    return () => {
+      window.removeEventListener("popstate", handleLocationChange);
+      window.removeEventListener("hashchange", handleLocationChange);
+    };
+  }, []);
+
+  const navigateToTelemetry = () => {
+    window.history.pushState({}, "", "/agents-value-technicals-business");
+    setCurrentPath("/agents-value-technicals-business");
+  };
+
+  const navigateHome = () => {
+    window.history.pushState({}, "", "/");
+    setCurrentPath("/");
+  };
 
   const handleJoin = (data) => {
     console.log(`[FRONTEND] Entering room: ${data.roomName} | Agent: ${data.creatorId}`);
@@ -44,9 +69,19 @@ function App() {
   const isAstra     = roomData?.creatorId === "ASTRA";
   const isRehearsal = roomData?.creatorId === "REHEARSAL";
   const isSeva      = roomData?.creatorId === "SEVA";
+  const isMartech   = roomData?.creatorId === "MARTECH";
 
   if (showBlog) {
     return <BlogSection onBack={() => setShowBlog(false)} />;
+  }
+
+  const isTelemetryPath = 
+    currentPath.replace(/\/$/, "") === "/agents-value-technicals-business" || 
+    window.location.hash.replace(/\/$/, "") === "#/agents-value-technicals-business" ||
+    window.location.hash === "#agents-value-technicals-business";
+
+  if (isTelemetryPath) {
+    return <SwarmTelemetryPage onBack={navigateHome} />;
   }
 
   return (
@@ -72,11 +107,17 @@ function App() {
           <RehearsalRoom roomData={roomData} onLeave={handleLeave} />
         ) : isSeva ? (
           <SevaRoom roomData={roomData} onLeave={handleLeave} />
+        ) : isMartech ? (
+          <MartechRoom roomData={roomData} onLeave={handleLeave} />
         ) : (
           <VideoRoom roomData={roomData} onLeave={handleLeave} />
         )
       ) : (
-        <LiveList onJoin={handleJoin} onBlogClick={() => setShowBlog(true)} />
+        <LiveList 
+          onJoin={handleJoin} 
+          onBlogClick={() => setShowBlog(true)} 
+          onTelemetryClick={navigateToTelemetry}
+        />
       )}
     </div>
   );

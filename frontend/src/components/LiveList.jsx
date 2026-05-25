@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import LegalModal from "./LegalModal";
 
@@ -212,7 +213,7 @@ const PipelineCard = ({ agent, onAction }) => {
 
 // --- MAIN PAGE ---
 
-export default function LiveList({ onJoin, onBlogClick }) {
+export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
   const [selectedReel, setSelectedReel] = React.useState(null);
   const [showReelsGallery, setShowReelsGallery] = React.useState(false);
   const [legalModalType, setLegalModalType] = React.useState(null);
@@ -233,6 +234,63 @@ export default function LiveList({ onJoin, onBlogClick }) {
   const [liveEvent, setLiveEvent] = React.useState("[SYSTEM] Swarm Fleet initialized. All cognitive nodes: operational.");
   const [weatherData, setWeatherData] = React.useState(null);
   const [showWeatherToast, setShowWeatherToast] = React.useState(false);
+
+  const [singleLogs, setSingleLogs] = React.useState([]);
+  const [swarmLogs, setSwarmLogs] = React.useState([]);
+  const [isTerminalSimulating, setIsTerminalSimulating] = React.useState(false);
+
+  const singleLogsList = React.useMemo(() => [
+    { time: "00:01", text: "Operator Request: \"Verify customer profile (9876543210), create carpenter booking, check compliance logs, and trigger GPay bill.\"", type: "info" },
+    { time: "00:02", text: "Initializing Single Agent session...", type: "info" },
+    { time: "00:03", text: "Searching user_profiles.json for phone '9876543210'... found.", type: "success" },
+    { time: "00:05", text: "Creating booking entry: service 'carpentry'... saved.", type: "success" },
+    { time: "00:08", text: "Proceeding to check compliance logs...", type: "info" },
+    { time: "00:11", text: "Error: Context length exceeded during security rules validation.", type: "error" },
+    { time: "00:14", text: "Attempting agent reboot... context window flushed.", type: "warn" },
+    { time: "00:17", text: "Retrying compliance verification...", type: "info" },
+    { time: "00:22", text: "Warning: API gateway connection timeout (10s threshold).", type: "warn" },
+    { time: "00:25", text: "FAILED: Task aborted after 25.4 seconds due to agent memory ceiling.", type: "error" }
+  ], []);
+
+  const swarmLogsList = React.useMemo(() => [
+    { time: "00:01", text: "Operator Request: \"Verify customer profile (9876543210), create carpenter booking, check compliance logs, and trigger GPay bill.\"", type: "info" },
+    { time: "00:02", text: "Swarm Commander online. Allocating tasks to specialized nodes...", type: "info" },
+    { time: "00:04", text: "Cortex-Orchestrator: Dispatched Profile Lookup & Booking request to SEVA.", type: "info" },
+    { time: "00:05", text: "SEVA Agent: Profile confirmed. Created carpentry booking ID 'SEVA-174'.", type: "success" },
+    { time: "00:06", text: "Cortex-Orchestrator: Dispatched Security & Observability checks to VIGIL.", type: "info" },
+    { time: "00:08", text: "VIGIL Node: Completed compliance checks. Sentry logs synced successfully.", type: "success" },
+    { time: "00:09", text: "Cortex-Orchestrator: Dispatched UPI Google Pay billing request to SEVA Tools.", type: "info" },
+    { time: "00:11", text: "SEVA Agent: Billing card triggered. VPA: 9876543210@okaxis. Paid intent ready.", type: "success" },
+    { time: "00:12", text: "Swarm Commander: All sub-tasks resolved. Division of labor success.", type: "info" },
+    { time: "00:13", text: "SUCCESS: Fleet execution completed in 2.15 seconds. [Network Load: Balanced]", type: "success" }
+  ], []);
+
+  const runTerminalSimulation = React.useCallback(() => {
+    if (isTerminalSimulating) return;
+    setIsTerminalSimulating(true);
+    setSingleLogs([]);
+    setSwarmLogs([]);
+    
+    let step = 0;
+    const interval = setInterval(() => {
+      if (step < singleLogsList.length) {
+        setSingleLogs(prev => [...prev, singleLogsList[step]]);
+        setSwarmLogs(prev => [...prev, swarmLogsList[step]]);
+        step++;
+      } else {
+        clearInterval(interval);
+        setIsTerminalSimulating(false);
+      }
+    }, 600);
+  }, [isTerminalSimulating, singleLogsList, swarmLogsList]);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      runTerminalSimulation();
+    }, 1500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   React.useEffect(() => {
     const fetchLocationAndWeather = async () => {
@@ -555,6 +613,31 @@ export default function LiveList({ onJoin, onBlogClick }) {
         "AC repair karna hai jaldi.",
         "Reschedule my carpenter to Sunday."
       ]
+    },
+    {
+      id: "martech", title: "Martech Analyst", icon: "📈", color: "#f97316",
+      desc: "Autonomous digital marketing and search engine optimization strategist. Deep insights into GA4 funnel performance, traffic anomalies, and Search Console ranking opportunities.",
+      btnText: "Consult Analyst",
+      prompts: [
+        "Run a comprehensive performance audit report.",
+        "Highlight GA4 conversion funnel anomalies.",
+        "What are our top SEO keyword ranking opportunities?",
+        "Are there any conversion rate drops on mobile devices?",
+        "Explain why organic search traffic declined.",
+        "Correlate Search Console clicks with landing page bounce rates."
+      ]
+    },
+    {
+      id: "aivyuh", title: "aivyuh Security", icon: "🛡️", color: "#10b981",
+      desc: "Swarm Cybersecurity Agent. Audits agent instructions, identifies OWASP LLM vulnerabilities, and provides prompt compliance advice.",
+      btnText: "Consult Auditor",
+      prompts: [
+        "Audit SEVA concierge rules.",
+        "Check run history ledger.",
+        "How can I prevent prompt injection?",
+        "What is excessive agency?",
+        "Are compliance logs secure?"
+      ]
     }
   ];
 
@@ -634,7 +717,7 @@ export default function LiveList({ onJoin, onBlogClick }) {
         creatorId: agentId.toUpperCase(), 
         isAI: true 
       });
-    } catch (err) {
+    } catch {
       alert("AI Assistant is offline");
     }
   };
@@ -658,7 +741,7 @@ export default function LiveList({ onJoin, onBlogClick }) {
       alert("Shadow Agent Observer has been successfully deployed to the meeting in the background!");
       setShowShadowInput(false);
       setMeetingUrl("");
-    } catch (err) {
+    } catch {
       alert("Failed to deploy Shadow Agent. Please try again.");
     } finally {
       setIsDeployingShadow(false);
@@ -674,12 +757,25 @@ export default function LiveList({ onJoin, onBlogClick }) {
         position: "sticky", top: 0, background: "rgba(255,255,255,0.8)", 
         backdropFilter: "blur(10px)", zIndex: 100
       }}>
-        <div style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "2px", color: COLORS.primary }}>
-          SWARM <span style={{ color: COLORS.accent }}>AGENTIC</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <img 
+            src="/logo.jpeg" 
+            alt="Swarm Agentic Logo" 
+            style={{ 
+              height: "36px", 
+              width: "36px", 
+              borderRadius: "8px", 
+              objectFit: "cover" 
+            }} 
+          />
+          <div style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "2px", color: COLORS.primary }}>
+            SWARM <span style={{ color: COLORS.accent }}>AGENTIC</span>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: "2.5rem", fontSize: "0.9rem", fontWeight: "600", color: COLORS.textMuted }}>
+        <div style={{ display: "flex", gap: "2.5rem", fontSize: "0.9rem", fontWeight: "600", color: COLORS.textMuted, alignItems: "center" }}>
           <a href="#services" style={{ textDecoration: "none", color: "inherit" }}>Services</a>
           <a href="#pricing" style={{ textDecoration: "none", color: "inherit" }}>Pricing</a>
+          <div onClick={onTelemetryClick} style={{ cursor: "pointer", color: COLORS.primary, fontWeight: "700" }}>Telemetry</div>
           <div onClick={onBlogClick} style={{ cursor: "pointer", color: COLORS.accent, fontWeight: "800" }}>Insights</div>
           <a href="#about" style={{ textDecoration: "none", color: "inherit" }}>About</a>
         </div>
@@ -1057,6 +1153,163 @@ export default function LiveList({ onJoin, onBlogClick }) {
       </div>
     </header>
 
+      {/* --- SWARM VS SINGLE AGENT BENCHMARK SECTION --- */}
+      <section style={{ 
+        padding: "6rem 5%", 
+        background: "#030712", 
+        borderTop: `1px solid rgba(255,255,255,0.05)`,
+        borderBottom: `1px solid rgba(255,255,255,0.05)`,
+        color: "#ffffff",
+        fontFamily: "'Outfit', sans-serif"
+      }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          
+          {/* Header */}
+          <div style={{ maxWidth: "850px", margin: "0 auto 4rem", textAlign: "center" }}>
+            <div style={{ 
+              display: "inline-block", padding: "6px 16px", background: "rgba(59, 130, 246, 0.15)", 
+              color: "#3b82f6", borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", 
+              marginBottom: "1.5rem", letterSpacing: "1.5px", textTransform: "uppercase" 
+            }}>
+              Swarm Performance Benchmark
+            </div>
+            <h2 style={{ fontSize: "2.75rem", fontWeight: "900", color: "#ffffff", lineHeight: "1.15", letterSpacing: "-1px", marginBottom: "1.5rem" }}>
+              Single Agent vs. Cooperative Swarm
+            </h2>
+            <p style={{ fontSize: "1.15rem", color: "#94a3b8", lineHeight: "1.6", maxWidth: "700px", margin: "0 auto" }}>
+              See how a distributed fleet of specialized cognitive nodes executes multi-step work without bottlenecks, compared to a single agent stalling under heavy logic overhead.
+            </p>
+          </div>
+
+          {/* Terminal Console Grid */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "2.5rem",
+            marginBottom: "3rem"
+          }} className="hero-split-grid">
+            
+            {/* Left Console: Single Agent */}
+            <div 
+              style={{
+                background: "#070a13",
+                border: "1px solid rgba(244, 63, 94, 0.2)",
+                borderRadius: "20px",
+                padding: "1.5rem",
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                height: "360px"
+              }}
+              className="terminal-glow"
+            >
+              {/* Window Controls Header */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "1.2rem", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "10px" }}>
+                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ef4444" }} />
+                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#eab308" }} />
+                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#22c55e" }} />
+                <span style={{ marginLeft: "8px", fontSize: "0.75rem", color: "#475569", fontFamily: "monospace", fontWeight: "bold" }}>
+                  single_agent_session.log
+                </span>
+                <span style={{ marginLeft: "auto", fontSize: "0.65rem", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", padding: "2px 8px", borderRadius: "4px", fontWeight: "700" }}>
+                  SEQUENTIAL LOAD
+                </span>
+              </div>
+
+              {/* Console logs area */}
+              <div style={{ flex: 1, overflowY: "auto", fontFamily: "'Courier New', Courier, monospace", fontSize: "0.8rem", display: "flex", flexDirection: "column", gap: "8px" }} className="terminal-scroll">
+                {Array.isArray(singleLogs) && singleLogs.map((log, idx) => {
+                  if (!log) return null;
+                  return (
+                    <div key={idx} style={{ 
+                      color: log.type === "error" ? "#f87171" : log.type === "warn" ? "#fbbf24" : log.type === "success" ? "#34d399" : "#94a3b8" 
+                    }}>
+                      <span style={{ color: "#475569", marginRight: "8px" }}>[{log.time || ""}]</span>
+                      {log.text || ""}
+                    </div>
+                  );
+                })}
+                {isTerminalSimulating && singleLogs && singleLogsList && singleLogs.length < singleLogsList.length && (
+                  <div style={{ color: "#ef4444", animation: "terminalPulse 1s infinite", fontFamily: "monospace" }}>&gt; Processing...</div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Console: Coordinated Swarm */}
+            <div 
+              style={{
+                background: "#070a13",
+                border: "1px solid rgba(34, 197, 94, 0.3)",
+                borderRadius: "20px",
+                padding: "1.5rem",
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                height: "360px"
+              }}
+              className="terminal-glow"
+            >
+              {/* Window Controls Header */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "1.2rem", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "10px" }}>
+                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ef4444" }} />
+                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#eab308" }} />
+                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#22c55e" }} />
+                <span style={{ marginLeft: "8px", fontSize: "0.75rem", color: "#475569", fontFamily: "monospace", fontWeight: "bold" }}>
+                  swarm_commander_orchestrator.log
+                </span>
+                <span style={{ marginLeft: "auto", fontSize: "0.65rem", background: "rgba(34, 197, 94, 0.1)", color: "#22c55e", padding: "2px 8px", borderRadius: "4px", fontWeight: "700" }}>
+                  COOPERATIVE FLEET
+                </span>
+              </div>
+
+              {/* Console logs area */}
+              <div style={{ flex: 1, overflowY: "auto", fontFamily: "'Courier New', Courier, monospace", fontSize: "0.8rem", display: "flex", flexDirection: "column", gap: "8px" }} className="terminal-scroll">
+                {Array.isArray(swarmLogs) && swarmLogs.map((log, idx) => {
+                  if (!log) return null;
+                  return (
+                    <div key={idx} style={{ 
+                      color: log.type === "error" ? "#f87171" : log.type === "warn" ? "#fbbf24" : log.type === "success" ? "#34d399" : "#94a3b8" 
+                    }}>
+                      <span style={{ color: "#475569", marginRight: "8px" }}>[{log.time || ""}]</span>
+                      {log.text || ""}
+                    </div>
+                  );
+                })}
+                {isTerminalSimulating && swarmLogs && swarmLogsList && swarmLogs.length < swarmLogsList.length && (
+                  <div style={{ color: "#22c55e", animation: "terminalPulse 1s infinite", fontFamily: "monospace" }}>&gt; Allocating threads...</div>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Action Trigger */}
+          <div style={{ textAlign: "center" }}>
+            <button
+              onClick={runTerminalSimulation}
+              disabled={isTerminalSimulating}
+              style={{
+                padding: "1rem 2rem",
+                background: isTerminalSimulating ? "rgba(255,255,255,0.05)" : "#22c55e",
+                color: isTerminalSimulating ? "#475569" : "#ffffff",
+                border: "none",
+                borderRadius: "12px",
+                fontWeight: "800",
+                fontSize: "0.95rem",
+                cursor: isTerminalSimulating ? "not-allowed" : "pointer",
+                boxShadow: isTerminalSimulating ? "none" : "0 4px 20px rgba(34, 197, 94, 0.3)",
+                transition: "all 0.2s"
+              }}
+              onMouseEnter={e => { if (!isTerminalSimulating) { e.currentTarget.style.background = "#16a34a"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+              onMouseLeave={e => { if (!isTerminalSimulating) { e.currentTarget.style.background = "#22c55e"; e.currentTarget.style.transform = "translateY(0)"; } }}
+            >
+              {isTerminalSimulating ? "SIMULATION RUNNING..." : "⚡ RUN BENCHMARK SCENARIO"}
+            </button>
+          </div>
+
+        </div>
+      </section>
+
       {/* --- THE ENTERPRISE AI TRIAD DIRECTIVE --- */}
       <section style={{ 
         padding: "6rem 5% 7rem", 
@@ -1365,8 +1618,9 @@ export default function LiveList({ onJoin, onBlogClick }) {
       {/* Footer */}
       <footer style={{ 
         padding: "6rem 5% 4rem", 
-        borderTop: `1px solid ${COLORS.border}`, 
-        background: COLORS.bgSoft,
+        borderTop: "1px solid rgba(255, 255, 255, 0.05)", 
+        background: "#070b16",
+        color: "#ffffff",
         fontFamily: "'Outfit', sans-serif"
       }}>
         <div style={{ 
@@ -1378,144 +1632,114 @@ export default function LiveList({ onJoin, onBlogClick }) {
           marginBottom: "5rem" 
         }}>
           
-          {/* Column 1: Branding & Pulse */}
+          {/* Column 1: Enterprise Branding & SEO Description */}
           <div>
-            <div style={{ fontSize: "1.5rem", fontWeight: "900", letterSpacing: "2px", marginBottom: "1.5rem", color: COLORS.primary }}>
-              SWARM <span style={{ color: COLORS.accent }}>AGENTIC</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "1.5rem" }}>
+              <img 
+                src="/logo.jpeg" 
+                alt="Swarm Agentic Logo" 
+                style={{ 
+                  height: "44px", 
+                  width: "44px", 
+                  borderRadius: "10px", 
+                  objectFit: "cover" 
+                }} 
+              />
+              <div style={{ fontSize: "1.5rem", fontWeight: "900", letterSpacing: "2px", color: "#ffffff" }}>
+                SWARM <span style={{ color: COLORS.accent }}>AGENTIC</span>
+              </div>
             </div>
-            <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6", marginBottom: "2rem" }}>
-              The future of business operations is agentic. We bridge complex multi-agent frameworks directly into production SaaS structures with verified 2-week deployments.
+            <p style={{ color: "#94a3b8", fontSize: "0.9rem", lineHeight: "1.6", marginBottom: "2rem" }}>
+              Enterprise-grade decentralized AI Swarm and Multi-Agent Orchestration platform. We automate complex B2B operations using localized LLM inference, real-time WebRTC audio pipelines, NLU semantic routers, and autonomous payment gateways (UPI/GPay).
             </p>
             <div style={{ 
               display: "inline-flex", alignItems: "center", gap: "8px", 
-              background: "rgba(16, 185, 129, 0.08)", color: COLORS.success, 
+              background: "rgba(34, 197, 94, 0.1)", color: "#22c55e", 
               padding: "6px 16px", borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", letterSpacing: "1px"
             }}>
-              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: COLORS.success, display: "inline-block", animation: "pulse 2s infinite" }} />
-              ALL OPERATIONAL NODES ONLINE
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "pulse 2s infinite" }} />
+              COGNITIVE NODES: OPERATIONAL
             </div>
           </div>
 
-          {/* Column 2: Fleet Active Nodes */}
+          {/* Column 2: Swarm Fleet Architecture (AEO Terms) */}
           <div>
-            <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: COLORS.primary, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "1.5rem" }}>
+            <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: "#ffffff", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "1.5rem" }}>
               Fleet Active Nodes
             </h4>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "2.2" }}>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>🤖 Swarm Commander (Central)</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>👥 Shadow Observer V1 (Audits)</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>📊 Cortex BI Analyst (SQL)</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>🚀 Nova Copilot (UI Guide)</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>✍️ Astra Architect (Insights)</li>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: "#94a3b8", fontSize: "0.9rem", lineHeight: "2.2" }}>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>🤖 Swarm Commander (Orchestration)</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>👥 Shadow Observer (Diarized Audits)</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>📊 Cortex BI Analyst (SQL Analytics)</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>🚀 Nova Copilot (UI Guide Agent)</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>✍️ Astra Architect (Document NLU)</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>📈 Martech Analyst (Growth & SEO)</li>
             </ul>
           </div>
 
-          {/* Column 3: Resources */}
+          {/* Column 3: Compliance & Stack */}
           <div>
-            <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: COLORS.primary, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "1.5rem" }}>
-              Swarm Resources
+            <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: "#ffffff", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "1.5rem" }}>
+              Enterprise Compliance & Stack
             </h4>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "2.2" }}>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted} onClick={() => { const el = document.getElementById("swarm-lab"); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}>🛠️ Swarm Lab (Pipeline)</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted} onClick={onBlogClick}>✍️ Insights & Sprint Blog</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted} onClick={() => { const el = document.getElementById("pricing"); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}>💰 Operational Pricing</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted} onClick={() => setShowAuditPreview(true)}>📄 Sample Meeting Audit (PDF)</li>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: "#94a3b8", fontSize: "0.9rem", lineHeight: "2.2" }}>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>🔒 Local Inference (Whisper / Llama)</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>🎙️ Deepgram Nova-2 Multilingual NLU</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>⚡ LiveKit WebRTC Voice Pipeline</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>📋 Sentry Security Governance Logs</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>💳 UPI & Google Pay Billing Intents</li>
             </ul>
           </div>
 
-          {/* Column 4: Newsletter */}
+          {/* Column 4: Newsletter & Resources */}
           <div>
-            <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: COLORS.primary, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "1.5rem" }}>
-              Newsletter
+            <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: "#ffffff", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "1.5rem" }}>
+              Observability & Resources
             </h4>
-            <p style={{ color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "1.5", marginBottom: "1.25rem" }}>
-              Join our newsletter for exclusive updates and tech premium insights.
-            </p>
-            {!leadSubmitted ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <input 
-                  type="email" 
-                  placeholder="Your email" 
-                  value={leadEmail}
-                  onChange={e => setLeadEmail(e.target.value)}
-                  style={{
-                    padding: "10px 14px",
-                    borderRadius: "10px",
-                    border: `1px solid ${COLORS.border}`,
-                    fontSize: "0.85rem",
-                    outline: "none",
-                    fontFamily: "'Outfit', sans-serif"
-                  }}
-                />
-                <button
-                  onClick={() => {
-                    if (leadEmail.includes("@")) {
-                      setLeadSubmitted(true);
-                      alert("Successfully subscribed to our newsletter!");
-                    } else {
-                      alert("Please enter a valid email address.");
-                    }
-                  }}
-                  style={{
-                    padding: "10px",
-                    background: COLORS.accent,
-                    color: "white",
-                    border: "none",
-                    borderRadius: "10px",
-                    fontWeight: "800",
-                    fontSize: "0.85rem",
-                    cursor: "pointer",
-                    transition: "background 0.2s"
-                  }}
-                  onMouseEnter={e => e.target.style.background = "#2563eb"}
-                  onMouseLeave={e => e.target.style.background = COLORS.accent}
-                >
-                  Join
-                </button>
-              </div>
-            ) : (
-              <div style={{ color: COLORS.success, fontWeight: "800", fontSize: "0.85rem", background: "rgba(16, 185, 129, 0.08)", padding: "12px", borderRadius: "10px", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
-                ✓ SUBSCRIBED WITH {leadEmail.toUpperCase()}
-              </div>
-            )}
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: "#94a3b8", fontSize: "0.9rem", lineHeight: "2.2", marginBottom: "1.5rem" }}>
+              <li style={{ cursor: "pointer", color: "#3b82f6", fontWeight: "700" }} onClick={onTelemetryClick} onMouseEnter={e => e.currentTarget.style.color = "#60a5fa"} onMouseLeave={e => e.currentTarget.style.color = "#3b82f6"}>📈 Live Swarm Telemetry Dashboard</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"} onClick={() => { const el = document.getElementById("swarm-lab"); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}>🛠️ Swarm Lab Production Pipeline</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"} onClick={onBlogClick}>✍️ Insights & Sprint Blog</li>
+              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"} onClick={() => setShowAuditPreview(true)}>📄 Sample Meeting Audit (PDF)</li>
+            </ul>
           </div>
 
         </div>
 
         {/* Bottom Bar Divider & Copyrights */}
         <div style={{ 
-          borderTop: `1px solid ${COLORS.border}`, 
+          borderTop: "1px solid rgba(255, 255, 255, 0.05)", 
           paddingTop: "2.5rem", 
           display: "flex", 
           justifyContent: "space-between", 
           alignItems: "center",
           flexWrap: "wrap",
           gap: "1.5rem",
-          color: COLORS.textMuted, 
+          color: "#64748b", 
           fontSize: "0.8rem", 
           letterSpacing: "0.5px" 
         }}>
           <div>
-            © 2026 SWARM COMMAND · ALL RIGHTS RESERVED · MADE IN INDIA 🇮🇳
+            © 2026 SWARM COMMAND · DECENTRALIZED MULTI-AGENT SWARMS · B2B AI AUTOMATION & TELEMETRY · INDIA 🇮🇳
           </div>
           <div style={{ display: "flex", gap: "2rem" }}>
             <span 
               onClick={() => setLegalModalType("privacy")}
               style={{ cursor: "pointer", transition: "color 0.2s" }} 
-              onMouseEnter={e => e.target.style.color = COLORS.accent} 
-              onMouseLeave={e => e.target.style.color = COLORS.textMuted}
+              onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} 
+              onMouseLeave={e => e.currentTarget.style.color = "#64748b"}
             >
               PRIVACY POLICY
             </span>
             <span 
               onClick={() => setLegalModalType("terms")}
               style={{ cursor: "pointer", transition: "color 0.2s" }} 
-              onMouseEnter={e => e.target.style.color = COLORS.accent} 
-              onMouseLeave={e => e.target.style.color = COLORS.textMuted}
+              onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} 
+              onMouseLeave={e => e.currentTarget.style.color = "#64748b"}
             >
               TERMS & CONDITIONS
             </span>
-            <span style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = COLORS.accent} onMouseLeave={e => e.target.style.color = COLORS.textMuted}>CONSOLE ACCESS</span>
+            <span style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#64748b"}>CONSOLE ACCESS</span>
           </div>
         </div>
       </footer>

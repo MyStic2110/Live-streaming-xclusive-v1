@@ -1,0 +1,90 @@
+[
+    {
+        "id": "run-008",
+        "date": "2026-05-25 19:14",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 9,
+        "resolved": 1,
+        "ignored": 0,
+        "cvss": "8.1",
+        "utility": "95%"
+    },
+    {
+        "id": "run-007",
+        "date": "2026-05-25 19:14",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 9,
+        "resolved": 1,
+        "ignored": 0,
+        "cvss": "8.1",
+        "utility": "95%"
+    },
+    {
+        "id": "run-006",
+        "date": "2026-05-25 19:13",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 10,
+        "resolved": 0,
+        "ignored": 0,
+        "cvss": "8.8",
+        "utility": "100%"
+    },
+    {
+        "id": "run-005",
+        "date": "2026-05-25 19:10",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 10,
+        "resolved": 0,
+        "ignored": 0,
+        "cvss": "8.8",
+        "utility": "100%"
+    },
+    {
+        "id": "run-004",
+        "date": "2026-05-25 17:20",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 10,
+        "resolved": 0,
+        "ignored": 0,
+        "cvss": "8.8",
+        "utility": "100%"
+    },
+    {
+        "id": "run-003",
+        "date": "2026-05-25 17:17",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 3,
+        "resolved": 1,
+        "ignored": 0,
+        "cvss": "7.5",
+        "utility": "95%"
+    },
+    {
+        "id": "run-002",
+        "date": "2026-05-25 17:09",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 3,
+        "resolved": 1,
+        "ignored": 0,
+        "cvss": "7.5",
+        "utility": "95%"
+    },
+    {
+        "id": "run-001",
+        "date": "2026-05-25 17:09",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 3,
+        "resolved": 1,
+        "ignored": 0,
+        "cvss": "7.5",
+        "utility": "95%"
+    }
+]

@@ -13,6 +13,11 @@ app.post("/deploy-shadow", roomController.deployShadow);
 app.get("/insights", roomController.getAstraInsights);
 app.get("/weather", roomController.getWeather);
 
+// --- aivyuh Security Console Routes ---
+app.get("/security/status", roomController.getSecurityStatus);
+app.post("/security/scan", roomController.runSecurityScan);
+app.post("/security/remediate", roomController.updateSecurityConstraint);
+
 app.listen(config.port, "0.0.0.0", () => {
   console.log(`[ENTERPRISE] Business Layers Active on ${config.port}`);
   console.log(`[ENTERPRISE] LiveKit Target: ${config.livekit.url}`);
