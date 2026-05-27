@@ -14,6 +14,7 @@ import SevaRoom from "./components/SevaRoom";
 import SwarmTelemetryPage from "./components/SwarmTelemetryPage";
 import MartechRoom from "./components/MartechRoom";
 import OctaneRoom from "./components/OctaneRoom";
+import DevopsGeniRoom from "./components/DevopsGeniRoom";
 import '@livekit/components-styles/index.css';
 import "./index.css";
 
@@ -84,6 +85,7 @@ function App() {
   const isSeva      = roomData?.creatorId === "SEVA";
   const isMartech   = roomData?.creatorId === "MARTECH";
   const isOctane    = roomData?.creatorId === "OCTANE";
+  const isDevopsGeni = roomData?.creatorId === "DEVOPS_GENI";
 
   const isTelemetryPath = 
     currentPath.replace(/\/$/, "") === "/agents-value-technicals-business" || 
@@ -96,7 +98,9 @@ function App() {
   } else if (isTelemetryPath) {
     content = <SwarmTelemetryPage onBack={navigateHome} />;
   } else if (roomData) {
-    content = isLina ? (
+    content = isDevopsGeni ? (
+      <DevopsGeniRoom roomData={roomData} onLeave={handleLeave} />
+    ) : isLina ? (
       <LinaRoom roomData={roomData} onLeave={handleLeave} />
     ) : isVigil ? (
       <VigilRoom roomData={roomData} onLeave={handleLeave} />

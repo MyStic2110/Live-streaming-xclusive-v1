@@ -772,6 +772,17 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
         "Give me the last 20 lines of redis logs",
         "Summarize recent livekit server logs"
       ]
+    },
+    {
+      id: "DEVOPS_GENI", title: "DevOpsGeni", icon: "⚙️", color: "#10b981",
+      desc: "Text-Only SRE System Monitor. Tracks ghost Python processes, analyzes Octane warnings, and guards local RAM.",
+      btnText: "Open Terminal",
+      prompts: [
+        "Check for ghost processes",
+        "Kill all idle Python agents",
+        "Analyze recent Octane warnings",
+        "What are my machine specs?"
+      ]
     }
   ];
 
