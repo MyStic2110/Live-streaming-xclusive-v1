@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowLeft, Sparkles, Shield, Activity, RefreshCw, Calendar, 
-  User, Tag, ChevronRight, Clock, Eye, Share2, List, ExternalLink 
+  User, Tag, ChevronRight, Clock, Eye, Share2, List, ExternalLink,
+  Volume2, VolumeX
 } from "lucide-react";
 import LegalModal from "./LegalModal";
 
@@ -32,6 +33,7 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
   const [dismissReelPreview, setDismissReelPreview] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [videoSrc, setVideoSrc] = useState("");
+  const [isReelMuted, setIsReelMuted] = useState(true);
   
   // --- PAGINATION STATES ---
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,6 +49,7 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
     setShowReelModal(false);
     setDismissReelPreview(false);
     setVideoError(false);
+    setIsReelMuted(true);
     if (selectedPost) {
       setVideoSrc(`/reels/${selectedPost.slug}_face_reel.mp4`);
     }
@@ -428,15 +431,19 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
               boxShadow: "0 25px 60px rgba(59, 130, 246, 0.4)",
               border: `2px solid ${COLORS.accent}`,
               background: COLORS.primary,
-              cursor: "pointer",
+              cursor: videoSrc.includes('_face_reel') ? "default" : "pointer",
               zIndex: 1000,
             }}
-            onClick={() => setShowReelModal(true)}
+            onClick={() => {
+              if (!videoSrc.includes('_face_reel')) {
+                setShowReelModal(true);
+              }
+            }}
           >
             {/* Miniature Video Auto-Player */}
             <video
               src={videoSrc}
-              muted
+              muted={!videoSrc.includes('_face_reel')}
               autoPlay
               loop
               playsInline
@@ -583,14 +590,76 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
                 </div>
 
                 {/* Unmuted Cinema Video */}
-                <video
-                  src={videoSrc}
-                  autoPlay
-                  controls
-                  loop
-                  playsInline
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
+                <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                  <video
+                    src={videoSrc}
+                    autoPlay
+                    controls
+                    loop
+                    playsInline
+                    muted={isReelMuted}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                  {/* Floating Sound Toggle Badge */}
+                  <button
+                    onClick={() => setIsReelMuted(!isReelMuted)}
+                    style={{
+                      position: "absolute",
+                      bottom: "80px",
+                      right: "20px",
+                      background: "rgba(17, 24, 39, 0.75)",
+                      backdropFilter: "blur(10px)",
+                      border: "1px solid rgba(255, 255, 255, 0.15)",
+                      borderRadius: "50%",
+                      width: "48px",
+                      height: "48px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      cursor: "pointer",
+                      boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+                      zIndex: 2010,
+                      transition: "transform 0.2s"
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                  >
+                    {isReelMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                  </button>
+                  {/* Tap to Unmute Pulsing Overlay */}
+                  {isReelMuted && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: [0.6, 1, 0.6], scale: 1 }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      onClick={() => setIsReelMuted(false)}
+                      style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        background: "rgba(17, 24, 39, 0.85)",
+                        backdropFilter: "blur(12px)",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        padding: "12px 24px",
+                        borderRadius: "99px",
+                        color: "white",
+                        fontWeight: "900",
+                        fontSize: "0.85rem",
+                        letterSpacing: "1px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
+                        cursor: "pointer",
+                        zIndex: 2010
+                      }}
+                    >
+                      <VolumeX size={16} color="#3b82f6" /> TAP TO UNMUTE
+                    </motion.div>
+                  )}
+                </div>
               </motion.div>
             </motion.div>
           )}

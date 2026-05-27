@@ -3,6 +3,7 @@ import sys
 import json
 import logging
 import asyncio
+import time
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import httpx
@@ -24,6 +25,7 @@ from livekit.plugins import silero, openai, deepgram
 # Append parent path for shared utilities
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
+from utils.cost_guard import CostGuard
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -721,36 +723,31 @@ GREETING:
     async def broadcast_usage():
         if ctx.room.local_participant:
             await ctx.room.local_participant.set_metadata(json.dumps({
-                "name": "MARTECH",
+                "name": AGENT_NAME,
                 "usage": usage
             }))
 
+    guard = CostGuard(
+        agent_name="MARTECH",
+        session_cost_ceiling=0.25,
+        max_context_turns=15,
+        usage_broadcast_interval_s=10.0,
+        min_stt_words=3,
+    )
+
     @session.on("session_usage_updated")
     def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
-        for m in usage_data.usage.model_usage:
-            if m.type == "llm_usage":
-                usage["input_tokens"] = getattr(m, "input_tokens", 0)
-                usage["output_tokens"] = getattr(m, "output_tokens", 0)
-            elif m.type == "stt_usage":
-                usage["stt_seconds"] = getattr(m, "audio_duration", 0.0)
-            elif m.type == "tts_usage":
-                usage["tts_chars"] = getattr(m, "characters_count", 0)
-        
-        # Swarm Cost Audit Sentry integration
         sentry.calculate_session_cost(
             llm_model="gpt-4o-mini",
-            input_tokens=usage["input_tokens"],
-            output_tokens=usage["output_tokens"],
+            input_tokens=usage.get("input_tokens", 0),
+            output_tokens=usage.get("output_tokens", 0),
             stt_model="nova-2-general",
-            stt_seconds=usage["stt_seconds"],
+            stt_seconds=usage.get("stt_seconds", 0.0),
             tts_model="aura-hera-en",
-            tts_characters=usage["tts_chars"]
+            tts_characters=usage.get("tts_chars", 0)
         )
-        usage["total_cost"] = round(
-            (usage["input_tokens"] / 1_000_000 * 0.15) + (usage["output_tokens"] / 1_000_000 * 0.60) +
-            (usage["stt_seconds"] / 60 * 0.0043) + (usage["tts_chars"] / 1000 * 0.015), 6
-        )
-        asyncio.create_task(broadcast_usage())
+        if guard.update_usage(usage_data, usage):
+            asyncio.create_task(broadcast_usage())
 
     # WebRTC connection retries
     max_retries = 3
@@ -793,6 +790,9 @@ GREETING:
     @session.on("user_input_transcribed")
     def on_stt(event: voice.UserInputTranscribedEvent):
         if event.is_final:
+            if not guard.allow_transcript(event.transcript):
+                return
+            # --- SEMANTIC ENDPOINTING ---
             if not sentry.is_thought_complete(event.transcript):
                 return
             logger.info(f"--- [INPUT] {event.transcript} ---")
@@ -801,6 +801,7 @@ GREETING:
     def on_conversation_item(event: voice.ConversationItemAddedEvent):
         item = event.item
         if isinstance(item, llm.ChatMessage):
+            guard.prune_context(chat_ctx)
             content = item.content[0] if isinstance(item.content, list) else item.content
             if item.role == "assistant":
                 logger.info(f"MARTECH: {content}")

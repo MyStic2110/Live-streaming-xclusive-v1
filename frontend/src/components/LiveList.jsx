@@ -221,6 +221,11 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
   const [meetingUrl, setMeetingUrl] = React.useState("");
   const [isDeployingShadow, setIsDeployingShadow] = React.useState(false);
   const [showAuditPreview, setShowAuditPreview] = React.useState(false);
+  const [isReelMuted, setIsReelMuted] = React.useState(true);
+
+  React.useEffect(() => {
+    setIsReelMuted(true);
+  }, [selectedReel]);
   
   const [swarmQuery, setSwarmQuery] = React.useState("");
   const [isSwarmCalculating, setIsSwarmCalculating] = React.useState(false);
@@ -283,6 +288,103 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
       }
     }, 600);
   }, [isTerminalSimulating, singleLogsList, swarmLogsList]);
+
+  React.useEffect(() => {
+    // Dynamic AEO JSON-LD Schema markup injection for Answer Engines
+    const orgSchema = {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Swarm Agentic",
+      "alternateName": "Cortex Swarm",
+      "url": "https://yourdomain.com",
+      "logo": "https://yourdomain.com/logo.jpeg",
+      "description": "Enterprise-grade decentralized AI Swarm and Multi-Agent Orchestration platform specializing in local inference, zero-cost AI agents, real-time WebRTC audio streams, and private VPC deployment.",
+      "sameAs": [
+        "https://github.com/MyStic2110/Live-streaming-xclusive-v1"
+      ]
+    };
+
+    const faqSchema = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How long does a typical build take?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Most agents are live in production within 1–2 weeks, including local model fine-tuning."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you use my data for training?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Never. Because your agents run entirely on your own local hardware or private VPC, your data never leaves your infrastructure."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can the agents talk to my existing tools?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. We specialize in connecting local agent inference to MySQL, MongoDB, Slack, and custom CRM APIs."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are the running costs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "₹0 in recurring cloud API fees. Running models locally or on dedicated hardware removes all message volume-based SaaS bills."
+          }
+        }
+      ]
+    };
+
+    const appSchema = {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Swarm Agentic Platform",
+      "operatingSystem": "Linux, Windows, macOS",
+      "applicationCategory": "BusinessApplication, AIOrchestration",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR",
+        "description": "Custom B2B local agent deployments with ₹0 recurring message-volume fees."
+      },
+      "featureList": [
+        "Decentralized AI Swarm Commander",
+        "Autonomous Shadow Zoom/Meet Transcriber",
+        "Local Database SQL BI Cortex Analyst",
+        "Real-time low-latency WebRTC Voice Streaming",
+        "Prompt injection vulnerability firewall compliance"
+      ]
+    };
+
+    let schemaContainer = document.getElementById('aeo-schemas');
+    if (!schemaContainer) {
+      schemaContainer = document.createElement('div');
+      schemaContainer.id = 'aeo-schemas';
+      document.head.appendChild(schemaContainer);
+    }
+    schemaContainer.innerHTML = '';
+
+    const schemas = [orgSchema, faqSchema, appSchema];
+    schemas.forEach((schema) => {
+      const script = document.createElement('script');
+      script.type = 'application/ld+json';
+      script.text = JSON.stringify(schema);
+      schemaContainer.appendChild(script);
+    });
+
+    return () => {
+      const el = document.getElementById('aeo-schemas');
+      if (el) el.remove();
+    };
+  }, []);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -637,6 +739,18 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
         "How can I prevent prompt injection?",
         "What is excessive agency?",
         "Are compliance logs secure?"
+      ]
+    },
+    {
+      id: "octane", title: "Octane Telemetry", icon: "⚡", color: "#0ea5e9",
+      desc: "Swarm Infrastructure Telemetry Agent. Streams, tails, and audits real-time logs from local Docker containers.",
+      btnText: "Deploy Octane",
+      prompts: [
+        "Stream logs for livekit-video-app-livekit-1",
+        "Stream logs for livekit-video-app-redis-1",
+        "List running docker containers",
+        "Give me the last 20 lines of redis logs",
+        "Summarize recent livekit server logs"
       ]
     }
   ];
@@ -1606,9 +1720,31 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
             { q: "Can the agents talk to my existing tools?", a: "Yes. We specialize in connecting local agent inference to MySQL, MongoDB, Slack, and custom CRM APIs." },
             { q: "What are the running costs?", a: "₹0 in recurring cloud API fees. Running models locally or on dedicated hardware removes all message volume-based SaaS bills." }
           ].map((item, i) => (
-            <div key={i} style={{ borderBottom: `1px solid ${COLORS.border}`, padding: "2rem 0" }}>
-              <h4 style={{ fontSize: "1.1rem", fontWeight: "800", color: COLORS.primary, marginBottom: "0.5rem" }}>{item.q}</h4>
-              <p style={{ color: COLORS.textMuted, fontSize: "1rem", lineHeight: "1.6" }}>{item.a}</p>
+            <div 
+              key={i} 
+              itemScope 
+              itemProp="mainEntity" 
+              itemType="https://schema.org/Question" 
+              style={{ borderBottom: `1px solid ${COLORS.border}`, padding: "2rem 0" }}
+            >
+              <h4 
+                itemProp="name" 
+                style={{ fontSize: "1.1rem", fontWeight: "800", color: COLORS.primary, marginBottom: "0.5rem" }}
+              >
+                {item.q}
+              </h4>
+              <div 
+                itemScope 
+                itemProp="acceptedAnswer" 
+                itemType="https://schema.org/Answer"
+              >
+                <p 
+                  itemProp="text" 
+                  style={{ color: COLORS.textMuted, fontSize: "1rem", lineHeight: "1.6", margin: 0 }}
+                >
+                  {item.a}
+                </p>
+              </div>
             </div>
           ))}
         </div>
@@ -1786,7 +1922,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
               {galleryReels.map((reel, index) => (
                 <motion.div
                   key={index}
-                  whileHover={{ y: -8, borderColor: "rgba(244, 63, 94, 0.4)" }}
+                  whileHover={{ y: -4, borderColor: "rgba(255, 255, 255, 0.15)" }}
                   style={{
                     background: "rgba(255, 255, 255, 0.03)",
                     border: "1px solid rgba(255, 255, 255, 0.08)",
@@ -1794,17 +1930,16 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
                     padding: "2rem",
                     display: "flex", flexDirection: "column", justifyContent: "space-between",
                     minHeight: "220px", transition: "all 0.3s ease",
-                    cursor: "pointer"
+                    cursor: "default"
                   }}
-                  onClick={() => setSelectedReel(reel)}
                 >
                   <div>
                     <div style={{ fontSize: "2.5rem", marginBottom: "1.5rem" }}>🎬</div>
                     <h3 style={{ color: "white", fontSize: "1.3rem", fontWeight: "800", marginBottom: "0.5rem" }}>{reel.title}</h3>
                     <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.9rem", lineHeight: "1.5", margin: 0 }}>{reel.desc}</p>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2rem", color: "#f43f5e", fontWeight: "800", fontSize: "0.85rem" }}>
-                    WATCH PREVIEW <span>→</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2rem", color: "rgba(255, 255, 255, 0.3)", fontWeight: "800", fontSize: "0.85rem" }}>
+                    GENERATED BY SWARM AGENT
                   </div>
                 </motion.div>
               ))}
@@ -1841,15 +1976,97 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
             }}>
               {/* Dynamic Video */}
               <video
-                src={`reels/${selectedReel.slug}_reel.mp4`}
+                src={`/reels/${selectedReel.slug}_reel.mp4`}
                 controls
                 autoPlay
+                muted={isReelMuted}
                 style={{
                   width: "100%",
                   height: "100%",
                   objectFit: "cover"
                 }}
               />
+
+              {/* Floating Sound Toggle Badge */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsReelMuted(!isReelMuted);
+                }}
+                style={{
+                  position: "absolute",
+                  bottom: "80px",
+                  right: "20px",
+                  background: "rgba(17, 24, 39, 0.75)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255, 255, 255, 0.15)",
+                  borderRadius: "50%",
+                  width: "48px",
+                  height: "48px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                  cursor: "pointer",
+                  boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+                  zIndex: 2010,
+                  transition: "transform 0.2s"
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
+                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+              >
+                {isReelMuted ? (
+                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                    <path d="M9 9v6a3 3 0 0 0 3 3h1.586l4.707 4.707A1 1 0 0 0 20 22V4a1 1 0 0 0-1.707-.707L13.586 8H12a3 3 0 0 0-3 3z"></path>
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                  </svg>
+                )}
+              </button>
+
+              {/* Tap to Unmute Pulsing Overlay */}
+              {isReelMuted && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: [0.6, 1, 0.6], scale: 1 }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsReelMuted(false);
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    background: "rgba(17, 24, 39, 0.85)",
+                    backdropFilter: "blur(12px)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    padding: "12px 24px",
+                    borderRadius: "99px",
+                    color: "white",
+                    fontWeight: "900",
+                    fontSize: "0.85rem",
+                    letterSpacing: "1px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
+                    cursor: "pointer",
+                    zIndex: 2010
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="#3b82f6" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                    <path d="M9 9v6a3 3 0 0 0 3 3h1.586l4.707 4.707A1 1 0 0 0 20 22V4a1 1 0 0 0-1.707-.707L13.586 8H12a3 3 0 0 0-3 3z"></path>
+                  </svg>
+                  TAP TO UNMUTE
+                </motion.div>
+              )}
 
             {/* Close Button on Bezel */}
             <button

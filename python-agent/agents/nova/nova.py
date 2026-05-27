@@ -1,5 +1,6 @@
 import os
 import asyncio
+import time
 from datetime import datetime
 import logging
 import json
@@ -19,8 +20,10 @@ from livekit.plugins import silero, openai, deepgram
 from semantic_router import SemanticRouter
 
 import sys
+import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
+from utils.cost_guard import CostGuard
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -359,6 +362,14 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
         "total_cost": 0.0
     }
 
+    guard = CostGuard(
+        agent_name="NOVA",
+        session_cost_ceiling=0.20,
+        max_context_turns=15,
+        usage_broadcast_interval_s=10.0,
+        extra_command_words={"nova", "scores", "leaderboard", "live", "matches"},
+    )
+
     async def broadcast_usage():
         if ctx.room.local_participant:
             await ctx.room.local_participant.set_metadata(json.dumps({
@@ -368,29 +379,8 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
 
     @session.on("session_usage_updated")
     def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
-        for m in usage_data.usage.model_usage:
-            if m.type == "llm_usage":
-                usage["input_tokens"] = getattr(m, "input_tokens", 0)
-                usage["output_tokens"] = getattr(m, "output_tokens", 0)
-            elif m.type == "stt_usage":
-                usage["stt_seconds"] = getattr(m, "audio_duration", 0.0)
-            elif m.type == "tts_usage":
-                usage["tts_chars"] = getattr(m, "characters_count", 0)
-        
-        # sentry.calculate_session_cost(
-        #     llm_model="gpt-4o-mini",
-        #     input_tokens=usage["input_tokens"],
-        #     output_tokens=usage["output_tokens"],
-        #     stt_model="nova-2-general",
-        #     stt_seconds=usage["stt_seconds"],
-        #     tts_model="aura-luna-en",
-        #     tts_characters=usage["tts_chars"]
-        # )
-        usage["total_cost"] = round(
-            (usage["input_tokens"] / 1_000_000 * 0.15) + (usage["output_tokens"] / 1_000_000 * 0.60) +
-            (usage["stt_seconds"] / 60 * 0.0043) + (usage["tts_chars"] / 1000 * 0.015), 6
-        )
-        asyncio.create_task(broadcast_usage())
+        if guard.update_usage(usage_data, usage):
+            asyncio.create_task(broadcast_usage())
 
     # --- THE NEXUS ONBOARDING GREETING ---
     agent_ready = False
@@ -430,6 +420,8 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
     def on_stt(event: voice.UserInputTranscribedEvent):
         if event.is_final:
             transcript = event.transcript
+            if not guard.allow_transcript(transcript):
+                return
             # --- SENTRY GUARDRAIL (Temporarily Disabled) ---
             # if not sentry.check_guardrails(transcript):
             #     logger.warning(f"[SENTRY] Blocked potentially malicious transcript: {transcript}")
@@ -442,7 +434,7 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
 
             logger.info(f"--- [INPUT] {transcript} ---")
 
-            # --- PILLAR 6: FAST-PATH EMISSION ---
+            # --- FAST-PATH EMISSION ---
             match = ROUTER.search(transcript)
             if match:
                 route = match['route']
@@ -458,6 +450,12 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
                     role="system", 
                     content=f"[FAST-PATH] I have already navigated the UI to {route}. Just confirm this to the user."
                 )
+
+    @session.on("conversation_item_added")
+    def on_conversation_item(event: voice.ConversationItemAddedEvent):
+        item = event.item
+        if isinstance(item, llm.ChatMessage):
+            guard.prune_context(chat_ctx)
 
     @ctx.room.on("data_received")
     def on_data_received(dp):

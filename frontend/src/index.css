@@ -221,3 +221,129 @@ body {
 .terminal-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* WhatsApp Floating Popup Styles */
+.wa-popup {
+  position: fixed;
+  bottom: 6rem;
+  right: 2rem;
+  width: 320px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.12), 0 5px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  font-family: 'Outfit', sans-serif;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.wa-popup.is-open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.wa-popup-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #ffffff;
+  opacity: 0.8;
+  font-size: 1.6rem;
+  cursor: pointer;
+  z-index: 1;
+  transition: opacity 0.2s;
+  padding: 0;
+  line-height: 1;
+}
+
+.wa-popup-close:hover {
+  opacity: 1;
+}
+
+.wa-popup-head {
+  background: linear-gradient(135deg, #128C7E 0%, #075E54 100%);
+  padding: 24px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #ffffff;
+  position: relative;
+}
+
+.wa-popup-avatar {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #ffffff;
+}
+
+.wa-popup-avatar svg {
+  width: 24px;
+  height: 24px;
+}
+
+.wa-popup-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  letter-spacing: 0.3px;
+}
+
+.wa-popup-status {
+  font-size: 0.75rem;
+  font-weight: 400;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.wa-popup-msg {
+  background: #f4f7f6;
+  padding: 20px;
+  font-size: 0.85rem;
+  color: #4a4a4a;
+  line-height: 1.5;
+  border-bottom: 1px solid #eef2f1;
+}
+
+.wa-popup-cta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  background: #25D366;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 14px;
+  margin: 16px 20px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+  transition: all 0.3s;
+}
+
+.wa-popup-cta:hover {
+  background: #20ba59;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(37, 211, 102, 0.35);
+}
+
+.wa-popup-cta svg {
+  width: 18px;
+  height: 18px;
+}
+

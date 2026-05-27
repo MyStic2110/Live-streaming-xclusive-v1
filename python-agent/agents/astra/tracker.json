@@ -1,18 +1,20 @@
 {
-    "current_day": 4,
+    "current_day": 6,
     "total_days": 7,
     "start_date": "2026-05-21",
-    "last_published_date": "2026-05-25",
+    "last_published_date": "2026-05-27",
     "published_slugs": [
         "rethinking-ai-architectures-agent-execution",
         "vector-policy-optimization-in-agentic-architecture",
-        "ai-revolutionizing-patient-care-healthcare"
+        "ai-revolutionizing-patient-care-healthcare",
+        "human-ai-workplace-collaboration",
+        "navigating-future-marketing-ai"
     ],
     "cumulative_usage": {
-        "input_tokens": 43318,
-        "output_tokens": 4776,
-        "total_cost": 0.131042,
-        "stt_cost": 0.008141,
-        "tts_cost": 0.02379
+        "input_tokens": 99345,
+        "output_tokens": 7905,
+        "total_cost": 0.265027,
+        "stt_cost": 0.016118,
+        "tts_cost": 0.065715
     }
 }

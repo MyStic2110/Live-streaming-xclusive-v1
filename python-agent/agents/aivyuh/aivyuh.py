@@ -23,6 +23,7 @@ from livekit.plugins import silero, deepgram, openai
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
+from utils.cost_guard import CostGuard
 
 # Load environment configs
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -177,6 +178,24 @@ async def entrypoint(ctx: JobContext):
     chat_ctx = llm.ChatContext()
     chat_ctx.add_message(role="system", content=SYSTEM_PROMPT)
 
+    usage = {
+        "input_tokens": 0, "output_tokens": 0,
+        "stt_seconds": 0.0, "tts_chars": 0, "total_cost": 0.0
+    }
+    guard = CostGuard(
+        agent_name="AIVYUH",
+        session_cost_ceiling=0.15,
+        max_context_turns=15,
+        usage_broadcast_interval_s=10.0,
+        min_stt_words=3,
+    )
+
+    async def broadcast_usage():
+        await ctx.room.local_participant.set_metadata(json.dumps({
+            "name": AGENT_NAME,
+            "usage": usage
+        }))
+
     security_tools = AivyuhSecurityTools(participant=ctx.room.local_participant)
 
     agent = voice.Agent(
@@ -220,8 +239,44 @@ async def entrypoint(ctx: JobContext):
         if event.new_state == "listening" and ctx.room.remote_participants:
             asyncio.create_task(speak_greeting())
 
+    @session.on("session_usage_updated")
+    def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
+        if guard.update_usage(usage_data, usage):
+            asyncio.create_task(broadcast_usage())
+
+    @session.on("user_input_transcribed")
+    def on_stt(event: voice.UserInputTranscribedEvent):
+        if event.is_final:
+            if not guard.allow_transcript(event.transcript):
+                return
+            logger.info(f"--- [INPUT] {event.transcript} ---")
+
+    @session.on("conversation_item_added")
+    def on_conversation_item(event: voice.ConversationItemAddedEvent):
+        item = event.item
+        if isinstance(item, llm.ChatMessage):
+            guard.prune_context(chat_ctx)
+
     # Start LiveKit Agent Session
     await session.start(room=ctx.room, agent=agent)
+
+    @session.on("session_usage_updated")
+    def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
+        if guard.update_usage(usage_data, usage):
+            asyncio.create_task(broadcast_usage())
+
+    @session.on("user_input_transcribed")
+    def on_stt(event: voice.UserInputTranscribedEvent):
+        if event.is_final:
+            if not guard.allow_transcript(event.transcript):
+                return
+            logger.info(f"--- [INPUT] {event.transcript} ---")
+
+    @session.on("conversation_item_added")
+    def on_conversation_item(event: voice.ConversationItemAddedEvent):
+        item = event.item
+        if isinstance(item, llm.ChatMessage):
+            guard.prune_context(chat_ctx)
 
     # stay alive
     from livekit import rtc as _rtc

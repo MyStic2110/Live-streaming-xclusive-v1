@@ -22,8 +22,10 @@ from livekit.agents import (
 from livekit.plugins import silero, deepgram, openai
 
 import sys
+import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
+from utils.cost_guard import CostGuard
 
 # ---------------------------------------------------------------------------
 # Environment & constants
@@ -683,37 +685,40 @@ async def entrypoint(ctx: JobContext):
     # Cost & Token Tracking
     # ------------------------------------------------------------------
     session_usage = {
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "stt_seconds": 0.0,
-        "tts_chars": 0
+        "input_tokens": 0, "output_tokens": 0,
+        "stt_seconds": 0.0, "tts_chars": 0, "total_cost": 0.0
     }
+
+    guard = CostGuard(
+        agent_name="SEVA",
+        session_cost_ceiling=0.15,
+        max_context_turns=15,
+        usage_broadcast_interval_s=10.0,
+        min_stt_words=3,
+        extra_command_words={"plumber", "electrician", "cleaner", "book", "cancel", "pay"},
+    )
+
+    async def broadcast_usage():
+        await ctx.room.local_participant.set_metadata(json.dumps({
+            "name": AGENT_NAME,
+            "usage": session_usage
+        }))
 
     @session.on("session_usage_updated")
     def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
         try:
-            for m in usage_data.usage.model_usage:
-                if m.type == "llm_usage":
-                    session_usage["input_tokens"] = getattr(m, "input_tokens", 0)
-                    session_usage["output_tokens"] = getattr(m, "output_tokens", 0)
-                elif m.type == "stt_usage":
-                    session_usage["stt_seconds"] = getattr(m, "audio_duration", 0.0)
-                elif m.type == "tts_usage":
-                    session_usage["tts_chars"] = getattr(m, "characters_count", 0)
-
             costs = sentry.calculate_session_cost(
                 llm_model="gpt-4o-mini",
-                input_tokens=session_usage["input_tokens"],
-                output_tokens=session_usage["output_tokens"],
+                input_tokens=session_usage.get("input_tokens", 0),
+                output_tokens=session_usage.get("output_tokens", 0),
                 stt_model="nova-2-general",
-                stt_seconds=session_usage["stt_seconds"],
+                stt_seconds=session_usage.get("stt_seconds", 0.0),
                 tts_model="aura-asteria-en",
-                tts_characters=session_usage["tts_chars"]
+                tts_characters=session_usage.get("tts_chars", 0)
             )
-            logger.info(
-                f"[COST_AUDIT] SEVA Session Total: ${costs.get('total_cost_usd', 0):.6f} "
-                f"| Tokens: {session_usage['input_tokens'] + session_usage['output_tokens']}"
-            )
+            session_usage["total_cost"] = costs
+            if guard.update_usage(usage_data, session_usage):
+                asyncio.create_task(broadcast_usage())
         except Exception as e:
             log_error(f"Error in on_usage: {e}")
 
@@ -770,12 +775,15 @@ async def entrypoint(ctx: JobContext):
     @session.on("user_input_transcribed")
     def on_stt(event: voice.UserInputTranscribedEvent):
         if event.is_final:
+            if not guard.allow_transcript(event.transcript):
+                return
             logger.info(f"--- [USER] {event.transcript} ---")
 
     @session.on("conversation_item_added")
     def on_conversation_item(event: voice.ConversationItemAddedEvent):
         item = event.item
         if isinstance(item, llm.ChatMessage):
+            guard.prune_context(chat_ctx)
             content = item.content[0] if isinstance(item.content, list) else item.content
             if item.role == "assistant":
                 logger.info(f"SEVA: {content}")

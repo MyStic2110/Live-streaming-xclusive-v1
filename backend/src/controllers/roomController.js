@@ -58,6 +58,9 @@ export const talkToAI = async (req, res) => {
   } else if (agentType === "aivyuh") {
     roomName = `security_session_${userId}`;
     agentName = "AIVYUH";
+  } else if (agentType === "octane") {
+    roomName = `telemetry_session_${userId}`;
+    agentName = "OCTANE";
   }
 
   console.log(`[HTTP_CONTROLLER] --> POST /talk-to-ai | AGENT: ${agentName} | ROOM: ${roomName}`);

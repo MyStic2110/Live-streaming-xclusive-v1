@@ -1,4 +1,5 @@
 import asyncio
+import time
 import os
 from datetime import datetime
 import aiohttp
@@ -12,8 +13,10 @@ from livekit.agents.voice import Agent, ModelSettings
 from livekit.plugins import mistralai, silero
 
 import sys
+import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
+from utils.cost_guard import CostGuard
 
 # Load environment variables from the root directory
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -211,6 +214,14 @@ async def entrypoint(ctx: JobContext):
             "total_cost": 0.0
         }
 
+        guard = CostGuard(
+            agent_name="AURA",
+            session_cost_ceiling=0.10,
+            max_context_turns=15,
+            usage_broadcast_interval_s=10.0,
+            min_stt_words=3,
+        )
+
         async def broadcast_usage():
             metadata = {
                 "name": AGENT_NAME,
@@ -230,23 +241,30 @@ async def entrypoint(ctx: JobContext):
                 elif m.type == "tts_usage":
                     usage["tts_chars"] = getattr(m, "characters_count", 0)
 
-            # MISTRAL PRICING ENGINE (USD)
+            # MISTRAL PRICING ENGINE (USD) — override cost guard's GPT pricing
             llm_cost = (usage["input_tokens"] / 1_000_000 * 2.00) + (usage["output_tokens"] / 1_000_000 * 6.00)
             stt_cost = (usage["stt_seconds"] / 60 * 0.005)
             tts_cost = (usage["tts_chars"] / 1000 * 0.02)
-
             usage["total_cost"] = round(llm_cost + stt_cost + tts_cost, 6)
-            
-            # Sentry Cost Audit (Mistral model mapping)
+
             sentry.calculate_cost("default", usage["input_tokens"], usage["output_tokens"])
-            
-            logger.info(f"[COST_AUDIT] Session Total: ${usage['total_cost']} | Tokens: {usage['input_tokens']+usage['output_tokens']}")
-            asyncio.create_task(broadcast_usage())
+
+            # Throttled broadcast
+            import time as _time
+            now = _time.monotonic()
+            if not hasattr(on_usage, '_last_broadcast'):
+                on_usage._last_broadcast = 0.0
+            if now - on_usage._last_broadcast >= 10.0:
+                on_usage._last_broadcast = now
+                logger.info(f"[COST_AUDIT] Session Total: ${usage['total_cost']} | Tokens: {usage['input_tokens']+usage['output_tokens']}")
+                asyncio.create_task(broadcast_usage())
 
         # --- REAL-TIME INPUT/OUTPUT LOGGERS ---
         @session.on("user_input_transcribed")
         def on_stt(event: voice.UserInputTranscribedEvent):
             if event.is_final:
+                if not guard.allow_transcript(event.transcript):
+                    return
                 # 1. Guardrail Check
                 if not sentry.check_guardrails(event.transcript):
                     return
@@ -259,6 +277,7 @@ async def entrypoint(ctx: JobContext):
         def on_conversation_item(event: voice.ConversationItemAddedEvent):
             item = event.item
             if isinstance(item, llm.ChatMessage):
+                guard.prune_context(chat_ctx)
                 content = item.content[0] if isinstance(item.content, list) else item.content
                 if item.role == "assistant":
                     logger.info(f"AURA: {content}")

@@ -1,5 +1,6 @@
 import os
 import asyncio
+import time
 from datetime import datetime
 import logging
 import json
@@ -18,8 +19,10 @@ from livekit.agents import (
 from livekit.plugins import silero, openai, deepgram
 
 import sys
+import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
+from utils.cost_guard import CostGuard
 
 # Load environment variables from the root directory
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -169,15 +172,16 @@ async def entrypoint(ctx: JobContext):
     @session.on("user_input_transcribed")
     def on_stt(event: voice.UserInputTranscribedEvent):
         if event.is_final:
-            # 1. Guardrail Check
-            if not sentry.check_guardrails(event.transcript):
+            if not guard.allow_transcript(event.transcript):
                 return
-            # 2. Semantic Endpointing
+            # --- SENTRY GUARDRAIL ---
+            if not sentry.check_guardrails(event.transcript):
+                logger.warning(f"[SENTRY] Blocked malicious transcript: {event.transcript}")
+                return
             if not sentry.is_thought_complete(event.transcript):
                 return
             logger.info(f"--- [INPUT] {event.transcript} ---")
             
-            # Publish user final transcript to the room
             payload = json.dumps({
                 "sender": "You",
                 "text": event.transcript,
@@ -189,9 +193,13 @@ async def entrypoint(ctx: JobContext):
     def on_conversation_item(event: voice.ConversationItemAddedEvent):
         item = event.item
         if isinstance(item, llm.ChatMessage):
+            guard.prune_context(chat_ctx)
             content = item.content[0] if isinstance(item.content, list) else item.content
-            if item.role == "assistant" and content:
+            if item.role == "assistant":
                 logger.info(f"LINA: {content}")
+            elif item.role == "user":
+                logger.info(f"USER: {content}")
+            if item.role == "assistant" and content:
                 # Publish assistant final speech to the room
                 payload = json.dumps({
                     "sender": "Lina",
@@ -199,8 +207,6 @@ async def entrypoint(ctx: JobContext):
                     "timestamp": datetime.now().isoformat()
                 }).encode("utf-8")
                 asyncio.create_task(ctx.room.local_participant.publish_data(payload, topic="chat_message"))
-            elif item.role == "user" and content:
-                logger.info(f"MURALI: {content}")
 
     @session.on("agent_state_changed")
     def on_state_changed(event: voice.AgentStateChangedEvent):
@@ -211,29 +217,38 @@ async def entrypoint(ctx: JobContext):
             if ctx.room.remote_participants:
                 asyncio.create_task(speak_greeting())
 
-    session_usage = {"input_tokens": 0, "output_tokens": 0, "stt_seconds": 0.0, "tts_chars": 0}
+    session_usage = {
+        "input_tokens": 0, "output_tokens": 0,
+        "stt_seconds": 0.0, "tts_chars": 0, "total_cost": 0.0
+    }
+
+    guard = CostGuard(
+        agent_name="LINA",
+        session_cost_ceiling=0.15,
+        max_context_turns=15,
+        usage_broadcast_interval_s=10.0,
+        min_stt_words=3,
+    )
+
+    async def broadcast_usage():
+        await ctx.room.local_participant.set_metadata(json.dumps({
+            "name": AGENT_NAME,
+            "usage": session_usage
+        }))
 
     @session.on("session_usage_updated")
     def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
-        for m in usage_data.usage.model_usage:
-            if m.type == "llm_usage":
-                session_usage["input_tokens"] = getattr(m, "input_tokens", 0)
-                session_usage["output_tokens"] = getattr(m, "output_tokens", 0)
-            elif m.type == "stt_usage":
-                session_usage["stt_seconds"] = getattr(m, "audio_duration", 0.0)
-            elif m.type == "tts_usage":
-                session_usage["tts_chars"] = getattr(m, "characters_count", 0)
-
-        # --- UNIFIED SENTRY COST AUDIT (LLM + STT + TTS) ---
         sentry.calculate_session_cost(
             llm_model="gpt-4o-mini",
-            input_tokens=session_usage["input_tokens"],
-            output_tokens=session_usage["output_tokens"],
+            input_tokens=session_usage.get("input_tokens", 0),
+            output_tokens=session_usage.get("output_tokens", 0),
             stt_model="nova-2-general",
-            stt_seconds=session_usage["stt_seconds"],
+            stt_seconds=session_usage.get("stt_seconds", 0.0),
             tts_model="aura-luna-en",
-            tts_characters=session_usage["tts_chars"]
+            tts_characters=session_usage.get("tts_chars", 0)
         )
+        if guard.update_usage(usage_data, session_usage):
+            asyncio.create_task(broadcast_usage())
 
     # 8. Start the pipeline
     await session.start(room=ctx.room, agent=agent)

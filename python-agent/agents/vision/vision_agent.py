@@ -1,5 +1,6 @@
 import os
 import asyncio
+import time
 import logging
 import csv
 from datetime import datetime
@@ -20,8 +21,10 @@ from livekit.agents import (
 from livekit.plugins import silero, openai, deepgram
 
 import sys
+import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
+from utils.cost_guard import CostGuard
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -221,6 +224,29 @@ async def entrypoint(ctx: JobContext):
             asyncio.create_task(vision.process_video_track(track))
 
     await session.start(room=ctx.room)
+    usage = {
+        "input_tokens": 0, "output_tokens": 0,
+        "stt_seconds": 0.0, "tts_chars": 0, "total_cost": 0.0
+    }
+    guard = CostGuard(
+        agent_name="VONE",
+        session_cost_ceiling=0.05,
+        max_context_turns=5,
+        usage_broadcast_interval_s=10.0,
+        min_stt_words=2,
+    )
+
+    async def broadcast_usage():
+        await ctx.room.local_participant.set_metadata(json.dumps({
+            "name": AGENT_NAME,
+            "usage": usage
+        }))
+
+    @session.on("session_usage_updated")
+    def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
+        if guard.update_usage(usage_data, usage):
+            asyncio.create_task(broadcast_usage())
+
     await vision.speak(f"Biometrics initialized. Welcome back {participant.identity}.")
 
 async def request_fnc(req: JobRequest):

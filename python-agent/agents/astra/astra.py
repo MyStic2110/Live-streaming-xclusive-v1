@@ -22,6 +22,7 @@ from livekit.plugins import silero, openai, deepgram
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
+from utils.cost_guard import CostGuard
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -590,18 +591,19 @@ You are not a generic blog writer. You are Astra — a strategic content intelli
 
     session_usage = {"input_tokens": 0, "output_tokens": 0, "stt_seconds": 0.0, "tts_chars": 0}
 
+    guard = CostGuard(
+        agent_name="ASTRA",
+        session_cost_ceiling=0.25,
+        max_context_turns=15,
+        usage_broadcast_interval_s=10.0,
+        min_stt_words=3,
+    )
+
     @session.on("session_usage_updated")
     def on_usage(usage_data: voice.SessionUsageUpdatedEvent):
         try:
             log_error(f"on_usage event received: {usage_data}")
-            for m in usage_data.usage.model_usage:
-                if m.type == "llm_usage":
-                    session_usage["input_tokens"] = getattr(m, "input_tokens", 0)
-                    session_usage["output_tokens"] = getattr(m, "output_tokens", 0)
-                elif m.type == "stt_usage":
-                    session_usage["stt_seconds"] = getattr(m, "audio_duration", 0.0)
-                elif m.type == "tts_usage":
-                    session_usage["tts_chars"] = getattr(m, "characters_count", 0)
+            should_broadcast = guard.update_usage(usage_data, session_usage)
 
             # --- UNIFIED SENTRY COST AUDIT (LLM + STT + TTS) ---
             costs = sentry.calculate_session_cost(
@@ -615,15 +617,29 @@ You are not a generic blog writer. You are Astra — a strategic content intelli
             )
 
             # Persist full cost breakdown to tracker
-            t = get_tracker()
-            t["cumulative_usage"]["input_tokens"] = pre_session_usage["input_tokens"] + session_usage["input_tokens"]
-            t["cumulative_usage"]["output_tokens"] = pre_session_usage["output_tokens"] + session_usage["output_tokens"]
-            t["cumulative_usage"]["total_cost"] = pre_session_usage["total_cost"] + costs["total_cost_usd"]
-            t["cumulative_usage"]["stt_cost"] = round(costs["stt_cost_usd"], 6)
-            t["cumulative_usage"]["tts_cost"] = round(costs["tts_cost_usd"], 6)
-            save_tracker(t)
+            if should_broadcast:
+                t = get_tracker()
+                t["cumulative_usage"]["input_tokens"] = pre_session_usage["input_tokens"] + session_usage["input_tokens"]
+                t["cumulative_usage"]["output_tokens"] = pre_session_usage["output_tokens"] + session_usage["output_tokens"]
+                t["cumulative_usage"]["total_cost"] = pre_session_usage["total_cost"] + costs["total_cost_usd"]
+                t["cumulative_usage"]["stt_cost"] = round(costs["stt_cost_usd"], 6)
+                t["cumulative_usage"]["tts_cost"] = round(costs["tts_cost_usd"], 6)
+                save_tracker(t)
         except Exception as e:
             log_error(f"Error in on_usage: {e}")
+
+    @session.on("user_input_transcribed")
+    def on_stt(event: voice.UserInputTranscribedEvent):
+        if event.is_final:
+            if not guard.allow_transcript(event.transcript):
+                return
+            logger.info(f"--- [INPUT] {event.transcript} ---")
+
+    @session.on("conversation_item_added")
+    def on_conversation_item(event: voice.ConversationItemAddedEvent):
+        item = event.item
+        if isinstance(item, llm.ChatMessage):
+            guard.prune_context(chat_ctx)
 
     agent_ready = False
     greeting_spoken = False

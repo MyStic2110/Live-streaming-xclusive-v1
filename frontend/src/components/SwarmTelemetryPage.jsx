@@ -211,9 +211,7 @@ function SwarmTelemetryPage({ onBack }) {
   }, []);
 
   // Calculate scores dynamically
-  const openCount = vulnerabilities.filter(v => v.status === "Open").length;
   const resolvedCount = vulnerabilities.filter(v => v.status === "Resolved").length;
-  const ignoredCount = vulnerabilities.filter(v => v.status === "Ignored").length;
 
   // CVSS Score calculates dynamically based on highest remaining risk
   const getCVSSScore = () => {
@@ -377,7 +375,7 @@ function SwarmTelemetryPage({ onBack }) {
   const speakVoiceAgent = (text) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const cleanText = text.replace(/[⚠️🚨📄🔍💡🏠📈🛡️👁️🚀✨📊🍃🎬👥⏰📅]/g, "").trim();
+      const cleanText = text.replace(/⚠️|🚨|📄|🔍|💡|🏠|📈|🛡️|👁️|🚀|✨|📊|🍃|🎬|👥|⏰|📅/g, "").trim();
       const utterance = new SpeechSynthesisUtterance(cleanText);
       const voices = window.speechSynthesis.getVoices();
       const targetVoice = voices.find(v => v.lang.startsWith('en-IN') || v.lang.startsWith('en')) || voices[0];
@@ -512,7 +510,7 @@ function SwarmTelemetryPage({ onBack }) {
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <img
             src="/logo.jpeg"
-            alt="aivyuh Logo"
+            alt="Swarm Agentic Logo"
             style={{
               height: "44px",
               width: "44px",

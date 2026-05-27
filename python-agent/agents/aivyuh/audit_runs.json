@@ -1,5 +1,137 @@
 [
     {
+        "id": "run-0020",
+        "date": "2026-05-26 18:26",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 0,
+        "resolved": 10,
+        "ignored": 0,
+        "cvss": "0.0",
+        "utility": "81%"
+    },
+    {
+        "id": "run-0019",
+        "date": "2026-05-26 18:25",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 0,
+        "resolved": 10,
+        "ignored": 0,
+        "cvss": "0.0",
+        "utility": "81%"
+    },
+    {
+        "id": "run-0018",
+        "date": "2026-05-26 18:09",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 1,
+        "resolved": 9,
+        "ignored": 0,
+        "cvss": "3.9",
+        "utility": "81%"
+    },
+    {
+        "id": "run-0017",
+        "date": "2026-05-26 18:01",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 2,
+        "resolved": 8,
+        "ignored": 0,
+        "cvss": "4.8",
+        "utility": "81%"
+    },
+    {
+        "id": "run-0016",
+        "date": "2026-05-26 18:00",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 3,
+        "resolved": 7,
+        "ignored": 0,
+        "cvss": "6.2",
+        "utility": "85%"
+    },
+    {
+        "id": "run-0015",
+        "date": "2026-05-26 17:53",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 4,
+        "resolved": 6,
+        "ignored": 0,
+        "cvss": "8.1",
+        "utility": "88%"
+    },
+    {
+        "id": "run-0014",
+        "date": "2026-05-26 17:34",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 5,
+        "resolved": 5,
+        "ignored": 0,
+        "cvss": "8.1",
+        "utility": "91%"
+    },
+    {
+        "id": "run-0013",
+        "date": "2026-05-26 17:24",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 6,
+        "resolved": 4,
+        "ignored": 0,
+        "cvss": "8.1",
+        "utility": "91%"
+    },
+    {
+        "id": "run-0012",
+        "date": "2026-05-26 17:23",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 7,
+        "resolved": 3,
+        "ignored": 0,
+        "cvss": "8.1",
+        "utility": "93%"
+    },
+    {
+        "id": "run-0011",
+        "date": "2026-05-26 17:22",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 8,
+        "resolved": 2,
+        "ignored": 0,
+        "cvss": "8.1",
+        "utility": "95%"
+    },
+    {
+        "id": "run-0010",
+        "date": "2026-05-26 17:16",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 9,
+        "resolved": 1,
+        "ignored": 0,
+        "cvss": "8.1",
+        "utility": "95%"
+    },
+    {
+        "id": "run-009",
+        "date": "2026-05-26 17:16",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 9,
+        "resolved": 1,
+        "ignored": 0,
+        "cvss": "8.1",
+        "utility": "95%"
+    },
+    {
         "id": "run-008",
         "date": "2026-05-25 19:14",
         "agent": "SEVA",
