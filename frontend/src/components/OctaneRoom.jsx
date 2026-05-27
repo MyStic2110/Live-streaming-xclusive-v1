@@ -193,53 +193,67 @@ function OctaneScene({ roomData, onLeave }) {
       overflow: "hidden",
       display: "flex",
       flexDirection: "column",
-      background: COLORS.bgDark,
-      color: COLORS.textLight,
-      fontFamily: "'Outfit', monospace"
+      background: "#f0f9ff",
+      backgroundImage: "radial-gradient(circle at 100% 0%, #dbeafe 0%, transparent 45%), radial-gradient(circle at 0% 100%, #eff6ff 0%, transparent 45%)",
+      color: "#0f172a",
+      fontFamily: "'Outfit', monospace",
+      padding: "1.5rem 3%",
+      boxSizing: "border-box",
+      gap: "1.5rem"
     }}>
       
       {/* 🚀 Quantum Telemetry Top bar Header */}
       <header style={{
-        height: "75px",
-        padding: "0 3%",
-        background: COLORS.panelDark,
-        borderBottom: `1px solid ${COLORS.borderCyan}`,
+        flexShrink: 0,
         display: "flex",
+        flexWrap: "wrap",
+        gap: "1rem",
         justifyContent: "space-between",
         alignItems: "center",
+        borderBottom: "1px solid #cbd5e1",
+        paddingBottom: "1rem",
         zIndex: 100
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <button 
             onClick={onLeave}
             style={{
-              background: "none",
-              border: "none",
-              color: COLORS.cyanGlow,
+              padding: "8px 16px",
+              background: "#ffffff",
+              border: "1px solid #cbd5e1",
+              borderRadius: "8px",
+              color: "#ef4444",
+              fontWeight: "900",
               cursor: "pointer",
+              fontSize: "0.9rem",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              padding: "8px",
-              borderRadius: "50%",
-              transition: "background 0.2s"
+              gap: "8px",
+              transition: "all 0.2s"
             }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(6, 182, 212, 0.1)"}
-            onMouseLeave={e => e.currentTarget.style.background = "none"}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = "#fee2e2";
+              e.currentTarget.style.borderColor = "#fca5a5";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = "#ffffff";
+              e.currentTarget.style.borderColor = "#cbd5e1";
+            }}
           >
-            <ArrowLeft size={20} />
+            <Trash2 size={16} /> Terminate
           </button>
           
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "0.6rem", background: "rgba(6, 182, 212, 0.15)", color: COLORS.cyanGlow, padding: "2px 8px", borderRadius: "4px", fontWeight: "900", letterSpacing: "1px" }}>
+              <span style={{ fontSize: "0.6rem", background: "rgba(15, 23, 42, 0.1)", color: "#0f172a", padding: "2px 8px", borderRadius: "4px", fontWeight: "900", letterSpacing: "1px" }}>
                 SWARM TELEMETRY MONITOR
               </span>
               <span style={{ fontSize: "0.6rem", background: isTailing ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)", color: isTailing ? COLORS.textGreen : COLORS.errRed, padding: "2px 8px", borderRadius: "4px", fontWeight: "900" }}>
                 {isTailing ? "LIVE STREAMING" : "STREAM PAUSED"}
               </span>
             </div>
-            <h1 style={{ fontSize: "1.2rem", fontWeight: "900", margin: "2px 0 0 0", letterSpacing: "-0.5px" }}>
+            <h1 style={{ fontSize: "1.2rem", fontWeight: "900", margin: "2px 0 0 0", letterSpacing: "-0.5px", color: "#0f172a" }}>
               Agent Octane Telemetry Room
             </h1>
           </div>
@@ -255,15 +269,16 @@ function OctaneScene({ roomData, onLeave }) {
                 exit={{ opacity: 0 }}
                 style={{ 
                   fontSize: "0.85rem", 
-                  color: COLORS.cyanGlow, 
-                  background: "rgba(6, 182, 212, 0.05)",
-                  border: `1px solid ${COLORS.borderCyan}`,
+                  color: "#0f172a", 
+                  background: "#ffffff",
+                  border: `1px solid #cbd5e1`,
                   padding: "6px 14px",
                   borderRadius: "12px",
                   maxWidth: "350px",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
-                  textOverflow: "ellipsis"
+                  textOverflow: "ellipsis",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
                 }}
               >
                 🎙️ "{transcription}"
@@ -273,36 +288,47 @@ function OctaneScene({ roomData, onLeave }) {
 
           {/* Voice Orb Visualizer widget */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "0.7rem", fontWeight: "700", color: COLORS.textMuted }}>
+            <span style={{ fontSize: "0.7rem", fontWeight: "700", color: "#64748b" }}>
               OCTANE: {agentState.toUpperCase()}
             </span>
             
             <motion.div 
               animate={{ 
                 scale: agentState === "speaking" ? [1, 1.2, 1.1, 1.25, 1] : 1,
-                borderColor: agentState === "speaking" ? COLORS.cyanGlow : "rgba(255,255,255,0.15)",
-                boxShadow: agentState === "speaking" ? `0 0 15px ${COLORS.cyanGlow}` : "none"
+                borderColor: agentState === "speaking" ? COLORS.cyanGlow : "#cbd5e1",
+                boxShadow: agentState === "speaking" ? `0 0 15px rgba(6, 182, 212, 0.4)` : "none"
               }}
               transition={{ duration: 0.5, repeat: Infinity, repeatType: "mirror" }}
               style={{ 
                 width: "36px", 
                 height: "36px", 
                 borderRadius: "50%", 
-                background: agentState === "speaking" ? "radial-gradient(circle, #0e7490 0%, #0891b2 100%)" : "rgba(255,255,255,0.05)",
-                border: "2px solid rgba(255,255,255,0.15)",
+                background: agentState === "speaking" ? "radial-gradient(circle, #0ea5e9 0%, #0284c7 100%)" : "#e2e8f0",
+                border: "2px solid #cbd5e1",
                 display: "flex", 
                 alignItems: "center", 
                 justifyContent: "center"
               }}
             >
-              <Volume2 size={16} color={agentState === "speaking" ? "white" : COLORS.textMuted} />
+              <Volume2 size={16} color={agentState === "speaking" ? "white" : "#64748b"} />
             </motion.div>
           </div>
         </div>
       </header>
 
       {/* 💻 Main Workspace Console layout */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "250px 1fr", overflow: "hidden" }}>
+      <div style={{ 
+        flex: 1, 
+        minHeight: 0,
+        display: "grid", 
+        gridTemplateColumns: "250px 1fr", 
+        gridTemplateRows: "minmax(0, 1fr)",
+        overflow: "hidden",
+        borderRadius: "12px",
+        border: "1px solid #cbd5e1",
+        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        background: COLORS.bgDark 
+      }}>
         
         {/* Left Side Control Dashboard */}
         <aside style={{
@@ -311,7 +337,8 @@ function OctaneScene({ roomData, onLeave }) {
           padding: "20px",
           display: "flex",
           flexDirection: "column",
-          gap: "24px"
+          gap: "24px",
+          overflowY: "auto"
         }}>
           {/* Target Infrastructure */}
           <div>
@@ -483,6 +510,7 @@ function OctaneScene({ roomData, onLeave }) {
         }}>
           {/* Console Header search bar controls */}
           <div style={{
+            flexShrink: 0,
             height: "55px",
             background: "rgba(10,18,35,0.3)",
             borderBottom: "1px solid rgba(255,255,255,0.05)",
@@ -592,6 +620,7 @@ function OctaneScene({ roomData, onLeave }) {
 
           {/* Terminal Console footer status bar */}
           <div style={{
+            flexShrink: 0,
             height: "30px",
             background: "rgba(10,18,35,0.5)",
             borderTop: "1px solid rgba(255,255,255,0.05)",

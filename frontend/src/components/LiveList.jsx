@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
+import { io } from "socket.io-client";
 import LegalModal from "./LegalModal";
 
 const API = import.meta.env.VITE_API_URL || "";
@@ -222,6 +223,25 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
   const [isDeployingShadow, setIsDeployingShadow] = React.useState(false);
   const [showAuditPreview, setShowAuditPreview] = React.useState(false);
   const [isReelMuted, setIsReelMuted] = React.useState(true);
+
+  const [reelsLogs, setReelsLogs] = React.useState([]);
+  const [showLogsModal, setShowLogsModal] = React.useState(false);
+  const logsEndRef = React.useRef(null);
+
+  React.useEffect(() => {
+    // Scroll logs to bottom
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [reelsLogs]);
+
+  React.useEffect(() => {
+    const socket = io(API || "http://localhost:5000");
+    socket.on("reels_progress", (data) => {
+      setReelsLogs(prev => [...prev, data.data]);
+    });
+    return () => socket.disconnect();
+  }, []);
 
   React.useEffect(() => {
     setIsReelMuted(true);
@@ -1917,6 +1937,66 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
               </button>
             </div>
 
+            {/* New Reel Generation Trigger UI */}
+            <div style={{ maxWidth: "1200px", width: "100%", margin: "0 auto 4rem auto", background: "rgba(255,255,255,0.05)", padding: "2rem", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <h3 style={{ color: "white", fontSize: "1.5rem", marginBottom: "1rem" }}>Generate New Reel</h3>
+              <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
+                Provide EITHER an existing Blog JSON filename OR write a freeform idea.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <input 
+                  id="blog-path-input"
+                  type="text" 
+                  placeholder="Existing blog json (e.g. ai-trends.json)" 
+                  style={{ width: "100%", padding: "1rem", borderRadius: "12px", border: "none", outline: "none", background: "rgba(0,0,0,0.5)", color: "white" }} 
+                />
+                <div style={{ color: "rgba(255,255,255,0.5)", textAlign: "center", fontWeight: "bold" }}>OR</div>
+                <textarea
+                  id="free-idea-input"
+                  placeholder="Describe your freeform reel idea here..."
+                  rows={4}
+                  style={{ width: "100%", padding: "1rem", borderRadius: "12px", border: "none", outline: "none", background: "rgba(0,0,0,0.5)", color: "white", resize: "vertical" }}
+                />
+                
+                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+                  <button 
+                    onClick={async () => {
+                      const blogPath = document.getElementById('blog-path-input').value.trim();
+                      const freeIdea = document.getElementById('free-idea-input').value.trim();
+                      if(!blogPath && !freeIdea) return alert("Enter a blog path or a free idea.");
+                      try {
+                        const res = await axios.post(`${API}/trigger-reels`, { blogPath, freeIdea, agentType: "face" });
+                        setReelsLogs([`Started Face Agent for: ${res.data.slug || blogPath}`]);
+                        setShowLogsModal(true);
+                      } catch(err) {
+                        alert("Failed: " + err.message);
+                      }
+                    }}
+                    style={{ flex: 1, padding: "1rem", background: "#4f46e5", color: "white", borderRadius: "12px", border: "none", fontWeight: "bold", cursor: "pointer" }}
+                  >
+                    🚀 Trigger Face Agent
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      const blogPath = document.getElementById('blog-path-input').value.trim();
+                      const freeIdea = document.getElementById('free-idea-input').value.trim();
+                      if(!blogPath && !freeIdea) return alert("Enter a blog path or a free idea.");
+                      try {
+                        const res = await axios.post(`${API}/trigger-reels`, { blogPath, freeIdea, agentType: "faceless" });
+                        setReelsLogs([`Started Faceless Agent for: ${res.data.slug || blogPath}`]);
+                        setShowLogsModal(true);
+                      } catch(err) {
+                        alert("Failed: " + err.message);
+                      }
+                    }}
+                    style={{ flex: 1, padding: "1rem", background: "#f43f5e", color: "white", borderRadius: "12px", border: "none", fontWeight: "bold", cursor: "pointer" }}
+                  >
+                    🎬 Trigger Faceless Agent
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Gallery Cards Grid */}
             <div style={{ maxWidth: "1200px", width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "2.5rem" }}>
               {galleryReels.map((reel, index) => (
@@ -2570,6 +2650,67 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
           }
         }
       ` }} />
+      {/* --- REELS GENERATION LOGS MODAL --- */}
+      <AnimatePresence>
+        {showLogsModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed", inset: 0, zIndex: 1200,
+              background: "rgba(11, 15, 25, 0.9)",
+              backdropFilter: "blur(15px)",
+              display: "flex", justifyContent: "center", alignItems: "center",
+              padding: "2rem",
+              fontFamily: "'Outfit', sans-serif"
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              style={{
+                background: "#0d1117",
+                width: "100%",
+                maxWidth: "800px",
+                height: "60vh",
+                display: "flex", flexDirection: "column",
+                borderRadius: "16px",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+                border: `1px solid rgba(255, 255, 255, 0.1)`,
+                position: "relative",
+                overflow: "hidden"
+              }}
+            >
+              <div style={{ background: "#161b22", padding: "1rem", borderBottom: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#ef4444" }}></div>
+                  <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#eab308" }}></div>
+                  <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#22c55e" }}></div>
+                  <span style={{ color: "white", marginLeft: "8px", fontWeight: "bold", fontSize: "0.9rem" }}>Reels Agent Terminal</span>
+                </div>
+                <button
+                  onClick={() => setShowLogsModal(false)}
+                  style={{
+                    background: "none", border: "none", color: COLORS.textMuted,
+                    fontSize: "1.2rem", cursor: "pointer"
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+              <div style={{ flex: 1, padding: "1rem", overflowY: "auto", color: "#32d74b", fontFamily: "monospace", fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>
+                {reelsLogs.map((log, i) => (
+                  <div key={i} style={{ marginBottom: "4px" }}>{log}</div>
+                ))}
+                <div ref={logsEndRef} />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

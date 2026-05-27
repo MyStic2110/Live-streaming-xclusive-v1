@@ -226,7 +226,8 @@ class OctaneTools:
             proc = await asyncio.create_subprocess_exec(
                 "docker", "logs", "-f", "--tail", "50", container_name,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT
+                stderr=asyncio.subprocess.STDOUT,
+                limit=1024 * 1024 * 10  # 10MB limit for long log lines
             )
             
             lines_streamed = 0

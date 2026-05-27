@@ -1,4 +1,9 @@
 import { tokenService } from '../services/tokenService.js';
+
+let ioInstance = null;
+export const setSocketIO = (io) => {
+  ioInstance = io;
+};
 import { AgentDispatchClient } from 'livekit-server-sdk';
 import { config } from '../config/livekit.js';
 import fs from 'fs';
@@ -242,3 +247,59 @@ export const updateSecurityConstraint = async (req, res) => {
   }
 };
 
+export const triggerReels = async (req, res) => {
+  const { blogPath, agentType, freeIdea } = req.body;
+  if (!blogPath && !freeIdea) {
+    return res.status(400).json({ error: "blogPath or freeIdea is required" });
+  }
+  if (!agentType) {
+    return res.status(400).json({ error: "agentType is required" });
+  }
+  
+  try {
+    const pythonPath = path.resolve(__dirname, "../../../python-agent/venv/Scripts/python.exe");
+    const scriptName = agentType === "face" ? "reels_face_agent.py" : "reels_agent.py";
+    const scriptPath = path.resolve(__dirname, `../../../python-agent/agents/reels/${scriptName}`);
+    
+    let absoluteBlogPath;
+    let generatedSlug = null;
+    if (freeIdea) {
+      generatedSlug = "idea-" + Math.random().toString(36).substring(2, 8);
+      absoluteBlogPath = path.resolve(__dirname, `../../../python-agent/agents/astra/blogs/${generatedSlug}.json`);
+      const tempBlogData = {
+        slug: generatedSlug,
+        title: "Freeform Idea",
+        excerpt: freeIdea,
+        content: freeIdea,
+        date: new Date().toISOString()
+      };
+      fs.writeFileSync(absoluteBlogPath, JSON.stringify(tempBlogData, null, 2));
+    } else {
+      absoluteBlogPath = path.resolve(__dirname, `../../../python-agent/agents/astra/blogs/${blogPath}`);
+    }
+
+    console.log(`[HTTP_CONTROLLER] Spawning Reels Agent (${agentType}) in background...`);
+    console.log(`Blog/Idea: ${absoluteBlogPath}`);
+    
+    const reelsProcess = spawn(pythonPath, [scriptPath, absoluteBlogPath], {
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    
+    if (ioInstance) {
+      reelsProcess.stdout.on('data', (data) => {
+        ioInstance.emit('reels_progress', { slug: generatedSlug || blogPath, data: data.toString() });
+      });
+      reelsProcess.stderr.on('data', (data) => {
+        ioInstance.emit('reels_progress', { slug: generatedSlug || blogPath, data: data.toString() });
+      });
+    }
+
+    reelsProcess.unref();
+    
+    res.json({ success: true, message: `Reels Agent (${agentType}) deployed successfully in the background.`, slug: generatedSlug });
+  } catch (err) {
+    console.error(`[HTTP_CONTROLLER] ❌ Failed to spawn Reels Agent (${agentType}):`, err.message);
+    res.status(500).json({ error: err.message });
+  }
+};

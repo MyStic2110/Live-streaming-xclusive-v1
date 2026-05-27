@@ -1,4 +1,6 @@
 @echo off
+echo [SWARM] Cleaning up old ghost processes...
+taskkill /F /IM python.exe >nul 2>&1
 echo [SWARM] Starting Army of Agents...
 npm run swarm
 pause

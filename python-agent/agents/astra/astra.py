@@ -490,47 +490,6 @@ You are not a generic blog writer. You are Astra — a strategic content intelli
             await self.ui_log(f"Insight '{title}' is now LIVE at /blog/{slug}")
             self.sentry.log_transaction("blog_publish_success", {"title": title, "slug": slug})
 
-            # --- AUTO REELS GENERATION (Background Task) ---
-            async def compile_and_send_reel():
-                try:
-                    await self.ui_log("🎬 REELS AGENT: Commencing vertical video compilation in background...", "milestone")
-                    
-                    # Resolve path relative to python-agent root
-                    import sys
-                    agent_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-                    if agent_root not in sys.path:
-                        sys.path.insert(0, agent_root)
-                    
-                    from agents.reels.reels_agent import ReelsAgent
-                    reels_agent = ReelsAgent()
-                    
-                    await self.ui_log("Synthesizing neural Jenny voice and rendering video frames...", "system")
-                    
-                    # Await the async generator
-                    video_path = await reels_agent.generate_reel(blog_path)
-                    
-                    if video_path and os.path.exists(video_path):
-                        await self.ui_log("✅ REELS AGENT: Vertical video compiled successfully!", "success")
-                        if telegram_gateway.is_configured():
-                            caption = (
-                                f"🎬 *Your Reel is Ready for Social Channels!*\n\n"
-                                f"📰 *Insight*: *{title}*\n"
-                                f"🔗 *Web URL*: /blog/{slug}\n\n"
-                                f"This high-fidelity short is fully optimized for monetization."
-                            )
-                            delivered = await telegram_gateway.send_video_reel(video_path, caption)
-                            if delivered:
-                                await self.ui_log("📨 delivered vertical Reel video directly to your Telegram chat!", "success")
-                            else:
-                                await self.ui_log("⚠️ Warning: Failed to deliver Reel video over Telegram.", "warning")
-                    else:
-                        await self.ui_log("❌ REELS AGENT: Compilation completed but no output video path returned.", "error")
-                except Exception as e:
-                    logger.error(f"[REELS_TASK] Error compiling background reel: {e}")
-                    await self.ui_log(f"⚠️ Reels compilation failed: {e}", "warning")
-
-            # Spawn background task
-            asyncio.create_task(compile_and_send_reel())
 
             return f"Strategic Insight '{title}' published autonomously. SEO/AEO optimization complete."
 

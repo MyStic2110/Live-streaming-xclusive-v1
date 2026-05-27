@@ -5,6 +5,7 @@ from datetime import datetime
 import logging
 import json
 import re
+from typing import AsyncIterable
 import aiomysql
 from dotenv import load_dotenv
 from livekit import agents
@@ -25,6 +26,8 @@ import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
+from integrations.observyze import get_observyze_llm
+from integrations.securelytix import SecurelytixClient
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -53,6 +56,7 @@ For every user request, you MUST perform these steps internally:
 - Use the provided SCHEMA_CACHE as your primary source of truth for table and column names.
 - ONLY EXECUTE 'SELECT' QUERIES. No modifications (INSERT, UPDATE, DELETE).
 - If a user asks a question that spans multiple tables, use the SCHEMA_CACHE to find the joining keys (Primary/Foreign keys).
+- BIG DATA GUARD: If a request requires querying a large table without specific filters (which could return massive amounts of data), treat it as LOW CONFIDENCE. Ask the user for confirmation or request specific filters before executing the query.
 
 --- STYLE ---
 - Professional, precise, and analytical.
@@ -127,11 +131,70 @@ class MySQLHandler:
                 result = await cur.fetchall()
                 get_sentry("BI").stop_latency_timer(t_start, "mysql_query")
                 get_sentry("BI").log_transaction("sql_success", {"query": query, "rows": len(result)})
+                
+                # Protect context window from massive row counts
+                if len(result) > 50:
+                    result = list(result[:50])
+                    result.append({"WARNING": "Results truncated at 50 rows to protect context window. Please use LIMIT or refine your WHERE clause."})
+
+                
+                # Tokenize PII fields in the result set using Securelytix
+                if result:
+                    vault = SecurelytixClient()
+                    result = await vault.tokenize(result)
+
                 return json.dumps(result, indent=2)
         except Exception as e:
             return f"Database Error: {str(e)}"
         finally:
             if 'conn' in locals(): conn.close()
+
+async def detokenize_stream(text_stream: AsyncIterable[str]) -> AsyncIterable[str]:
+    from integrations.securelytix import SecurelytixClient
+    vault = SecurelytixClient()
+    buffer = ""
+    
+    async def process_tokens(text: str) -> str:
+        tokens = re.findall(r'([a-zA-Z0-9_\-\.\@]+_stx)', text)
+        for token in set(tokens):
+            payload = {
+                "email": token,
+                "full_name": token,
+                "phoneNo": token,
+                "name": token,
+                "first_name": token,
+                "last_name": token,
+                "value": token
+            }
+            res = await vault.detokenize(payload, suppress_partial_warning=True)
+            if isinstance(res, dict):
+                for k, v in res.items():
+                    if v != token:
+                        text = text.replace(token, str(v))
+                        break
+        return text
+
+    async for chunk in text_stream:
+        buffer += chunk
+        while True:
+            match = re.search(r'([\s]+)', buffer)
+            if not match:
+                break
+            
+            idx = match.start()
+            word = buffer[:idx]
+            delimiter = match.group(1)
+            
+            if "_stx" in word:
+                word = await process_tokens(word)
+                
+            yield word + delimiter
+            buffer = buffer[idx + len(delimiter):]
+
+    if buffer:
+        if "_stx" in buffer:
+            buffer = await process_tokens(buffer)
+        yield buffer
 
 # --- AGENT SETUP ---
 VAD_PLUGIN = silero.VAD.load(min_silence_duration=0.8)
@@ -155,18 +218,15 @@ async def entrypoint(ctx: JobContext):
     if not SCHEMA_CACHE:
         await db.initialize_schema() # Fallback if global failed
 
-    llm_plugin = openai.LLM(
-        model="openai/gpt-4o-mini",
-        api_key=os.getenv("OPENROUTER_API_KEY"),
-        base_url=os.getenv("OPENROUTER_BASE_URL"),
-    )
+    llm_plugin = get_observyze_llm(model="openai/gpt-4o-mini")
 
     # Inject the pre-warmed schema and current time
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     dynamic_prompt = f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}\n\nCURRENT DATABASE SCHEMA:\n{json.dumps(SCHEMA_CACHE, indent=2)}"
     
     chat_ctx = llm.ChatContext()
-    chat_ctx.add_message(role="system", content=dynamic_prompt)
+    # voice.Agent will automatically add the `instructions` as a system message, 
+    # so we don't need to manually add it here to avoid duplication.
 
     # --- TOOL REGISTRATION ---
     class BITools:
@@ -189,6 +249,7 @@ async def entrypoint(ctx: JobContext):
         stt=STT_PLUGIN,
         llm=llm_plugin,
         tts=TTS_PLUGIN,
+        tts_text_transforms=[voice.text_transforms.filter_markdown, detokenize_stream],
         turn_handling={"interruption": {"enabled": True}, "endpointing": {"min_delay": 2.0}},
     )
 

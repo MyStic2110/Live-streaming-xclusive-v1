@@ -55,7 +55,8 @@ class AvatarHelper:
             "--face", image_path,
             "--audio", audio_path,
             "--outfile", output_mp4,
-            "--pads", "0", "20", "0", "0"  # padding to include chin
+            "--pads", "0", "20", "0", "0",  # padding to include chin
+            "--wav2lip_batch_size", "16"
         ]
         
         # Run inference

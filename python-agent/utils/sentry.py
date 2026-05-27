@@ -50,6 +50,9 @@ class SwarmSentry:
         # Turn Detection / Linguistic Heuristics
         self.hanging_words = ["and", "but", "so", "because", "the", "a", "or", "if", "when", "um", "uh"]
         self.incomplete_punctuation = [",", "...", "-"]
+        
+        # Latency tracking for rolling p95 calculation
+        self.latency_history: Dict[str, List[float]] = {}
 
     def is_thought_complete(self, text: str) -> bool:
         """
@@ -87,7 +90,7 @@ class SwarmSentry:
         return True
 
     def log_transaction(self, event_type: str, data: Dict[str, Any]):
-        """Append a structured event to the local audit log."""
+        """Append a structured event to the local audit log and print to terminal."""
         entry = {
             "timestamp": datetime.now().isoformat(),
             "agent": self.agent_name,
@@ -97,6 +100,13 @@ class SwarmSentry:
         }
         with open(self.log_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(entry) + "\n")
+        
+        # Print trace to the terminal
+        if event_type == "performance_audit":
+            p95_str = f" | p95: {data.get('p95_ms')}ms" if 'p95_ms' in data else ""
+            self.logger.info(f"[TRACE] {data.get('stage')} latency: {data.get('latency_ms')}ms{p95_str}")
+        else:
+            self.logger.info(f"[TRACE] {event_type.upper()}: {json.dumps(data)}")
 
     def calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """Calculate the cost of an LLM transaction in USD."""
@@ -197,9 +207,28 @@ class SwarmSentry:
 
     def stop_latency_timer(self, start_time: float, stage: str):
         elapsed = time.perf_counter() - start_time
+        latency_ms = round(elapsed * 1000, 2)
+        
+        # Track latency history
+        if stage not in self.latency_history:
+            self.latency_history[stage] = []
+        self.latency_history[stage].append(latency_ms)
+        
+        # Rolling window of 100 requests
+        if len(self.latency_history[stage]) > 100:
+            self.latency_history[stage].pop(0)
+            
+        # Calculate p95
+        sorted_latencies = sorted(self.latency_history[stage])
+        p95_idx = int(len(sorted_latencies) * 0.95)
+        if p95_idx >= len(sorted_latencies):
+            p95_idx = len(sorted_latencies) - 1
+        p95_ms = sorted_latencies[p95_idx]
+
         self.log_transaction("performance_audit", {
             "stage": stage,
-            "latency_ms": round(elapsed * 1000, 2)
+            "latency_ms": latency_ms,
+            "p95_ms": p95_ms
         })
         return elapsed
 

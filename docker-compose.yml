@@ -10,6 +10,11 @@ services:
       - "7882:7882/udp"
     volumes:
       - ./livekit.yaml:/etc/livekit.yaml
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     depends_on:
       - redis
   redis:
@@ -17,3 +22,32 @@ services:
     restart: unless-stopped
     ports:
       - "6379:6379"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  securelytix-postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: vault
+      POSTGRES_PASSWORD: vault
+      POSTGRES_DB: vault
+      TZ: UTC
+    command: ["postgres", "-c", "timezone=UTC"]
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+  securelytix-sdk:
+    image: securelytix2026/dev-sdk:1.0.4
+    env_file:
+      - ./python-agent/.env
+    environment:
+      VAULT_PORT: 8080
+      DATABASE_URL: "postgresql://vault:vault@securelytix-postgres:5432/vault?sslmode=disable"
+      API_KEY: ${SECURELYTIX_API_KEY}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - securelytix-postgres
+    restart: unless-stopped
