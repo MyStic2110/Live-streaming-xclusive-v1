@@ -23,6 +23,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
 
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
+from integrations.observyze import get_observyze_llm
 from utils.sentry import get_sentry
 
 # Logger setup
@@ -178,11 +179,7 @@ async def entrypoint(ctx: JobContext):
     chat_ctx = llm.ChatContext()
     chat_ctx.add_message(role="system", content=dynamic_prompt)
 
-    llm_plugin = openai.LLM(
-        model="openai/gpt-4o-mini",
-        api_key=os.getenv("OPENROUTER_API_KEY"),
-        base_url=os.getenv("OPENROUTER_BASE_URL"),
-    )
+    llm_plugin = get_observyze_llm(model="openai/gpt-4o-mini")
 
     # --- TOOL REGISTRATION ---
     class BI2Tools:

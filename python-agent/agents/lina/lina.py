@@ -21,6 +21,7 @@ from livekit.plugins import silero, openai, deepgram
 import sys
 import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
+from integrations.observyze import get_observyze_llm
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
 
@@ -86,12 +87,7 @@ async def entrypoint(ctx: JobContext):
 
     # LLM: Large Language Model (OpenAI via OpenRouter)
     # Using GPT-4o-mini for speed and emotional intelligence
-    llm_plugin = openai.LLM(
-        model="openai/gpt-4o-mini",
-        api_key=os.getenv("OPENROUTER_API_KEY"),
-        base_url=os.getenv("OPENROUTER_BASE_URL"),
-        max_completion_tokens=512,
-    )
+    llm_plugin = get_observyze_llm(model="openai/gpt-4o-mini")
 
     # TTS: Text-to-Speech (Deepgram Aura)
     # Using 'Aura Luna' for a warm, natural feminine voice
@@ -100,11 +96,11 @@ async def entrypoint(ctx: JobContext):
     # 2. Setup ChatContext with current time awareness
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     chat_ctx = llm.ChatContext()
-    chat_ctx.add_message(role="system", content=f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}")
 
     # 3. Create the Agent
+    dynamic_prompt = f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}"
     agent = voice.Agent(turn_handling={"interruption": {"mode": "vad"}}, 
-        instructions=SYSTEM_PROMPT,
+        instructions=dynamic_prompt,
         chat_ctx=chat_ctx,
     )
 
@@ -172,6 +168,14 @@ async def entrypoint(ctx: JobContext):
     @session.on("user_input_transcribed")
     def on_stt(event: voice.UserInputTranscribedEvent):
         if event.is_final:
+            # Publish UI updates immediately so the user always sees what they said
+            payload = json.dumps({
+                "sender": "You",
+                "text": event.transcript,
+                "timestamp": datetime.now().isoformat()
+            }).encode("utf-8")
+            asyncio.create_task(ctx.room.local_participant.publish_data(payload, topic="chat_message"))
+
             if not guard.allow_transcript(event.transcript):
                 return
             # --- SENTRY GUARDRAIL ---
@@ -181,13 +185,6 @@ async def entrypoint(ctx: JobContext):
             if not sentry.is_thought_complete(event.transcript):
                 return
             logger.info(f"--- [INPUT] {event.transcript} ---")
-            
-            payload = json.dumps({
-                "sender": "You",
-                "text": event.transcript,
-                "timestamp": datetime.now().isoformat()
-            }).encode("utf-8")
-            asyncio.create_task(ctx.room.local_participant.publish_data(payload, topic="chat_message"))
 
     @session.on("conversation_item_added")
     def on_conversation_item(event: voice.ConversationItemAddedEvent):

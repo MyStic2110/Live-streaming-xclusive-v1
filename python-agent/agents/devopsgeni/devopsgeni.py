@@ -48,6 +48,7 @@ SYSTEM RESPONSIBILITIES
 1. Understand local host hardware limits (RAM, CPU, Local Networking).
 2. Profile the local Swarm Agent processes for memory leaks and CPU saturation.
 3. Actively monitor for "Ghost Processes" (orphaned Python instances eating RAM).
+   - CRITICAL KNOWLEDGE: A healthy local swarm running 1 agent + Core Infra naturally spawns 9-10 Python processes (loggers, main agents, and LiveKit multiprocessing forks). Do NOT flag these active 9-10 processes as "ghosts".
 4. Translate local performance metrics into AWS Capacity Requirements.
 
 COMMIT IMPACT ANALYSIS RULE (CRITICAL)

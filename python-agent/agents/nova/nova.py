@@ -22,6 +22,7 @@ from semantic_router import SemanticRouter
 import sys
 import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
+from integrations.observyze import get_observyze_llm
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
 
@@ -335,11 +336,7 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
     chat_ctx = llm.ChatContext()
     # chat_ctx.add_message(role="system", content=system_prompt)
 
-    llm_plugin = openai.LLM(
-        model="openai/gpt-4o-mini",
-        api_key=os.getenv("OPENROUTER_API_KEY"),
-        base_url=os.getenv("OPENROUTER_BASE_URL"),
-    )
+    llm_plugin = get_observyze_llm(model="openai/gpt-4o-mini")
 
     agent = voice.Agent(turn_handling={"interruption": {"mode": "vad"}}, 
         instructions=system_prompt,

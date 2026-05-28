@@ -177,7 +177,7 @@ function App() {
               Hi there! Tell us what you're building — we usually reply within an hour.
             </div>
             <a 
-              href="https://wa.me/919791388549?text=Hi%20Shazra%20Labs%2C%20I%27d%20like%20to%20discuss%20a%20project." 
+              href="https://wa.me/919791388549?text=Hi%20swarm%20agents%2C%20I%27d%20like%20to%20discuss%20a%20project." 
               target="_blank" 
               rel="noopener noreferrer" 
               className="wa-popup-cta"
