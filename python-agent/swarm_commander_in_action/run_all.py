@@ -6,7 +6,7 @@ import time
 # Set path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
-from swarm_commander_in_action import test_bi, test_bi2, test_lina, test_astra, test_vigil, test_nova, test_rehearsal, test_seva
+from swarm_commander_in_action import test_bi, test_bi2, test_lina, test_astra, test_nova, test_rehearsal, test_seva
 
 async def main():
     # Prompt user for input if no cmd-line argument is passed
@@ -21,15 +21,14 @@ async def main():
         print("2. BI2 (Cortex II - MongoDB)")
         print("3. Lina (Emotion Agent)")
         print("4. Astra (Growth Sprint Agent)")
-        print("5. Vigil (Cybersecurity Auditor)")
-        print("6. Nova (IPL Strategic Copilot)")
-        print("7. Rehearsal (Speech Coaching Agent)")
-        print("8. Seva (Service OS Agent)")
-        print("9. All (Run all tests concurrently)")
+        print("5. Nova (IPL Strategic Copilot)")
+        print("6. Rehearsal (Speech Coaching Agent)")
+        print("7. Seva (Service OS Agent)")
+        print("8. All (Run all tests concurrently)")
         print("-" * 70)
         
         try:
-            choice_input = input("Enter choice (1-9 or agent name) [default: 9]: ").strip().lower()
+            choice_input = input("Enter choice (1-8 or agent name) [default: 8]: ").strip().lower()
         except (KeyboardInterrupt, EOFError):
             print("\nAborting.")
             sys.exit(1)
@@ -44,15 +43,13 @@ async def main():
             choice = "lina"
         elif choice_input in ["4", "astra"]:
             choice = "astra"
-        elif choice_input in ["5", "vigil"]:
-            choice = "vigil"
-        elif choice_input in ["6", "nova"]:
+        elif choice_input in ["5", "nova"]:
             choice = "nova"
-        elif choice_input in ["7", "rehearsal"]:
+        elif choice_input in ["6", "rehearsal"]:
             choice = "rehearsal"
-        elif choice_input in ["8", "seva"]:
+        elif choice_input in ["7", "seva"]:
             choice = "seva"
-        elif choice_input in ["9", "all"]:
+        elif choice_input in ["8", "all"]:
             choice = "all"
         else:
             choice = choice_input
@@ -63,7 +60,7 @@ async def main():
         "bi2": (test_bi2.run_test, "BI2 (Cortex II)"),
         "lina": (test_lina.run_test, "Lina"),
         "astra": (test_astra.run_test, "Astra"),
-        "vigil": (test_vigil.run_test, "Vigil"),
+
         "nova": (test_nova.run_test, "Nova"),
         "rehearsal": (test_rehearsal.run_test, "Rehearsal"),
         "seva": (test_seva.run_test, "Seva"),

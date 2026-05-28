@@ -69,7 +69,7 @@ class WeatherTools:
                     return f"Open-Meteo Data: Temp: {current.get('temperature_2m')} degreesC, Humidity: {current.get('relative_humidity_2m')}%."
                 return "Failed to fetch detailed forecast."
 
-class CustomAgent(Agent):
+class CustomAgent(turn_handling={"interruption": {"mode": "vad"}}, Agent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -126,7 +126,7 @@ async def entrypoint(ctx: JobContext):
         await ctx.room.local_participant.set_metadata(json.dumps({"name": AGENT_NAME}))
 
         # Initialize the Agent logic
-        agent = CustomAgent(
+        agent = CustomAgent(turn_handling={"interruption": {"mode": "vad"}}, 
             instructions="You are Aura, the climate intelligence assistant. Use your tools to provide accurate, real-time weather data for Chennai and other regions.",
             chat_ctx=chat_ctx,
             tools=fnc_ctx,

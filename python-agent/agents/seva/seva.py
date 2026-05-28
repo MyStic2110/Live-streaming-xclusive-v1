@@ -664,7 +664,7 @@ async def entrypoint(ctx: JobContext):
     # Bind tools to this session's local participant
     seva_tools = SevaTools(participant=ctx.room.local_participant)
 
-    agent = voice.Agent(
+    agent = voice.Agent(turn_handling={"interruption": {"mode": "vad"}}, 
         instructions=system_prompt,
         chat_ctx=chat_ctx,
         tools=llm.find_function_tools(seva_tools),

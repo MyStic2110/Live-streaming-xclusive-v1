@@ -241,7 +241,7 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
             )}
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "2rem" }}>
-              {selectedPost.metadata.tags.map(tag => (
+              {selectedPost.metadata?.tags?.map(tag => (
                 <span key={tag} style={{ fontSize: "0.7rem", fontWeight: "900", color: COLORS.accent, background: `${COLORS.accent}11`, padding: "4px 12px", borderRadius: "99px", letterSpacing: "1px" }}>
                   #{tag.toUpperCase()}
                 </span>
@@ -257,10 +257,10 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
 
             <div style={{ display: "flex", alignItems: "center", gap: "2rem", marginBottom: "4rem", paddingBottom: "2.5rem", borderBottom: `1px solid ${COLORS.border}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                <img src={selectedPost.author.avatar} style={{ width: "56px", height: "56px", borderRadius: "50%", background: COLORS.bgSoft, border: `1px solid ${COLORS.border}` }} alt={selectedPost.author.name} />
+                <img src={selectedPost.author?.avatar || "https://api.dicebear.com/7.x/bottts/svg?seed=astra"} style={{ width: "56px", height: "56px", borderRadius: "50%", background: COLORS.bgSoft, border: `1px solid ${COLORS.border}` }} alt={selectedPost.author?.name || "Astra AI"} />
                 <div>
-                  <div style={{ fontWeight: "900", color: COLORS.primary, fontSize: "1.1rem" }}>{selectedPost.author.name}</div>
-                  <div style={{ fontSize: "0.85rem", color: COLORS.accent, fontWeight: "700" }}>{selectedPost.author.role}</div>
+                  <div style={{ fontWeight: "900", color: COLORS.primary, fontSize: "1.1rem" }}>{selectedPost.author?.name || "Astra AI"}</div>
+                  <div style={{ fontSize: "0.85rem", color: COLORS.accent, fontWeight: "700" }}>{selectedPost.author?.role || "Autonomous Growth Agent"}</div>
                 </div>
               </div>
               <div style={{ height: "30px", width: "1px", background: COLORS.border }}></div>
@@ -270,7 +270,7 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <div style={{ fontSize: "0.7rem", fontWeight: "900", color: COLORS.textMuted, letterSpacing: "1px" }}>READ TIME</div>
-                <div style={{ fontSize: "1rem", fontWeight: "700", color: COLORS.primary }}>{selectedPost.readTime}</div>
+                <div style={{ fontSize: "1rem", fontWeight: "700", color: COLORS.primary }}>{selectedPost.readTime || "2 min read"}</div>
               </div>
             </div>
 
@@ -386,7 +386,7 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
                   <List size={18}/> TABLE OF CONTENTS
                 </div>
                 <div style={{ display: "grid", gap: "12px" }}>
-                  {selectedPost.tableOfContents.map((item, i) => (
+                  {selectedPost.tableOfContents?.map((item, i) => (
                     <div key={i} style={{ fontSize: "0.95rem", color: COLORS.textMuted, cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={(e) => e.target.style.color = COLORS.accent} onMouseLeave={(e) => e.target.style.color = COLORS.textMuted}>
                       {item.replace(/\*\*/g, '').trim()}
                     </div>
@@ -400,10 +400,10 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
               <div style={{ padding: "1.5rem", background: COLORS.primary, borderRadius: "24px", color: "white" }}>
                  <div style={{ fontSize: "0.7rem", fontWeight: "900", opacity: 0.6, letterSpacing: "1px", marginBottom: "1rem" }}>AGENT METADATA</div>
                  <div style={{ fontSize: "0.8rem", display: "grid", gap: "8px" }}>
-                    <div style={{ display: "flex", gap: "8px" }}><span style={{ opacity: 0.5 }}>CANONICAL:</span> {selectedPost.metadata.canonicalUrl}</div>
+                    <div style={{ display: "flex", gap: "8px" }}><span style={{ opacity: 0.5 }}>CANONICAL:</span> {selectedPost.metadata?.canonicalUrl || `/blog/${selectedPost.slug}`}</div>
                     <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                       <span style={{ opacity: 0.5 }}>KEYWORDS:</span>
-                      {selectedPost.metadata.keywords.slice(0, 3).map(k => (
+                      {selectedPost.metadata?.keywords?.slice(0, 3).map(k => (
                         <span key={k} style={{ background: "rgba(255,255,255,0.1)", padding: "2px 6px", borderRadius: "4px" }}>{k}</span>
                       ))}
                     </div>
@@ -753,7 +753,7 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
                     fontSize: "0.8rem", fontWeight: "900", color: COLORS.primary,
                     boxShadow: "0 10px 20px rgba(0,0,0,0.1)"
                   }}>
-                    {getCategoryIcon(post.category)} {post.category.toUpperCase()}
+                    {getCategoryIcon(post.category)} {(post.category || "Insight").toUpperCase()}
                   </div>
                   {post.featured && (
                     <div style={{ position: "absolute", bottom: "2rem", right: "2rem", background: COLORS.accent, color: "white", padding: "6px 16px", borderRadius: "99px", fontSize: "0.7rem", fontWeight: "900", letterSpacing: "1px" }}>
@@ -764,8 +764,8 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
 
                 <div style={{ marginTop: "2.5rem", padding: "0 1rem" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginBottom: "1rem", fontSize: "0.8rem", fontWeight: "800", color: COLORS.textMuted, letterSpacing: "1px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><Clock size={14} color={COLORS.accent}/> {post.readTime.toUpperCase()}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><User size={14}/> {post.author.name.toUpperCase()}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><Clock size={14} color={COLORS.accent}/> {(post.readTime || "2 min read").toUpperCase()}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><User size={14}/> {(post.author?.name || "Astra AI").toUpperCase()}</div>
                   </div>
                   <h2 style={{ fontSize: "3.2rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem", letterSpacing: "-2px", lineHeight: 1 }}>{post.title}</h2>
                   <p style={{ fontSize: "1.35rem", color: COLORS.textMuted, lineHeight: 1.5, marginBottom: "2rem", maxWidth: "800px" }}>{post.subtitle}</p>

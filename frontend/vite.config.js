@@ -10,7 +10,13 @@ export default defineConfig({
       '/livekit': {
         target: 'ws://127.0.0.1:7880',
         ws: true,
-        rewrite: (path) => path.replace(/^\/livekit/, '')
+        rewrite: (path) => path.replace(/^\/livekit/, ''),
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            if (err.code === 'ECONNABORTED') return;
+            console.warn('LiveKit Proxy Error:', err.message);
+          });
+        }
       },
       // Direct Local Proxy to Backend
       '/go-live': 'http://127.0.0.1:3002',
@@ -19,7 +25,13 @@ export default defineConfig({
       '/end-room': 'http://127.0.0.1:3002',
       '/socket.io': {
         target: 'http://127.0.0.1:3002',
-        ws: true
+        ws: true,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            if (err.code === 'ECONNABORTED') return;
+            console.warn('Socket.IO Proxy Error:', err.message);
+          });
+        }
       }
     }
   }

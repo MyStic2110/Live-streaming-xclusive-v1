@@ -3,7 +3,6 @@ import axios from "axios";
 import LiveList from "./components/LiveList";
 import VideoRoom from "./components/VideoRoom";
 import LinaRoom from "./components/LinaRoom";
-import VigilRoom from "./components/VigilRoom";
 import BIRoom from "./components/BIRoom";
 import NovaRoom from "./components/NovaRoom";
 import VisionRoom from "./components/VisionRoom";
@@ -15,6 +14,7 @@ import SwarmTelemetryPage from "./components/SwarmTelemetryPage";
 import MartechRoom from "./components/MartechRoom";
 import OctaneRoom from "./components/OctaneRoom";
 import DevopsGeniRoom from "./components/DevopsGeniRoom";
+import DevopsOrb from "./components/DevopsOrb";
 import '@livekit/components-styles/index.css';
 import "./index.css";
 
@@ -74,7 +74,6 @@ function App() {
   };
 
   const isLina      = roomData?.creatorId === "LINA";
-  const isVigil     = roomData?.creatorId === "VIGIL";
   const isBI        = roomData?.creatorId === "BI";
   const isBI2       = roomData?.creatorId === "BI2";
   const isNova      = roomData?.creatorId === "NOVA";
@@ -102,8 +101,6 @@ function App() {
       <DevopsGeniRoom roomData={roomData} onLeave={handleLeave} />
     ) : isLina ? (
       <LinaRoom roomData={roomData} onLeave={handleLeave} />
-    ) : isVigil ? (
-      <VigilRoom roomData={roomData} onLeave={handleLeave} />
     ) : isBI ? (
       <BIRoom roomData={roomData} onLeave={handleLeave} />
     ) : isBI2 ? (
@@ -144,6 +141,7 @@ function App() {
       {/* Floating Premium WhatsApp Contact Button & Popup Panel (Hidden in Active Rooms) */}
       {!roomData && (
         <>
+          <DevopsOrb />
           {/* WhatsApp Popup Card */}
           <div 
             className={`wa-popup ${isWaPopupOpen ? "is-open" : ""}`} 

@@ -90,6 +90,38 @@ def check_ghost_processes():
     except Exception as e:
         return f"Error checking processes: {str(e)}"
 
+def get_swarm_memory_usage():
+    import psutil
+    try:
+        python_mem = 0
+        node_mem = 0
+        python_count = 0
+        node_count = 0
+        
+        for proc in psutil.process_iter(['name', 'memory_info']):
+            try:
+                name = proc.info['name']
+                if not name: continue
+                name = name.lower()
+                mem = proc.info['memory_info'].rss / (1024**2)
+                if 'python' in name:
+                    python_mem += mem
+                    python_count += 1
+                elif 'node' in name:
+                    node_mem += mem
+                    node_count += 1
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                pass
+                
+        return (
+            f"Current Swarm Process Memory Usage:\n"
+            f"- Python Agents ({python_count} processes): {python_mem:.2f} MB\n"
+            f"- Node.js Infrastructure ({node_count} processes): {node_mem:.2f} MB\n"
+            f"- Total Local Swarm Memory: {(python_mem + node_mem):.2f} MB"
+        )
+    except Exception as e:
+        return f"Error calculating swarm memory: {str(e)}"
+
 def kill_ghost_processes():
     import psutil
     import os
@@ -114,6 +146,22 @@ def analyze_recent_telemetry():
     logs = list(TELEMETRY_BUFFER)
     return "Recent High-Priority Telemetry (Warnings/Errors):\n" + "\n".join(logs)
 
+def read_backend_crash_logs():
+    import os
+    try:
+        log_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../backend_errors.log"))
+        if not os.path.exists(log_path):
+            return "No backend_errors.log file found. The backend is currently healthy with zero recorded crashes."
+        with open(log_path, "r") as f:
+            lines = f.readlines()
+        if not lines:
+            return "The backend_errors.log file is empty. The backend is currently healthy."
+        
+        # Return the last 30 crash lines
+        return "Recent Node.js Backend Crash Logs:\n" + "".join(lines[-30:])
+    except Exception as e:
+        return f"Error reading backend crash logs: {str(e)}"
+
 AVAILABLE_TOOLS = [
     {
         "type": "function",
@@ -132,6 +180,13 @@ AVAILABLE_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "get_swarm_memory_usage",
+            "description": "Get the exact total memory usage of all Swarm components (Python agents and Node.js infrastructure) currently running on the local host."
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "kill_ghost_processes",
             "description": "Kill all other python.exe processes to free up RAM, excluding this agent's own process."
         }
@@ -141,6 +196,13 @@ AVAILABLE_TOOLS = [
         "function": {
             "name": "analyze_recent_telemetry",
             "description": "Analyze the recent warning and error logs intercepted from Octane's live telemetry stream."
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "read_backend_crash_logs",
+            "description": "Read and analyze the raw backend_errors.log file containing Node.js uncaught exceptions and crashes."
         }
     }
 ]
@@ -162,6 +224,50 @@ async def entrypoint(ctx: JobContext):
 
     await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
     await ctx.room.local_participant.set_metadata(json.dumps({"name": AGENT_NAME, "type": "text-only"}))
+
+    async def redis_subscriber_loop():
+        try:
+            import redis.asyncio as redis
+            redis_client = redis.Redis(host='localhost', port=6379, db=0)
+            pubsub = redis_client.pubsub()
+            await pubsub.subscribe('octane_telemetry_stream')
+            logger.info("[DEVOPS_GENI] Subscribed to Redis octane_telemetry_stream")
+            async for message in pubsub.listen():
+                if message['type'] == 'message':
+                    try:
+                        payload = json.loads(message['data'].decode('utf-8'))
+                        if payload.get("type") == "log_line":
+                            line = payload.get("line", "")
+                            container = payload.get("container", "unknown")
+                            upper_line = line.upper()
+                            priority_keywords = ["ERROR", "WARN", "CRITICAL", "FATAL", "FAIL", "EXCEPTION"]
+                            if any(kw in upper_line for kw in priority_keywords):
+                                log_entry = f"[{container}] {line}"
+                                TELEMETRY_BUFFER.append(log_entry)
+                                
+                                if payload.get("alert") is True:
+                                    alert_payload = json.dumps({
+                                        "type": "chat_message",
+                                        "sender": AGENT_NAME,
+                                        "message": f"🚨 **RUNTIME ALERT**: {log_entry}",
+                                        "timestamp": datetime.now().isoformat(),
+                                        "is_alert": True
+                                    })
+                                    asyncio.create_task(ctx.room.local_participant.publish_data(alert_payload, topic="chat_message"))
+                    except json.JSONDecodeError:
+                        pass
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.error(f"[DEVOPS_GENI] Redis subscriber error: {e}")
+
+    # Start the subscriber loop
+    redis_task = asyncio.create_task(redis_subscriber_loop())
+    
+    async def _cleanup_redis():
+        redis_task.cancel()
+        
+    ctx.add_shutdown_callback(_cleanup_redis)
 
     async def process_chat(user_text: str):
         messages.append({"role": "user", "content": user_text})
@@ -192,6 +298,10 @@ async def entrypoint(ctx: JobContext):
                         result = kill_ghost_processes()
                     elif fn_name == "analyze_recent_telemetry":
                         result = analyze_recent_telemetry()
+                    elif fn_name == "read_backend_crash_logs":
+                        result = read_backend_crash_logs()
+                    elif fn_name == "get_swarm_memory_usage":
+                        result = get_swarm_memory_usage()
                     
                     messages.append({
                         "role": "tool",

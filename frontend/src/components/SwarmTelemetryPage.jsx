@@ -616,7 +616,7 @@ function SwarmTelemetryPage({ onBack }) {
               </div>
 
               {/* Locked Agents in Phase 2 */}
-              {["LINA", "VIGIL", "BI", "MARTECH", "NOVA", "AURA"].map(name => (
+              {["LINA", "BI", "MARTECH", "NOVA", "AURA"].map(name => (
                 <div
                   key={name}
                   style={{

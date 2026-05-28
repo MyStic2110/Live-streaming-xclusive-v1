@@ -282,8 +282,6 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
     { time: "00:02", text: "Swarm Commander online. Allocating tasks to specialized nodes...", type: "info" },
     { time: "00:04", text: "Cortex-Orchestrator: Dispatched Profile Lookup & Booking request to SEVA.", type: "info" },
     { time: "00:05", text: "SEVA Agent: Profile confirmed. Created carpentry booking ID 'SEVA-174'.", type: "success" },
-    { time: "00:06", text: "Cortex-Orchestrator: Dispatched Security & Observability checks to VIGIL.", type: "info" },
-    { time: "00:08", text: "VIGIL Node: Completed compliance checks. Sentry logs synced successfully.", type: "success" },
     { time: "00:09", text: "Cortex-Orchestrator: Dispatched UPI Google Pay billing request to SEVA Tools.", type: "info" },
     { time: "00:11", text: "SEVA Agent: Billing card triggered. VPA: 9876543210@okaxis. Paid intent ready.", type: "success" },
     { time: "00:12", text: "Swarm Commander: All sub-tasks resolved. Division of labor success.", type: "info" },
@@ -530,7 +528,6 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
       "[Shadow-V1] Diarized transcript generated for Meet ID: 492-302",
       "[Cortex-BI] MongoDB performance audit complete: index optimized",
       "[Reels-Agent] MoviePy voice overlay rendered: 30s vertical ready",
-      "[Vigil-Security] Governance audit logged: 0 risk parameters exposed",
       "[Aura-Weather] Southwest monsoon model successfully re-calculated",
       "[Nova-UI] Autonomous squad leaderboard query executed flawlessly",
       "[SEVA] Plumbing booking confirmed: SEVA-1748023400 · Tomorrow 10AM",
@@ -659,18 +656,6 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
       ]
     },
     {
-      id: "vigil", title: "Vigil Auditor", icon: "🛡️", color: "#4f46e5",
-      desc: "Professional IR maturity assessment and security audit. Security governance for enterprises.",
-      btnText: "Deploy Vigil",
-      prompts: [
-        "Assess IR maturity.", "Identify security gaps.",
-        "Audit readiness summary.", "Review access control risks.",
-        "Weak compliance areas?", "Ransomware response scenario.",
-        "Analyze governance posture.", "Operational vulnerabilities.",
-        "Privilege escalation exposure.", "Remediation roadmap."
-      ]
-    },
-    {
       id: "lina", title: "Lina", icon: "✨", color: "#d946ef",
       desc: "Empathetic companion and mental wellness support. Specialized in conversational therapy patterns.",
       btnText: "Connect Lina",
@@ -771,17 +756,6 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
         "List running docker containers",
         "Give me the last 20 lines of redis logs",
         "Summarize recent livekit server logs"
-      ]
-    },
-    {
-      id: "DEVOPS_GENI", title: "DevOpsGeni", icon: "⚙️", color: "#10b981",
-      desc: "Text-Only SRE System Monitor. Tracks ghost Python processes, analyzes Octane warnings, and guards local RAM.",
-      btnText: "Open Terminal",
-      prompts: [
-        "Check for ghost processes",
-        "Kill all idle Python agents",
-        "Analyze recent Octane warnings",
-        "What are my machine specs?"
       ]
     }
   ];

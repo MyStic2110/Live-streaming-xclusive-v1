@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, memo } from "react";
-import { LiveKitRoom, useRoomContext, useLocalParticipant } from "@livekit/components-react";
+import { LiveKitRoom, useRoomContext, useLocalParticipant, useRemoteParticipants } from "@livekit/components-react";
 import { Send, ArrowLeft, Bot, User, Server } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -15,7 +15,10 @@ function DevopsGeniChat({ roomData, onLeave }) {
     }
   ]);
   const [inputValue, setInputValue] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
+  const remoteParticipants = useRemoteParticipants();
+  const isAgentPresent = remoteParticipants.length > 0;
 
   // Auto-scroll to bottom
   const scrollToBottom = () => {
@@ -40,6 +43,9 @@ function DevopsGeniChat({ roomData, onLeave }) {
             text: msg.message,
             timestamp: msg.timestamp || new Date().toISOString()
           }]);
+          if (msg.sender !== "USER") {
+            setIsTyping(false);
+          }
         }
       } catch (e) {
         console.error("Failed to parse data packet:", e);
@@ -74,6 +80,7 @@ function DevopsGeniChat({ roomData, onLeave }) {
     localParticipant.publishData(data, { topic: "chat_message", reliable: true });
 
     setInputValue("");
+    setIsTyping(true);
   };
 
   return (
@@ -134,13 +141,31 @@ function DevopsGeniChat({ roomData, onLeave }) {
             <div>
               <h1 style={{ margin: 0, fontSize: "1.1rem", fontWeight: "600", color: "#111827" }}>DevOpsGeni</h1>
               <span style={{ fontSize: "0.8rem", color: "#6b7280", display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#10b981" }}></span>
-                SRE Architecture Assistant
+                <span style={{ 
+                  width: "8px", 
+                  height: "8px", 
+                  borderRadius: "50%", 
+                  backgroundColor: isAgentPresent ? "#10b981" : "#f59e0b",
+                  animation: !isAgentPresent ? "pulse 1.5s infinite" : "none" 
+                }}></span>
+                {isAgentPresent ? "Agent Online" : "Waiting for Geni to connect..."}
               </span>
             </div>
           </div>
         </div>
       </header>
+
+      <style>{`
+        @keyframes pulse {
+          0% { opacity: 1; }
+          50% { opacity: 0.4; }
+          100% { opacity: 1; }
+        }
+        @keyframes typingBounce {
+          0%, 80%, 100% { transform: scale(0); }
+          40% { transform: scale(1); }
+        }
+      `}</style>
 
       {/* Chat Messages Area */}
       <div style={{
@@ -220,6 +245,38 @@ function DevopsGeniChat({ roomData, onLeave }) {
             );
           })}
         </AnimatePresence>
+
+        {isTyping && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              display: "flex",
+              gap: "16px",
+              maxWidth: "800px",
+              margin: "0 auto",
+              width: "100%",
+              flexDirection: "row"
+            }}
+          >
+            <div style={{
+              width: "36px", height: "36px", borderRadius: "8px", backgroundColor: "#10b981",
+              display: "flex", alignItems: "center", justifyContent: "center", color: "white", flexShrink: 0
+            }}>
+              <Server size={20} />
+            </div>
+            <div style={{
+              backgroundColor: "#ffffff", padding: "12px 16px", borderRadius: "16px",
+              borderTopLeftRadius: "4px", border: "1px solid #e5e7eb",
+              display: "flex", gap: "4px", alignItems: "center"
+            }}>
+              <div style={{ width: "6px", height: "6px", backgroundColor: "#9ca3af", borderRadius: "50%", animation: "typingBounce 1.4s infinite ease-in-out both", animationDelay: "-0.32s" }}></div>
+              <div style={{ width: "6px", height: "6px", backgroundColor: "#9ca3af", borderRadius: "50%", animation: "typingBounce 1.4s infinite ease-in-out both", animationDelay: "-0.16s" }}></div>
+              <div style={{ width: "6px", height: "6px", backgroundColor: "#9ca3af", borderRadius: "50%", animation: "typingBounce 1.4s infinite ease-in-out both" }}></div>
+            </div>
+          </motion.div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 

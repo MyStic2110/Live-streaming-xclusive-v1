@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 from collections import deque
 
 AGENT_LOGS_BUFFER = deque(maxlen=1000)
+import redis.asyncio as redis
+redis_client = redis.Redis(host='localhost', port=6379, db=0)
+
 from livekit.agents import (
     JobContext,
     JobRequest,
@@ -62,6 +65,7 @@ YOUR ACTIVE INFRASTRUCTURE:
 - livekit-video-app-livekit-1 (LiveKit SFU Server)
 - livekit-video-app-redis-1 (Redis In-Memory Database)
 - octane-agent (This Telemetry Agent's own system process logs)
+- node-backend (The global Node.js backend server crash logs)
 
 YOUR TOOLS:
 - list_containers(): Identify all running docker containers on the host machine.
@@ -145,6 +149,19 @@ class OctaneTools:
                     return f"No high-priority warnings or errors found in the last {len(all_lines)} agent log lines."
                 return f"Last high-priority logs for the Octane Agent:\n{final_output}"
 
+            if container_name == "node-backend":
+                logger.info(f"[OCTANE][TOOLS] Fetching node-backend logs (limit: {limit})")
+                log_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../backend_errors.log"))
+                try:
+                    with open(log_path, "r") as f:
+                        lines = f.readlines()
+                    final_lines = lines[-limit:]
+                    return f"Last {len(final_lines)} crash logs from Node.js backend:\n" + "".join(final_lines)
+                except FileNotFoundError:
+                    return "No backend_errors.log file found. The backend is currently healthy with zero recorded crashes."
+                except Exception as e:
+                    return f"Error reading backend logs: {str(e)}"
+
             # Fetch a larger historical window from docker host to ensure we locate warnings/errors, then filter down
             tail_limit = max(1000, limit * 10)
             logger.info(f"[OCTANE][TOOLS] Subprocess query: docker logs --tail {tail_limit} {container_name}")
@@ -220,6 +237,48 @@ class OctaneTools:
         if container_name == "octane-agent":
             logger.info("[OCTANE][STREAM] Stream target is octane-agent. Local log handler is streaming events, skipping Docker logs subprocess.")
             return
+
+        if container_name == "node-backend":
+            logger.info("[OCTANE][STREAM] Stream target is node-backend. Initiating native file tailing...")
+            log_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../backend_errors.log"))
+            
+            # Ensure file exists
+            if not os.path.exists(log_path):
+                open(log_path, 'a').close()
+
+            try:
+                with open(log_path, "r") as f:
+                    f.seek(0, 2) # Go to end of file
+                    lines_streamed = 0
+                    while True:
+                        line = f.readline()
+                        if not line:
+                            await asyncio.sleep(0.5)
+                            continue
+                        
+                        text_line = line.strip()
+                        payload = json.dumps({
+                            "type": "log_line",
+                            "container": "node-backend",
+                            "line": text_line,
+                            "timestamp": datetime.now().isoformat()
+                        })
+                        await self.ctx.room.local_participant.publish_data(
+                            payload, reliable=False, topic="log_stream"
+                        )
+                        try:
+                            await redis_client.publish('octane_telemetry_stream', payload)
+                        except Exception as e:
+                            logger.error(f"[OCTANE][REDIS] Pub error: {e}")
+                        lines_streamed += 1
+                        if lines_streamed % 10 == 0:
+                            logger.info(f"[OCTANE][STREAM] Streamed {lines_streamed} backend crash logs.")
+            except asyncio.CancelledError:
+                logger.info("[OCTANE][STREAM] Node backend tail loop cancelled.")
+            except Exception as e:
+                logger.error(f"[OCTANE][STREAM] Error tailing node-backend: {e}")
+            return
+
         proc = None
         try:
             logger.info(f"[OCTANE][STREAM] Initializing logs subprocess loop for '{container_name}'...")
@@ -251,6 +310,10 @@ class OctaneTools:
                     reliable=False,
                     topic="log_stream"
                 )
+                try:
+                    await redis_client.publish('octane_telemetry_stream', payload)
+                except Exception as e:
+                    logger.error(f"[OCTANE][REDIS] Pub error: {e}")
                 lines_streamed += 1
                 if lines_streamed % 50 == 0:
                     logger.info(f"[OCTANE][STREAM] Streamed {lines_streamed} log lines so far for '{container_name}'")
@@ -366,6 +429,10 @@ async def entrypoint(ctx: JobContext):
                     ),
                     self.loop
                 )
+                asyncio.run_coroutine_threadsafe(
+                    redis_client.publish('octane_telemetry_stream', payload),
+                    self.loop
+                )
             except Exception:
                 pass
             finally:
@@ -378,7 +445,7 @@ async def entrypoint(ctx: JobContext):
     lk_handler.setFormatter(formatter)
     logger.addHandler(lk_handler)
 
-    agent = voice.Agent(
+    agent = voice.Agent(turn_handling={"interruption": {"mode": "vad"}}, 
         instructions=dynamic_prompt,
         chat_ctx=chat_ctx,
         tools=llm.find_function_tools(octane_tools),
@@ -533,6 +600,45 @@ async def entrypoint(ctx: JobContext):
     
     logger.info("[OCTANE] Auto-starting default livekit logs stream pipeline...")
     asyncio.create_task(octane_tools.stream_logs("livekit-video-app-livekit-1"))
+
+    async def _tail_swarm_master_loop():
+        import re
+        import os
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        log_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../swarm_master.log"))
+        
+        while not os.path.exists(log_path):
+            await asyncio.sleep(1)
+            
+        try:
+            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                f.seek(0, 2)
+                while True:
+                    line = f.readline()
+                    if not line:
+                        await asyncio.sleep(0.5)
+                        continue
+                    clean_line = ansi_escape.sub('', line).strip()
+                    if not clean_line:
+                        continue
+                    upper_line = clean_line.upper()
+                    if any(kw in upper_line for kw in ["ERROR", "CRITICAL", "FATAL", "EXCEPTION"]):
+                        payload = json.dumps({
+                            "type": "log_line",
+                            "container": "SWARM-AGGREGATOR",
+                            "line": clean_line,
+                            "timestamp": datetime.now().isoformat(),
+                            "alert": True
+                        })
+                        try:
+                            await redis_client.publish('octane_telemetry_stream', payload)
+                        except Exception as e:
+                            pass
+        except Exception as e:
+            logger.error(f"[OCTANE] Master log tail error: {e}")
+
+    logger.info("[OCTANE] Auto-starting Swarm Master Log tailer...")
+    swarm_tail_task = asyncio.create_task(_tail_swarm_master_loop())
 
     # Shutdown callback handler
     async def _on_shutdown():

@@ -531,7 +531,7 @@ You are not a generic blog writer. You are Astra — a strategic content intelli
         base_url=os.getenv("OPENROUTER_BASE_URL"),
     )
 
-    agent = voice.Agent(
+    agent = voice.Agent(turn_handling={"interruption": {"mode": "vad"}}, 
         instructions=system_prompt,
         chat_ctx=chat_ctx,
         tools=llm.find_function_tools(astra_tools),

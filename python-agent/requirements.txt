@@ -4,3 +4,4 @@ livekit-plugins-silero
 python-dotenv
 httpx
 google-genai
+redis

@@ -198,7 +198,7 @@ async def entrypoint(ctx: JobContext):
 
     security_tools = AivyuhSecurityTools(participant=ctx.room.local_participant)
 
-    agent = voice.Agent(
+    agent = voice.Agent(turn_handling={"interruption": {"mode": "vad"}}, 
         instructions=SYSTEM_PROMPT,
         chat_ctx=chat_ctx,
         tools=llm.find_function_tools(security_tools),

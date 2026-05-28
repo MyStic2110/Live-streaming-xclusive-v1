@@ -251,7 +251,7 @@ async def entrypoint(ctx: JobContext):
 
     bi2_tools = BI2Tools()
 
-    agent = voice.Agent(
+    agent = voice.Agent(turn_handling={"interruption": {"mode": "vad"}}, 
         instructions=dynamic_prompt,
         chat_ctx=chat_ctx,
         tools=llm.find_function_tools(bi2_tools),

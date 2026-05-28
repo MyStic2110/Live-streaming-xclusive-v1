@@ -30,9 +30,6 @@ export const talkToAI = async (req, res) => {
   if (agentType === "lina") {
     roomName = `lina_session_${userId}`;
     agentName = "LINA";
-  } else if (agentType === "vigil") {
-    roomName = `audit_session_${userId}`;
-    agentName = "VIGIL";
   } else if (agentType === "bi") {
     roomName = `bi_session_${userId}`;
     agentName = "BI";
@@ -111,7 +108,7 @@ export const getAstraInsights = async (req, res) => {
 
     const files = fs.readdirSync(blogsDir);
     const insights = files
-      .filter(f => f.endsWith(".json"))
+      .filter(f => f.endsWith(".json") && !f.startsWith("idea-"))
       .map(f => {
         const content = fs.readFileSync(path.join(blogsDir, f), "utf-8");
         return JSON.parse(content);
@@ -278,7 +275,11 @@ export const triggerReels = async (req, res) => {
       };
       fs.writeFileSync(absoluteBlogPath, JSON.stringify(tempBlogData, null, 2));
     } else {
-      absoluteBlogPath = path.resolve(__dirname, `../../../python-agent/agents/astra/blogs/${blogPath}`);
+      let finalBlogPath = blogPath;
+      if (!finalBlogPath.endsWith(".json")) {
+        finalBlogPath += ".json";
+      }
+      absoluteBlogPath = path.resolve(__dirname, `../../../python-agent/agents/astra/blogs/${finalBlogPath}`);
     }
 
     console.log(`[HTTP_CONTROLLER] Spawning Reels Agent (${agentType}) in background...`);

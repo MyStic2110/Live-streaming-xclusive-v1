@@ -699,7 +699,7 @@ GREETING:
     martech_tools = MartechTools()
     fnc_ctx = llm.ToolContext(tools=llm.find_function_tools(martech_tools))
 
-    agent = voice.Agent(
+    agent = voice.Agent(turn_handling={"interruption": {"mode": "vad"}}, 
         instructions=dynamic_prompt,
         chat_ctx=chat_ctx,
         tools=llm.find_function_tools(martech_tools),

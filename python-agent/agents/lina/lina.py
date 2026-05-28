@@ -103,7 +103,7 @@ async def entrypoint(ctx: JobContext):
     chat_ctx.add_message(role="system", content=f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}")
 
     # 3. Create the Agent
-    agent = voice.Agent(
+    agent = voice.Agent(turn_handling={"interruption": {"mode": "vad"}}, 
         instructions=SYSTEM_PROMPT,
         chat_ctx=chat_ctx,
     )
