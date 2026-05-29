@@ -212,9 +212,171 @@ const PipelineCard = ({ agent, onAction }) => {
   );
 };
 
+// --- REEL CARD COMPONENT ---
+
+function ReelCard({ reel, index, onClick }) {
+  const [hovered, setHovered] = React.useState(false);
+  const videoRef = React.useRef(null);
+  const videoFile = reel.face
+    ? `/reels/${reel.slug}_face_reel.mp4`
+    : `/reels/${reel.slug}_reel.mp4`;
+
+  React.useEffect(() => {
+    if (!videoRef.current) return;
+    if (hovered) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+    } else {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  }, [hovered]);
+
+  const TAG_COLORS = {
+    "ORCHESTRATION": "#f59e0b",
+    "PRODUCTION": "#f43f5e",
+    "BUSINESS": "#22c55e",
+    "RESEARCH": "#a855f7",
+    "STRATEGY": "#6366f1",
+    "ARCHITECTURE": "#0ea5e9",
+    "VOICE AI": "#0ea5e9",
+    "MARKETING": "#f97316",
+    "SEO AI": "#22c55e",
+    "DEEP DIVE": "#a855f7",
+    "CASE STUDY": "#f59e0b",
+    "SECURITY": "#f43f5e",
+    "INDUSTRY": "#0ea5e9",
+    "HEALTHCARE": "#22c55e",
+    "WORKPLACE": "#6366f1",
+  };
+  const tagColor = TAG_COLORS[reel.tag] || "#94a3b8";
+
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        borderRadius: "16px",
+        overflow: "hidden",
+        cursor: "pointer",
+        position: "relative",
+        border: `1.5px solid ${hovered ? tagColor + "55" : "rgba(255,255,255,0.07)"}`,
+        boxShadow: hovered
+          ? `0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px ${tagColor}33`
+          : "0 4px 20px rgba(0,0,0,0.5)",
+        transition: "all 0.35s cubic-bezier(0.23,1,0.32,1)",
+        transform: hovered ? "translateY(-8px) scale(1.02)" : "translateY(0) scale(1)",
+        background: "#000",
+        aspectRatio: reel.face ? "9/16" : "9/16",
+      }}
+    >
+      {/* Muted video preview */}
+      <video
+        ref={videoRef}
+        src={videoFile}
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          display: "block",
+          opacity: hovered ? 1 : 0.8,
+          transition: "opacity 0.4s",
+        }}
+      />
+
+      {/* Dark gradient overlay */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: hovered
+          ? "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)"
+          : "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)",
+        transition: "background 0.35s",
+      }} />
+
+      {/* Colour accent line */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0,
+        height: "2px",
+        background: `linear-gradient(90deg, ${tagColor}, transparent)`,
+        opacity: hovered ? 1 : 0.3,
+        transition: "opacity 0.4s",
+      }} />
+
+      {/* Play button on hover */}
+      {hovered && (
+        <div style={{
+          position: "absolute", top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "52px", height: "52px", borderRadius: "50%",
+          background: "rgba(255,255,255,0.92)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "1.2rem", color: "#111", fontWeight: "900",
+          boxShadow: `0 0 0 10px ${tagColor}25, 0 8px 30px rgba(0,0,0,0.5)`,
+          animation: "none",
+        }}>
+          ▶
+        </div>
+      )}
+
+      {/* Tag pill top-left */}
+      <div style={{
+        position: "absolute", top: "0.75rem", left: "0.75rem",
+        background: `${tagColor}22`,
+        border: `1px solid ${tagColor}44`,
+        color: tagColor,
+        fontSize: "0.55rem", fontWeight: "900",
+        padding: "3px 9px", borderRadius: "99px",
+        letterSpacing: "1px",
+        backdropFilter: "blur(8px)",
+      }}>
+        {reel.tag}
+      </div>
+
+      {/* Date badge top-right */}
+      {reel.date && (
+        <div style={{
+          position: "absolute", top: "0.75rem", right: "0.75rem",
+          background: "rgba(0,0,0,0.6)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          color: "rgba(255,255,255,0.6)",
+          fontSize: "0.52rem", fontWeight: "700",
+          padding: "3px 8px", borderRadius: "99px",
+          backdropFilter: "blur(8px)",
+          letterSpacing: "0.3px",
+        }}>
+          {reel.date}
+        </div>
+      )}
+
+      {/* Title at bottom */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0,
+        padding: "0.9rem 0.85rem 0.75rem",
+        transform: hovered ? "translateY(0)" : "translateY(4px)",
+        transition: "transform 0.3s",
+      }}>
+        <div style={{
+          color: "#fff",
+          fontSize: "0.82rem",
+          fontWeight: "800",
+          lineHeight: "1.3",
+          textShadow: "0 2px 8px rgba(0,0,0,0.9)",
+        }}>
+          {reel.title}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- MAIN PAGE ---
 
-export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
+export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShortsClick }) {
   const [selectedReel, setSelectedReel] = React.useState(null);
   const [showReelsGallery, setShowReelsGallery] = React.useState(false);
   const [legalModalType, setLegalModalType] = React.useState(null);
@@ -774,27 +936,38 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
   ];
 
   const galleryReels = [
-    {
-      title: "Autonomous Swarms",
-      slug: "autonomous-multi-agent-orchestration",
-      desc: "30-second vertical preview of multi-agent workflows."
-    },
-    {
-      title: "Mastering Agent Swarms",
-      slug: "from-demo-to-production-agent-systems",
-      desc: "Cinematic vertical preview of multi-agent orchestration scaling (Master Orchestrator + 15 specialist agents)."
-    },
-    {
-      title: "Unleashing AI Potential",
-      slug: "unleashing-ai-potential-in-business",
-      desc: "Premium vertical slideshow showcasing operational cost reductions and supply chain optimization."
-    },
-    {
-      title: "Influencer Campaign",
-      slug: "influencer",
-      desc: "High-energy influencer promotional video for Swarm Agentic Lab."
-    }
+    // 29 May 2026
+    { title: "From Demo to Production Agent Systems", slug: "from-demo-to-production-agent-systems", tag: "PRODUCTION", date: "29 May 2026" },
+    { title: "Unleashing AI Potential in Business", slug: "unleashing-ai-potential-in-business", tag: "BUSINESS", date: "29 May 2026" },
+    // 28 May 2026
+    { title: "Bajaj Finance AI Call Centre", slug: "bajaj-finance-ai-callcentre", tag: "CASE STUDY", date: "28 May 2026" },
+    { title: "Impact of AI on EV Manufacturing", slug: "impact-of-ai-on-electric-vehicle-manufacturing", tag: "INDUSTRY", date: "28 May 2026" },
+    // 27 May 2026
+    { title: "Navigating Future of Marketing with AI", slug: "navigating-future-marketing-ai", tag: "MARKETING", date: "27 May 2026" },
+    // 26 May 2026
+    { title: "Human-AI Workplace Collaboration", slug: "human-ai-workplace-collaboration", face: true, tag: "WORKPLACE", date: "26 May 2026" },
+    { title: "AI Revolutionizing Patient Care", slug: "ai-revolutionizing-patient-care-healthcare", face: true, tag: "HEALTHCARE", date: "26 May 2026" },
+    // 24 May 2026
+    { title: "Vector Policy Optimization in Agentic AI", slug: "vector-policy-optimization-in-agentic-architecture", tag: "RESEARCH", date: "24 May 2026" },
+    { title: "Rethinking AI Architectures & Agent Execution", slug: "rethinking-ai-architectures-agent-execution", tag: "ARCHITECTURE", date: "24 May 2026" },
+    // 22 May 2026
+    { title: "Vector Policy Optimization AI Agents", slug: "vector-policy-optimization-ai-agents", tag: "RESEARCH", date: "22 May 2026" },
+    // 21 May 2026
+    { title: "Rethinking AI Architectures (Face)", slug: "rethinking-ai-architectures-agent-execution", face: true, tag: "ARCHITECTURE", date: "21 May 2026" },
+    // 20 May 2026
+    { title: "Runtime Architectures for LLM Agents (Face)", slug: "runtime-architectures-llm-agents", face: true, tag: "DEEP DIVE", date: "20 May 2026" },
+    { title: "Runtime Architectures for LLM Agents", slug: "runtime-architectures-llm-agents", tag: "DEEP DIVE", date: "20 May 2026" },
+    // 19 May 2026
+    { title: "Biometric Swarm Security", slug: "biometric-swarm-security", tag: "SECURITY", date: "19 May 2026" },
+    { title: "Gartner AI: Trough to Multi-Agent Swarms", slug: "gartner-ai-trough-to-multiagent-swarms", tag: "RESEARCH", date: "19 May 2026" },
+    { title: "Shift from Copilots to Autonomous Agents", slug: "shift-from-copilots-to-autonomous-agents", tag: "STRATEGY", date: "19 May 2026" },
+    { title: "Optimizing for Answer Engines", slug: "optimizing-for-answer-engines", tag: "SEO AI", date: "19 May 2026" },
+    // 18 May 2026
+    { title: "Swarm Observability & Sentry Architecture", slug: "swarm-observability-and-sentry-architecture", tag: "ARCHITECTURE", date: "18 May 2026" },
+    { title: "Autonomous Multi-Agent Orchestration", slug: "autonomous-multi-agent-orchestration", tag: "ORCHESTRATION", date: "18 May 2026" },
+    { title: "LiveKit Voice Agents & Latency Optimization", slug: "livekit-voice-agents-and-latency-optimization", tag: "VOICE AI", date: "18 May 2026" },
   ];
+
 
   const pricing = [
     {
@@ -912,6 +1085,29 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
           <div onClick={onTelemetryClick} style={{ cursor: "pointer", color: COLORS.primary, fontWeight: "700" }}>Telemetry</div>
           <div onClick={onBlogClick} style={{ cursor: "pointer", color: COLORS.accent, fontWeight: "800" }}>Insights</div>
           <a href="#about" style={{ textDecoration: "none", color: "inherit" }}>About</a>
+          {/* Learn Shorts Link */}
+          <div
+            onClick={onShortsClick}
+            style={{
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              background: "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(79,70,229,0.08))",
+              border: "1px solid rgba(99,102,241,0.3)",
+              color: "#6366f1",
+              fontWeight: "900",
+              fontSize: "0.85rem",
+              padding: "7px 16px",
+              borderRadius: "99px",
+              letterSpacing: "0.3px",
+              transition: "all 0.25s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "linear-gradient(135deg, rgba(99,102,241,0.22), rgba(79,70,229,0.18))"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(99,102,241,0.25)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(79,70,229,0.08))"; e.currentTarget.style.boxShadow = "none"; }}
+          >
+            🚀 Learn
+          </div>
         </div>
       </nav>
 
@@ -1909,120 +2105,59 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
             exit={{ opacity: 0 }}
             style={{
               position: "fixed", inset: 0, zIndex: 1000,
-              background: "rgba(11, 15, 25, 0.95)",
-              backdropFilter: "blur(25px)",
+              background: "#07090f",
               display: "flex", flexDirection: "column",
-              padding: "4rem 2rem", overflowY: "auto",
+              overflowY: "auto",
               fontFamily: "'Outfit', sans-serif"
             }}
           >
-            {/* Gallery Header */}
-            <div style={{ maxWidth: "1200px", width: "100%", margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4rem" }}>
-              <div>
-                <span style={{ color: "#f43f5e", fontSize: "0.75rem", fontWeight: "900", letterSpacing: "3px" }}>SWARM LAB PRODUCTION</span>
-                <h2 style={{ color: "white", fontSize: "2.5rem", fontWeight: "900", margin: "8px 0 0 0" }}>Pipeline Reels Gallery</h2>
+            {/* Sticky Header */}
+            <div style={{
+              position: "sticky", top: 0, zIndex: 10,
+              background: "rgba(7,9,15,0.92)",
+              backdropFilter: "blur(20px)",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              padding: "1.2rem 5%",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ color: "#f43f5e", fontSize: "0.65rem", fontWeight: "900", letterSpacing: "3px" }}>SWARM AGENTIC LAB · AI-GENERATED</span>
+                <span style={{ color: "white", fontSize: "1.35rem", fontWeight: "900", letterSpacing: "-0.5px" }}>
+                  Reels Gallery <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: "400", fontSize: "1rem" }}>· {galleryReels.length} videos</span>
+                </span>
               </div>
               <button
                 onClick={() => setShowReelsGallery(false)}
                 style={{
-                  background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                  color: "white", width: "50px", height: "50px", borderRadius: "50%",
-                  fontSize: "1.5rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)",
+                  color: "white", width: "44px", height: "44px", borderRadius: "50%",
+                  fontSize: "1.3rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                   transition: "all 0.2s"
                 }}
-                onMouseEnter={e => e.target.style.background = "rgba(255,255,255,0.15)"}
-                onMouseLeave={e => e.target.style.background = "rgba(255,255,255,0.05)"}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
               >
                 ×
               </button>
             </div>
 
-            {/* New Reel Generation Trigger UI */}
-            <div style={{ maxWidth: "1200px", width: "100%", margin: "0 auto 4rem auto", background: "rgba(255,255,255,0.05)", padding: "2rem", borderRadius: "24px", border: "1px solid rgba(255,255,255,0.1)" }}>
-              <h3 style={{ color: "white", fontSize: "1.5rem", marginBottom: "1rem" }}>Generate New Reel</h3>
-              <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
-                Provide EITHER an existing Blog JSON filename OR write a freeform idea.
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <input 
-                  id="blog-path-input"
-                  type="text" 
-                  placeholder="Existing blog json (e.g. ai-trends.json)" 
-                  style={{ width: "100%", padding: "1rem", borderRadius: "12px", border: "none", outline: "none", background: "rgba(0,0,0,0.5)", color: "white" }} 
-                />
-                <div style={{ color: "rgba(255,255,255,0.5)", textAlign: "center", fontWeight: "bold" }}>OR</div>
-                <textarea
-                  id="free-idea-input"
-                  placeholder="Describe your freeform reel idea here..."
-                  rows={4}
-                  style={{ width: "100%", padding: "1rem", borderRadius: "12px", border: "none", outline: "none", background: "rgba(0,0,0,0.5)", color: "white", resize: "vertical" }}
-                />
-                
-                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-                  <button 
-                    onClick={async () => {
-                      const blogPath = document.getElementById('blog-path-input').value.trim();
-                      const freeIdea = document.getElementById('free-idea-input').value.trim();
-                      if(!blogPath && !freeIdea) return alert("Enter a blog path or a free idea.");
-                      try {
-                        const res = await axios.post(`${API}/trigger-reels`, { blogPath, freeIdea, agentType: "face" });
-                        setReelsLogs([`Started Face Agent for: ${res.data.slug || blogPath}`]);
-                        setShowLogsModal(true);
-                      } catch(err) {
-                        alert("Failed: " + err.message);
-                      }
-                    }}
-                    style={{ flex: 1, padding: "1rem", background: "#4f46e5", color: "white", borderRadius: "12px", border: "none", fontWeight: "bold", cursor: "pointer" }}
-                  >
-                    🚀 Trigger Face Agent
-                  </button>
-                  <button 
-                    onClick={async () => {
-                      const blogPath = document.getElementById('blog-path-input').value.trim();
-                      const freeIdea = document.getElementById('free-idea-input').value.trim();
-                      if(!blogPath && !freeIdea) return alert("Enter a blog path or a free idea.");
-                      try {
-                        const res = await axios.post(`${API}/trigger-reels`, { blogPath, freeIdea, agentType: "faceless" });
-                        setReelsLogs([`Started Faceless Agent for: ${res.data.slug || blogPath}`]);
-                        setShowLogsModal(true);
-                      } catch(err) {
-                        alert("Failed: " + err.message);
-                      }
-                    }}
-                    style={{ flex: 1, padding: "1rem", background: "#f43f5e", color: "white", borderRadius: "12px", border: "none", fontWeight: "bold", cursor: "pointer" }}
-                  >
-                    🎬 Trigger Faceless Agent
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Gallery Cards Grid */}
-            <div style={{ maxWidth: "1200px", width: "100%", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "2.5rem" }}>
+            {/* Video Grid */}
+            <div style={{
+              padding: "3rem 5%",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+              gap: "1.25rem",
+              maxWidth: "1600px",
+              margin: "0 auto",
+              width: "100%",
+            }}>
               {galleryReels.map((reel, index) => (
-                <motion.div
+                <ReelCard
                   key={index}
-                  whileHover={{ y: -4, borderColor: "rgba(244, 63, 94, 0.4)", boxShadow: "0 0 20px rgba(244, 63, 94, 0.15)" }}
+                  reel={reel}
+                  index={index}
                   onClick={() => setSelectedReel(reel)}
-                  style={{
-                    background: "rgba(255, 255, 255, 0.03)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                    borderRadius: "24px",
-                    padding: "2rem",
-                    display: "flex", flexDirection: "column", justifyContent: "space-between",
-                    minHeight: "220px", transition: "all 0.3s ease",
-                    cursor: "pointer"
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: "2.5rem", marginBottom: "1.5rem" }}>🎬</div>
-                    <h3 style={{ color: "white", fontSize: "1.3rem", fontWeight: "800", marginBottom: "0.5rem" }}>{reel.title}</h3>
-                    <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.9rem", lineHeight: "1.5", margin: 0 }}>{reel.desc}</p>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2rem", color: "rgba(255, 255, 255, 0.3)", fontWeight: "800", fontSize: "0.85rem" }}>
-                    GENERATED BY SWARM AGENT
-                  </div>
-                </motion.div>
+                />
               ))}
             </div>
           </motion.div>

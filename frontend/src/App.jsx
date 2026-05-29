@@ -15,6 +15,7 @@ import MartechRoom from "./components/MartechRoom";
 import OctaneRoom from "./components/OctaneRoom";
 import DevopsGeniRoom from "./components/DevopsGeniRoom";
 import DevopsOrb from "./components/DevopsOrb";
+import SwarmShortsPage from "./components/SwarmShortsPage";
 import '@livekit/components-styles/index.css';
 import "./index.css";
 
@@ -23,6 +24,7 @@ const API = import.meta.env.VITE_API_URL || "";
 function App() {
   const [roomData, setRoomData] = useState(null);
   const [showBlog, setShowBlog] = useState(false);
+  const [showShorts, setShowShorts] = useState(false);
   const [currentPath, setCurrentPath] = useState(window.location.hash || window.location.pathname);
   const [isWaPopupOpen, setIsWaPopupOpen] = useState(false);
 
@@ -54,9 +56,16 @@ function App() {
     setCurrentPath("/agents-value-technicals-business");
   };
 
+  const navigateToShorts = () => {
+    window.history.pushState({}, "", "/learn");
+    setCurrentPath("/learn");
+    setShowShorts(true);
+  };
+
   const navigateHome = () => {
     window.history.pushState({}, "", "/");
     setCurrentPath("/");
+    setShowShorts(false);
   };
 
   const handleJoin = (data) => {
@@ -91,9 +100,15 @@ function App() {
     window.location.hash.replace(/\/$/, "") === "#/agents-value-technicals-business" ||
     window.location.hash === "#agents-value-technicals-business";
 
+  const isShortsPath =
+    currentPath.replace(/\/$/, "") === "/learn" ||
+    window.location.hash === "#/learn";
+
   let content;
   if (showBlog) {
     content = <BlogSection onBack={() => setShowBlog(false)} />;
+  } else if (showShorts || isShortsPath) {
+    content = <SwarmShortsPage onBack={navigateHome} />;
   } else if (isTelemetryPath) {
     content = <SwarmTelemetryPage onBack={navigateHome} />;
   } else if (roomData) {
@@ -130,6 +145,7 @@ function App() {
         onJoin={handleJoin} 
         onBlogClick={() => setShowBlog(true)} 
         onTelemetryClick={navigateToTelemetry}
+        onShortsClick={navigateToShorts}
       />
     );
   }
