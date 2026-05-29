@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -30,6 +31,7 @@ const SHORTS = [
     borderColor: "rgba(245,158,11,0.55)",
     videoSrc: "/shorts/Launch_AI_teams_in_minutes_202605291710.mp4",
     thumbnail: null,
+    duration: "10s",
   },
   {
     id: 4,
@@ -40,6 +42,7 @@ const SHORTS = [
     borderColor: "rgba(168,85,247,0.55)",
     videoSrc: "/shorts/Swarm_Agentic_Lab_promotion_202605291713.mp4",
     thumbnail: null,
+    duration: "10s",
   },
 ];
 
@@ -200,7 +203,7 @@ function VideoCard({ short, index, onPlay }) {
           padding: "3px 9px", borderRadius: "99px",
           letterSpacing: "0.5px",
         }}>
-          ▶ 10s
+          ▶ {short.duration || "10s"}
         </div>
       </div>
 
@@ -261,6 +264,30 @@ function VideoCard({ short, index, onPlay }) {
 // ─── Main Page ───────────────────────────────────────────────────────────────────
 export default function SwarmShortsPage({ onBack }) {
   const [activeVideo, setActiveVideo] = useState(null);
+
+  useEffect(() => {
+    // Generate VideoObject schemas for all shorts
+    const videoSchemas = SHORTS.map(short => ({
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      "name": short.title,
+      "description": short.desc,
+      "uploadDate": "2026-05-29T17:00:00Z", // Replace with real date if available
+      "contentUrl": `https://yourdomain.com${short.videoSrc}`,
+      "thumbnailUrl": short.thumbnail ? `https://yourdomain.com${short.thumbnail}` : "https://yourdomain.com/logo.jpeg"
+    }));
+
+    setupPageAEO({
+      title: "Swarm AI Shorts | Learn Agentic Lab in 60s",
+      description: "Watch bite-sized 60-second video shorts on how to deploy Swarm Agentic Lab for enterprise automation.",
+      keywords: ["Swarm AI Shorts", "AI Agent Videos", "Swarm Agentic Lab Tutorials", "decentralized AI demos"],
+      url: "https://yourdomain.com/learn",
+      schemaId: "shorts-aeo",
+      schemaData: videoSchemas
+    });
+
+    return () => cleanupPageAEO("shorts-aeo");
+  }, []);
 
   return (
     <div style={{

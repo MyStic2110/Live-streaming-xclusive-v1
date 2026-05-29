@@ -4,6 +4,7 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { io } from "socket.io-client";
 import LegalModal from "./LegalModal";
+import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -544,25 +545,18 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
       ]
     };
 
-    let schemaContainer = document.getElementById('aeo-schemas');
-    if (!schemaContainer) {
-      schemaContainer = document.createElement('div');
-      schemaContainer.id = 'aeo-schemas';
-      document.head.appendChild(schemaContainer);
-    }
-    schemaContainer.innerHTML = '';
-
-    const schemas = [orgSchema, faqSchema, appSchema];
-    schemas.forEach((schema) => {
-      const script = document.createElement('script');
-      script.type = 'application/ld+json';
-      script.text = JSON.stringify(schema);
-      schemaContainer.appendChild(script);
+    setupPageAEO({
+      title: "Swarm Agentic Lab | Decentralized AI Swarms",
+      description: "Deploy Swarm Agentic Lab (powered by Cortex Swarm) to replace SaaS subscriptions with local autonomous AI agent fleets.",
+      keywords: ["Swarm Agentic Lab", "local AI agents", "decentralized AI", "local inference LLM"],
+      url: "https://yourdomain.com/",
+      imageUrl: "https://yourdomain.com/logo.jpeg",
+      schemaId: "livelist-aeo",
+      schemaData: [orgSchema, faqSchema, appSchema]
     });
 
     return () => {
-      const el = document.getElementById('aeo-schemas');
-      if (el) el.remove();
+      cleanupPageAEO("livelist-aeo");
     };
   }, []);
 

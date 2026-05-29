@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -166,6 +167,30 @@ function SwarmTelemetryPage({ onBack }) {
   const scrollToBottom = () => {
     terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  useEffect(() => {
+    // Generate AEO schema for Dashboard / TechArticle
+    const telemetrySchema = {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "Swarm Agentic Security Telemetry & OWASP Analysis",
+      "abstract": "Real-time security telemetry dashboard displaying live continuous agent audits for the Swarm Agentic Lab pilot (SEVA).",
+      "author": {
+        "@type": "Organization",
+        "name": "Swarm Agentic Lab"
+      }
+    };
+    
+    setupPageAEO({
+      title: "Swarm AI Telemetry | Live Agent Security",
+      description: "Live dashboard tracking OWASP vulnerabilities and security posture for Swarm AI agents.",
+      url: "https://yourdomain.com/agents-value-technicals-business",
+      schemaId: "telemetry-aeo",
+      schemaData: telemetrySchema
+    });
+    
+    return () => cleanupPageAEO("telemetry-aeo");
+  }, []);
 
   useEffect(() => {
     if (isScanning) {

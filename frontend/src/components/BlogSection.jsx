@@ -6,6 +6,7 @@ import {
   Volume2, VolumeX
 } from "lucide-react";
 import LegalModal from "./LegalModal";
+import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
 
 const COLORS = {
   primary: "#111827",
@@ -70,47 +71,7 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
     }
   }, [selectedPost]);
 
-  // AEO JSON-LD Schema Injection
-  React.useEffect(() => {
-    // Remove existing schema script if it exists
-    const oldScript = document.getElementById("aeo-schema");
-    if (oldScript) {
-      oldScript.remove();
-    }
 
-    if (selectedPost && selectedPost.aeoSchema) {
-      try {
-        const schemaData = {
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          "mainEntity": selectedPost.aeoSchema.questions.map(q => ({
-            "@type": "Question",
-            "name": q.question,
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": q.answer
-            }
-          }))
-        };
-
-        const script = document.createElement("script");
-        script.id = "aeo-schema";
-        script.type = "application/ld+json";
-        script.innerHTML = JSON.stringify(schemaData);
-        document.head.appendChild(script);
-      } catch (err) {
-        console.error("[BLOG] Failed to inject AEO schema:", err);
-      }
-    }
-
-    // Cleanup on unmount/deselect
-    return () => {
-      const script = document.getElementById("aeo-schema");
-      if (script) {
-        script.remove();
-      }
-    };
-  }, [selectedPost]);
 
   // Sync external posts and fetch persistent ones from backend
   React.useEffect(() => {
@@ -155,60 +116,23 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
   // --- DYNAMIC SEO INJECTION ---
   React.useEffect(() => {
     if (selectedPost) {
-      // Set Document Title
-      document.title = selectedPost.metadata.seoTitle || selectedPost.title;
+      const schemas = [];
 
-      // Helper to set/update meta tags
-      const setMetaTag = (name, content) => {
-        let meta = document.querySelector(`meta[name="${name}"]`);
-        if (!meta) {
-          meta = document.createElement('meta');
-          meta.name = name;
-          document.head.appendChild(meta);
-        }
-        meta.content = content;
-      };
-
-      setMetaTag('description', selectedPost.metadata.seoDesc);
-      setMetaTag('keywords', selectedPost.metadata.keywords.join(', '));
-      
-      // --- SOCIAL META (OpenGraph / Twitter) ---
-      const setOGTag = (property, content) => {
-        let meta = document.querySelector(`meta[property="${property}"]`);
-        if (!meta) {
-          meta = document.createElement('meta');
-          meta.setAttribute('property', property);
-          document.head.appendChild(meta);
-        }
-        meta.content = content;
-      };
-
-      setOGTag('og:title', selectedPost.title);
-      setOGTag('og:description', selectedPost.metadata.seoDesc);
-      setOGTag('og:image', `https://yourdomain.com${selectedPost.featuredImage}`);
-      setOGTag('og:type', 'article');
-      setOGTag('og:url', `https://yourdomain.com/blog/${selectedPost.slug}`);
-
-      setMetaTag('twitter:card', 'summary_large_image');
-      setMetaTag('twitter:title', selectedPost.title);
-      setMetaTag('twitter:description', selectedPost.metadata.seoDesc);
-      setMetaTag('twitter:image', `https://yourdomain.com${selectedPost.featuredImage}`);
-
-      // --- JSON-LD SCHEMA.ORG AUTOMATION ---
-      const schemaData = {
+      // Add BlogPosting schema
+      schemas.push({
         "@context": "https://schema.org",
         "@type": "BlogPosting",
         "headline": selectedPost.title,
-        "description": selectedPost.metadata.seoDesc,
+        "description": selectedPost.metadata?.seoDesc || selectedPost.subtitle,
         "image": `https://yourdomain.com${selectedPost.featuredImage}`,
         "author": {
           "@type": "Person",
-          "name": selectedPost.author.name,
-          "jobTitle": selectedPost.author.role
+          "name": selectedPost.author?.name || "Astra AI",
+          "jobTitle": selectedPost.author?.role || "Autonomous Agent"
         },
         "publisher": {
           "@type": "Organization",
-          "name": "Cortex Swarm",
+          "name": "Swarm Agentic Lab",
           "logo": {
             "@type": "ImageObject",
             "url": "https://yourdomain.com/favicon.svg"
@@ -219,36 +143,47 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
           "@type": "WebPage",
           "@id": `https://yourdomain.com/blog/${selectedPost.slug}`
         }
-      };
+      });
 
-      let schemaScript = document.getElementById('astra-schema');
-      if (!schemaScript) {
-        schemaScript = document.createElement('script');
-        schemaScript.id = 'astra-schema';
-        schemaScript.type = 'application/ld+json';
-        document.head.appendChild(schemaScript);
+      // Add FAQ schema if available
+      if (selectedPost.aeoSchema && selectedPost.aeoSchema.questions) {
+        schemas.push({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": selectedPost.aeoSchema.questions.map(q => ({
+            "@type": "Question",
+            "name": q.question,
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": q.answer
+            }
+          }))
+        });
       }
-      schemaScript.text = JSON.stringify(schemaData);
 
-      // Handle Canonical URL
-      let canonical = document.querySelector('link[rel="canonical"]');
-      if (!canonical) {
-        canonical = document.createElement('link');
-        canonical.rel = 'canonical';
-        document.head.appendChild(canonical);
-      }
-      canonical.href = `https://yourdomain.com${selectedPost.metadata.canonicalUrl}`;
+      setupPageAEO({
+        title: selectedPost.metadata?.seoTitle || selectedPost.title,
+        description: selectedPost.metadata?.seoDesc || selectedPost.subtitle,
+        keywords: selectedPost.metadata?.keywords || [],
+        url: `https://yourdomain.com${selectedPost.metadata?.canonicalUrl || "/blog/" + selectedPost.slug}`,
+        imageUrl: `https://yourdomain.com${selectedPost.featuredImage}`,
+        schemaId: 'blog-aeo',
+        schemaData: schemas
+      });
 
     } else {
-      // Revert to default when closing the post
-      document.title = "Cortex Swarm | Future-Gen Intelligence";
-      const desc = document.querySelector('meta[name="description"]');
-      if (desc) desc.content = "Enterprise autonomous AI and Swarm Intelligence.";
-
-      // Cleanup Schema
-      const script = document.getElementById('astra-schema');
-      if (script) script.remove();
+      setupPageAEO({
+        title: "Swarm Agentic Lab | Insights & Engineering",
+        description: "Enterprise autonomous AI and Swarm Intelligence.",
+        schemaId: 'blog-aeo',
+        schemaData: null
+      });
+      cleanupPageAEO('blog-aeo');
     }
+
+    return () => {
+      cleanupPageAEO('blog-aeo');
+    };
   }, [selectedPost]);
 
   if (selectedPost) {
