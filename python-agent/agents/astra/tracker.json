@@ -1,21 +1,23 @@
 {
-    "current_day": 7,
-    "total_days": 7,
+    "current_day": 9,
+    "total_days": 10,
     "start_date": "2026-05-21",
-    "last_published_date": "2026-05-28",
+    "last_published_date": "2026-05-29",
     "published_slugs": [
         "rethinking-ai-architectures-agent-execution",
         "vector-policy-optimization-in-agentic-architecture",
         "ai-revolutionizing-patient-care-healthcare",
         "human-ai-workplace-collaboration",
         "navigating-future-marketing-ai",
-        "impact-of-ai-on-electric-vehicle-manufacturing"
+        "impact-of-ai-on-electric-vehicle-manufacturing",
+        "unleashing-ai-potential-in-business",
+        "from-demo-to-production-agent-systems"
     ],
     "cumulative_usage": {
-        "input_tokens": 128449,
-        "output_tokens": 10097,
-        "total_cost": 0.379185,
-        "stt_cost": 0.017472,
-        "tts_cost": 0.091005
+        "input_tokens": 161528,
+        "output_tokens": 13790,
+        "total_cost": 0.4273,
+        "stt_cost": 0.0,
+        "tts_cost": 0.004875
     }
 }

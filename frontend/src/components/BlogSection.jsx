@@ -19,6 +19,21 @@ const COLORS = {
 
 const API = import.meta.env.VITE_API_URL || "";
 
+const parseInlineMarkdown = (text) => {
+  if (!text) return "";
+  const regex = /(\*\*.*?\*\*|\*.*?\*)/g;
+  const parts = text.split(regex);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index} style={{ fontWeight: "900", color: COLORS.accent }}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={index} style={{ fontStyle: "italic", opacity: 0.9 }}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+};
+
 // --- ELITE AGENT-READY POST SCHEMA ---
 const INITIAL_POSTS = [];
 
@@ -53,6 +68,48 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
     if (selectedPost) {
       setVideoSrc(`/reels/${selectedPost.slug}_face_reel.mp4`);
     }
+  }, [selectedPost]);
+
+  // AEO JSON-LD Schema Injection
+  React.useEffect(() => {
+    // Remove existing schema script if it exists
+    const oldScript = document.getElementById("aeo-schema");
+    if (oldScript) {
+      oldScript.remove();
+    }
+
+    if (selectedPost && selectedPost.aeoSchema) {
+      try {
+        const schemaData = {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": selectedPost.aeoSchema.questions.map(q => ({
+            "@type": "Question",
+            "name": q.question,
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": q.answer
+            }
+          }))
+        };
+
+        const script = document.createElement("script");
+        script.id = "aeo-schema";
+        script.type = "application/ld+json";
+        script.innerHTML = JSON.stringify(schemaData);
+        document.head.appendChild(script);
+      } catch (err) {
+        console.error("[BLOG] Failed to inject AEO schema:", err);
+      }
+    }
+
+    // Cleanup on unmount/deselect
+    return () => {
+      const script = document.getElementById("aeo-schema");
+      if (script) {
+        script.remove();
+      }
+    };
   }, [selectedPost]);
 
   // Sync external posts and fetch persistent ones from backend
@@ -275,75 +332,121 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
             </div>
 
             <div className="prose" style={{ fontSize: "1.35rem", lineHeight: 1.8, color: COLORS.primary, opacity: 0.9 }}>
-              {selectedPost.content.split('\n').map((line, i) => {
-                // --- ELITE KEY POINT CALLOUT PARSING ---
-                if (line.includes('[Key Point]')) {
-                  let cleanText = line
-                    .replace(/-\s*\*\*\[Key Point\]\*\*:\s*/gi, '')
-                    .replace(/\*\*\[Key Point\]\*\*:\s*/gi, '')
-                    .replace(/\[Key Point\]:\s*/gi, '')
-                    .replace(/-\s*\[Key Point\]:\s*/gi, '')
-                    .replace(/-\s*\*\*\[Key Point\]\*\*:\s*/gi, '')
-                    .trim();
-                  
-                  // Clean up potential starting brackets or extra colons/dashes
-                  cleanText = cleanText.replace(/^[:\-\s\*\s]+/, '');
+              {(() => {
+                const lines = selectedPost.content.split('\n');
+                const blocks = [];
+                let currentQuoteBlock = null;
 
-                  const parts = cleanText.split('**');
+                for (let i = 0; i < lines.length; i++) {
+                  const line = lines[i];
+                  if (line.startsWith('> ')) {
+                    if (!currentQuoteBlock) {
+                      currentQuoteBlock = { type: 'quote', lines: [] };
+                      blocks.push(currentQuoteBlock);
+                    }
+                    currentQuoteBlock.lines.push(line.slice(2).trim());
+                  } else {
+                    currentQuoteBlock = null;
+                    blocks.push({ type: 'line', text: line, index: i });
+                  }
+                }
 
-                  return (
-                    <motion.div 
-                      key={i}
-                      initial={{ opacity: 0, x: -20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      style={{ 
-                        margin: "2.5rem 0", 
-                        padding: "1.5rem 2rem", 
-                        background: "linear-gradient(90deg, rgba(59,130,246,0.06) 0%, rgba(59,130,246,0.01) 100%)", 
-                        borderLeft: `4px solid ${COLORS.accent}`, 
-                        borderRadius: "0 16px 16px 0",
-                        boxShadow: "0 4px 20px rgba(59,130,246,0.03)",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "8px"
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", fontWeight: "900", color: COLORS.accent, letterSpacing: "1.5px" }}>
-                        <Sparkles size={14} /> KEY INSIGHT
+                return blocks.map((block, i) => {
+                  if (block.type === 'quote') {
+                    return (
+                      <motion.div 
+                        key={`quote-${i}`}
+                        initial={{ opacity: 0, y: 15 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        style={{ 
+                          margin: "2.5rem 0", 
+                          padding: "2rem", 
+                          background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)", 
+                          border: `1px solid rgba(59, 130, 246, 0.15)`, 
+                          borderLeft: `5px solid ${COLORS.accent}`, 
+                          borderRadius: "16px",
+                          boxShadow: "0 10px 30px rgba(59, 130, 246, 0.05)",
+                        }}
+                      >
+                        <div style={{ fontSize: "0.8rem", fontWeight: "900", color: COLORS.accent, letterSpacing: "1.5px", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "8px" }}>
+                          ⚙️ TECHNICAL ARCHITECTURE & STRATEGY
+                        </div>
+                        {block.lines.map((qLine, qIdx) => {
+                          if (qLine.startsWith('- ')) {
+                            return (
+                              <div key={qIdx} style={{ display: "flex", gap: "10px", marginBottom: "0.6rem", paddingLeft: "0.5rem" }}>
+                                <span style={{ color: COLORS.accent, fontWeight: "900" }}>•</span>
+                                <span style={{ flex: 1, fontSize: "1.2rem", color: COLORS.primary }}>{parseInlineMarkdown(qLine.slice(2).trim())}</span>
+                              </div>
+                            );
+                          }
+                          return <p key={qIdx} style={{ margin: "0 0 1rem 0", fontSize: "1.2rem", lineHeight: 1.6, color: COLORS.primary }}>{parseInlineMarkdown(qLine)}</p>;
+                        })}
+                      </motion.div>
+                    );
+                  }
+
+                  const line = block.text;
+                  const idx = block.index;
+
+                  if (line.includes('[Key Point]')) {
+                    let cleanText = line
+                      .replace(/-\s*\*\*\[Key Point\]\*\*:\s*/gi, '')
+                      .replace(/\*\*\[Key Point\]\*\*:\s*/gi, '')
+                      .replace(/\[Key Point\]:\s*/gi, '')
+                      .replace(/-\s*\[Key Point\]:\s*/gi, '')
+                      .replace(/-\s*\*\*\[Key Point\]\*\*:\s*/gi, '')
+                      .trim();
+                    
+                    cleanText = cleanText.replace(/^[:\-\s\*\s]+/, '');
+
+                    return (
+                      <motion.div 
+                        key={idx}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        style={{ 
+                          margin: "2.5rem 0", 
+                          padding: "1.5rem 2rem", 
+                          background: "linear-gradient(90deg, rgba(59,130,246,0.06) 0%, rgba(59,130,246,0.01) 100%)", 
+                          borderLeft: `4px solid ${COLORS.accent}`, 
+                          borderRadius: "0 16px 16px 0",
+                          boxShadow: "0 4px 20px rgba(59,130,246,0.03)",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "8px"
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", fontWeight: "900", color: COLORS.accent, letterSpacing: "1.5px" }}>
+                          <Sparkles size={14} /> KEY INSIGHT
+                        </div>
+                        <p style={{ margin: 0, fontSize: "1.25rem", lineHeight: "1.6", fontWeight: "500", color: COLORS.primary }}>
+                          {parseInlineMarkdown(cleanText)}
+                        </p>
+                      </motion.div>
+                    );
+                  }
+
+                  if (line.startsWith('## ')) {
+                    return <h2 key={idx} style={{ fontSize: "2.5rem", fontWeight: "900", marginTop: "4rem", marginBottom: "1.5rem", letterSpacing: "-1px" }}>{parseInlineMarkdown(line.replace('## ', '').trim())}</h2>;
+                  }
+                  if (line.startsWith('### ')) {
+                    return <h3 key={idx} style={{ fontSize: "1.8rem", fontWeight: "800", marginTop: "3rem", marginBottom: "1rem", color: COLORS.accent }}>{parseInlineMarkdown(line.replace('### ', '').trim())}</h3>;
+                  }
+                  if (line.startsWith('- ')) {
+                    return (
+                      <div key={idx} style={{ display: "flex", gap: "10px", marginBottom: "1rem", paddingLeft: "1rem" }}>
+                        <span style={{ color: COLORS.accent, fontWeight: "900" }}>•</span>
+                        <span style={{ flex: 1 }}>{parseInlineMarkdown(line.slice(2).trim())}</span>
                       </div>
-                      <p style={{ margin: 0, fontSize: "1.25rem", lineHeight: "1.6", fontWeight: "500", color: COLORS.primary }}>
-                        {parts.map((part, idx) => (
-                          <span key={idx} style={idx % 2 === 1 ? { fontWeight: "800", color: COLORS.accent } : {}}>
-                            {part}
-                          </span>
-                        ))}
-                      </p>
-                    </motion.div>
-                  );
-                }
-
-                if (line.startsWith('## ')) {
-                  return <h2 key={i} style={{ fontSize: "2.5rem", fontWeight: "900", marginTop: "4rem", marginBottom: "1.5rem", letterSpacing: "-1px" }}>{line.replace('## ', '').replace(/\*\*/g, '').trim()}</h2>;
-                }
-                if (line.startsWith('### ')) {
-                  return <h3 key={i} style={{ fontSize: "1.8rem", fontWeight: "800", marginTop: "3rem", marginBottom: "1rem", color: COLORS.accent }}>{line.replace('### ', '').replace(/\*\*/g, '').trim()}</h3>;
-                }
-                if (line.startsWith('- **') || line.includes('**')) {
-                  const parts = line.split('**');
-                  return (
-                    <p key={i} style={{ marginBottom: "1.5rem" }}>
-                      {parts.map((part, idx) => (
-                        <span key={idx} style={idx % 2 === 1 ? { fontWeight: "900", color: COLORS.accent } : {}}>
-                          {part}
-                        </span>
-                      ))}
-                    </p>
-                  );
-                }
-                if (line.trim() === "") return <div key={i} style={{ height: "1rem" }} />;
-                return <p key={i} style={{ marginBottom: "2rem" }}>{line}</p>;
-              })}
+                    );
+                  }
+                  if (line.trim() === "") return <div key={idx} style={{ height: "1rem" }} />;
+                  return <p key={idx} style={{ marginBottom: "2rem" }}>{parseInlineMarkdown(line)}</p>;
+                });
+              })()}
             </div>
 
             {/* CTA Section */}

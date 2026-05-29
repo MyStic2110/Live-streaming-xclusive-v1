@@ -1,0 +1,35 @@
+{
+  // Recommended extensions for this project.
+  // VS Code will prompt you to install these when you open this folder.
+  "recommendations": [
+    // Python (backend + python-agent)
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+
+    // Docker & Docker Compose
+    "ms-azuretools.vscode-docker",
+
+    // JavaScript / Node.js (frontend)
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+
+    // Environment variables (.env)
+    "mikestead.dotenv",
+
+    // Git & source control
+    "eamodio.gitlens",
+
+    // YAML (livekit.yaml, docker-compose.yml)
+    "redhat.vscode-yaml",
+
+    // REST API testing
+    "humao.rest-client",
+
+    // Better terminal experience
+    "formulahendry.code-runner",
+
+    // Bracket pair & indent guides
+    "oderwat.indent-rainbow"
+  ]
+}

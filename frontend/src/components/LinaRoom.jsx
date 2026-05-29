@@ -723,8 +723,7 @@ function LinaOrbScene({ onLeave }) {
 // --- LINA ROOM COMPONENT ---
 // Outer container that configures the LiveKit session
 const LinaRoom = memo(function LinaRoom({ roomData, onLeave }) {
-  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  const serverUrl = `${protocol}://${window.location.host}/livekit`;
+  const serverUrl = import.meta.env.VITE_LIVEKIT_URL || 'ws://localhost:7880';
 
   return (
     <LiveKitRoom

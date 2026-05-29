@@ -30,7 +30,7 @@ AGENT_NAME = "REHEARSAL"
 SYSTEM_PROMPT = """You are The Rehearsal, a professional speech coaching agent. When the user greets you or says they are ready to start, greet them back briefly, introduce yourself as their speech coach, and state you are ready to listen. During the rehearsal, listen silently while the user speaks and do not interrupt or respond to their content. Your only job is to listen and analyse. When asked to deliver a critique, you speak with authority, warmth, and precision like a world-class speaking coach. Keep all spoken responses concise and impactful."""
 
 
-class SilentRehearsalAgent(turn_handling={"interruption": {"mode": "vad"}}, voice.Agent):
+class SilentRehearsalAgent(voice.Agent):
     async def llm_node(
         self,
         chat_ctx: llm.ChatContext,

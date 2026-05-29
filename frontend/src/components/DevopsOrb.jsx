@@ -392,8 +392,7 @@ export default function DevopsOrb() {
     setLatestError(null);
   };
 
-  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  const serverUrl = `${protocol}://${window.location.host}/livekit`;
+  const serverUrl = import.meta.env.VITE_LIVEKIT_URL || 'ws://localhost:7880';
 
   return (
     <>

@@ -7,8 +7,7 @@ import {
 import "@livekit/components-styles/index.css";
 
 const VisionRoom = memo(function VisionRoom({ roomData, onLeave }) {
-  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  const proxiedServerUrl = `${protocol}://${window.location.host}/livekit`;
+  const serverUrl = import.meta.env.VITE_LIVEKIT_URL || 'ws://localhost:7880';
 
   return (
     <div style={{ height: "100dvh", width: "100vw", background: "#000000", fontFamily: "'Outfit', sans-serif" }}>

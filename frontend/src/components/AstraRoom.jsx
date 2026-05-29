@@ -6,7 +6,7 @@ import {
   useRoomContext
 } from "@livekit/components-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Sparkles, Activity, Shield, RefreshCw } from "lucide-react";
+import { ArrowLeft, Sparkles, Activity, Shield, RefreshCw, User, Mic, MicOff } from "lucide-react";
 import BlogSection from "./BlogSection";
 
 const COLORS = {
@@ -19,31 +19,94 @@ const COLORS = {
 
 function AstraScene({ roomData, onLeave }) {
   const [agentState, setAgentState] = useState("idle");
-  const [transcription, setTranscription] = useState("");
+  const [transcription, setTranscription] = useState(null);
   const [blogPosts, setBlogPosts] = useState([]);
   const [logs, setLogs] = useState([
     { id: 1, type: "system", msg: "Strategic data link established.", time: new Date().toLocaleTimeString() }
   ]);
   const [isLogOpen, setIsLogOpen] = useState(true);
+  const [chatInput, setChatInput] = useState("");
+  const [isMicMuted, setIsMicMuted] = useState(true);
   const remoteParticipants = useRemoteParticipants();
   const room = useRoomContext();
   const logEndRef = React.useRef(null);
 
+  const handleSendChat = async () => {
+    if (!chatInput.trim()) return;
+    const userText = chatInput.trim();
+    setChatInput("");
+
+    setLogs(prev => [...prev, {
+      id: Date.now(),
+      type: "user_message",
+      msg: userText,
+      time: new Date().toLocaleTimeString()
+    }]);
+
+    try {
+      const payload = JSON.stringify({ type: "chat_message", text: userText });
+      await room.localParticipant.publishData(
+        new TextEncoder().encode(payload),
+        { reliable: true, topic: "chat_message" }
+      );
+    } catch (err) {
+      console.error("[ASTRA] Failed to send chat message:", err);
+      setLogs(prev => [...prev, {
+        id: Date.now(),
+        type: "warning",
+        msg: "Failed to deliver message to Astra.",
+        time: new Date().toLocaleTimeString()
+      }]);
+    }
+  };
+
+  const toggleMute = async () => {
+    try {
+      const enabled = room.localParticipant.isMicrophoneEnabled;
+      await room.localParticipant.setMicrophoneEnabled(!enabled);
+      setIsMicMuted(enabled);
+    } catch (err) {
+      console.error("Failed to toggle microphone:", err);
+    }
+  };
+
   // Auto-scroll logs
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [logs]);
+  }, [logs, transcription]);
 
   // Listen for transcriptions
   useEffect(() => {
-    const handleTranscription = (segments) => {
+    let timer;
+    const handleTranscription = (segments, participant) => {
+      if (!segments || segments.length === 0) return;
       const text = segments.map(s => s.text).join(" ");
-      setTranscription(text);
-      const timer = setTimeout(() => setTranscription(""), 3000);
-      return () => clearTimeout(timer);
+      if (!text.trim()) return;
+
+      let speaker = "user";
+      if (participant) {
+        const identity = participant.identity || "";
+        let metaName = "";
+        try {
+          metaName = JSON.parse(participant.metadata || "{}").name || "";
+        } catch (e) {}
+
+        if (identity.toUpperCase().includes("ASTRA") || metaName.toUpperCase().includes("ASTRA")) {
+          speaker = "astra";
+        }
+      }
+
+      setTranscription({ text, speaker });
+
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setTranscription(null), 3000);
     };
+
     room.on("transcriptionReceived", handleTranscription);
-    return () => room.off("transcriptionReceived", handleTranscription);
+    return () => {
+      room.off("transcriptionReceived", handleTranscription);
+      if (timer) clearTimeout(timer);
+    };
   }, [room]);
 
   // Listen for Astra's speaking state
@@ -81,6 +144,9 @@ function AstraScene({ roomData, onLeave }) {
                 msg: msg.message, 
                 time: new Date().toLocaleTimeString() 
             }]);
+            if (msg.level === "astra") {
+                setTranscription(null);
+            }
         }
       }
     };
@@ -94,6 +160,7 @@ function AstraScene({ roomData, onLeave }) {
       case "milestone": return <Sparkles size={14} color={COLORS.accent} />;
       case "warning": return <Activity size={14} color="#f59e0b" />;
       case "system": return <RefreshCw size={14} color={COLORS.accent} />;
+      case "user_message": return <User size={14} color="#10b981" />;
       default: return <Sparkles size={14} color={COLORS.accent} />;
     }
   };
@@ -131,19 +198,6 @@ function AstraScene({ roomData, onLeave }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
-            <AnimatePresence>
-                {transcription && (
-                    <motion.div 
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0 }}
-                        style={{ fontSize: "0.9rem", color: COLORS.accent, fontStyle: "italic", fontWeight: "600" }}
-                    >
-                        "{transcription}"
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
             {/* Visualizer Orb (Mini Version) */}
             <motion.div 
                 animate={{ 
@@ -159,6 +213,19 @@ function AstraScene({ roomData, onLeave }) {
             >
                 <Sparkles size={20} />
             </motion.div>
+
+            <button 
+                onClick={toggleMute}
+                style={{ 
+                    padding: "0.6rem 1.2rem", borderRadius: "12px", border: `1px solid ${COLORS.border}`,
+                    background: isMicMuted ? "#ef444411" : "none", fontWeight: "800", cursor: "pointer", fontSize: "0.8rem",
+                    color: isMicMuted ? "#ef4444" : COLORS.primary, display: "flex", alignItems: "center", gap: "8px",
+                    transition: "all 0.2s"
+                }}
+            >
+                {isMicMuted ? <MicOff size={16} /> : <Mic size={16} />}
+                {isMicMuted ? "MIC OFF" : "MIC ON"}
+            </button>
 
             <button 
                 onClick={onLeave}
@@ -204,36 +271,213 @@ function AstraScene({ roomData, onLeave }) {
                         </p>
                     </div>
 
-                    <div style={{ flex: 1, overflowY: "auto", padding: "1rem" }}>
-                        {logs.map((log, i) => (
+                    <div style={{ flex: 1, overflowY: "auto", padding: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                        {logs.map((log, i) => {
+                            if (log.type === "user_message") {
+                                return (
+                                    <motion.div 
+                                        key={log.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        style={{ 
+                                            display: "flex", 
+                                            justifyContent: "flex-end", 
+                                            width: "100%",
+                                            marginBottom: "0.4rem"
+                                        }}
+                                    >
+                                        <div style={{ 
+                                            maxWidth: "85%",
+                                            background: "linear-gradient(135deg, #10b981, #059669)",
+                                            color: "white",
+                                            padding: "0.7rem 0.9rem",
+                                            borderRadius: "16px 16px 2px 16px",
+                                            boxShadow: "0 4px 12px rgba(16,185,129,0.15)",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: "2px"
+                                        }}>
+                                            <span style={{ fontSize: "0.78rem", lineHeight: "1.35", fontWeight: "500", whiteSpace: "pre-wrap" }}>
+                                                {log.msg}
+                                            </span>
+                                            <span style={{ fontSize: "0.5rem", opacity: 0.7, textAlign: "right", fontWeight: "500" }}>
+                                                {log.time}
+                                            </span>
+                                        </div>
+                                    </motion.div>
+                                );
+                            } else if (log.type === "astra") {
+                                return (
+                                    <motion.div 
+                                        key={log.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        style={{ 
+                                            display: "flex", 
+                                            justifyContent: "flex-start", 
+                                            width: "100%",
+                                            gap: "8px",
+                                            marginBottom: "0.4rem"
+                                        }}
+                                    >
+                                        <div style={{ 
+                                            width: "28px", height: "28px", borderRadius: "50%", 
+                                            background: `${COLORS.accent}11`, 
+                                            border: `1px solid ${COLORS.accent}33`,
+                                            display: "flex", alignItems: "center", justifyContent: "center", 
+                                            color: COLORS.accent, flexShrink: 0, marginTop: "2px"
+                                        }}>
+                                            <Sparkles size={12} />
+                                        </div>
+                                        <div style={{ 
+                                            maxWidth: "80%",
+                                            background: "white",
+                                            border: `1px solid ${COLORS.border}`,
+                                            color: COLORS.primary,
+                                            padding: "0.7rem 0.9rem",
+                                            borderRadius: "16px 16px 16px 2px",
+                                            boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: "2px"
+                                        }}>
+                                            <span style={{ fontSize: "0.78rem", lineHeight: "1.35", fontWeight: "500", whiteSpace: "pre-wrap" }}>
+                                                {log.msg}
+                                            </span>
+                                            <span style={{ fontSize: "0.5rem", color: COLORS.textMuted, fontWeight: "500" }}>
+                                                {log.time}
+                                            </span>
+                                        </div>
+                                    </motion.div>
+                                );
+                            } else {
+                                return (
+                                    <motion.div 
+                                        key={log.id}
+                                        initial={{ opacity: 0, y: 5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        style={{ 
+                                            display: "flex", 
+                                            justifyContent: "center", 
+                                            width: "100%",
+                                            margin: "0.5rem 0"
+                                        }}
+                                    >
+                                        <div style={{
+                                            background: "#f3f4f6",
+                                            border: "1px solid #e5e7eb",
+                                            borderRadius: "16px",
+                                            padding: "4px 12px",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "6px",
+                                            maxWidth: "90%",
+                                            boxShadow: "0 2px 4px rgba(0,0,0,0.01)"
+                                        }}>
+                                            {getLogIcon(log.type)}
+                                            <span style={{ 
+                                                fontSize: "0.65rem", 
+                                                color: "#4b5563", 
+                                                fontWeight: "600",
+                                                letterSpacing: "0.2px",
+                                                lineHeight: "1.3",
+                                                whiteSpace: "pre-wrap"
+                                            }}>
+                                                {log.msg}
+                                            </span>
+                                        </div>
+                                    </motion.div>
+                                );
+                            }
+                        })}
+                        {transcription && transcription.text && (
                             <motion.div 
-                                key={log.id}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 style={{ 
-                                    marginBottom: "1rem", display: "flex", gap: "0.8rem",
-                                    padding: "0.8rem", borderRadius: "12px", 
-                                    background: log.type === "milestone" ? "#eff6ff" : "white",
-                                    border: log.type === "milestone" ? `1px solid ${COLORS.accent}44` : `1px solid ${COLORS.border}`, 
-                                    boxShadow: log.type === "milestone" ? `0 4px 12px ${COLORS.accent}11` : "0 2px 6px rgba(0,0,0,0.02)"
+                                    display: "flex", 
+                                    justifyContent: transcription.speaker === "user" ? "flex-end" : "flex-start", 
+                                    width: "100%",
+                                    gap: "8px",
+                                    marginBottom: "0.4rem"
                                 }}
                             >
-                                <div style={{ marginTop: "2px" }}>{getLogIcon(log.type)}</div>
-                                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                                    <span style={{ 
-                                        fontSize: "0.75rem", color: COLORS.primary, lineHeight: "1.3", 
-                                        fontWeight: log.type === "milestone" ? "800" : "600",
-                                        letterSpacing: log.type === "milestone" ? "0.2px" : "normal"
+                                {transcription.speaker === "astra" && (
+                                    <div style={{ 
+                                        width: "28px", height: "28px", borderRadius: "50%", 
+                                        background: `${COLORS.accent}11`, 
+                                        border: `1px solid ${COLORS.accent}33`,
+                                        display: "flex", alignItems: "center", justifyContent: "center", 
+                                        color: COLORS.accent, flexShrink: 0, marginTop: "2px"
                                     }}>
-                                        {log.msg}
-                                    </span>
-                                    <span style={{ fontSize: "0.6rem", color: COLORS.textMuted, fontWeight: "500" }}>
-                                        {log.time}
+                                        <Sparkles size={12} />
+                                    </div>
+                                )}
+                                <div style={{ 
+                                    maxWidth: transcription.speaker === "user" ? "85%" : "80%",
+                                    background: transcription.speaker === "user" ? "linear-gradient(135deg, #10b981, #059669)" : "white",
+                                    border: transcription.speaker === "user" ? "none" : `1px solid ${COLORS.border}`,
+                                    color: transcription.speaker === "user" ? "white" : COLORS.primary,
+                                    padding: "0.7rem 0.9rem",
+                                    borderRadius: transcription.speaker === "user" ? "16px 16px 2px 16px" : "16px 16px 16px 2px",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "2px",
+                                    opacity: 0.8,
+                                    fontStyle: "italic"
+                                }}>
+                                    <span style={{ fontSize: "0.78rem", lineHeight: "1.35", fontWeight: "500", whiteSpace: "pre-wrap" }}>
+                                        {transcription.text}...
                                     </span>
                                 </div>
                             </motion.div>
-                        ))}
+                        )}
                         <div ref={logEndRef} />
+                    </div>
+
+                    {/* Chat Input Bar */}
+                    <div style={{ padding: "1rem", borderTop: `1px solid ${COLORS.border}`, background: "white", display: "flex", gap: "8px" }}>
+                        <input 
+                            type="text" 
+                            placeholder="Type guidance for Astra..." 
+                            value={chatInput} 
+                            onChange={(e) => setChatInput(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
+                            style={{
+                                flex: 1,
+                                padding: "0.8rem 1rem",
+                                borderRadius: "12px",
+                                border: `1px solid ${COLORS.border}`,
+                                fontSize: "0.85rem",
+                                outline: "none",
+                                background: "#f9fafb",
+                                color: COLORS.primary,
+                                fontWeight: "500",
+                                transition: "border-color 0.2s"
+                            }}
+                            onFocus={(e) => e.target.style.borderColor = COLORS.accent}
+                            onBlur={(e) => e.target.style.borderColor = COLORS.border}
+                        />
+                        <button
+                            onClick={handleSendChat}
+                            style={{
+                                padding: "0.8rem 1.2rem",
+                                borderRadius: "12px",
+                                background: COLORS.accent,
+                                color: "white",
+                                border: "none",
+                                fontWeight: "700",
+                                fontSize: "0.8rem",
+                                cursor: "pointer",
+                                boxShadow: `0 4px 12px ${COLORS.accent}44`,
+                                transition: "transform 0.2s"
+                            }}
+                            onMouseEnter={(e) => e.target.style.transform = "scale(1.03)"}
+                            onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+                        >
+                            SEND
+                        </button>
                     </div>
                 </motion.div>
             )}
@@ -246,12 +490,11 @@ function AstraScene({ roomData, onLeave }) {
 }
 
 const AstraRoom = memo(function AstraRoom({ roomData, onLeave }) {
-  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  const serverUrl = `${protocol}://${window.location.host}/livekit`;
+  const serverUrl = import.meta.env.VITE_LIVEKIT_URL || 'ws://localhost:7880';
 
   return (
     <LiveKitRoom
-      audio={true}
+      audio={false}
       video={false}
       token={roomData.token}
       serverUrl={serverUrl}

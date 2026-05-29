@@ -69,7 +69,7 @@ class WeatherTools:
                     return f"Open-Meteo Data: Temp: {current.get('temperature_2m')} degreesC, Humidity: {current.get('relative_humidity_2m')}%."
                 return "Failed to fetch detailed forecast."
 
-class CustomAgent(turn_handling={"interruption": {"mode": "vad"}}, Agent):
+class CustomAgent(Agent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

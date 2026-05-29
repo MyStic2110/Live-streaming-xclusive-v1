@@ -9,8 +9,8 @@ import "@livekit/components-styles";
 console.log("[VITE] VideoRoom Loaded v2.0");
 
 const VideoRoom = memo(function VideoRoom({ roomData, onLeave }) {
-  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  const proxiedServerUrl = `${protocol}://${window.location.host}/livekit`;
+  // Use direct LiveKit URL — Vite proxy is not reliable for full RTC signaling
+  const livekitUrl = import.meta.env.VITE_LIVEKIT_URL || 'ws://localhost:7880';
 
   return (
     <div style={{ height: "100dvh", width: "100vw", background: "#0f172a" }}>
@@ -18,7 +18,7 @@ const VideoRoom = memo(function VideoRoom({ roomData, onLeave }) {
         video={true}
         audio={true}
         token={roomData.token}
-        serverUrl={proxiedServerUrl}
+        serverUrl={livekitUrl}
         onDisconnected={onLeave}
         data-lk-theme="default"
         style={{ height: "100%" }}

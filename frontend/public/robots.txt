@@ -1,4 +1,4 @@
-# Robots.txt for Swarm Agentic
+# Robots.txt for Swarm Agentic Lab
 # Optimized for Search Engine Optimization (SEO) & Answer Engine Optimization (AEO)
 
 User-agent: *

@@ -506,8 +506,7 @@ function RehearsalContent({ onLeave }) {
 // Root Export
 // ─────────────────────────────────────────────────────────────────────────────
 export default function RehearsalRoom({ roomData, onLeave }) {
-  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  const serverUrl = `${protocol}://${window.location.host}/livekit`;
+  const serverUrl = import.meta.env.VITE_LIVEKIT_URL || 'ws://localhost:7880';
 
   console.log("[HOP-1][REHEARSAL] RehearsalRoom mounting.", {
     room: roomData.roomName,

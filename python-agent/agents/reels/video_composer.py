@@ -8,6 +8,7 @@ from moviepy import (
     CompositeVideoClip,
     VideoClip
 )
+from moviepy.audio.fx import AudioFadeOut
 
 def wrap_text(text, max_chars=22):
     """Utility to wrap text cleanly by maximum character count."""
@@ -172,7 +173,12 @@ class VideoComposer:
         """
         Creates a centered image clip inside a styled rounded card with drop shadows
         and a smooth Ken Burns scale zoom effect.
+        Accepts either a single image path (str) or a list of image paths for slideshow mode.
         """
+        # Delegate to slideshow if a list is passed
+        if isinstance(img_path, list):
+            return self.create_slideshow_clip(img_path, duration)
+
         if not os.path.exists(img_path):
             print(f"[VIDEO] Warning: Visual asset {img_path} not found.")
             return VideoClip(lambda t: np.zeros((self.height, self.width, 4)), duration=duration)
@@ -224,6 +230,86 @@ class VideoComposer:
             # Paste card
             overlay.paste(rounded_card, (x_start, y_start), mask=rounded_card)
             return np.array(overlay)
+
+        clip = VideoClip(make_frame, duration=duration)
+        return clip
+
+    def create_slideshow_clip(self, img_paths: list, duration: float) -> VideoClip:
+        """
+        Creates a full-frame slideshow from multiple images with smooth crossfade
+        transitions and a Ken Burns zoom effect per slide.
+        Each slide fills the entire 1080x1920 canvas.
+        """
+        # Filter out missing files
+        valid_paths = [p for p in img_paths if os.path.exists(p)]
+        if not valid_paths:
+            print("[VIDEO] Warning: No valid slide images found for slideshow.")
+            return VideoClip(lambda t: np.zeros((self.height, self.width, 3)), duration=duration)
+
+        n = len(valid_paths)
+        slide_duration = duration / n          # seconds per slide
+        crossfade = min(0.4, slide_duration * 0.2)  # 0.4s crossfade max
+
+        print(f"[VIDEO] Slideshow: {n} slides × {slide_duration:.2f}s each, crossfade={crossfade:.2f}s")
+
+        # Pre-load, crop-to-fill, and resize all slides to full canvas size (9:16 aspect ratio)
+        w, h = self.width, self.height
+        slides = []
+        for p in valid_paths:
+            img = Image.open(p).convert("RGB")
+            
+            # Crop to fill 9:16 aspect ratio
+            img_w, img_h = img.size
+            target_aspect = w / h  # 1080/1920 = 0.5625
+            current_aspect = img_w / img_h
+            
+            if current_aspect > target_aspect:
+                # Image is too wide (horizontal) - crop sides
+                new_w = int(img_h * target_aspect)
+                left = (img_w - new_w) // 2
+                img = img.crop((left, 0, left + new_w, img_h))
+            else:
+                # Image is too tall (vertical) - crop top/bottom
+                new_h = int(img_w / target_aspect)
+                top = (img_h - new_h) // 2
+                img = img.crop((0, top, img_w, top + new_h))
+                
+            img_resized = img.resize((w, h), Image.Resampling.LANCZOS)
+            slides.append(np.array(img_resized))
+
+        def make_frame(t):
+            # Determine which slide we're on
+            slide_idx = min(int(t / slide_duration), n - 1)
+            time_in_slide = t - slide_idx * slide_duration
+
+            # Ken Burns slow zoom per slide (1.0 → 1.06)
+            zoom = 1.0 + 0.06 * (time_in_slide / slide_duration)
+            cur = slides[slide_idx]
+            zh = int(h * zoom)
+            zw = int(w * zoom)
+            zoomed = np.array(Image.fromarray(cur).resize((zw, zh), Image.Resampling.BILINEAR))
+            dy = (zh - h) // 2
+            dx = (zw - w) // 2
+            frame = zoomed[dy:dy + h, dx:dx + w]
+
+            # Crossfade into next slide near the end of current slide
+            if slide_idx < n - 1 and time_in_slide > (slide_duration - crossfade):
+                alpha = (time_in_slide - (slide_duration - crossfade)) / crossfade
+                alpha = max(0.0, min(1.0, alpha))
+                nxt = slides[slide_idx + 1]
+                frame = (frame * (1 - alpha) + nxt * alpha).astype(np.uint8)
+
+            # 1. Apply Chromatic Aberration (3px edge prism shift)
+            r = np.roll(frame[:, :, 0], 3, axis=1)
+            g = frame[:, :, 1]
+            b = np.roll(frame[:, :, 2], -3, axis=1)
+            frame_ca = np.stack([r, g, b], axis=2)
+
+            # 2. Apply Dynamic Film Grain (random micro-noise)
+            noise = np.random.randint(-6, 6, frame_ca.shape, dtype=np.int16)
+            grained = np.clip(frame_ca.astype(np.int16) + noise, 0, 255).astype(np.uint8)
+
+            return grained
 
         clip = VideoClip(make_frame, duration=duration)
         return clip
@@ -333,30 +419,71 @@ class VideoComposer:
         clip = VideoClip(make_frame, duration=duration)
         return clip
 
-    def compile_reel(self, bg_img_path, voice_audio_path, word_timings, output_path, title="", category=""):
+    def compile_reel(self, bg_img_path, voice_audio_path, word_timings, output_path, title="", category="", bg_music_path=None):
         """
         Synthesizes all layers into a stunning high-fidelity vertical MP4 reel using MoviePy and FFmpeg.
+        bg_img_path can be a single image path (str) or a list of image paths for a slideshow reel.
+        When a list is provided, slides fill the full canvas with crossfade transitions (no static bg needed).
+        If bg_music_path is provided, it is looped/subclipped, volume-scaled, faded, and mixed with the voice narration.
         """
         print("[VIDEO] Loading voice audio track...")
         voice_audio = AudioFileClip(voice_audio_path)
         duration = voice_audio.duration
 
         print("[VIDEO] Rendering premium visual layers...")
-        bg_clip = self.create_dynamic_grid_bg(duration)
-        header_clip = self.create_header_overlay(duration, title=title, category=category)
-        img_clip = self.create_image_card_clip(bg_img_path, duration)
-        caption_clip = self.create_kinetic_captions(word_timings, duration)
 
-        print("[VIDEO] Mixing audio tracks...")
-        final_audio = CompositeAudioClip([voice_audio])
-        
-        print("[VIDEO] Composing full vertical video layers...")
-        final_video = CompositeVideoClip([
-            bg_clip,
-            header_clip,
-            img_clip,
-            caption_clip
-        ]).with_audio(final_audio)
+        slideshow_mode = isinstance(bg_img_path, list) and len(bg_img_path) > 1
+
+        if slideshow_mode:
+            # Full-canvas slideshow — no separate background or image card overlay needed
+            print(f"[VIDEO] Slideshow mode: {len(bg_img_path)} slides detected.")
+            slide_clip = self.create_slideshow_clip(bg_img_path, duration)
+            caption_clip = self.create_kinetic_captions(word_timings, duration)
+
+            print("[VIDEO] Mixing audio tracks...")
+            audio_clips = [voice_audio]
+            if bg_music_path and os.path.exists(bg_music_path):
+                try:
+                    # Load, adjust volume to 8% to prevent overtaking narration, apply 1.5s fadeout
+                    bg_music = AudioFileClip(bg_music_path).subclipped(0, duration).with_volume_scaled(0.08).with_effects([AudioFadeOut(1.5)])
+                    audio_clips.append(bg_music)
+                    print("[VIDEO] Ambient background music track mixed successfully.")
+                except Exception as ex:
+                    print(f"[VIDEO] Warning: Failed to mix background music track ({ex})")
+
+            final_audio = CompositeAudioClip(audio_clips)
+
+            print("[VIDEO] Composing slideshow vertical video layers...")
+            final_video = CompositeVideoClip([
+                slide_clip,
+                caption_clip
+            ]).with_audio(final_audio)
+        else:
+            # Single image mode (original behaviour)
+            bg_clip = self.create_dynamic_grid_bg(duration)
+            header_clip = self.create_header_overlay(duration, title=title, category=category)
+            img_clip = self.create_image_card_clip(bg_img_path, duration)
+            caption_clip = self.create_kinetic_captions(word_timings, duration)
+
+            print("[VIDEO] Mixing audio tracks...")
+            audio_clips = [voice_audio]
+            if bg_music_path and os.path.exists(bg_music_path):
+                try:
+                    bg_music = AudioFileClip(bg_music_path).subclipped(0, duration).with_volume_scaled(0.08).with_effects([AudioFadeOut(1.5)])
+                    audio_clips.append(bg_music)
+                    print("[VIDEO] Ambient background music track mixed successfully.")
+                except Exception as ex:
+                    print(f"[VIDEO] Warning: Failed to mix background music track ({ex})")
+
+            final_audio = CompositeAudioClip(audio_clips)
+
+            print("[VIDEO] Composing full vertical video layers...")
+            final_video = CompositeVideoClip([
+                bg_clip,
+                header_clip,
+                img_clip,
+                caption_clip
+            ]).with_audio(final_audio)
 
         print(f"[VIDEO] Compiling final vertical reel to: {output_path}")
         final_video.write_videofile(

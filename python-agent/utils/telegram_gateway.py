@@ -22,21 +22,23 @@ def is_configured() -> bool:
     """Checks if Telegram configuration credentials exist in the environment."""
     return bool(TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID)
 
-async def send_approval_request(slug: str, title: str, category: str, excerpt: str) -> int:
+async def send_approval_request(slug: str, title: str, category: str, excerpt: str, content: str = "") -> int:
     """
     Sends an interactive approval card to the configured Telegram chat.
-    Returns the message ID of the sent message, or -1 on failure.
+    If the blog content is provided and long, splits it into multiple messages to respect
+    Telegram's 4096-character limit, sending the content first and the action buttons at the end.
+    Returns the message ID of the sent card, or -1 on failure.
     """
     if not is_configured():
         logger.error("Telegram credentials not configured in .env!")
         return -1
 
-    message_text = (
+    combined_text = (
         f"🤖 *SWARM COMMAND CENTER*\n"
         f"Astra has drafted a new autonomous insight candidate!\n\n"
         f"📂 *Category*: {category}\n"
         f"📰 *Title*: *{title}*\n\n"
-        f"📝 *Excerpt*: _{excerpt}_\n\n"
+        f"📝 *Full Draft Content*:\n{content}\n\n"
         f"Select an action below to command your autonomous publishing fleet:"
     )
 
@@ -49,28 +51,93 @@ async def send_approval_request(slug: str, title: str, category: str, excerpt: s
         ]
     }
 
-    url = f"{BASE_URL}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": message_text,
-        "parse_mode": "Markdown",
-        "reply_markup": reply_markup
-    }
+    # Telegram max message length is 4096. Keep a safe margin of 4000.
+    if len(combined_text) <= 4000:
+        url = f"{BASE_URL}/sendMessage"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": combined_text,
+            "parse_mode": "Markdown",
+            "reply_markup": reply_markup
+        }
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.post(url, json=payload)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    msg_id = data["result"]["message_id"]
+                    logger.info(f"Sent single Telegram approval request for {slug}. Message ID: {msg_id}")
+                    return msg_id
+                else:
+                    logger.warning(f"Telegram Markdown parse failed ({resp.status_code}). Retrying in plain text...")
+                    payload["parse_mode"] = ""
+                    resp = await client.post(url, json=payload)
+                    if resp.status_code == 200:
+                        return resp.json()["result"]["message_id"]
+                    return -1
+        except Exception as e:
+            logger.error(f"Failed to send Telegram message: {e}")
+            return -1
+    else:
+        logger.info(f"Draft is long ({len(combined_text)} chars). Sending full content first, then approval card.")
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                # 1. Send header intro
+                intro_url = f"{BASE_URL}/sendMessage"
+                intro_payload = {
+                    "chat_id": TELEGRAM_CHAT_ID,
+                    "text": f"🤖 *SWARM DRAFT CONTENT* for *{title}* ({category}):",
+                    "parse_mode": "Markdown"
+                }
+                resp = await client.post(intro_url, json=intro_payload)
+                if resp.status_code != 200:
+                    intro_payload["parse_mode"] = ""
+                    await client.post(intro_url, json=intro_payload)
 
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(url, json=payload)
-            if resp.status_code == 200:
-                data = resp.json()
-                msg_id = data["result"]["message_id"]
-                logger.info(f"Sent Telegram approval request for {slug}. Message ID: {msg_id}")
-                return msg_id
-            else:
-                logger.error(f"Telegram returned status {resp.status_code}: {resp.text}")
-                return -1
-    except Exception as e:
-        logger.error(f"Failed to send Telegram message: {e}")
-        return -1
+                # 2. Send content in chunks of 3500 characters
+                content_chunks = [content[i:i+3500] for i in range(0, len(content), 3500)]
+                for i, chunk in enumerate(content_chunks):
+                    chunk_payload = {
+                        "chat_id": TELEGRAM_CHAT_ID,
+                        "text": f"📝 *Draft Part {i+1}*:\n{chunk}",
+                        "parse_mode": "Markdown"
+                    }
+                    resp = await client.post(intro_url, json=chunk_payload)
+                    if resp.status_code != 200:
+                        logger.warning(f"Failed chunk {i+1} with Markdown. Retrying in plain text...")
+                        chunk_payload["parse_mode"] = ""
+                        await client.post(intro_url, json=chunk_payload)
+
+                # 3. Send final decision card with interactive buttons
+                card_text = (
+                    f"🤖 *SWARM COMMAND CENTER*\n"
+                    f"Complete draft sent above. Please review and approve:\n\n"
+                    f"📂 *Category*: {category}\n"
+                    f"📰 *Title*: *{title}*\n\n"
+                    f"📝 *Excerpt*: _{excerpt}_\n\n"
+                    f"Select an action below to command your autonomous publishing fleet:"
+                )
+                card_payload = {
+                    "chat_id": TELEGRAM_CHAT_ID,
+                    "text": card_text,
+                    "parse_mode": "Markdown",
+                    "reply_markup": reply_markup
+                }
+                resp = await client.post(intro_url, json=card_payload)
+                if resp.status_code == 200:
+                    msg_id = resp.json()["result"]["message_id"]
+                    logger.info(f"Sent split Telegram approval request for {slug}. Card Message ID: {msg_id}")
+                    return msg_id
+                else:
+                    logger.warning("Failed final Telegram approval card with Markdown. Retrying in plain text...")
+                    card_payload["parse_mode"] = ""
+                    resp = await client.post(intro_url, json=card_payload)
+                    if resp.status_code == 200:
+                        return resp.json()["result"]["message_id"]
+                    return -1
+        except Exception as e:
+            logger.error(f"Exception in split Telegram message flow: {e}")
+            return -1
 
 async def poll_approval(slug: str, message_id: int) -> bool:
     """

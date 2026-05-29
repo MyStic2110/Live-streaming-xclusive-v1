@@ -169,7 +169,7 @@ function App() {
                 </svg>
               </div>
               <div className="wa-popup-name">
-                Swarm Agentic
+                Swarm Agentic Lab
                 <span className="wa-popup-status">Online · Replies in ~1 hr</span>
               </div>
             </div>

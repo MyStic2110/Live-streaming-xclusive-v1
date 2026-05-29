@@ -4,6 +4,7 @@ rtc:
     port_range_start: 50000
     port_range_end: 60000
     use_external_ip: false
+    node_ip: 172.24.32.1
 redis:
     address: redis:6379
     username: ""

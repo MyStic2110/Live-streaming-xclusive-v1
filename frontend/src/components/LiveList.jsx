@@ -312,7 +312,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
     const orgSchema = {
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": "Swarm Agentic",
+      "name": "Swarm Agentic Lab",
       "alternateName": "Cortex Swarm",
       "url": "https://yourdomain.com",
       "logo": "https://yourdomain.com/logo.jpeg",
@@ -364,7 +364,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
     const appSchema = {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      "name": "Swarm Agentic Platform",
+      "name": "Swarm Agentic Lab Platform",
       "operatingSystem": "Linux, Windows, macOS",
       "applicationCategory": "BusinessApplication, AIOrchestration",
       "offers": {
@@ -888,7 +888,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
             }} 
           />
           <div style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "2px", color: COLORS.primary }}>
-            SWARM <span style={{ color: COLORS.accent }}>AGENTIC</span>
+            SWARM <span style={{ color: COLORS.accent }}>AGENTIC LAB</span>
           </div>
         </div>
         <div style={{ display: "flex", gap: "2.5rem", fontSize: "0.9rem", fontWeight: "600", color: COLORS.textMuted, alignItems: "center" }}>
@@ -984,7 +984,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
 
           {/* Dialogue text */}
           <p style={{ fontSize: "1.2rem", color: COLORS.primary, fontWeight: "500", lineHeight: "1.6", marginBottom: "2.5rem", maxWidth: "850px" }}>
-            "Welcome, Operator. I am the central orchestrator of the Swarm Agentic Fleet. Select the workflow bottleneck you wish to solve, or describe it below, and I will calculate your optimal agent fleet profile."
+            "Welcome, Operator. I am the central orchestrator of the Swarm Agentic Lab Fleet. Select the workflow bottleneck you wish to solve, or describe it below, and I will calculate your optimal agent fleet profile."
           </p>
 
           {/* Structured Heuristic Bottlenecks */}
@@ -1787,7 +1787,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
                 }} 
               />
               <div style={{ fontSize: "1.5rem", fontWeight: "900", letterSpacing: "2px", color: "#ffffff" }}>
-                SWARM <span style={{ color: COLORS.accent }}>AGENTIC</span>
+                SWARM <span style={{ color: COLORS.accent }}>AGENTIC LAB</span>
               </div>
             </div>
             <p style={{ color: "#94a3b8", fontSize: "0.9rem", lineHeight: "1.6", marginBottom: "2rem" }}>

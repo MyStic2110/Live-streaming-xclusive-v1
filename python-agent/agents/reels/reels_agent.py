@@ -62,32 +62,68 @@ class ReelsAgent:
         if not word_timings:
             raise RuntimeError("Failed to generate voice timings or subtitle files.")
 
-        # ── Step 3: Resolve featured image ────────────────────────────────────
-        featured_image = blog_data.get("featuredImage", "")
+        # ── Step 3: Resolve visual assets ─────────────────────────────────────
+        # ── Step 3: Resolve Visual Slides & Outro Branding ────────────────────
+        slide_images = blog_data.get("slideImages", [])
         public_dir = os.path.abspath(os.path.join(self.base_dir, "../../../frontend/public"))
-        img_path = os.path.abspath(os.path.join(public_dir, featured_image.lstrip("/")))
-        
-        # If the featured image is missing or the file does not exist,
-        # fall back to the Gemini-generated image prepared earlier.
-        if not featured_image or not os.path.exists(img_path):
-            img_path = r"C:\\Users\\Acer\\.gemini\\antigravity\\brain\\cda27265-3c7f-4279-8c71-d20ff46ed2dd\\abstract_tech_bg_1779277336065.png"
-            print(f"[REELS_AGENT] Using Gemini-generated fallback image for reel: {img_path}")
-        
-        print(f"[REELS_AGENT] Resolving visual asset:\n--> {img_path}")
 
-        # ── Step 4: Compile vertical reel ─────────────────────────────────────
-        print("[REELS_AGENT] Compiling vertical 9:16 reel with dynamic captions...")
+        resolved_slides = []
+        if slide_images:
+            for p in slide_images:
+                if os.path.exists(p):
+                    resolved_slides.append(os.path.abspath(p))
+                else:
+                    rel_path = os.path.abspath(os.path.join(public_dir, p.lstrip("/")))
+                    if os.path.exists(rel_path):
+                        resolved_slides.append(rel_path)
+            
+        if not resolved_slides:
+            # Fall back to single featured image
+            featured_image_path = self._resolve_featured_image(blog_data)
+            resolved_slides.append(featured_image_path)
+
+        # Inject the Swarm Agentic Lab Outro Branding card at the end of the slideshow
+        outro_path = os.path.abspath(os.path.join(public_dir, "insights/swarm_agentic_lab_outro.png"))
+        if os.path.exists(outro_path):
+            print("[REELS_AGENT] Appending Swarm Agentic Lab Outro branding slide.")
+            resolved_slides.append(outro_path)
+        else:
+            # Fallback path if not copied yet
+            local_outro = os.path.abspath(os.path.join(self.base_dir, "swarm_agentic_lab_outro.png"))
+            if os.path.exists(local_outro):
+                resolved_slides.append(local_outro)
+
+        print(f"[REELS_AGENT] Slideshow mode: {len(resolved_slides)} slides resolved.")
+        img_path = resolved_slides
+
+        # ── Step 4: Resolve & Download Background Music ───────────────────────
+        bg_music_path = os.path.join(self.scratch_dir, "tech_ambient_bg.mp3")
+        if not os.path.exists(bg_music_path):
+            print("[REELS_AGENT] Downloading royalty-free background music track...")
+            try:
+                import urllib.request
+                music_url = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3"
+                urllib.request.urlretrieve(music_url, bg_music_path)
+                print("[REELS_AGENT] Background music downloaded successfully!")
+            except Exception as e:
+                print(f"[REELS_AGENT] Warning: Music download failed ({e}) — compiling without music.")
+                bg_music_path = None
+
+        # ── Step 5: Compile vertical reel ─────────────────────────────────────
+        print("[REELS_AGENT] Compiling vertical 9:16 reel with dynamic captions & background music...")
         self.video_composer.compile_reel(
             img_path, 
             temp_audio, 
             word_timings, 
             output_mp4,
             title=blog_data.get("title", ""),
-            category=blog_data.get("category", "")
+            category=blog_data.get("category", ""),
+            bg_music_path=bg_music_path
         )
 
-        # ── Step 5: Sync to frontend public assets ────────────────────────────
+        # ── Step 6: Sync to frontend public assets ────────────────────────────
         import shutil
+        public_dir = os.path.abspath(os.path.join(self.base_dir, "../../../frontend/public"))
         frontend_reels_dir = os.path.join(public_dir, "reels")
         os.makedirs(frontend_reels_dir, exist_ok=True)
         frontend_reel_path = os.path.join(frontend_reels_dir, f"{slug}_reel.mp4")
@@ -101,6 +137,16 @@ class ReelsAgent:
 
         print(f"\n[REELS_AGENT] SUCCESS! Vertical reel ready at:\n--> {output_mp4}\n")
         return output_mp4
+
+    def _resolve_featured_image(self, blog_data: dict) -> str:
+        """Resolve featured image path from blog data, with fallback."""
+        featured_image = blog_data.get("featuredImage", "")
+        public_dir = os.path.abspath(os.path.join(self.base_dir, "../../../frontend/public"))
+        img_path = os.path.abspath(os.path.join(public_dir, featured_image.lstrip("/")))
+        if not featured_image or not os.path.exists(img_path):
+            img_path = r"C:\Users\Acer\.gemini\antigravity\brain\cda27265-3c7f-4279-8c71-d20ff46ed2dd\abstract_tech_bg_1779277336065.png"
+            print(f"[REELS_AGENT] Using Gemini-generated fallback image for reel: {img_path}")
+        return img_path
 
 
 if __name__ == "__main__":

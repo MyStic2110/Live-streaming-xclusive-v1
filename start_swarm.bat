@@ -25,6 +25,7 @@ echo CORE INFRASTRUCTURE IS RUNNING IN BACKGROUND.
 echo Which Agent do you want to load into memory?
 echo.
 echo [1] Lina (Sales)
+echo [2] DevOpsGeni (SRE)
 echo [3] BI (Cortex)
 echo [4] BI2 (Cortex2)
 echo [5] Nova (Engineering)
@@ -40,6 +41,7 @@ echo ===================================================
 set /p choice="Enter your choice (0-99): "
 
 if "%choice%"=="1" start "Lina" cmd /c "cd python-agent && .\venv\Scripts\python.exe agents\lina\lina.py dev 2>&1 | .\venv\Scripts\python.exe ..\tee.py ..\swarm_master.log" & goto MENU
+if "%choice%"=="2" start "DevOpsGeni" cmd /c "cd python-agent && .\venv\Scripts\python.exe agents\devopsgeni\devopsgeni.py dev 2>&1 | .\venv\Scripts\python.exe ..\tee.py ..\swarm_master.log" & goto MENU
 if "%choice%"=="3" start "BI" cmd /c "cd python-agent && .\venv\Scripts\python.exe agents\bi\bi_agent.py dev 2>&1 | .\venv\Scripts\python.exe ..\tee.py ..\swarm_master.log" & goto MENU
 if "%choice%"=="4" start "BI2" cmd /c "cd python-agent && .\venv\Scripts\python.exe agents\bi2\bi2_agent.py dev 2>&1 | .\venv\Scripts\python.exe ..\tee.py ..\swarm_master.log" & goto MENU
 if "%choice%"=="5" start "Nova" cmd /c "cd python-agent && .\venv\Scripts\python.exe agents\nova\nova.py dev 2>&1 | .\venv\Scripts\python.exe ..\tee.py ..\swarm_master.log" & goto MENU

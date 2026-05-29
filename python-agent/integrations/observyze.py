@@ -17,7 +17,8 @@ def get_observyze_llm(model="openai/gpt-4o-mini"):
             model=model,
             api_key=observyze_key,
             base_url="https://api.observyze.com/api/v1/proxy/openrouter/v1",
-            extra_headers={"x-provider-key": openrouter_key} if openrouter_key else {}
+            extra_headers={"x-provider-key": openrouter_key} if openrouter_key else {},
+            timeout=60.0
         )
     else:
         # Fallback to standard OpenRouter
@@ -27,5 +28,6 @@ def get_observyze_llm(model="openai/gpt-4o-mini"):
         return openai.LLM(
             model=model,
             api_key=openrouter_key,
-            base_url=openrouter_base_url
+            base_url=openrouter_base_url,
+            timeout=60.0
         )

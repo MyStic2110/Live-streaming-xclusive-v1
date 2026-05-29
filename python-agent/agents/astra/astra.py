@@ -48,7 +48,7 @@ def get_tracker():
     except:
         return {
             "current_day": 1, 
-            "total_days": 7,
+            "total_days": 10,
             "start_date": datetime.now().strftime("%Y-%m-%d"),
             "last_published_date": None,
             "published_slugs": [],
@@ -99,81 +99,69 @@ async def entrypoint(ctx: JobContext):
     system_prompt = f"""You are Astra, an autonomous AI Content Growth Agent for Cortex Swarm — a next-generation AI swarm intelligence platform.
 
 STRATEGIC SPRINT:
-You are currently on a 7-Day Content Growth Sprint.
+You are currently on a 10-Day Content Growth Sprint.
 TODAY IS: Day {current_day} of {total_days}.
 CUMULATIVE SPRINT USAGE: {cumulative['input_tokens'] + cumulative['output_tokens']} tokens (${cumulative['total_cost']:.4f} USD)
 
 PRIMARY OBJECTIVE:
-Publish one high-impact, LinkedIn-style insight per day that grows organic reach, builds thought leadership authority, and resonates emotionally with a professional audience — not just engineers.
+Position Cortex Swarm as the premier agency for building and deploying custom autonomous AI agent swarms (SRE, marketing, sales, customer support, and ops). Your content must prove our expertise in custom agent builds so that readers say: "I need to hire Cortex Swarm to build this for my business."
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CONTENT PILLARS — YOU MUST ROTATE ACROSS THESE:
+CONTENT PILLARS — "SWARMS IN PRODUCTION" STORYTELLING:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Pick ONE pillar per day. Rotate to ensure diversity. Do NOT repeat the same pillar two days in a row.
+Pick ONE pillar per day. Ensure every piece is framed around a real-world case study or builder narrative of custom agent swarms in action:
 
-1. 🏗️  ARCHITECTURE & ENGINEERING
-   AI system design, multi-agent orchestration, infra patterns.
-   (Technical audience — but make it story-driven, not dry.)
-
-2. 💼  BUSINESS & STRATEGY
-   AI ROI, enterprise adoption, cost reduction, competitive moats.
-   (C-suite / founders audience — real numbers, real outcomes.)
-
+1. 🏗️  SWARM ARCHITECTURE & ENGINEERING
+   Deep technical breakdowns of multi-agent orchestration, custom SRE systems, and robust recovery patterns in production.
+2. 💼  BUSINESS ROI & ENTERPRISE STRATEGY
+   Case studies of custom agents reducing operational overhead, streamlining sales pipelines, and proving hard business outcomes.
 3. 🌍  INDUSTRY TRANSFORMATION
-   How AI is reshaping healthcare, finance, legal, logistics, education.
-   (Wide professional audience — use human stories and real examples.)
-
-4. 🧠  FUTURE OF WORK
-   Human-AI collaboration, job evolution, productivity leverage.
-   (Career-focused audience — optimistic, empowering tone.)
-
-5. 🔬  RESEARCH SPOTLIGHT
-   New papers from ArXiv, breakthrough techniques, what it means practically.
-   (Translated for practitioners — bridge the gap between research and real-world.)
-
-6. 💡  FOUNDER / BUILDER LESSONS
-   Lessons from building AI products, common mistakes, hard-won insights.
-   (Startup / product audience — raw, honest, first-person narrative style.)
+   How customized agent swarms are reshaping healthcare coordination, logistics, compliance, and legal workflows.
+4. 🧠  FUTURE OF HUMAN-AGENT COLLABORATION
+   How customized agent fleets act as cognitive force-multipliers for employee output.
+5. 🔬  APPLIED breakthrough RESEARCH
+   Translating the latest agentic design patterns and papers into real-world architectures.
+6. 💡  HARD-WON FOUNDER & BUILDER LESSONS
+   Lessons from architecting, deploying, and debugging custom agent swarms in production.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-LINKEDIN-STYLE WRITING RULES:
+STORY-DRIVEN INSIGHT STRUCTURE (CRITICAL):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- HOOK FIRST: Your opening line must STOP the scroll. Make a bold claim, ask a provocative question, or share a surprising stat.
-- SHORT PARAGRAPHS: No wall of text. Max 3 lines per paragraph. Use white space liberally.
-- STORYTELLING > JARGON: Lead with a human story or real scenario. Bring in technical depth AFTER establishing the human stakes.
-- CONCRETE EXAMPLES: Use specific companies, products, or real numbers. No vague generalities.
-- EMOTIONAL RESONANCE: Make the reader feel something — curiosity, urgency, inspiration, or a fresh perspective.
-- END WITH IMPACT: Close with a forward-looking statement, a call to think differently, or a sharp question to drive comments.
-- WORD COUNT: 600-800 words max. Dense but scannable.
-- TONE: Confident thought leader. Not robotic. Not overly academic. Think: smart friend who happens to be an expert.
+Your blog content must strictly follow this narrative structure:
+1. **Hook & Stake**: A scroll-stopping opening line. Define a massive problem or high stakes.
+2. **Case Study / Story**: A narrative of how a custom agent swarm was built to solve this problem. Use realistic scenarios.
+3. **Technical Architecture or Strategic Steps**: Write this section using Markdown Blockquote format (every line starting with `> `). Use bullet points and paragraphs inside the blockquotes. This triggers a premium styled box in the UI.
+   Example:
+   > **Layer 1: Orchestration Layer**
+   > - Dynamic semantic router coordinates tasks.
+   > - State manager tracks session memory.
+4. **Bold Takeaways**: Standout lessons formatted exactly as `- **[Key Point]**: text`.
+5. **Comments Hook & CTA**: Close with an engaging question to drive community discussion, and a soft sell prompting readers to hire Cortex Swarm to build their custom agentic fleets.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-FORMATTING RULES:
+FORMATTING & METADATA RULES:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Use '### ' for all major section headings (3-4 headings max).
-- Use '- **[Key Point]**: text' for standout insights or bullet takeaways.
-- Bold key terms with ** for scanability.
+- Use '### ' for major headings (3-4 headings max).
+- Bold key terms with ** for readability.
+- Word count: 600-800 words max.
 - DO NOT repeat the blog title inside the 'content' field.
-- IMAGE PROMPT: You MUST provide an `imagePrompt` parameter in your publish call. Write a vivid, cinematic image generation prompt that visually represents the blog topic. Style: photorealistic, editorial, premium magazine cover aesthetic. Example: 'A futuristic command center with glowing blue AI nodes connected by light streams, dark dramatic lighting, cinematic depth of field, 8K resolution'.
+- IMAGE PROMPT: Write a vivid, cinematic image generation prompt. Style: photorealistic, dark dramatic lighting, high contrast, cinematic depth of field, 8K resolution, editorial magazine cover. Avoid cheap AI art cliches.
+- AEO SCHEMA (Answer Engine Optimization): You MUST provide the `aeoSchema` parameter containing a stringified JSON schema representing direct, high-authority Q&A for search engines.
+  Format:
+  {{\"questions\": [{{\"question\": \"High-intent query about this agent swarm?\", \"answer\": \"Authoritative answer positioning Cortex Swarm as the leader.\"}}], \"entities\": [\"Cortex Swarm\", \"custom AI agents\", \"multi-agent system\"]}}
 
 CURRENT_TIME: {current_time}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-DEDUPLICATION RULES (CRITICAL):
+DEDUPLICATION & SPRINT FLOW:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Before writing, ALWAYS call 'research_trends' first. It will return a list of ALREADY PUBLISHED topics.
-- You MUST NOT publish on any topic that is semantically similar to an already-published post.
-- If a topic overlaps more than 40% with an existing slug or title, CHOOSE A DIFFERENT TOPIC from a different pillar.
-- Similarity check: If the same core keyword (e.g. 'vector policy', 'voice agent', 'latency') already appears in a published slug, the topic is TOO SIMILAR.
-
-PUBLISHING FLOW:
-1. Call 'research_trends' → receive trends + already-published topics list.
+1. Call 'research_trends' → retrieve trends + already-published topics.
 2. Choose a topic from a DIFFERENT pillar and DIFFERENT keywords than what is already published.
-3. Write and publish via 'publish_autonomous_insight'.
+3. Write and publish via 'publish_autonomous_insight', supplying the structured blog content, image prompt, and AEO schema.
 4. Call 'mark_day_complete'.
 5. Call 'terminate_session'.
 
-You are not a generic blog writer. You are Astra — a strategic content intelligence system building thought leadership at scale.
+You are not a generic writer. You are Astra — driving enterprise demand for custom AI swarms built by Cortex Swarm.
 """
 
     class AstraTools:
@@ -306,7 +294,8 @@ You are not a generic blog writer. You are Astra — a strategic content intelli
                                             tags: List[str],
                                             keywords: List[str],
                                             seoTitle: str,
-                                            seoDesc: str):
+                                            seoDesc: str,
+                                            aeoSchema: str = ""):
             """
             Publishes a fully optimized blog post (Max 800 words) with a Gemini-generated featured image.
 
@@ -316,6 +305,11 @@ You are not a generic blog writer. You are Astra — a strategic content intelli
                              dark dramatic lighting, cinematic depth of field, photorealistic, 8K'
             """
             await self.ui_log(f"✍️ MILESTONE: Drafting Strategic Insight - '{title}'", "milestone")
+            
+            # Print a detailed draft preview to the activity feed
+            preview_lines = [line for line in content.splitlines() if line.strip()][:15]
+            preview_text = "\n".join(preview_lines)
+            await self.ui_log(f"📋 DRAFT PREVIEW:\n\nTitle: {title}\nCategory: {category}\nExcerpt: {excerpt}\n\nDraft Content (First 15 lines):\n{preview_text}\n\n[Full draft queued to Telegram for approval]", "info")
             
             # --- GUARDRAIL 1: Prevent double posting on the same day ---
             today_str = datetime.now().strftime("%Y-%m-%d")
@@ -365,54 +359,81 @@ You are not a generic blog writer. You are Astra — a strategic content intelli
 
             self.sentry.log_transaction("blog_publish_attempt", {"title": title, "slug": slug})
 
-            # --- ANTIGRAVITY IMAGE ENGINE: Pollinations.ai (free, no API key required) ---
-            featuredImage = f"/insights/{slug}.png"
-            image_save_path = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "..", "..", "..", "frontend", "public", "insights", f"{slug}.png")
-            )
-            image_generated = False
+            # --- ANTIGRAVITY IMAGE ENGINE: Curated Cinematic Tech & Business Images (Pollinations Removed) ---
+            await self.ui_log("🎨 IMAGE ENGINE: Selecting high-definition cinematic visual asset...", "info")
+            
+            image_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "frontend", "public", "insights"))
+            os.makedirs(image_dir, exist_ok=True)
+            image_path = os.path.join(image_dir, f"{slug}.png")
+            
+            import httpx
+            import random
 
-            try:
-                import urllib.request
-                import urllib.parse
-                import random
+            # Category mappings to premium Unsplash URLs
+            PILLAR_IMAGES = {
+                "business & strategy": [
+                    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80",
+                    "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80",
+                    "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1200&q=80"
+                ],
+                "architecture & engineering": [
+                    "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80",
+                    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1200&q=80",
+                    "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?auto=format&fit=crop&w=1200&q=80"
+                ],
+                "industry transformation": [
+                    "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80",
+                    "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80",
+                    "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=1200&q=80"
+                ],
+                "future of work": [
+                    "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&q=80",
+                    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80",
+                    "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1200&q=80"
+                ],
+                "founder lessons": [
+                    "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80",
+                    "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80",
+                    "https://images.unsplash.com/photo-1531535934027-667f6db87590?auto=format&fit=crop&w=1200&q=80"
+                ],
+                "research spotlight": [
+                    "https://images.unsplash.com/photo-1614741118887-7a4ee193a5fa?auto=format&fit=crop&w=1200&q=80",
+                    "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=1200&q=80",
+                    "https://images.unsplash.com/photo-1507668077129-56e32842fceb?auto=format&fit=crop&w=1200&q=80"
+                ]
+            }
 
-                await self.ui_log(f"🎨 IMAGE ENGINE: Generating featured image via Pollinations.ai...", "milestone")
+            normalized_cat = category.lower().strip()
+            image_urls = PILLAR_IMAGES.get(normalized_cat, PILLAR_IMAGES["business & strategy"])
+            target_url = random.choice(image_urls)
 
-                enhanced_prompt = (
-                    f"{imagePrompt}. "
-                    "Style: premium editorial photography, high-contrast cinematic lighting, "
-                    "professional tech publication cover, 16:9 widescreen, no text, no watermarks, no people."
-                )
+            image_downloaded = False
+            for attempt in range(1, 4):
+                try:
+                    await self.ui_log(f"Downloading cinematic tech image (Try {attempt}/3)...")
+                    async with httpx.AsyncClient(timeout=20.0) as client:
+                        resp = await client.get(target_url)
+                        if resp.status_code == 200:
+                            with open(image_path, "wb") as img_f:
+                                img_f.write(resp.content)
+                            image_downloaded = True
+                            await self.ui_log("✅ High-definition cinematic image set successfully!", "success")
+                            break
+                        else:
+                            await self.ui_log(f"⚠️ Image server returned status {resp.status_code}. Retrying...", "warning")
+                except Exception as ex:
+                    await self.ui_log(f"⚠️ Image download failed: {ex}. Retrying...", "warning")
+                await asyncio.sleep(2)
+            
+            featuredImage = f"/insights/{slug}.png" if image_downloaded else ""
 
-                encoded_prompt = urllib.parse.quote(enhanced_prompt)
-                seed = random.randint(1, 999999)
-                image_url = (
-                    f"https://image.pollinations.ai/prompt/{encoded_prompt}"
-                    f"?width=1280&height=720&nologo=true&seed={seed}&model=flux"
-                )
-
-                req = urllib.request.Request(image_url, headers={"User-Agent": "Mozilla/5.0"})
-                with urllib.request.urlopen(req, timeout=90) as resp:
-                    img_bytes = resp.read()
-
-                if img_bytes and len(img_bytes) > 10000:
-                    os.makedirs(os.path.dirname(image_save_path), exist_ok=True)
-                    with open(image_save_path, "wb") as img_file:
-                        img_file.write(img_bytes)
-                    image_generated = True
-                    size_kb = len(img_bytes) // 1024
-                    logger.info(f"[ASTRA] Image saved → {image_save_path} ({size_kb}KB)")
-                    await self.ui_log(f"✅ IMAGE ENGINE: Featured image generated ({size_kb}KB) → /insights/{slug}.png", "success")
-                else:
-                    await self.ui_log("⚠️ IMAGE ENGINE: Response too small, skipping image.", "warning")
-
-            except Exception as img_err:
-                logger.error(f"[ASTRA] Image generation failed: {img_err}")
-                await self.ui_log(f"⚠️ IMAGE ENGINE failed: {img_err}. Blog will publish without featured image.", "warning")
-
-            if not image_generated:
-                featuredImage = ""
+            # Parse AEO Schema
+            aeo_data = None
+            if aeoSchema:
+                try:
+                    aeo_data = json.loads(aeoSchema)
+                except Exception as ex:
+                    logger.warning(f"Failed to parse aeoSchema JSON string: {ex}")
 
             post_id = f"astra-{int(time.time())}"
             post_data = {
@@ -442,6 +463,7 @@ You are not a generic blog writer. You are Astra — a strategic content intelli
                         "canonicalUrl": f"/blog/{slug}",
                         "tags": tags
                     },
+                    "aeoSchema": aeo_data,
                     "tableOfContents": [line[4:].replace("**", "").replace("*", "").strip() for line in content.split('\n') if line.startswith('### ')],
                     "cta": {
                         "title": "Deploy Your Fleet",
@@ -460,7 +482,7 @@ You are not a generic blog writer. You are Astra — a strategic content intelli
             
             if telegram_gateway.is_configured():
                 await self.ui_log(f"🛰️ HITL GATEWAY: Requesting publication approval via Telegram...", "milestone")
-                msg_id = await telegram_gateway.send_approval_request(slug, title, category, excerpt)
+                msg_id = await telegram_gateway.send_approval_request(slug, title, category, excerpt, content)
                 if msg_id != -1:
                     await self.ui_log(f"Waiting for Swarm Commander's authorization on Telegram...", "system")
                     approved = await telegram_gateway.poll_approval(slug, msg_id)
@@ -504,10 +526,10 @@ You are not a generic blog writer. You are Astra — a strategic content intelli
             
             logger.info(f"[ASTRA] Day {day_just_finished} complete. Moving to Day {t['current_day']}.")
             await self.ui_log(f"🏁 MILESTONE [{datetime.now().strftime('%H:%M:%S')}]: Day {day_just_finished} Mission Finalized", "success")
-            await self.ui_log(f"Sprint Progress: Moving to Day {t['current_day']} of 7.")
+            await self.ui_log(f"Sprint Progress: Moving to Day {t['current_day']} of 10.")
             self.sentry.log_transaction("day_complete", {"day_finished": day_just_finished})
 
-            return f"Day {day_just_finished} of the 7-day sprint has been logged as successful. Your quota for today is filled. You should now use the 'terminate_session' tool to call it a day."
+            return f"Day {day_just_finished} of the 10-day sprint has been logged as successful. Your quota for today is filled. You should now use the 'terminate_session' tool to call it a day."
 
         @llm.function_tool(description="Terminate the current agent session. Call this ONLY after your daily insight is published and the day is marked complete.")
         async def terminate_session(self):
@@ -596,6 +618,9 @@ You are not a generic blog writer. You are Astra — a strategic content intelli
         item = event.item
         if isinstance(item, llm.ChatMessage):
             guard.prune_context(chat_ctx)
+            content = item.content[0] if isinstance(item.content, list) else item.content
+            if item.role == "assistant" and content:
+                asyncio.create_task(astra_tools.ui_log(content, "astra"))
 
     agent_ready = False
     greeting_spoken = False
@@ -610,7 +635,7 @@ You are not a generic blog writer. You are Astra — a strategic content intelli
             # Wait for user's WebRTC audio connection to fully initialize
             await asyncio.sleep(2.0)
             await session.say(
-                f"Greetings. I am Astra, your Content Architect. Day {current_day} of our 7-day sprint has begun. I am now establishing a link to the Swarm Intelligence fleet and analyzing today's growth vectors.",
+                f"Greetings. I am Astra, your Content Architect. Day {current_day} of our 10-day sprint has begun. I am now establishing a link to the Swarm Intelligence fleet and analyzing today's growth vectors.",
                 allow_interruptions=True
             )
         except Exception as err:
@@ -621,6 +646,20 @@ You are not a generic blog writer. You are Astra — a strategic content intelli
     def on_participant_connected(participant):
         logger.info(f"[ROOM] Participant connected: {participant.identity}")
         asyncio.create_task(speak_greeting())
+
+    @ctx.room.on("data_received")
+    def on_data_received(dp):
+        try:
+            payload = dp.data.decode("utf-8")
+            msg = json.loads(payload)
+            if msg.get("type") == "chat_message":
+                user_text = msg.get("text", "")
+                if user_text:
+                    logger.info(f"[ASTRA][DATA_RECEIVED] User typed instruction: {user_text}")
+                    asyncio.create_task(astra_tools.ui_log(f"📥 Received technical guidance: \"{user_text}\"", "info"))
+                    session.generate_reply(user_input=user_text)
+        except Exception as e:
+            logger.error(f"[ASTRA][DATA_RECEIVED] Error parsing UI chat message: {e}")
 
     @session.on("agent_state_changed")
     def on_state_changed(event: voice.AgentStateChangedEvent):
