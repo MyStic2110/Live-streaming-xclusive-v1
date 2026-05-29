@@ -778,6 +778,21 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
       title: "Autonomous Swarms",
       slug: "autonomous-multi-agent-orchestration",
       desc: "30-second vertical preview of multi-agent workflows."
+    },
+    {
+      title: "Mastering Agent Swarms",
+      slug: "from-demo-to-production-agent-systems",
+      desc: "Cinematic vertical preview of multi-agent orchestration scaling (Master Orchestrator + 15 specialist agents)."
+    },
+    {
+      title: "Unleashing AI Potential",
+      slug: "unleashing-ai-potential-in-business",
+      desc: "Premium vertical slideshow showcasing operational cost reductions and supply chain optimization."
+    },
+    {
+      title: "Influencer Campaign",
+      slug: "influencer",
+      desc: "High-energy influencer promotional video for Swarm Agentic Lab."
     }
   ];
 
@@ -1987,7 +2002,8 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
               {galleryReels.map((reel, index) => (
                 <motion.div
                   key={index}
-                  whileHover={{ y: -4, borderColor: "rgba(255, 255, 255, 0.15)" }}
+                  whileHover={{ y: -4, borderColor: "rgba(244, 63, 94, 0.4)", boxShadow: "0 0 20px rgba(244, 63, 94, 0.15)" }}
+                  onClick={() => setSelectedReel(reel)}
                   style={{
                     background: "rgba(255, 255, 255, 0.03)",
                     border: "1px solid rgba(255, 255, 255, 0.08)",
@@ -1995,7 +2011,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick }) {
                     padding: "2rem",
                     display: "flex", flexDirection: "column", justifyContent: "space-between",
                     minHeight: "220px", transition: "all 0.3s ease",
-                    cursor: "default"
+                    cursor: "pointer"
                   }}
                 >
                   <div>
