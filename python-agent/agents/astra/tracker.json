@@ -1,8 +1,8 @@
 {
-    "current_day": 9,
+    "current_day": 11,
     "total_days": 10,
     "start_date": "2026-05-21",
-    "last_published_date": "2026-05-29",
+    "last_published_date": "2026-05-31",
     "published_slugs": [
         "rethinking-ai-architectures-agent-execution",
         "vector-policy-optimization-in-agentic-architecture",
@@ -11,13 +11,15 @@
         "navigating-future-marketing-ai",
         "impact-of-ai-on-electric-vehicle-manufacturing",
         "unleashing-ai-potential-in-business",
-        "from-demo-to-production-agent-systems"
+        "from-demo-to-production-agent-systems",
+        "transforming-legal-workflows-with-autonomous-swarms",
+        "applying-ai-research-to-create-autonomous-agents"
     ],
     "cumulative_usage": {
-        "input_tokens": 161528,
-        "output_tokens": 13790,
-        "total_cost": 0.4273,
+        "input_tokens": 214707,
+        "output_tokens": 18973,
+        "total_cost": 0.45294,
         "stt_cost": 0.0,
-        "tts_cost": 0.004875
+        "tts_cost": 0.00912
     }
 }

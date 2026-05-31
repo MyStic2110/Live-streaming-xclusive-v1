@@ -68,16 +68,68 @@ function BIScene({ onLeave }) {
 
   // Listen for LiveKit Room Transcriptions
   useEffect(() => {
-    const handleTranscription = (segments) => {
-      const text = segments.map(s => s.text).join(" ");
+    let currentTimer = null;
+    
+    const handleTranscription = async (segments) => {
+      let text = segments.map(s => s.text).join(" ");
       setTranscription(text);
+      
+      // If there are masked tokens, fetch original values to display
+      if (text.includes("_stx")) {
+        try {
+          const API = import.meta.env.VITE_API_URL || "http://localhost:3002";
+          
+          // Build payload exactly like detokenize_stream so Securelytix detects the PII fields
+          const tokens = text.match(/[a-zA-Z0-9_\-\.\@]+_stx/g) || [];
+          const payload = [...new Set(tokens)].map(token => ({
+             original_token: token,
+             email: token,
+             full_name: token,
+             phoneNo: token,
+             name: token,
+             first_name: token,
+             last_name: token,
+             value: token
+          }));
+          
+          const response = await fetch(`${API}/detokenize`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data: payload })
+          });
+          
+          if (response.ok) {
+             const result = await response.json();
+             const data = result.data || result;
+             if (Array.isArray(data)) {
+                data.forEach(item => {
+                   const token = item.original_token;
+                   if (token) {
+                      // Find the detokenized value (it will be different from the token)
+                      const detokenizedValue = Object.values(item).find(val => val && val !== token && val !== item.original_token);
+                      if (detokenizedValue) {
+                         text = text.replaceAll(token, detokenizedValue);
+                      }
+                   }
+                });
+                setTranscription(text);
+             }
+          }
+        } catch(e) {
+          console.error("[DETOKENIZE] Hook failed on frontend:", e);
+        }
+      }
+
       // Clear after 3 seconds of inactivity
-      const timer = setTimeout(() => setTranscription(""), 3000);
-      return () => clearTimeout(timer);
+      if (currentTimer) clearTimeout(currentTimer);
+      currentTimer = setTimeout(() => setTranscription(""), 3000);
     };
 
     room.on("transcriptionReceived", handleTranscription);
-    return () => room.off("transcriptionReceived", handleTranscription);
+    return () => {
+      room.off("transcriptionReceived", handleTranscription);
+      if (currentTimer) clearTimeout(currentTimer);
+    };
   }, [room]);
 
   // Listen for speaking changes from BI Agent Cortex II

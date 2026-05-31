@@ -21,7 +21,6 @@ from livekit.plugins import silero, openai, deepgram
 
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
-from integrations.observyze import get_observyze_llm
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
 
@@ -141,7 +140,7 @@ Your blog content must strictly follow this narrative structure:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FORMATTING & METADATA RULES:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Use '### ' for major headings (3-4 headings max).
+- Use '### ' for major headings (3-4 headings max). CRITICAL: DO NOT use the structural marker names (e.g., 'Hook & Stake', 'Case Study / Story') as headings. Instead, write engaging, natural-sounding section titles.
 - Bold key terms with ** for readability.
 - Word count: 600-800 words max.
 - DO NOT repeat the blog title inside the 'content' field.
@@ -548,7 +547,7 @@ You are not a generic writer. You are Astra — driving enterprise demand for cu
     chat_ctx = llm.ChatContext()
     chat_ctx.add_message(role="system", content=system_prompt)
 
-    llm_plugin = get_observyze_llm(model="openai/gpt-4o-mini")
+    llm_plugin = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
 
     agent = voice.Agent(turn_handling={"interruption": {"mode": "vad"}}, 
         instructions=system_prompt,

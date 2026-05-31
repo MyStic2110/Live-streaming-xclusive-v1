@@ -88,6 +88,34 @@ app.get("/security/status", roomController.getSecurityStatus);
 app.post("/security/scan", roomController.runSecurityScan);
 app.post("/security/remediate", roomController.updateSecurityConstraint);
 
+// --- Securelytix Detokenization Proxy ---
+app.post("/detokenize", async (req, res) => {
+  try {
+    const { data } = req.body;
+    const url = `${process.env.SECURELYTIX_URL || "http://localhost:8080"}/api/v1/detokenize`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.SECURELYTIX_API_KEY}`
+      },
+      body: JSON.stringify({ data })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Securelytix API error: ${response.status} ${errorText}`);
+    }
+    
+    const result = await response.json();
+    res.json(result);
+  } catch (error) {
+    console.error("[DETOKENIZE] Proxy error:", error.message);
+    // On failure, return the original data gracefully to avoid crashing frontend
+    res.json({ data: req.body.data });
+  }
+});
+
 httpServer.listen(config.port, "0.0.0.0", () => {
   console.log(`[ENTERPRISE] Business Layers Active on ${config.port}`);
   console.log(`[ENTERPRISE] LiveKit Target: ${config.livekit.url}`);

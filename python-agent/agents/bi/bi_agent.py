@@ -26,7 +26,6 @@ import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
-from integrations.observyze import get_observyze_llm
 from integrations.securelytix import SecurelytixClient
 
 # Load environment variables
@@ -155,9 +154,14 @@ async def detokenize_stream(text_stream: AsyncIterable[str]) -> AsyncIterable[st
     buffer = ""
     
     async def process_tokens(text: str) -> str:
-        tokens = re.findall(r'([a-zA-Z0-9_\-\.\@]+_stx)', text)
-        for token in set(tokens):
-            payload = {
+        tokens = list(set(re.findall(r'([a-zA-Z0-9_\-\.\@]+_stx)', text)))
+        if not tokens:
+            return text
+            
+        payload = []
+        for token in tokens:
+            payload.append({
+                "original_token": token,
                 "email": token,
                 "full_name": token,
                 "phoneNo": token,
@@ -165,13 +169,17 @@ async def detokenize_stream(text_stream: AsyncIterable[str]) -> AsyncIterable[st
                 "first_name": token,
                 "last_name": token,
                 "value": token
-            }
-            res = await vault.detokenize(payload, suppress_partial_warning=True)
-            if isinstance(res, dict):
-                for k, v in res.items():
-                    if v != token:
-                        text = text.replace(token, str(v))
-                        break
+            })
+            
+        res_list = await vault.detokenize(payload, suppress_partial_warning=True)
+        if isinstance(res_list, list):
+            for item in res_list:
+                token = item.get("original_token")
+                if token:
+                    for k, v in item.items():
+                        if v and v != token and k != "original_token":
+                            text = text.replace(token, str(v))
+                            break
         return text
 
     async for chunk in text_stream:
@@ -218,7 +226,7 @@ async def entrypoint(ctx: JobContext):
     if not SCHEMA_CACHE:
         await db.initialize_schema() # Fallback if global failed
 
-    llm_plugin = get_observyze_llm(model="openai/gpt-4o-mini")
+    llm_plugin = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
 
     # Inject the pre-warmed schema and current time
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

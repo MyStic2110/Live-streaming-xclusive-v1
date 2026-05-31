@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
+import Footer from "./Footer";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -44,6 +45,83 @@ const SHORTS = [
     thumbnail: null,
     duration: "10s",
   },
+  {
+    id: 5,
+    title: "SaaS Learns to Talk",
+    desc: "Adding voice AI capabilities to traditional SaaS.",
+    tag: "VOICE AI",
+    color: C.sky,
+    borderColor: "rgba(14,165,233,0.55)",
+    videoSrc: "/shorts/SaaS_learns_to_talk_202605300025.mp4",
+    thumbnail: null,
+    duration: "10s",
+  },
+  {
+    id: 6,
+    title: "Building Agent Swarms",
+    desc: "A deep dive into how Swarm Agentic Lab architects and orchestrates massive agent swarms for complex automation.",
+    tag: "ARCHITECTURE",
+    color: "#ec4899",
+    borderColor: "rgba(236,72,153,0.55)",
+    videoSrc: "/shorts/Agentic_Lab_building_agent_swarms_202605301700.mp4",
+    thumbnail: null,
+    duration: "10s",
+  },
+  {
+    id: 7,
+    title: "Instant AI Answers",
+    desc: "Watch as AI agents process natural language queries and provide instant, accurate answers using real-time data.",
+    tag: "DEMO",
+    color: "#22c55e",
+    borderColor: "rgba(34,197,94,0.55)",
+    videoSrc: "/shorts/AI_agents_answer_questions_instantly.mp4",
+    thumbnail: null,
+    duration: "10s",
+  },
+  {
+    id: 8,
+    title: "Autonomous Content Creation",
+    desc: "See how specialized AI agents autonomously research, draft, and publish high-converting blog posts.",
+    tag: "CONTENT",
+    color: "#eab308",
+    borderColor: "rgba(234,179,8,0.55)",
+    videoSrc: "/shorts/AI_agents_create_blog_and_202605301719.mp4",
+    thumbnail: null,
+    duration: "10s",
+  },
+  {
+    id: 9,
+    title: "Lina AI: Contextual Voice",
+    desc: "Meet Lina AI, a voice companion that remembers past conversations and builds persistent context across sessions.",
+    tag: "VOICE AI",
+    color: "#3b82f6",
+    borderColor: "rgba(59,130,246,0.55)",
+    videoSrc: "/shorts/Lina_AI_voice_companion_remembers_202605301720.mp4",
+    thumbnail: null,
+    duration: "10s",
+  },
+  {
+    id: 10,
+    title: "Agents Research, Investor Decides",
+    desc: "A powerful workflow where autonomous agents execute extensive market research while the human simply makes the final decision.",
+    tag: "FINANCE",
+    color: "#8b5cf6",
+    borderColor: "rgba(139,92,246,0.55)",
+    videoSrc: "/shorts/Agents_research,_investor_decides_202605301747.mp4",
+    thumbnail: null,
+    duration: "10s",
+  },
+  {
+    id: 11,
+    title: "Autonomous End-to-End Publishing",
+    desc: "Watch a fully autonomous pipeline where AI agents write, edit, format, and seamlessly publish articles without human intervention.",
+    tag: "MEDIA",
+    color: "#f97316",
+    borderColor: "rgba(249,115,22,0.55)",
+    videoSrc: "/shorts/Autonomous_agents_create_and_publish.mp4",
+    thumbnail: null,
+    duration: "10s",
+  }
 ];
 
 // ─── Sub-components ─────────────────────────────────────────────────────────────
@@ -264,6 +342,7 @@ function VideoCard({ short, index, onPlay }) {
 // ─── Main Page ───────────────────────────────────────────────────────────────────
 export default function SwarmShortsPage({ onBack }) {
   const [activeVideo, setActiveVideo] = useState(null);
+  const [legalModalType, setLegalModalType] = useState(null);
 
   useEffect(() => {
     // Generate VideoObject schemas for all shorts
@@ -477,21 +556,7 @@ export default function SwarmShortsPage({ onBack }) {
 
 
       {/* ── Footer ── */}
-      <footer style={{
-        padding: "2.5rem 5%",
-        borderTop: `1px solid ${C.border}`,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        flexWrap: "wrap", gap: "1rem",
-        color: C.muted, fontSize: "0.8rem",
-      }}>
-        <span>© 2026 SWARM AGENTIC LAB · ALL RIGHTS RESERVED</span>
-        <button onClick={onBack} style={{
-          background: "none", border: "none", color: C.accent,
-          cursor: "pointer", fontWeight: "700", fontSize: "0.85rem",
-        }}>
-          ← Back to Landing Page
-        </button>
-      </footer>
+      <Footer onShortsClick={() => {}} onLegalClick={setLegalModalType} />
 
       {/* ── Video Lightbox Modal ── */}
       <AnimatePresence>
@@ -660,6 +725,16 @@ export default function SwarmShortsPage({ onBack }) {
               )}
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- LEGAL MODAL --- */}
+      <AnimatePresence>
+        {legalModalType && (
+          <LegalModal 
+            type={legalModalType} 
+            onClose={() => setLegalModalType(null)} 
+          />
         )}
       </AnimatePresence>
     </div>

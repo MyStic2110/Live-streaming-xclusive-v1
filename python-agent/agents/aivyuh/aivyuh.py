@@ -22,7 +22,6 @@ from livekit.plugins import silero, deepgram, openai
 
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
-from integrations.observyze import get_observyze_llm
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
 
@@ -166,7 +165,7 @@ async def entrypoint(ctx: JobContext):
     stt = deepgram.STT(model="nova-2-general")
     tts = deepgram.TTS(model="aura-asteria-en")
 
-    llm_plugin = get_observyze_llm(model="openai/gpt-4o-mini")
+    llm_plugin = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
 
     await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
     await ctx.room.local_participant.set_metadata(json.dumps({"name": AGENT_NAME}))

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { io } from "socket.io-client";
 import LegalModal from "./LegalModal";
 import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
+import Footer from "./Footer";
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -111,47 +112,6 @@ const AgentCard = ({ agent, onAction }) => {
   );
 };
 
-const PricingCard = ({ tier, price, duration, bestFor, features, isFeatured }) => (
-  <div style={{ 
-    background: isFeatured ? COLORS.primary : "white", 
-    padding: "3rem", 
-    borderRadius: "32px", 
-    border: isFeatured ? `none` : `1px solid ${COLORS.border}`,
-    color: isFeatured ? "white" : COLORS.primary,
-    position: "relative",
-    display: "flex",
-    flexDirection: "column",
-    boxShadow: isFeatured ? "0 20px 50px rgba(17, 24, 39, 0.2)" : "none"
-  }}>
-    {isFeatured && (
-      <div style={{ position: "absolute", top: "2rem", right: "2rem", background: COLORS.accent, color: "white", padding: "4px 12px", borderRadius: "99px", fontSize: "0.7rem", fontWeight: "900" }}>MOST POPULAR</div>
-    )}
-    <h3 style={{ fontSize: "1.2rem", fontWeight: "800", marginBottom: "0.5rem", opacity: isFeatured ? 0.9 : 1 }}>{tier}</h3>
-    <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "1.5rem" }}>
-      <span style={{ fontSize: "2.5rem", fontWeight: "900" }}>{price}</span>
-      <span style={{ fontSize: "0.9rem", opacity: 0.6 }}>{duration}</span>
-    </div>
-    <p style={{ fontSize: "0.9rem", color: isFeatured ? "rgba(255,255,255,0.7)" : COLORS.textMuted, marginBottom: "2rem", lineHeight: "1.5" }}>{bestFor}</p>
-    
-    <div style={{ flex: 1 }}>
-      {features.map((f, i) => (
-        <div key={i} style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "12px", fontSize: "0.95rem" }}>
-          <span style={{ color: isFeatured ? COLORS.success : COLORS.accent }}>✓</span>
-          <span style={{ opacity: isFeatured ? 0.9 : 1 }}>{f}</span>
-        </div>
-      ))}
-    </div>
-    
-    <button style={{ 
-      marginTop: "3rem", width: "100%", padding: "1.2rem", 
-      background: isFeatured ? "white" : COLORS.primary, 
-      color: isFeatured ? COLORS.primary : "white", 
-      border: "none", borderRadius: "12px", fontWeight: "900", cursor: "pointer"
-    }}>
-      GET STARTED
-    </button>
-  </div>
-);
 
 const PipelineCard = ({ agent, onAction }) => {
   const [isHovered, setIsHovered] = React.useState(false);
@@ -963,50 +923,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
   ];
 
 
-  const pricing = [
-    {
-      tier: "Audit + Roadmap",
-      price: "₹15,000",
-      duration: "/one-time",
-      bestFor: "Owners who want to know exactly where AI fits before committing to a build.",
-      features: [
-        "30-min AI Opportunity Audit",
-        "Deep-dive into 3 manual workflows",
-        "Prioritized ROI Roadmap",
-        "Tool & Budget Recommendations",
-        "1 Week of Slack Support"
-      ],
-      isFeatured: false
-    },
-    {
-      tier: "Build + Manage",
-      price: "₹45,000",
-      duration: "/setup",
-      bestFor: "The most common engagement. Pick one painful process — we build and hand over.",
-      features: [
-        "End-to-end AI Agent Build",
-        "Integration with existing stack",
-        "Local inference models (Llama 3, Whisper, TTS) for zero API fees",
-        "Full Documentation & Loom Video",
-        "30-day Support Period"
-      ],
-      isFeatured: true
-    },
-    {
-      tier: "Full Retainer",
-      price: "₹25,000",
-      duration: "/mo",
-      bestFor: "For teams scaling fast who need ongoing AI automation and priority support.",
-      features: [
-        "Unlimited Workflow Tweaks",
-        "Monthly AI Strategy Sessions",
-        "Priority 24h Support",
-        "New Feature Implementation",
-        "Server & API Monitoring"
-      ],
-      isFeatured: false
-    }
-  ];
+
 
   const initiateAITalk = async (agentId) => {
     try {
@@ -1075,7 +992,6 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
         </div>
         <div style={{ display: "flex", gap: "2.5rem", fontSize: "0.9rem", fontWeight: "600", color: COLORS.textMuted, alignItems: "center" }}>
           <a href="#services" style={{ textDecoration: "none", color: "inherit" }}>Services</a>
-          <a href="#pricing" style={{ textDecoration: "none", color: "inherit" }}>Pricing</a>
           <div onClick={onTelemetryClick} style={{ cursor: "pointer", color: COLORS.primary, fontWeight: "700" }}>Telemetry</div>
           <div onClick={onBlogClick} style={{ cursor: "pointer", color: COLORS.accent, fontWeight: "800" }}>Insights</div>
           <a href="#about" style={{ textDecoration: "none", color: "inherit" }}>About</a>
@@ -1904,18 +1820,6 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" style={{ padding: "8rem 5%", background: COLORS.bgSoft }}>
-        <SectionHeader 
-          title="Transparent AI Pricing" 
-          subtitle="Every automation is different, but our pricing isn't. Honest brackets, transparent ROI, and fixed quotes after your free audit."
-        />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "2.5rem", maxWidth: "1200px", margin: "0 auto" }}>
-          {pricing.map((tier, idx) => (
-            <PricingCard key={idx} {...tier} />
-          ))}
-        </div>
-      </section>
 
       {/* FAQ Section */}
       <section id="faq" style={{ padding: "8rem 5%", background: "white" }}>
@@ -1962,133 +1866,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
 
 
       {/* Footer */}
-      <footer style={{ 
-        padding: "6rem 5% 4rem", 
-        borderTop: "1px solid rgba(255, 255, 255, 0.05)", 
-        background: "#070b16",
-        color: "#ffffff",
-        fontFamily: "'Outfit', sans-serif"
-      }}>
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
-          gap: "3.5rem", 
-          maxWidth: "1400px", 
-          margin: "0 auto", 
-          marginBottom: "5rem" 
-        }}>
-          
-          {/* Column 1: Enterprise Branding & SEO Description */}
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "1.5rem" }}>
-              <img 
-                src="/logo.jpeg" 
-                alt="Swarm Agentic Logo" 
-                style={{ 
-                  height: "44px", 
-                  width: "44px", 
-                  borderRadius: "10px", 
-                  objectFit: "cover" 
-                }} 
-              />
-              <div style={{ fontSize: "1.5rem", fontWeight: "900", letterSpacing: "2px", color: "#ffffff" }}>
-                SWARM <span style={{ color: COLORS.accent }}>AGENTIC LAB</span>
-              </div>
-            </div>
-            <p style={{ color: "#94a3b8", fontSize: "0.9rem", lineHeight: "1.6", marginBottom: "2rem" }}>
-              Enterprise-grade decentralized AI Swarm and Multi-Agent Orchestration platform. We automate complex B2B operations using localized LLM inference, real-time WebRTC audio pipelines, NLU semantic routers, and autonomous payment gateways (UPI/GPay).
-            </p>
-            <div style={{ 
-              display: "inline-flex", alignItems: "center", gap: "8px", 
-              background: "rgba(34, 197, 94, 0.1)", color: "#22c55e", 
-              padding: "6px 16px", borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", letterSpacing: "1px"
-            }}>
-              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "pulse 2s infinite" }} />
-              COGNITIVE NODES: OPERATIONAL
-            </div>
-          </div>
-
-          {/* Column 2: Swarm Fleet Architecture (AEO Terms) */}
-          <div>
-            <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: "#ffffff", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "1.5rem" }}>
-              Fleet Active Nodes
-            </h4>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: "#94a3b8", fontSize: "0.9rem", lineHeight: "2.2" }}>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>🤖 Swarm Commander (Orchestration)</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>👥 Shadow Observer (Diarized Audits)</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>📊 Cortex BI Analyst (SQL Analytics)</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>🚀 Nova Copilot (UI Guide Agent)</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>✍️ Astra Architect (Document NLU)</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>📈 Martech Analyst (Growth & SEO)</li>
-            </ul>
-          </div>
-
-          {/* Column 3: Compliance & Stack */}
-          <div>
-            <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: "#ffffff", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "1.5rem" }}>
-              Enterprise Compliance & Stack
-            </h4>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: "#94a3b8", fontSize: "0.9rem", lineHeight: "2.2" }}>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>🔒 Local Inference (Whisper / Llama)</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>🎙️ Deepgram Nova-2 Multilingual NLU</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>⚡ LiveKit WebRTC Voice Pipeline</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>📋 Sentry Security Governance Logs</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}>💳 UPI & Google Pay Billing Intents</li>
-            </ul>
-          </div>
-
-          {/* Column 4: Newsletter & Resources */}
-          <div>
-            <h4 style={{ fontSize: "0.8rem", fontWeight: "900", color: "#ffffff", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: "1.5rem" }}>
-              Observability & Resources
-            </h4>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, color: "#94a3b8", fontSize: "0.9rem", lineHeight: "2.2", marginBottom: "1.5rem" }}>
-              <li style={{ cursor: "pointer", color: "#3b82f6", fontWeight: "700" }} onClick={onTelemetryClick} onMouseEnter={e => e.currentTarget.style.color = "#60a5fa"} onMouseLeave={e => e.currentTarget.style.color = "#3b82f6"}>📈 Live Swarm Telemetry Dashboard</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"} onClick={() => { const el = document.getElementById("swarm-lab"); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}>🛠️ Swarm Lab Production Pipeline</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"} onClick={onBlogClick}>✍️ Insights & Sprint Blog</li>
-              <li style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"} onClick={() => setShowAuditPreview(true)}>📄 Sample Meeting Audit (PDF)</li>
-            </ul>
-          </div>
-
-        </div>
-
-        {/* Bottom Bar Divider & Copyrights */}
-        <div style={{ 
-          borderTop: "1px solid rgba(255, 255, 255, 0.05)", 
-          paddingTop: "2.5rem", 
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "1.5rem",
-          color: "#64748b", 
-          fontSize: "0.8rem", 
-          letterSpacing: "0.5px" 
-        }}>
-          <div>
-            © 2026 SWARM COMMAND · DECENTRALIZED MULTI-AGENT SWARMS · B2B AI AUTOMATION & TELEMETRY · INDIA 🇮🇳
-          </div>
-          <div style={{ display: "flex", gap: "2rem" }}>
-            <span 
-              onClick={() => setLegalModalType("privacy")}
-              style={{ cursor: "pointer", transition: "color 0.2s" }} 
-              onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} 
-              onMouseLeave={e => e.currentTarget.style.color = "#64748b"}
-            >
-              PRIVACY POLICY
-            </span>
-            <span 
-              onClick={() => setLegalModalType("terms")}
-              style={{ cursor: "pointer", transition: "color 0.2s" }} 
-              onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} 
-              onMouseLeave={e => e.currentTarget.style.color = "#64748b"}
-            >
-              TERMS & CONDITIONS
-            </span>
-            <span style={{ cursor: "pointer", transition: "color 0.2s" }} onMouseEnter={e => e.currentTarget.style.color = "#22c55e"} onMouseLeave={e => e.currentTarget.style.color = "#64748b"}>CONSOLE ACCESS</span>
-          </div>
-        </div>
-      </footer>
+      <Footer onBlogClick={onBlogClick} onTelemetryClick={onTelemetryClick} onShortsClick={onShortsClick} onLegalClick={setLegalModalType} />
 
       {/* --- PIPELINE REELS GALLERY MODAL --- */}
       <AnimatePresence>

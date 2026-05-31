@@ -26,6 +26,10 @@ async def generate_reel_script(blog_data: dict) -> str:
     Calls OpenRouter with the blog content and returns a punchy, narrative-driven
     30-second (≤80 words) reel script. Falls back to heuristic extraction on failure.
     """
+    if "custom_script" in blog_data and blog_data["custom_script"]:
+        print("[SCRIPT_WRITER] Using pre-approved custom script from JSON.")
+        return blog_data["custom_script"]
+
     title = blog_data.get("title", "")
     excerpt = blog_data.get("excerpt", "")
     content = blog_data.get("content", "")[:2000]  # Limit input context
