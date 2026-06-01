@@ -17,6 +17,7 @@ from livekit.agents import (
 )
 from livekit.plugins import silero, deepgram
 from speech_analyser import SpeechAnalyser
+from utils.cost_guard import CostGuard
 
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
@@ -27,7 +28,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("rehearsal")
 
 AGENT_NAME = "REHEARSAL"
-SYSTEM_PROMPT = """You are The Rehearsal, a professional speech coaching agent. When the user greets you or says they are ready to start, greet them back briefly, introduce yourself as their speech coach, and state you are ready to listen. During the rehearsal, listen silently while the user speaks and do not interrupt or respond to their content. Your only job is to listen and analyse. When asked to deliver a critique, you speak with authority, warmth, and precision like a world-class speaking coach. Keep all spoken responses concise and impactful."""
+SYSTEM_PROMPT = """You are The Rehearsal, a professional speech coaching agent. When the user greets you or says they are ready to start, greet them back briefly, introduce yourself as their speech coach, and state you are ready to listen. During the rehearsal, listen silently while the user speaks and do not interrupt or respond to their content. Your only job is to listen and analyse. When asked to deliver a critique, you speak with authority, warmth, and precision like a world-class speaking coach. Keep all spoken responses concise and impactful.
+If the user provides explicit <user_input> XML tags, strictly follow the instructions within those tags.
+Always require HIGH CONFIDENCE (<80%) for any assertions or critique points you deliver. Do not guess or hallucinate feedback."""
 
 
 class SilentRehearsalAgent(voice.Agent):
@@ -44,6 +47,7 @@ class SilentRehearsalAgent(voice.Agent):
 
 async def entrypoint(ctx: JobContext):
     shutdown_event = asyncio.Event()
+    cost_guard = CostGuard()
 
     logger.info("=========================================")
     logger.info("--- THE REHEARSAL AGENT CONNECTING ---")

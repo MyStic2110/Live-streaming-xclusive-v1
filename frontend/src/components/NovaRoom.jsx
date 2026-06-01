@@ -1,4 +1,5 @@
 import React, { memo, useState } from "react";
+import CostGuardAlert from "./CostGuardAlert";
 import { LiveKitRoom, RoomAudioRenderer, useRoomContext, useParticipants } from "@livekit/components-react";
 import { NovaProvider, useNova } from "../nova-sdk/index.js";
 
@@ -198,7 +199,8 @@ const NovaRoom = memo(function NovaRoom({ roomData, onLeave }) {
             <NovaProvider>
                 <DashboardContent roomData={roomData} onLeave={onLeave} />
             </NovaProvider>
-        </LiveKitRoom>
+          <CostGuardAlert />
+      </LiveKitRoom>
     );
 });
 

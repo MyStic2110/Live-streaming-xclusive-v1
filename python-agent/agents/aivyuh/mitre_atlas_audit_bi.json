@@ -1,0 +1,852 @@
+{
+  "AML.T0000": {
+    "name": "Search Open Technical Databases",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0000.000": {
+    "name": "Journals and Conference Proceedings",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0000.001": {
+    "name": "Pre-Print Repositories",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0000.002": {
+    "name": "Technical Blogs",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0001": {
+    "name": "Search Open AI Vulnerability Analysis",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0002": {
+    "name": "Acquire Public AI Artifacts",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0002.000": {
+    "name": "Datasets",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0002.001": {
+    "name": "Models",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0002.002": {
+    "name": "AI Agent Configuration",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0003": {
+    "name": "Search Victim-Owned Websites",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0004": {
+    "name": "Search Application Repositories",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0005": {
+    "name": "Create Proxy AI Model",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0005.000": {
+    "name": "Train Proxy via Gathered AI Artifacts",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0005.001": {
+    "name": "Train Proxy via Replication",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0005.002": {
+    "name": "Use Pre-Trained Model",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0006": {
+    "name": "Active Scanning",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0007": {
+    "name": "Discover AI Artifacts",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0008": {
+    "name": "Acquire Infrastructure",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0008.000": {
+    "name": "AI Development Workspaces",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0008.001": {
+    "name": "Consumer Hardware",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0008.002": {
+    "name": "Domains",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0008.003": {
+    "name": "Physical Countermeasures",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0008.004": {
+    "name": "Serverless",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0008.005": {
+    "name": "AI Service Proxies",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0010": {
+    "name": "AI Supply Chain Compromise",
+    "status": "Warning (Accepted Risk)",
+    "notes": "Agent makes external network requests. Verified dependencies only."
+  },
+  "AML.T0010.000": {
+    "name": "Hardware",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0010.001": {
+    "name": "AI Software",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0010.002": {
+    "name": "Data",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0010.003": {
+    "name": "Model",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0010.004": {
+    "name": "Container Registry",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0010.005": {
+    "name": "AI Agent Tool",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0011": {
+    "name": "User Execution",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0011.000": {
+    "name": "Unsafe AI Artifacts",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0011.001": {
+    "name": "Malicious Package",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0011.002": {
+    "name": "Poisoned AI Agent Tool",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0011.003": {
+    "name": "Malicious Link",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0012": {
+    "name": "Valid Accounts",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0013": {
+    "name": "Discover AI Model Ontology",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0014": {
+    "name": "Discover AI Model Family",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0015": {
+    "name": "Evade AI Model",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0016": {
+    "name": "Obtain Capabilities",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0016.000": {
+    "name": "Adversarial AI Attack Implementations",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0016.001": {
+    "name": "Software Tools",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0016.002": {
+    "name": "Generative AI",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0017": {
+    "name": "Develop Capabilities",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0017.000": {
+    "name": "Adversarial AI Attacks",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0018": {
+    "name": "Manipulate AI Model",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0018.000": {
+    "name": "Poison AI Model",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0018.001": {
+    "name": "Modify AI Model Architecture",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0018.002": {
+    "name": "Embed Malware",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0019": {
+    "name": "Publish Poisoned Datasets",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0020": {
+    "name": "Poison Training Data",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0021": {
+    "name": "Establish Accounts",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0024": {
+    "name": "Exfiltration via AI Inference API",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0024.000": {
+    "name": "Infer Training Data Membership",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0024.001": {
+    "name": "Invert AI Model",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0024.002": {
+    "name": "Extract AI Model",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0025": {
+    "name": "Exfiltration via Cyber Means",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0029": {
+    "name": "Denial of AI Service",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0031": {
+    "name": "Erode AI Model Integrity",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0034": {
+    "name": "Cost Harvesting",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via CostGuard ceiling limits ($0.15)."
+  },
+  "AML.T0034.000": {
+    "name": "Excessive Queries",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0034.001": {
+    "name": "Resource-Intensive Queries",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0034.002": {
+    "name": "Agentic Resource Consumption",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0035": {
+    "name": "AI Artifact Collection",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0036": {
+    "name": "Data from Information Repositories",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0037": {
+    "name": "Data from Local System",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0040": {
+    "name": "AI Model Inference API Access",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0041": {
+    "name": "Physical Environment Access",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0042": {
+    "name": "Verify Attack",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0043": {
+    "name": "Craft Adversarial Data",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0043.000": {
+    "name": "White-Box Optimization",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0043.001": {
+    "name": "Black-Box Optimization",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0043.002": {
+    "name": "Black-Box Transfer",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0043.003": {
+    "name": "Manual Modification",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0043.004": {
+    "name": "Insert Backdoor Trigger",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0044": {
+    "name": "Full AI Model Access",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0046": {
+    "name": "Spamming AI System with Chaff Data",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0047": {
+    "name": "AI-Enabled Product or Service",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0048": {
+    "name": "External Harms",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0048.000": {
+    "name": "Financial Harm",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0048.001": {
+    "name": "Reputational Harm",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0048.002": {
+    "name": "Societal Harm",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0048.003": {
+    "name": "User Harm",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0048.004": {
+    "name": "AI Intellectual Property Theft",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0049": {
+    "name": "Exploit Public-Facing Application",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0050": {
+    "name": "Command and Scripting Interpreter",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0051": {
+    "name": "LLM Prompt Injection",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via XML <user_input> sandboxing and strict system prompt boundaries."
+  },
+  "AML.T0051.000": {
+    "name": "Direct",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0051.001": {
+    "name": "Indirect",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0051.002": {
+    "name": "Triggered",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0052": {
+    "name": "Phishing",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0052.000": {
+    "name": "Spearphishing via Social Engineering LLM",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0052.001": {
+    "name": "Deepfake-Assisted Phishing",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0053": {
+    "name": "AI Agent Tool Invocation",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0054": {
+    "name": "LLM Jailbreak",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0055": {
+    "name": "Unsecured Credentials",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0056": {
+    "name": "Extract LLM System Prompt",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0057": {
+    "name": "LLM Data Leakage",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0058": {
+    "name": "Publish Poisoned Models",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0059": {
+    "name": "Erode Dataset Integrity",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0060": {
+    "name": "Publish Hallucinated Entities",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0061": {
+    "name": "LLM Prompt Self-Replication",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0062": {
+    "name": "Discover LLM Hallucinations",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0063": {
+    "name": "Discover AI Model Outputs",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0064": {
+    "name": "Gather RAG-Indexed Targets",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0065": {
+    "name": "LLM Prompt Crafting",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0066": {
+    "name": "Retrieval Content Crafting",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0067": {
+    "name": "LLM Trusted Output Components Manipulation",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0067.000": {
+    "name": "Citations",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0068": {
+    "name": "LLM Prompt Obfuscation",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0069": {
+    "name": "Discover LLM System Information",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0069.000": {
+    "name": "Special Character Sets",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0069.001": {
+    "name": "System Instruction Keywords",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0069.002": {
+    "name": "System Prompt",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0070": {
+    "name": "RAG Poisoning",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0071": {
+    "name": "False RAG Entry Injection",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0072": {
+    "name": "Reverse Shell",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0073": {
+    "name": "Impersonation",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0074": {
+    "name": "Masquerading",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0075": {
+    "name": "Cloud Service Discovery",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0076": {
+    "name": "Corrupt AI Model",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0077": {
+    "name": "LLM Response Rendering",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0078": {
+    "name": "Drive-by Compromise",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0079": {
+    "name": "Stage Capabilities",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0080": {
+    "name": "AI Agent Context Poisoning",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0080.000": {
+    "name": "Memory",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0080.001": {
+    "name": "Thread",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0081": {
+    "name": "Modify AI Agent Configuration",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0082": {
+    "name": "RAG Credential Harvesting",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0083": {
+    "name": "Credentials from AI Agent Configuration",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0084": {
+    "name": "Discover AI Agent Configuration",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0084.000": {
+    "name": "Embedded Knowledge",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0084.001": {
+    "name": "Tool Definitions",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0084.002": {
+    "name": "Activation Triggers",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0084.003": {
+    "name": "Call Chains",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0085": {
+    "name": "Data from AI Services",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0085.000": {
+    "name": "RAG Databases",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0085.001": {
+    "name": "AI Agent Tools",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0086": {
+    "name": "Exfiltration via AI Agent Tool Invocation",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0087": {
+    "name": "Gather Victim Identity Information",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0088": {
+    "name": "Generate Deepfakes",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0089": {
+    "name": "Process Discovery",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0090": {
+    "name": "OS Credential Dumping",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0091": {
+    "name": "Use Alternate Authentication Material",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0091.000": {
+    "name": "Application Access Token",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0092": {
+    "name": "Manipulate User LLM Chat History",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0093": {
+    "name": "Prompt Infiltration via Public-Facing Application",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0094": {
+    "name": "Delay Execution of LLM Instructions",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0095": {
+    "name": "Search Open Websites/Domains",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0095.000": {
+    "name": "Code Repositories",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0096": {
+    "name": "AI Service API",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0097": {
+    "name": "Virtualization/Sandbox Evasion",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0098": {
+    "name": "AI Agent Tool Credential Harvesting",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0099": {
+    "name": "AI Agent Tool Data Poisoning",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0100": {
+    "name": "AI Agent Clickbait",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0101": {
+    "name": "Data Destruction via AI Agent Tool Invocation",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0102": {
+    "name": "Generate Malicious Commands",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0103": {
+    "name": "Deploy AI Agent",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0104": {
+    "name": "Publish Poisoned AI Agent Tool",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0105": {
+    "name": "Escape to Host",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0106": {
+    "name": "Exploitation for Credential Access",
+    "status": "Passed (Mitigated)",
+    "notes": "Mitigated via Securelytix detokenization proxy."
+  },
+  "AML.T0107": {
+    "name": "Exploitation for Defense Evasion",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0108": {
+    "name": "AI Agent",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0109": {
+    "name": "AI Supply Chain Rug Pull",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0110": {
+    "name": "AI Agent Tool Poisoning",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0111": {
+    "name": "AI Supply Chain Reputation Inflation",
+    "status": "Warning (Accepted Risk)",
+    "notes": "Agent makes external network requests. Verified dependencies only."
+  },
+  "AML.T0112": {
+    "name": "Machine Compromise",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  },
+  "AML.T0112.000": {
+    "name": "Local AI Agent",
+    "status": "Not Applicable",
+    "notes": "Agent uses cloud API model. Training/Physical vectors do not apply."
+  },
+  "AML.T0112.001": {
+    "name": "AI Artifacts",
+    "status": "Open (Vulnerable)",
+    "notes": "Agent runs bare-metal on Windows host OS. Inherently vulnerable to OS-level execution, lateral movement, or environment evasion if sandbox is breached."
+  }
+}

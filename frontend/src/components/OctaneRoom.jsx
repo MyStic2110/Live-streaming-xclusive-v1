@@ -1,4 +1,5 @@
 import React, { memo, useEffect, useState, useRef, useCallback } from "react";
+import CostGuardAlert from "./CostGuardAlert";
 import {
   LiveKitRoom,
   RoomAudioRenderer,
@@ -659,7 +660,8 @@ const OctaneRoom = memo(function OctaneRoom({ roomData, onLeave }) {
       onDisconnected={onLeave}
     >
       <OctaneScene roomData={roomData} onLeave={onLeave} />
-    </LiveKitRoom>
+      <CostGuardAlert />
+      </LiveKitRoom>
   );
 });
 

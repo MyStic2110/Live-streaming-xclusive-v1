@@ -14,6 +14,7 @@ import SwarmTelemetryPage from "./components/SwarmTelemetryPage";
 import MartechRoom from "./components/MartechRoom";
 import OctaneRoom from "./components/OctaneRoom";
 import DevopsGeniRoom from "./components/DevopsGeniRoom";
+import AivyuhRoom from "./components/AivyuhRoom";
 import DevopsOrb from "./components/DevopsOrb";
 import SwarmShortsPage from "./components/SwarmShortsPage";
 import '@livekit/components-styles/index.css';
@@ -94,6 +95,7 @@ function App() {
   const isMartech   = roomData?.creatorId === "MARTECH";
   const isOctane    = roomData?.creatorId === "OCTANE";
   const isDevopsGeni = roomData?.creatorId === "DEVOPS_GENI";
+  const isAivyuh    = roomData?.creatorId === "AIVYUH" || roomData?.creatorId === "aivyuh";
 
   const isTelemetryPath = 
     currentPath.replace(/\/$/, "") === "/agents-value-technicals-business" || 
@@ -124,6 +126,8 @@ function App() {
       <NovaRoom roomData={roomData} onLeave={handleLeave} />
     ) : isAura ? (
       <VideoRoom roomData={roomData} onLeave={handleLeave} />
+    ) : isAivyuh ? (
+      <AivyuhRoom roomData={roomData} onLeave={handleLeave} />
     ) : isVision ? (
       <VisionRoom roomData={roomData} onLeave={handleLeave} />
     ) : isAstra ? (

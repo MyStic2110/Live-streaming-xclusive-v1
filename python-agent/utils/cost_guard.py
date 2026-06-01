@@ -38,6 +38,9 @@ Usage example (inside any agent's entrypoint):
 
 import time
 import logging
+import os
+import json
+import asyncio
 from collections import deque
 from livekit.agents import llm, voice
 
@@ -93,7 +96,18 @@ class CostGuard:
         extra_command_words: set = None,
     ):
         self.agent_name = agent_name
-        self.session_cost_ceiling = session_cost_ceiling
+        
+        # Override with .env variables if they exist
+        env_specific = os.getenv(f"{agent_name.upper()}_COST_CEILING")
+        env_global = os.getenv("DEFAULT_COST_CEILING")
+        
+        if env_specific:
+            self.session_cost_ceiling = float(env_specific)
+        elif env_global:
+            self.session_cost_ceiling = float(env_global)
+        else:
+            self.session_cost_ceiling = session_cost_ceiling
+            
         self.max_context_turns = max_context_turns
         self.usage_broadcast_interval_s = usage_broadcast_interval_s
         self.min_stt_words = min_stt_words
@@ -247,3 +261,17 @@ class CostGuard:
     def is_ceiling_exceeded(self) -> bool:
         """True once the session cost ceiling has been hit."""
         return self._cost_ceiling_exceeded
+
+    async def disconnect_with_alert(self, room):
+        """Sends a data packet to the UI and disconnects the room."""
+        if not room:
+            return
+            
+        try:
+            payload = json.dumps({"type": "COST_CEILING_EXCEEDED"}).encode("utf-8")
+            await room.local_participant.publish_data(payload)
+            logger.info(f"[COST_GUARD][{self.agent_name}] Sent COST_CEILING_EXCEEDED to UI.")
+            await asyncio.sleep(1.0)  # Give UI time to receive
+            await room.disconnect()
+        except Exception as e:
+            logger.error(f"[COST_GUARD] Error disconnecting room: {e}")

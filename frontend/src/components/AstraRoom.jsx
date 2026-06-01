@@ -1,4 +1,5 @@
 import React, { memo, useEffect, useState } from "react";
+import CostGuardAlert from "./CostGuardAlert";
 import {
   LiveKitRoom,
   RoomAudioRenderer,
@@ -501,7 +502,8 @@ const AstraRoom = memo(function AstraRoom({ roomData, onLeave }) {
       onDisconnected={onLeave}
     >
       <AstraScene roomData={roomData} onLeave={onLeave} />
-    </LiveKitRoom>
+      <CostGuardAlert />
+      </LiveKitRoom>
   );
 });
 

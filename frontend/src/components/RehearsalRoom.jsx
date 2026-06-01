@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import CostGuardAlert from "./CostGuardAlert";
 import { LiveKitRoom, RoomAudioRenderer, useRoomContext } from "@livekit/components-react";
 
 const FILLER_RE = /\b(um|uh|like|you know|so|basically|literally|right|okay)\b/gi;
@@ -526,6 +527,7 @@ export default function RehearsalRoom({ roomData, onLeave }) {
     >
       <RoomAudioRenderer />
       <RehearsalContent onLeave={onLeave} />
-    </LiveKitRoom>
+      <CostGuardAlert />
+      </LiveKitRoom>
   );
 }

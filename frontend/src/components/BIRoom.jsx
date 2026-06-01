@@ -1,4 +1,5 @@
 import React, { memo, useEffect, useRef, useState } from "react";
+import CostGuardAlert from "./CostGuardAlert";
 import {
   LiveKitRoom,
   RoomAudioRenderer,
@@ -451,7 +452,8 @@ const BIRoom = memo(function BIRoom({ roomData, onLeave }) {
   return (
     <LiveKitRoom audio={true} video={false} token={roomData.token} serverUrl={serverUrl} onDisconnected={onLeave}>
       <BIScene onLeave={onLeave} />
-    </LiveKitRoom>
+      <CostGuardAlert />
+      </LiveKitRoom>
   );
 });
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, memo } from "react";
+import CostGuardAlert from "./CostGuardAlert";
 import { LiveKitRoom, useRoomContext, useLocalParticipant, useRemoteParticipants } from "@livekit/components-react";
 import { Send, ArrowLeft, Bot, User, Server } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -358,7 +359,8 @@ const DevopsGeniRoom = memo(function DevopsGeniRoom({ roomData, onLeave }) {
       onDisconnected={onLeave}
     >
       <DevopsGeniChat roomData={roomData} onLeave={onLeave} />
-    </LiveKitRoom>
+      <CostGuardAlert />
+      </LiveKitRoom>
   );
 });
 

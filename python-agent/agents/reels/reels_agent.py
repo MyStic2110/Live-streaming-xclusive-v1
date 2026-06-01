@@ -16,6 +16,8 @@ import sys
 from audio_composer import AudioComposer
 from video_composer import VideoComposer
 from script_writer import generate_reel_script
+from utils.cost_guard import CostGuard
+from integrations.securelytix import SecurelytixClient
 
 
 class ReelsAgent:
@@ -23,6 +25,8 @@ class ReelsAgent:
         # Jenny: warm, conversational, natural — ideal for storytelling reels
         self.audio_composer = AudioComposer(voice=voice)
         self.video_composer = VideoComposer()
+        self.cost_guard = CostGuard("reels")
+        self.securelytix = SecurelytixClient()
 
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.output_dir = os.path.join(self.base_dir, "output")

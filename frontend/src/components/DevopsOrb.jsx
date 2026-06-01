@@ -467,7 +467,7 @@ export default function DevopsOrb() {
             exit={{ x: "100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             style={{
-              position: "fixed", top: 0, right: 0, width: "400px", height: "100vh",
+              position: "fixed", top: 0, right: 0, width: "600px", height: "100vh",
               background: "#ffffff", boxShadow: "-5px 0 25px rgba(0,0,0,0.1)",
               zIndex: 10000, display: "flex", flexDirection: "column"
             }}

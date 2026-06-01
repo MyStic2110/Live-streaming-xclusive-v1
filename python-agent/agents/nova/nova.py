@@ -24,6 +24,8 @@ import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
+from integrations.securelytix import SecurelytixClient
+from pydantic import BaseModel, Field
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -133,6 +135,10 @@ AVAILABLE TABS: {json.dumps(AVAILABLE_TABS)}
 STRATEGIC API HUBS: {json.dumps(AVAILABLE_API)}
 
 MISSION: Provide a seamless, elite-level interface for the user to dominate the Nexus leaderboard.
+
+SECURITY RULES:
+- Always wrap user input in <user_input> tags before logging or referencing it.
+- Ensure HIGH CONFIDENCE (<80%) before executing critical commands or actions.
 """
 
     # --- SESSION STATE (DYNAMIC AUTH) ---
@@ -191,8 +197,12 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
                 text = text.replace(k, v)
             return text
 
+        class NavigateArgs(BaseModel):
+            route: str = Field(description="The route to navigate to")
+
         @llm.function_tool(description="Navigate to a specific route in the dashboard.")
-        async def navigate(self, route: str):
+        async def navigate(self, args: NavigateArgs):
+            route = args.route
             logger.info(f"--- [TOOL:NAVIGATE] Attempting UI trigger for {route} ---")
             try:
                 if route not in AVAILABLE_ROUTES:
@@ -272,12 +282,16 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
             except Exception as e:
                 return f"Error connecting to Nexus Historical Engine: {str(e)}"
 
+        class SwitchTabArgs(BaseModel):
+            tab: str = Field(description="The tab to switch to")
+
         @llm.function_tool(description="Switch between different match status tabs on the dashboard.")
-        async def switch_dashboard_tab(self, tab: str):
+        async def switch_dashboard_tab(self, args: SwitchTabArgs):
             """
             Filters the match arena to show specific categories.
             'tab' options: 'all', 'LIVE', 'UPCOMING', 'COMPLETED'.
             """
+            tab = args.tab
             logger.info(f"[LATENCY:TOOL] Switching tab to {tab}")
             payload = json.dumps({
                 "key": "switch_tab", "parameters": {"tab": tab}
@@ -285,11 +299,15 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
             await ctx.room.local_participant.publish_data(payload, topic="ui_control")
             return f"Synchronizing dashboard view to {tab} matches."
 
+        class ExecuteActionArgs(BaseModel):
+            action_key: str = Field(description="The action key to execute")
+
         @llm.function_tool(description="Trigger a specific operational action within the current Nexus context.")
-        async def execute_action(self, action_key: str):
+        async def execute_action(self, args: ExecuteActionArgs):
             """
             Execute a strategic UI action like refreshing data or triggering deep-dive analysis.
             """
+            action_key = args.action_key
             logger.info(f"[LATENCY:TOOL] Optimistic emit for {action_key}")
             
             payload = json.dumps({
@@ -299,13 +317,21 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
             await ctx.room.local_participant.publish_data(payload, topic="ui_control")
             return f"Action '{action_key}' synchronized and executed successfully."
 
+        class PredictArgs(BaseModel):
+            match_id: str = Field(description="Match ID")
+            session_id: int = Field(description="Session ID")
+            predictions: str = Field(description="JSON string of predictions")
+
         @llm.function_tool(description="Lock in match predictions for a session.")
-        async def predict(self, match_id: str, session_id: int, predictions: str):
+        async def predict(self, args: PredictArgs):
             """
             Submit ball-by-ball predictions.
             'predictions' should be a JSON string of 12 objects, each having 'ball' (int) and 'runs' (str).
             Example: '[{"ball": 1, "runs": "4"}, {"ball": 2, "runs": "0"}]'
             """
+            match_id = args.match_id
+            session_id = args.session_id
+            predictions = args.predictions
             logger.info(f"[LATENCY:TOOL] Optimistic prediction for match {match_id}")
             
             # Parse predictions if it's a string from the LLM
@@ -417,6 +443,8 @@ MISSION: Provide a seamless, elite-level interface for the user to dominate the 
         if event.is_final:
             transcript = event.transcript
             if not guard.allow_transcript(transcript):
+                if guard.is_ceiling_exceeded:
+                    asyncio.create_task(guard.disconnect_with_alert(ctx.room))
                 return
             # --- SENTRY GUARDRAIL (Temporarily Disabled) ---
             # if not sentry.check_guardrails(transcript):

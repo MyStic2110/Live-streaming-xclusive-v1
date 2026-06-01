@@ -210,8 +210,12 @@ const runScanner = (args) => {
 
 export const getSecurityStatus = async (req, res) => {
   try {
-    const result = await runScanner(["status"]);
-    res.json(result);
+    const auditPath = path.resolve(__dirname, "../../../python-agent/agents/aivyuh/audit_history.json");
+    if (!fs.existsSync(auditPath)) {
+      return res.json({});
+    }
+    const content = fs.readFileSync(auditPath, "utf-8");
+    res.json(JSON.parse(content));
   } catch (err) {
     console.error("[SECURITY_CONTROLLER] ❌ Status error:", err.message);
     res.status(500).json({ error: err.message });

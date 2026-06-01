@@ -1,4 +1,5 @@
 import React, { memo, useMemo } from "react";
+import CostGuardAlert from "./CostGuardAlert";
 import { 
     LiveKitRoom, 
     RoomAudioRenderer, 
@@ -154,7 +155,8 @@ const WeatherRoom = memo(function WeatherRoom({ roomData, onLeave }) {
         >
             <RoomAudioRenderer />
             <WeatherContent onLeave={onLeave} />
-        </LiveKitRoom>
+          <CostGuardAlert />
+      </LiveKitRoom>
     );
 });
 

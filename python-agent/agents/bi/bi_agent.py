@@ -8,6 +8,7 @@ import re
 from typing import AsyncIterable
 import aiomysql
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field
 from livekit import agents
 from livekit.agents import (
     JobContext, 
@@ -52,9 +53,8 @@ For every user request, you MUST perform these steps internally:
    - If confidence is LOW (<80%): Ask for clarification before querying.
 
 --- OPERATIONAL RULES ---
-- Use the provided SCHEMA_CACHE as your primary source of truth for table and column names.
+- You DO NOT know the database schema yet. You must use the `get_database_schema` tool to discover available tables and their exact columns before writing any SQL query.
 - ONLY EXECUTE 'SELECT' QUERIES. No modifications (INSERT, UPDATE, DELETE).
-- If a user asks a question that spans multiple tables, use the SCHEMA_CACHE to find the joining keys (Primary/Foreign keys).
 - BIG DATA GUARD: If a request requires querying a large table without specific filters (which could return massive amounts of data), treat it as LOW CONFIDENCE. Ask the user for confirmation or request specific filters before executing the query.
 
 --- STYLE ---
@@ -63,7 +63,7 @@ For every user request, you MUST perform these steps internally:
 - If a query returns no results, explain why based on the data structure.
 
 GREETING:
-"Cortex is online. I have mapped your database schema and my intent engine is primed. How can I help you navigate your data today?"
+"Cortex is online. I am connected to the database engine. How can I help you navigate your data today?"
 """
 
 # --- DATABASE HANDLER ---
@@ -228,18 +228,46 @@ async def entrypoint(ctx: JobContext):
 
     llm_plugin = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
 
-    # Inject the pre-warmed schema and current time
+    # Inject the current time (Schema is now fetched lazily via tool)
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    dynamic_prompt = f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}\n\nCURRENT DATABASE SCHEMA:\n{json.dumps(SCHEMA_CACHE, indent=2)}"
+    dynamic_prompt = f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}"
     
     chat_ctx = llm.ChatContext()
     # voice.Agent will automatically add the `instructions` as a system message, 
     # so we don't need to manually add it here to avoid duplication.
 
     # --- TOOL REGISTRATION ---
+    class DatabaseQuery(BaseModel):
+        sql_query: str = Field(
+            description="The exact SQL SELECT query to execute against the MySQL database. Must strictly start with SELECT to prevent malicious write operations.",
+            pattern="^(?i)SELECT.*"
+        )
+        
+    class SchemaRequest(BaseModel):
+        table_name: str = Field(
+            default="",
+            description="Optional. The name of the specific table to inspect for its columns. Leave empty to list all available tables in the database."
+        )
+
     class BITools:
+        @llm.function_tool(description="Fetches the database schema on demand. Use this BEFORE writing SQL queries to learn the table names and columns.")
+        async def get_database_schema(self, args: SchemaRequest):
+            if not SCHEMA_CACHE:
+                await db.initialize_schema()
+            
+            table_name = args.table_name.strip()
+            if table_name:
+                if table_name in SCHEMA_CACHE:
+                    columns = SCHEMA_CACHE[table_name]
+                    return f"Table '{table_name}' has the following columns: {', '.join(columns)}"
+                else:
+                    return f"Error: Table '{table_name}' does not exist. The available tables are: {', '.join(SCHEMA_CACHE.keys())}"
+            else:
+                return f"The database has the following tables: {', '.join(SCHEMA_CACHE.keys())}. To see columns, call this tool again with a specific table_name."
+
         @llm.function_tool(description="Query the database for information. ONLY SELECT queries allowed.")
-        async def query_data(self, sql_query: str):
+        async def query_data(self, args: DatabaseQuery):
+            sql_query = args.sql_query
             logger.info(f"[BI_QUERY] Executing: {sql_query}")
             return await db.execute_query(sql_query)
 
@@ -317,6 +345,8 @@ async def entrypoint(ctx: JobContext):
     def on_stt(event: voice.UserInputTranscribedEvent):
         if event.is_final:
             if not guard.allow_transcript(event.transcript):
+                if guard.is_ceiling_exceeded:
+                    asyncio.create_task(guard.disconnect_with_alert(ctx.room))
                 return
             # --- SEMANTIC ENDPOINTING ---
             if not sentry.is_thought_complete(event.transcript):

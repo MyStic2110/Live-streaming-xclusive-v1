@@ -1,4 +1,5 @@
 import React, { memo } from "react";
+import CostGuardAlert from "./CostGuardAlert";
 import { 
   LiveKitRoom, 
   VideoConference, 
@@ -79,6 +80,7 @@ const VisionRoom = memo(function VisionRoom({ roomData, onLeave }) {
         `}</style>
         
         <RoomAudioRenderer />
+        <CostGuardAlert />
       </LiveKitRoom>
     </div>
   );

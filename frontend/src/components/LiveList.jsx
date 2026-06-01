@@ -51,13 +51,24 @@ const AgentCard = ({ agent, onAction }) => {
       className="hover-shadow"
     >
       <div>
-        <div style={{ 
-          width: "60px", height: "60px", borderRadius: "16px", 
-          background: `${agent.color}11`, display: "flex", alignItems: "center", 
-          justifyContent: "center", fontSize: "2rem", border: `1px solid ${agent.color}22`,
-          marginBottom: "2rem"
-        }}>
-          {agent.icon}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem" }}>
+          <div style={{ 
+            width: "60px", height: "60px", borderRadius: "16px", 
+            background: `${agent.color}11`, display: "flex", alignItems: "center", 
+            justifyContent: "center", fontSize: "2rem", border: `1px solid ${agent.color}22`
+          }}>
+            {agent.icon}
+          </div>
+          <div style={{ 
+            display: "flex", alignItems: "center", gap: "6px",
+            fontSize: "0.65rem", fontWeight: "900", color: COLORS.success,
+            background: `${COLORS.success}11`,
+            padding: "4px 12px", borderRadius: "99px", letterSpacing: "1px",
+            border: `1px solid ${COLORS.success}22`
+          }}>
+            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: COLORS.success, boxShadow: `0 0 6px ${COLORS.success}` }} />
+            <span>ONLINE</span>
+          </div>
         </div>
         <h3 style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem" }}>{agent.title}</h3>
         <p style={{ color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "2rem", fontSize: "1rem" }}>{agent.desc}</p>
@@ -143,14 +154,16 @@ const PipelineCard = ({ agent, onAction }) => {
           }}>
             {agent.icon}
           </div>
-          <span style={{ 
-            fontSize: "0.65rem", fontWeight: "900", color: agent.status === "READY" ? COLORS.success : COLORS.textMuted,
-            background: agent.status === "READY" ? `${COLORS.success}11` : "rgba(107, 114, 128, 0.1)",
+          <div style={{ 
+            display: "flex", alignItems: "center", gap: "6px",
+            fontSize: "0.65rem", fontWeight: "900", color: COLORS.success,
+            background: `${COLORS.success}11`,
             padding: "4px 12px", borderRadius: "99px", letterSpacing: "1px",
-            border: `1px solid ${agent.status === "READY" ? `${COLORS.success}22` : "rgba(107, 114, 128, 0.2)"}`
+            border: `1px solid ${COLORS.success}22`
           }}>
-            {agent.status}
-          </span>
+            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: COLORS.success, boxShadow: `0 0 6px ${COLORS.success}` }} />
+            <span>ONLINE</span>
+          </div>
         </div>
         <h3 style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem" }}>{agent.title}</h3>
         <p style={{ color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "2rem", fontSize: "1rem" }}>{agent.desc}</p>
@@ -161,11 +174,10 @@ const PipelineCard = ({ agent, onAction }) => {
         style={{ 
           width: "100%", padding: "1.2rem", background: isHovered ? agent.color : COLORS.primary, 
           color: "white", border: "none", borderRadius: "12px", 
-          fontWeight: "800", cursor: agent.status === "READY" ? "pointer" : "not-allowed", fontSize: "0.9rem",
+          fontWeight: "800", cursor: "pointer", fontSize: "0.9rem",
           letterSpacing: "1px", transition: "all 0.3s ease",
-          opacity: agent.status === "READY" ? 1 : 0.5
+          opacity: 1
         }}
-        disabled={agent.status !== "READY"}
       >
         {agent.btnText.toUpperCase()}
       </button>
@@ -890,6 +902,8 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
   ];
 
   const galleryReels = [
+    // 01 Jun 2026
+    { title: "NVIDIA's Open-Sourced Humanoid Robot", slug: "how-nvidia-humanoid-robot-is-transforming-industries", tag: "INDUSTRY", date: "01 Jun 2026" },
     // 29 May 2026
     { title: "From Demo to Production Agent Systems", slug: "from-demo-to-production-agent-systems", tag: "PRODUCTION", date: "29 May 2026" },
     { title: "Unleashing AI Potential in Business", slug: "unleashing-ai-potential-in-business", tag: "BUSINESS", date: "29 May 2026" },
@@ -1779,8 +1793,12 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
                     padding: "4px 12px", borderRadius: "99px", letterSpacing: "1px",
                     border: `1px solid ${agent.status === "READY" ? `${COLORS.success}22` : "rgba(107, 114, 128, 0.2)"}`
                   }}>
-                    {agent.status}
-                  </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      {agent.status === "READY" && (
+                        <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: COLORS.success, boxShadow: `0 0 6px ${COLORS.success}` }} />
+                      )}
+                      <span>{agent.status === "READY" ? "ONLINE" : agent.status}</span>
+                    </div>                  </span>
                 </div>
                 <h3 style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem" }}>{agent.title}</h3>
                 <p style={{ color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "2rem", fontSize: "1rem" }}>{agent.desc}</p>

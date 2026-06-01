@@ -1,4 +1,5 @@
 import React, { memo, useEffect, useState } from "react";
+import CostGuardAlert from "./CostGuardAlert";
 import {
   LiveKitRoom,
   RoomAudioRenderer,
@@ -796,7 +797,8 @@ const SevaRoom = memo(function SevaRoom({ roomData, onLeave }) {
       onDisconnected={onLeave}
     >
       <SevaScene onLeave={onLeave} />
-    </LiveKitRoom>
+      <CostGuardAlert />
+      </LiveKitRoom>
   );
 });
 

@@ -1,4 +1,5 @@
 import React, { memo, useEffect, useState, useRef } from "react";
+import CostGuardAlert from "./CostGuardAlert";
 import {
   LiveKitRoom,
   RoomAudioRenderer,
@@ -735,7 +736,8 @@ const LinaRoom = memo(function LinaRoom({ roomData, onLeave }) {
       style={{ height: "100dvh", width: "100vw" }}
     >
       <LinaOrbScene onLeave={onLeave} />
-    </LiveKitRoom>
+      <CostGuardAlert />
+      </LiveKitRoom>
   );
 });
 

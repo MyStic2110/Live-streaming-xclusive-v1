@@ -121,6 +121,17 @@ const SHORTS = [
     videoSrc: "/shorts/Autonomous_agents_create_and_publish.mp4",
     thumbnail: null,
     duration: "10s",
+  },
+  {
+    id: 13,
+    title: "Robotic Hand Precision",
+    desc: "A robotic hand picking up a microchip with extreme precision, showcasing the future of automated hardware manufacturing.",
+    tag: "HARDWARE",
+    color: "#3b82f6",
+    borderColor: "rgba(59,130,246,0.55)",
+    videoSrc: "/shorts/Robotic_hand_picking_microchip_202606011943.mp4",
+    thumbnail: null,
+    duration: "10s",
   }
 ];
 

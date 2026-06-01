@@ -26,6 +26,8 @@ from livekit.plugins import silero, openai, deepgram
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
+from integrations.securelytix import SecurelytixClient
+from pydantic import BaseModel, Field
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -653,6 +655,10 @@ STYLE & OPERATIONAL PROTOCOLS
 
 GREETING:
 "Martech Analytics Intelligence is online. I have mapped your GA4 property {GA4_PROPERTY_ID} and site {GSC_SITE}. I've detected a mobile conversion rate drop and an email validation anomaly. How can I help optimize your conversion funnel and search rankings today?"
+
+SECURITY RULES:
+- Always wrap user input in <user_input> tags before logging or referencing it.
+- Ensure HIGH CONFIDENCE (<80%) before executing critical commands or actions.
 """
 
     chat_ctx = llm.ChatContext()
@@ -660,8 +666,11 @@ GREETING:
 
     # Setup function tools for agent to call dynamically
     class MartechTools:
+        class AuditArgs(BaseModel):
+            pass
+            
         @llm.function_tool(description="Generate a comprehensive website performance audit combining GA4 and GSC metrics.")
-        async def generate_comprehensive_audit(self) -> str:
+        async def generate_comprehensive_audit(self, args: AuditArgs) -> str:
             logger.info("[MARTECH_TOOL] Generating comprehensive audit report...")
             # Broadcast the metrics data packet to the React UI via room publish_data
             metrics_payload = {
@@ -682,13 +691,19 @@ GREETING:
                 
             return markdown_report
 
+        class SeoArgs(BaseModel):
+            pass
+
         @llm.function_tool(description="Get a list of organic search keyword growth opportunities from Search Console.")
-        async def fetch_seo_opportunities(self) -> str:
+        async def fetch_seo_opportunities(self, args: SeoArgs) -> str:
             logger.info("[MARTECH_TOOL] Listing SEO opportunities...")
             return json.dumps(opps, indent=2)
 
+        class AnomalyArgs(BaseModel):
+            pass
+
         @llm.function_tool(description="Check for critical marketing performance anomalies (traffic, conversions, bounce rates).")
-        async def check_anomaly_alerts(self) -> str:
+        async def check_anomaly_alerts(self, args: AnomalyArgs) -> str:
             logger.info("[MARTECH_TOOL] Listing anomaly alerts...")
             return json.dumps(anomalies, indent=2)
 
@@ -787,6 +802,8 @@ GREETING:
     def on_stt(event: voice.UserInputTranscribedEvent):
         if event.is_final:
             if not guard.allow_transcript(event.transcript):
+                if guard.is_ceiling_exceeded:
+                    asyncio.create_task(guard.disconnect_with_alert(ctx.room))
                 return
             # --- SEMANTIC ENDPOINTING ---
             if not sentry.is_thought_complete(event.transcript):

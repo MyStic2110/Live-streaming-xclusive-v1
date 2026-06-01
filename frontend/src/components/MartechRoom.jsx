@@ -1,4 +1,5 @@
 import React, { memo, useEffect, useRef, useState } from "react";
+import CostGuardAlert from "./CostGuardAlert";
 import {
   LiveKitRoom,
   RoomAudioRenderer,
@@ -922,7 +923,8 @@ const MartechRoom = memo(function MartechRoom({ roomData, onLeave }) {
   return (
     <LiveKitRoom audio={true} video={false} token={roomData.token} serverUrl={serverUrl} onDisconnected={onLeave}>
       <MartechScene onLeave={onLeave} />
-    </LiveKitRoom>
+      <CostGuardAlert />
+      </LiveKitRoom>
   );
 });
 
