@@ -283,7 +283,7 @@ function ShortsPlayer({ short, isActive, isMuted, toggleMute }) {
 }
 
 // ─── Main Page ───────────────────────────────────────────────────────────────────
-export default function SwarmShortsPage({ onBack, customData, customHeader, customTitle }) {
+export default function SwarmReelsCarousel({ onBack, customData, customHeader, customTitle }) {
   const containerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
@@ -325,7 +325,8 @@ export default function SwarmShortsPage({ onBack, customData, customHeader, cust
       });
     }, {
       root: containerRef.current,
-      threshold: 0.6 // Video is active when 60% is visible
+      rootMargin: "0px -40% 0px -40%", // Triggers only when the video hits the center 20% of the screen
+      threshold: 0 
     });
 
     const elements = document.querySelectorAll('.shorts-item');
@@ -409,19 +410,66 @@ export default function SwarmShortsPage({ onBack, customData, customHeader, cust
         className="shorts-container"
         style={{
           height: "100vh",
-          overflowY: "scroll",
-          scrollSnapType: "y mandatory",
-          scrollBehavior: "smooth"
+          width: "100vw",
+          display: "flex",
+          overflowX: "scroll",
+          overflowY: "hidden",
+          scrollSnapType: "x mandatory",
+          scrollBehavior: "smooth",
+          padding: "0 calc(50vw - clamp(140px, 37.5vw, 210px) - 10px)", // Perfectly centers the first and last item
+          alignItems: "center"
         }}
       >
         {shortsList.map((short, i) => (
-          <div key={short.id} className="shorts-item" data-index={i} style={{ height: "100vh", scrollSnapAlign: "start" }}>
-            <ShortsPlayer 
-              short={short} 
-              isActive={activeIndex === i} 
-              isMuted={isMuted}
-              toggleMute={toggleMute}
-            />
+          <div 
+            key={short.id} 
+            className="shorts-item" 
+            data-index={i}
+            style={{ 
+              width: "clamp(280px, 75vw, 420px)", // Tight width so next/prev are visible on desktop
+              flexShrink: 0,
+              margin: "0 10px", // Slight gap between videos
+              height: activeIndex === i ? "90vh" : "70vh", 
+              scrollSnapAlign: "center",
+              position: "relative",
+              transition: "all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
+              transform: activeIndex === i ? "scale(1)" : "scale(0.9)",
+              filter: activeIndex === i ? "none" : "blur(3px)", // light blur that won't crash GPU
+              opacity: activeIndex === i ? 1 : 0.6,
+              borderRadius: "24px",
+              overflow: "hidden",
+              boxShadow: activeIndex === i ? "none" : "0 20px 50px rgba(0,0,0,0.8)",
+              cursor: activeIndex === i ? "default" : "pointer"
+            }}
+            onClick={(e) => {
+              if (activeIndex !== i) {
+                e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+              }
+            }}
+          >
+            {activeIndex !== i && (
+              <div 
+                style={{ 
+                  position: "absolute", inset: 0, zIndex: 100, 
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "rgba(0,0,0,0.3)" // Dimmer instead of heavy blur
+                }}
+              >
+                <div style={{ width: "80px", height: "80px", background: "rgba(0,0,0,0.6)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "1.5rem", border: "2px solid rgba(255,255,255,0.3)", backdropFilter: "blur(10px)", paddingLeft: "5px" }}>▶</div>
+              </div>
+            )}
+            
+            {/* PERFORMANCE OPTIMIZATION: Only render video tags if within 2 items of active index */}
+            {Math.abs(activeIndex - i) <= 2 ? (
+              <ShortsPlayer 
+                short={short} 
+                isActive={activeIndex === i} 
+                isMuted={isMuted}
+                toggleMute={toggleMute}
+              />
+            ) : (
+              <div style={{ width: "100%", height: "100%", background: "#111" }} />
+            )}
           </div>
         ))}
       </div>

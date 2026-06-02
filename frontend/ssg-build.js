@@ -1,0 +1,99 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const DIST_DIR = path.join(__dirname, 'dist');
+const BLOGS_DIR = path.join(__dirname, '../python-agent/agents/astra/blogs');
+
+const DOMAIN = 'https://yourdomain.com';
+
+async function runSSG() {
+  console.log('[SSG] Starting Static Site Generation...');
+
+  if (!fs.existsSync(DIST_DIR)) {
+    console.error('[SSG] dist/ directory not found. Make sure to run `npm run build` before SSG.');
+    process.exit(1);
+  }
+
+  const indexHtmlPath = path.join(DIST_DIR, 'index.html');
+  if (!fs.existsSync(indexHtmlPath)) {
+    console.error('[SSG] index.html not found in dist/');
+    process.exit(1);
+  }
+
+  const originalHtml = fs.readFileSync(indexHtmlPath, 'utf-8');
+
+  let blogFiles = [];
+  try {
+    if (fs.existsSync(BLOGS_DIR)) {
+      blogFiles = fs.readdirSync(BLOGS_DIR).filter(file => file.endsWith('.json'));
+    }
+  } catch (err) {
+    console.error('[SSG] Could not read blogs directory:', err);
+  }
+
+  const sitemapUrls = [
+    `<url><loc>${DOMAIN}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
+    `<url><loc>${DOMAIN}/learn</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>`,
+    `<url><loc>${DOMAIN}/agents-value-technicals-business</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`
+  ];
+
+  console.log(`[SSG] Found ${blogFiles.length} blog posts to pre-render.`);
+
+  for (const file of blogFiles) {
+    try {
+      const content = fs.readFileSync(path.join(BLOGS_DIR, file), 'utf-8');
+      const post = JSON.parse(content);
+      const slug = post.slug;
+      
+      if (!slug) continue;
+
+      const title = post.metadata?.seoTitle || post.title || 'Swarm Agentic Lab Insight';
+      const desc = post.metadata?.seoDesc || post.subtitle || 'Explore our latest insights.';
+      const img = post.featuredImage ? `${DOMAIN}${post.featuredImage}` : `${DOMAIN}/logo.jpeg`;
+      const url = `${DOMAIN}/blog/${slug}`;
+
+      // Inject custom tags
+      let updatedHtml = originalHtml
+        .replace(/<title>.*?<\/title>/g, `<title>${title}</title>`)
+        .replace(/<meta name="description" content=".*?"\s*\/>/g, `<meta name="description" content="${desc}" />`)
+        .replace(/<meta property="og:url" content=".*?"\s*\/>/g, `<meta property="og:url" content="${url}" />`)
+        .replace(/<meta property="og:title" content=".*?"\s*\/>/g, `<meta property="og:title" content="${title}" />`)
+        .replace(/<meta property="og:description" content=".*?"\s*\/>/g, `<meta property="og:description" content="${desc}" />`)
+        .replace(/<meta property="og:image" content=".*?"\s*\/>/g, `<meta property="og:image" content="${img}" />`)
+        .replace(/<meta property="twitter:url" content=".*?"\s*\/>/g, `<meta property="twitter:url" content="${url}" />`)
+        .replace(/<meta property="twitter:title" content=".*?"\s*\/>/g, `<meta property="twitter:title" content="${title}" />`)
+        .replace(/<meta property="twitter:description" content=".*?"\s*\/>/g, `<meta property="twitter:description" content="${desc}" />`)
+        .replace(/<meta property="twitter:image" content=".*?"\s*\/>/g, `<meta property="twitter:image" content="${img}" />`);
+
+      // Create static directory
+      const blogDir = path.join(DIST_DIR, 'blog', slug);
+      fs.mkdirSync(blogDir, { recursive: true });
+      fs.writeFileSync(path.join(blogDir, 'index.html'), updatedHtml);
+      
+      console.log(`[SSG] Rendered: /blog/${slug}`);
+
+      // Add to sitemap
+      sitemapUrls.push(
+        `<url><loc>${url}</loc><lastmod>${(post.date || new Date().toISOString()).split('T')[0]}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`
+      );
+
+    } catch (e) {
+      console.error(`[SSG] Error processing ${file}:`, e);
+    }
+  }
+
+  // Generate dynamic sitemap
+  const sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${sitemapUrls.join('\n  ')}
+</urlset>`;
+
+  fs.writeFileSync(path.join(DIST_DIR, 'sitemap.xml'), sitemapContent);
+  console.log('[SSG] Generated dist/sitemap.xml successfully!');
+}
+
+runSSG();

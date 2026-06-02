@@ -17,6 +17,7 @@ import DevopsGeniRoom from "./components/DevopsGeniRoom";
 import AivyuhRoom from "./components/AivyuhRoom";
 import DevopsOrb from "./components/DevopsOrb";
 import SwarmShortsPage from "./components/SwarmShortsPage";
+import NotFoundPage from "./components/NotFoundPage";
 import '@livekit/components-styles/index.css';
 import "./index.css";
 
@@ -143,7 +144,13 @@ function App() {
     ) : (
       <VideoRoom roomData={roomData} onLeave={handleLeave} />
     );
-  } else {
+  } else if (
+    currentPath === "/" ||
+    currentPath === "" ||
+    currentPath.startsWith("#") ||
+    currentPath === "/blog" ||
+    currentPath.startsWith("/blog/")
+  ) {
     content = (
       <LiveList 
         onJoin={handleJoin} 
@@ -152,6 +159,8 @@ function App() {
         onShortsClick={navigateToShorts}
       />
     );
+  } else {
+    content = <NotFoundPage onBack={navigateHome} />;
   }
 
   return (

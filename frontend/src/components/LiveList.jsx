@@ -6,6 +6,7 @@ import { io } from "socket.io-client";
 import LegalModal from "./LegalModal";
 import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
 import Footer from "./Footer";
+import SwarmReelsCarousel from "./SwarmReelsCarousel";
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -1838,6 +1839,123 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
         </div>
       </section>
 
+      {/* About Section (Bento Box) */}
+      <section id="about" style={{ padding: "8rem 5%", background: COLORS.bgSoft, borderTop: `1px solid ${COLORS.border}`, borderBottom: `1px solid ${COLORS.border}`, position: "relative" }}>
+        <style>
+          {`
+            .bento-grid {
+              display: grid;
+              grid-template-columns: repeat(12, 1fr);
+              gap: 1.5rem;
+              max-width: 1200px;
+              margin: 0 auto;
+            }
+            .bento-card {
+              background: rgba(255, 255, 255, 0.8);
+              backdrop-filter: blur(10px);
+              border: 1px solid rgba(0, 0, 0, 0.05);
+              border-radius: 24px;
+              padding: 2.5rem;
+              display: flex;
+              flex-direction: column;
+              gap: 1.25rem;
+              transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+              box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+            }
+            .bento-card:hover {
+              transform: translateY(-8px);
+              box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+              border: 1px solid rgba(0, 0, 0, 0.1);
+            }
+            .card-1 { grid-column: span 7; }
+            .card-2 { grid-column: span 5; background: ${COLORS.primary}; color: white; }
+            .card-3 { grid-column: span 5; }
+            .card-4 { grid-column: span 7; }
+            .card-5 { grid-column: span 12; text-align: center; background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent}); color: white; border: none; }
+            
+            @media (max-width: 900px) {
+              .card-1, .card-2, .card-3, .card-4, .card-5 { grid-column: span 12; }
+            }
+          `}
+        </style>
+        
+        <div style={{ textAlign: "center", marginBottom: "4rem" }}>
+          <h2 style={{ fontSize: "3rem", fontWeight: "900", color: COLORS.primary }}>
+            The Founder's Story
+          </h2>
+        </div>
+
+        <div className="bento-grid">
+          
+          {/* Box 1: The Origin */}
+          <div className="bento-card card-1">
+            <div style={{ fontSize: "0.85rem", fontWeight: "900", color: COLORS.accent, textTransform: "uppercase", letterSpacing: "2px" }}>The Origin</div>
+            <p style={{ fontSize: "1.2rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
+              Like most builders in the AI era, I started with what everyone else was doing—small side projects, late-night experiments, and endless hours of vibe coding.
+            </p>
+            <p style={{ fontSize: "1.2rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
+              At first, I wasn't trying to build a company. I was simply trying to solve my own problems. Every day, I found myself repeating the same workflows: researching, planning, writing content, managing projects, tracking leads, documenting processes, onboarding people, and making decisions.
+            </p>
+          </div>
+
+          {/* Box 2: The Catalyst */}
+          <div className="bento-card card-2" style={{ justifyContent: "center" }}>
+            <div style={{ fontSize: "0.85rem", fontWeight: "900", color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "2px" }}>The Epiphany</div>
+            <div style={{ fontSize: "1.7rem", fontWeight: "900", lineHeight: "1.4", margin: "1rem 0" }}>
+              "Why am I doing this manually when AI agents can do it for me?"
+            </div>
+            <p style={{ fontSize: "1.1rem", color: "rgba(255,255,255,0.9)", margin: 0, lineHeight: "1.6" }}>
+              That question changed everything. Instead of building another AI tool, I started building AI agents that could replicate how I work. What began as a personal productivity experiment evolved into something much bigger: <strong>A startup designed to run itself.</strong>
+            </p>
+          </div>
+
+          {/* Box 3: The Problem */}
+          <div className="bento-card card-3">
+            <div style={{ fontSize: "0.85rem", fontWeight: "900", color: COLORS.accent, textTransform: "uppercase", letterSpacing: "2px" }}>The Broken Reality</div>
+            <p style={{ fontSize: "1.2rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
+              Not because humans aren't important. But because founders shouldn't spend their time buried under repetitive operational work.
+            </p>
+            <p style={{ fontSize: "1.2rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
+              Today's founders are expected to be marketers, salespeople, recruiters, operators, product managers, content creators, customer success teams, and executives—all at the same time.
+            </p>
+            <div style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginTop: "0.5rem" }}>
+              That's broken.
+            </div>
+          </div>
+
+          {/* Box 4: The Solution */}
+          <div className="bento-card card-4">
+            <div style={{ fontSize: "0.85rem", fontWeight: "900", color: COLORS.accent, textTransform: "uppercase", letterSpacing: "2px" }}>The Operating System</div>
+            <h3 style={{ fontSize: "2rem", fontWeight: "900", color: COLORS.primary, margin: "0.5rem 0", lineHeight: "1.2" }}>
+              Every founder deserves a digital workforce.
+            </h3>
+            <p style={{ fontSize: "1.15rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
+              A team of specialized AI agents that understand your business, execute proven playbooks, and help you move faster without hiring an army of people. From hiring your first employee to acquiring your first customer. From content creation to sales outreach.
+            </p>
+            <div style={{ display: "flex", gap: "10px", marginTop: "1rem", flexWrap: "wrap" }}>
+              {["No complicated setups", "No enterprise consulting", "No months of implementation"].map(tag => (
+                <span key={tag} style={{ background: "rgba(59, 130, 246, 0.1)", color: COLORS.accent, padding: "8px 16px", borderRadius: "99px", fontSize: "0.9rem", fontWeight: "800" }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Box 5: The Vision */}
+          <div className="bento-card card-5" style={{ alignItems: "center", padding: "5rem 2rem" }}>
+            <div style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)", fontWeight: "900", marginBottom: "2rem", textShadow: "0 4px 20px rgba(0,0,0,0.2)", lineHeight: "1.1" }}>
+              One founder.<br/>Unlimited execution.
+            </div>
+            <p style={{ fontSize: "1.25rem", lineHeight: "1.7", maxWidth: "800px", margin: "0 auto", color: "rgba(255,255,255,0.9)" }}>
+              We're building a future where entrepreneurs spend less time managing tasks and more time building products, serving customers, and creating impact. Because the next generation of startups won't scale by hiring faster. <strong>They'll scale by deploying smarter agents.</strong>
+            </p>
+            <div style={{ marginTop: "3.5rem", fontSize: "1.1rem", fontWeight: "900", letterSpacing: "3px", textTransform: "uppercase", padding: "16px 40px", border: "2px solid rgba(255,255,255,0.4)", borderRadius: "99px", background: "rgba(0,0,0,0.1)" }}>
+              Welcome to the future of company building
+            </div>
+          </div>
+
+        </div>
+      </section>
 
       {/* FAQ Section */}
       <section id="faq" style={{ padding: "8rem 5%", background: "white" }}>
@@ -1895,61 +2013,22 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
             exit={{ opacity: 0 }}
             style={{
               position: "fixed", inset: 0, zIndex: 1000,
-              background: "#07090f",
-              display: "flex", flexDirection: "column",
-              overflowY: "auto",
-              fontFamily: "'Outfit', sans-serif"
+              background: "#000"
             }}
           >
-            {/* Sticky Header */}
-            <div style={{
-              position: "sticky", top: 0, zIndex: 10,
-              background: "rgba(7,9,15,0.92)",
-              backdropFilter: "blur(20px)",
-              borderBottom: "1px solid rgba(255,255,255,0.06)",
-              padding: "1.2rem 5%",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-            }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                <span style={{ color: "#f43f5e", fontSize: "0.65rem", fontWeight: "900", letterSpacing: "3px" }}>SWARM AGENTIC LAB · AI-GENERATED</span>
-                <span style={{ color: "white", fontSize: "1.35rem", fontWeight: "900", letterSpacing: "-0.5px" }}>
-                  Reels Gallery <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: "400", fontSize: "1rem" }}>· {galleryReels.length} videos</span>
-                </span>
-              </div>
-              <button
-                onClick={() => setShowReelsGallery(false)}
-                style={{
-                  background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)",
-                  color: "white", width: "44px", height: "44px", borderRadius: "50%",
-                  fontSize: "1.3rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                  transition: "all 0.2s"
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
-                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Video Grid */}
-            <div style={{
-              padding: "3rem 5%",
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-              gap: "1.25rem",
-              maxWidth: "1600px",
-              margin: "0 auto",
-              width: "100%",
-            }}>
-              {galleryReels.map((reel, index) => (
-                <ReelCard
-                  key={index}
-                  reel={reel}
-                  index={index}
-                  onClick={() => setSelectedReel(reel)}
-                />
-              ))}
-            </div>
+            <SwarmReelsCarousel 
+               onBack={() => setShowReelsGallery(false)} 
+               customData={galleryReels.map((reel, index) => ({
+                 id: index,
+                 title: reel.title,
+                 desc: `Published: ${reel.date}`,
+                 tag: reel.tag,
+                 color: "#f43f5e",
+                 videoSrc: reel.face ? `/reels/${reel.slug}_face_reel.mp4` : `/reels/${reel.slug}_reel.mp4`
+               }))}
+               customTitle="Swarm Lab"
+               customHeader="SWARM AGENTIC LAB · REELS GALLERY"
+            />
           </motion.div>
         )}
       </AnimatePresence>

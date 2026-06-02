@@ -209,6 +209,26 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
             {selectedPost.slug}
           </div>
           <div style={{ display: "flex", gap: "1rem" }}>
+            <a 
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(selectedPost.title)}&url=https://yourdomain.com/blog/${selectedPost.slug}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ padding: "8px 16px", background: "#1DA1F2", color: "white", borderRadius: "99px", textDecoration: "none", fontSize: "0.85rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "6px", transition: "transform 0.2s" }}
+              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+            >
+              <Share2 size={14}/> X / TWITTER
+            </a>
+            <a 
+              href={`https://www.linkedin.com/shareArticle?mini=true&url=https://yourdomain.com/blog/${selectedPost.slug}&title=${encodeURIComponent(selectedPost.title)}&summary=${encodeURIComponent(selectedPost.subtitle || '')}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ padding: "8px 16px", background: "#0A66C2", color: "white", borderRadius: "99px", textDecoration: "none", fontSize: "0.85rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "6px", transition: "transform 0.2s" }}
+              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+            >
+              <Share2 size={14}/> LINKEDIN
+            </a>
           </div>
         </nav>
 
@@ -435,19 +455,7 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
 
               {/* SEO Tags / Metadata (Agent Helper) */}
 
-              {/* SEO Tags / Metadata (Agent Helper) */}
-              <div style={{ padding: "1.5rem", background: COLORS.primary, borderRadius: "24px", color: "white" }}>
-                 <div style={{ fontSize: "0.7rem", fontWeight: "900", opacity: 0.6, letterSpacing: "1px", marginBottom: "1rem" }}>AGENT METADATA</div>
-                 <div style={{ fontSize: "0.8rem", display: "grid", gap: "8px" }}>
-                    <div style={{ display: "flex", gap: "8px" }}><span style={{ opacity: 0.5 }}>CANONICAL:</span> {selectedPost.metadata?.canonicalUrl || `/blog/${selectedPost.slug}`}</div>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                      <span style={{ opacity: 0.5 }}>KEYWORDS:</span>
-                      {selectedPost.metadata?.keywords?.slice(0, 3).map(k => (
-                        <span key={k} style={{ background: "rgba(255,255,255,0.1)", padding: "2px 6px", borderRadius: "4px" }}>{k}</span>
-                      ))}
-                    </div>
-                 </div>
-              </div>
+
             </div>
           </aside>
         </article>

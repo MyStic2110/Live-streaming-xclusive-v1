@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host --port 5173 --strictPort",
-    "build": "vite build",
+    "build": "vite build && node ssg-build.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
