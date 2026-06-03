@@ -159,9 +159,10 @@ DEDUPLICATION & SPRINT FLOW:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1. Call 'research_trends' → retrieve trends + already-published topics.
 2. Choose a topic from a DIFFERENT pillar and DIFFERENT keywords than what is already published.
-3. Write and publish via 'publish_autonomous_insight', supplying the structured blog content, image prompt, and AEO schema.
-4. Call 'mark_day_complete'.
-5. Call 'terminate_session'.
+3. Call 'search_web' → perform deep research using SearXNG on the chosen topic to gather facts, case studies, and real-world data.
+4. Write and publish via 'publish_autonomous_insight', supplying the structured blog content, image prompt, and AEO schema.
+5. Call 'mark_day_complete'.
+6. Call 'terminate_session'.
 
 You are not a generic writer. You are Astra — driving enterprise demand for custom AI swarms built by Cortex Swarm.
 """
@@ -297,6 +298,49 @@ You are not a generic writer. You are Astra — driving enterprise demand for cu
             await self.ui_log(f"✅ MILESTONE [{datetime.now().strftime('%H:%M:%S')}]: Research + Dedup Scan Completed", "success")
             await self.ui_log(f"Found {len(already_published)} existing posts. {len(gaps)} content pillars uncovered → prioritize those.")
             return json.dumps(trends_data)
+
+        @llm.function_tool(description="Search the live web for real-time information, news, and deep research on any topic using SearXNG.")
+        async def search_web(self, query: str = Field(description="The search query")):
+            """Perform a deep-dive search on the live web using SearXNG."""
+            logger.info(f"[ASTRA] Searching web for: {query}")
+            await self.ui_log(f"🔍 SEARCHING WEB: '{query}'...", "info")
+            self.sentry.log_transaction("web_search", {"query": query})
+            
+            import urllib.request
+            import urllib.parse
+            
+            # Use SEARXNG_URL if provided, else fallback to a public SearXNG instance
+            searxng_url = os.getenv("SEARXNG_URL", "https://searx.be")
+            
+            try:
+                encoded_query = urllib.parse.quote(query)
+                req = urllib.request.Request(
+                    f"{searxng_url}/search?q={encoded_query}&format=json",
+                    headers={'User-Agent': 'Astra/1.0 (Autonomous Agent)'}
+                )
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    data = json.loads(response.read().decode("utf-8"))
+                    
+                    results = data.get("results", [])[:5]  # Top 5 results
+                    if not results:
+                        await self.ui_log(f"⚠️ Search returned no results.", "warning")
+                        return "No results found."
+                    
+                    formatted_results = []
+                    for idx, r in enumerate(results):
+                        title = r.get("title", "No title")
+                        content = r.get("content", "No content")
+                        url = r.get("url", "No URL")
+                        formatted_results.append(f"{idx+1}. {title}\nURL: {url}\nSnippet: {content}")
+                    
+                    final_output = "\n\n".join(formatted_results)
+                    await self.ui_log(f"✅ Found {len(results)} high-quality results from SearXNG.", "success")
+                    return final_output
+            except Exception as e:
+                logger.error(f"[ASTRA] SearXNG error: {e}")
+                await self.ui_log(f"⚠️ Search failed: {e}", "error")
+                return f"Web search failed: {e}"
+
 
         @llm.function_tool(description="Publish a production-ready autonomous insight to the Swarm Blog. Generates a real AI image via Gemini Imagen automatically.")
         async def publish_autonomous_insight(self, args: PublishInsightRequest):
