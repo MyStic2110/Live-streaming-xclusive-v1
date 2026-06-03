@@ -25,6 +25,7 @@ import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
+from utils.traced_llm import TracedLLM
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -204,7 +205,8 @@ async def entrypoint(ctx: JobContext):
         await asyncio.sleep(0.5)
 
     # Setup Session
-    llm_plugin = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
+    raw_llm = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
+    llm_plugin = TracedLLM(raw_llm, agent_name="VONE")
     tts_plugin = deepgram.TTS(model="aura-stella-en")
     vad_plugin = silero.VAD.load()
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

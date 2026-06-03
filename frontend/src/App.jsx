@@ -17,6 +17,7 @@ import DevopsGeniRoom from "./components/DevopsGeniRoom";
 import AivyuhRoom from "./components/AivyuhRoom";
 import DevopsOrb from "./components/DevopsOrb";
 import SwarmShortsPage from "./components/SwarmShortsPage";
+import DashboardPage from "./components/DashboardPage";
 import NotFoundPage from "./components/NotFoundPage";
 import '@livekit/components-styles/index.css';
 import "./index.css";
@@ -64,6 +65,12 @@ function App() {
     setShowShorts(true);
   };
 
+  const navigateToDashboard = () => {
+    window.history.pushState({}, "", "/dashboard");
+    setCurrentPath("/dashboard");
+    setShowShorts(false);
+  };
+
   const navigateHome = () => {
     window.history.pushState({}, "", "/");
     setCurrentPath("/");
@@ -107,6 +114,11 @@ function App() {
     currentPath.replace(/\/$/, "") === "/learn" ||
     window.location.hash === "#/learn";
 
+  const isDashboardPath =
+    currentPath.replace(/\/$/, "") === "/dashboard" ||
+    window.location.hash === "#/dashboard" ||
+    window.location.hash === "#dashboard";
+
   let content;
   if (showBlog) {
     content = <BlogSection onBack={() => setShowBlog(false)} />;
@@ -114,6 +126,8 @@ function App() {
     content = <SwarmShortsPage onBack={navigateHome} />;
   } else if (isTelemetryPath) {
     content = <SwarmTelemetryPage onBack={navigateHome} />;
+  } else if (isDashboardPath) {
+    content = <DashboardPage onBack={navigateHome} />;
   } else if (roomData) {
     content = isDevopsGeni ? (
       <DevopsGeniRoom roomData={roomData} onLeave={handleLeave} />
@@ -157,6 +171,7 @@ function App() {
         onBlogClick={() => setShowBlog(true)} 
         onTelemetryClick={navigateToTelemetry}
         onShortsClick={navigateToShorts}
+        onDashboardClick={navigateToDashboard}
       />
     );
   } else {

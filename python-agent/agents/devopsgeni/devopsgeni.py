@@ -24,6 +24,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
+from utils.traced_llm import trace_raw_call, trace_raw_error
 
 logger = logging.getLogger("devopsgeni")
 logger.setLevel(logging.INFO)
@@ -508,14 +509,18 @@ async def entrypoint(ctx: JobContext):
         messages.append({"role": "user", "content": user_text})
         
         try:
+            start_time = time.perf_counter()
+            first_call_start = time.perf_counter()
             response = await client.chat.completions.create(
                 model="openai/gpt-4o-mini",
                 messages=messages,
                 tools=AVAILABLE_TOOLS,
                 tool_choice="auto"
             )
+            ttft = time.perf_counter() - first_call_start
             
             resp_msg = response.choices[0].message
+            tool_latency = 0.0
             
             if resp_msg.tool_calls:
                 # Add the assistant's tool call message
@@ -525,6 +530,8 @@ async def entrypoint(ctx: JobContext):
                     fn_name = tool_call.function.name
                     logger.info(f"[DEVOPS_GENI] Executing tool: {fn_name}")
                     result = ""
+                    
+                    tool_start = time.perf_counter()
                     if fn_name == "get_local_machine_specs":
                         result = get_local_machine_specs()
                     elif fn_name == "check_ghost_processes":
@@ -552,6 +559,7 @@ async def entrypoint(ctx: JobContext):
                     elif fn_name == "search_web":
                         args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
                         result = search_web(args.get("query", ""))
+                    tool_latency += time.perf_counter() - tool_start
                     
                     messages.append({
                         "role": "tool",
@@ -567,10 +575,25 @@ async def entrypoint(ctx: JobContext):
                 )
                 resp_msg = response.choices[0].message
             
+            duration = time.perf_counter() - start_time
             final_text = resp_msg.content
             if final_text:
                 messages.append({"role": "assistant", "content": final_text})
                 logger.info(f"[DEVOPS_GENI] Responding: {final_text}")
+
+                # Trace the full conversation turn with metrics
+                usage = getattr(response, "usage", None)
+                asyncio.create_task(trace_raw_call(
+                    agent_name="DEVOPS_GENI",
+                    model="openai/gpt-4o-mini",
+                    messages=messages[:-1],  # everything before the last assistant msg
+                    response_text=final_text,
+                    prompt_tokens=usage.prompt_tokens if usage else 0,
+                    completion_tokens=usage.completion_tokens if usage else 0,
+                    duration=duration,
+                    ttft=ttft,
+                    tool_latency=tool_latency
+                ))
                 
                 payload = json.dumps({
                     "type": "chat_message",
@@ -582,6 +605,14 @@ async def entrypoint(ctx: JobContext):
                 
         except Exception as e:
             logger.error(f"[DEVOPS_GENI] Chat error: {e}")
+            duration = time.perf_counter() - start_time
+            asyncio.create_task(trace_raw_error(
+                agent_name="DEVOPS_GENI",
+                model="openai/gpt-4o-mini",
+                messages=messages,
+                exception=e,
+                duration=duration
+            ))
 
     @ctx.room.on("data_received")
     def on_data_received(dp):

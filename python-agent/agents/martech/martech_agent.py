@@ -26,6 +26,7 @@ from livekit.plugins import silero, openai, deepgram
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
+from utils.traced_llm import TracedLLM
 from integrations.securelytix import SecurelytixClient
 from pydantic import BaseModel, Field
 
@@ -611,7 +612,8 @@ async def entrypoint(ctx: JobContext):
     # Generate the initial markdown report
     markdown_report = build_executive_markdown(comparison, anomalies, opps, correlations)
 
-    llm_plugin = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
+    raw_llm = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
+    llm_plugin = TracedLLM(raw_llm, agent_name="MARTECH")
 
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     dynamic_prompt = f"""You are 'MarTech Analyst', an autonomous senior digital marketing analyst and growth intelligence system.

@@ -3,6 +3,8 @@ import CostGuardAlert from "./CostGuardAlert";
 import { LiveKitRoom, useRoomContext, useLocalParticipant, useRemoteParticipants } from "@livekit/components-react";
 import { Send, ArrowLeft, Bot, User, Server } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 function DevopsGeniChat({ roomData, onLeave }) {
   const room = useRoomContext();
@@ -185,6 +187,49 @@ function DevopsGeniChat({ roomData, onLeave }) {
           0%, 80%, 100% { transform: scale(0); }
           40% { transform: scale(1); }
         }
+        .markdown-chat-bubble h1, .markdown-chat-bubble h2, .markdown-chat-bubble h3 {
+          margin-top: 0;
+          margin-bottom: 0.5rem;
+          color: inherit;
+        }
+        .markdown-chat-bubble h3 {
+          font-size: 1.05rem;
+          font-weight: 700;
+        }
+        .markdown-chat-bubble p {
+          margin-top: 0;
+          margin-bottom: 0.75rem;
+        }
+        .markdown-chat-bubble p:last-child {
+          margin-bottom: 0;
+        }
+        .markdown-chat-bubble ul, .markdown-chat-bubble ol {
+          margin-top: 0;
+          margin-bottom: 0.75rem;
+          padding-left: 1.2rem;
+        }
+        .markdown-chat-bubble li {
+          margin-bottom: 0.25rem;
+        }
+        .markdown-chat-bubble pre {
+          background-color: rgba(0, 0, 0, 0.05);
+          padding: 10px;
+          border-radius: 8px;
+          overflow-x: auto;
+          margin-bottom: 0.75rem;
+          border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .markdown-chat-bubble code {
+          font-family: 'Courier New', Courier, monospace;
+          background-color: rgba(0, 0, 0, 0.05);
+          padding: 2px 4px;
+          border-radius: 4px;
+          font-size: 0.85em;
+        }
+        .markdown-chat-bubble pre code {
+          background-color: transparent;
+          padding: 0;
+        }
       `}</style>
 
       {/* Chat Messages Area */}
@@ -244,21 +289,28 @@ function DevopsGeniChat({ roomData, onLeave }) {
                   }}>
                     {isUser ? "You" : "DevOpsGeni"}
                   </div>
-                  <div style={{
-                    backgroundColor: isUser ? "#3b82f6" : "#ffffff",
-                    color: isUser ? "#ffffff" : "#1f2937",
-                    padding: "12px 16px",
-                    borderRadius: "16px",
-                    borderTopRightRadius: isUser ? "4px" : "16px",
-                    borderTopLeftRadius: !isUser ? "4px" : "16px",
-                    boxShadow: isUser ? "none" : "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-                    border: isUser ? "none" : "1px solid #e5e7eb",
-                    fontSize: "0.95rem",
-                    lineHeight: "1.5",
-                    whiteSpace: "pre-wrap",
-                    fontFamily: !isUser && (msg.text || msg.message || "").includes("```") ? "'Courier New', Courier, monospace" : "inherit"
-                  }}>
-                    {msg.text || msg.message || ""}
+                  <div 
+                    className="markdown-chat-bubble"
+                    style={{
+                      backgroundColor: isUser ? "#3b82f6" : "#ffffff",
+                      color: isUser ? "#ffffff" : "#1f2937",
+                      padding: "12px 16px",
+                      borderRadius: "16px",
+                      borderTopRightRadius: isUser ? "4px" : "16px",
+                      borderTopLeftRadius: !isUser ? "4px" : "16px",
+                      boxShadow: isUser ? "none" : "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+                      border: isUser ? "none" : "1px solid #e5e7eb",
+                      fontSize: "0.95rem",
+                      lineHeight: "1.5"
+                    }}
+                  >
+                    {!isUser ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {msg.text || msg.message || ""}
+                      </ReactMarkdown>
+                    ) : (
+                      <div style={{ whiteSpace: "pre-wrap" }}>{msg.text || msg.message || ""}</div>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -310,10 +362,10 @@ function DevopsGeniChat({ roomData, onLeave }) {
           {/* Quick Actions */}
           <div style={{ display: "flex", gap: "8px", overflowX: "auto", marginBottom: "16px", paddingBottom: "4px", scrollbarWidth: "none" }}>
             {[
-              "Run SAST scan on the backend directory",
-              "Analyze architecture risks of docker setup",
-              "Install pre-commit security gate",
-              "Check for ghost processes"
+              "Run Security Compliance Audit",
+              "Analyze Infrastructure Risks",
+              "Monitor CI/CD Telemetry",
+              "Audit Agent Factory Logs"
             ].map((action) => (
               <button
                 key={action}

@@ -28,6 +28,7 @@ import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
+from utils.traced_llm import TracedLLM
 
 # ---------------------------------------------------------------------------
 # Environment & constants
@@ -671,8 +672,9 @@ async def entrypoint(ctx: JobContext):
         stt = deepgram.STT(model="nova-2-general")
         tts = deepgram.TTS(model="aura-asteria-en")
 
-        # LLM via OpenRouter (same as Astra)
-        llm_plugin = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
+        # LLM via OpenRouter (same as Astra), wrapped with TracedLLM for telemetry
+        raw_llm = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
+        llm_plugin = TracedLLM(raw_llm, agent_name="SEVA")
 
         # Connect to LiveKit room with retry
         max_retries = 3

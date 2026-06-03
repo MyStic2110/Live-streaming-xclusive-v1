@@ -1,6 +1,9 @@
 import os
 import asyncio
 import time
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+
 from datetime import datetime
 import logging
 import json
@@ -23,16 +26,14 @@ from livekit.agents import (
 )
 from livekit.plugins import silero, openai, deepgram
 from utils.cost_guard import CostGuard
+from utils.traced_llm import TracedLLM
 from integrations.securelytix import SecurelytixClient
 from pydantic import BaseModel, Field
+from utils.sentry import get_sentry
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
 os.environ["LIVEKIT_AGENT_BARGEIN_HOST"] = ""
-
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
-from utils.sentry import get_sentry
 
 # Logger setup
 logger = logging.getLogger("octane-telemetry")
@@ -67,6 +68,9 @@ Your mission is to monitor local docker container state and stream docker logs f
 YOUR ACTIVE INFRASTRUCTURE:
 - livekit-video-app-livekit-1 (LiveKit SFU Server)
 - livekit-video-app-redis-1 (Redis In-Memory Database)
+- livekit-video-app-securelytix-sdk-1 (Securelytix SDK)
+- livekit-video-app-securelytix-postgres-1 (PostgreSQL DB)
+- livekit-video-app-searxng-1 (SearXNG Search Engine)
 - octane-agent (This Telemetry Agent's own system process logs)
 - node-backend (The global Node.js backend server crash logs)
 
@@ -102,7 +106,7 @@ class OctaneTools:
         self.sentry = sentry
         self.stream_task = None
         self.current_container = None
-        self.cost_guard = CostGuard()
+        self.cost_guard = CostGuard(agent_name=AGENT_NAME)
         self.securelytix = SecurelytixClient()
         logger.info("[OCTANE][TOOLS] Initialized OctaneTools interface.")
 
@@ -225,13 +229,34 @@ class OctaneTools:
 
     @llm.function_tool(description="Start tailing and broadcasting real-time logs from a specific container over WebRTC data channels.")
     async def stream_logs(self, args: StreamLogsArgs) -> str:
-        container_name = args.container_name
+        return await self._start_streaming(args.container_name)
+
+    async def _start_streaming(self, container_name: str) -> str:
         logger.info(f"[OCTANE][TOOLS] Tool called: stream_logs() for container '{container_name}'")
-        self.stop_active_stream()
-        
         self.current_container = container_name
-        logger.info(f"[OCTANE][TOOLS] Launching log-tailing stream loop task for '{container_name}'")
-        self.stream_task = asyncio.create_task(self._tail_logs_loop(container_name))
+        
+        if container_name not in ["octane-agent", "node-backend"]:
+            try:
+                logger.info(f"[OCTANE][TOOLS] Fetching last 50 lines for '{container_name}' UI refresh...")
+                proc = await asyncio.create_subprocess_exec (
+                    "docker", "logs", "--tail", "50", container_name,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.STDOUT
+                )
+                stdout, _ = await proc.communicate()
+                if stdout:
+                    lines = stdout.decode("utf-8", errors="ignore").splitlines()
+                    for text_line in lines:
+                        payload = json.dumps({
+                            "type": "log_line",
+                            "container": container_name,
+                            "line": text_line,
+                            "timestamp": datetime.now().isoformat()
+                        })
+                        await self.ctx.room.local_participant.publish_data(payload, topic="log_stream")
+            except Exception as e:
+                logger.error(f"[OCTANE][TOOLS] Failed to burst-send historical logs: {e}")
+                
         return f"Tailing started for container '{container_name}'. Logs are now streaming to the terminal console."
 
     @llm.function_tool(description="Stop the currently active Docker log stream.")
@@ -241,13 +266,6 @@ class OctaneTools:
         return "Log stream stopped."
 
     def stop_active_stream(self):
-        if self.stream_task and not self.stream_task.done():
-            logger.info(f"[OCTANE][TOOLS] Stream task cancellation triggered for: '{self.current_container}'")
-            self.stream_task.cancel()
-            logger.info(f"[OCTANE][TOOLS] Log stream task successfully cancelled.")
-        else:
-            logger.info("[OCTANE][TOOLS] No active log stream task found to stop.")
-        self.stream_task = None
         self.current_container = None
 
     async def _tail_logs_loop(self, container_name: str):
@@ -280,9 +298,14 @@ class OctaneTools:
                             "line": text_line,
                             "timestamp": datetime.now().isoformat()
                         })
-                        await self.ctx.room.local_participant.publish_data(
-                            payload, reliable=False, topic="log_stream"
-                        )
+                        if self.current_container == "node-backend":
+                            try:
+                                await self.ctx.room.local_participant.publish_data(
+                                    payload, topic="log_stream"
+                                )
+                            except Exception:
+                                pass
+                        
                         try:
                             await redis_client.publish('octane_telemetry_stream', payload)
                         except Exception as e:
@@ -321,16 +344,20 @@ class OctaneTools:
                     "timestamp": datetime.now().isoformat()
                 })
                 
-                # Broadcast over LiveKit room to the client React UI
-                await self.ctx.room.local_participant.publish_data(
-                    payload,
-                    reliable=False,
-                    topic="log_stream"
-                )
                 try:
                     await redis_client.publish('octane_telemetry_stream', payload)
                 except Exception as e:
                     logger.error(f"[OCTANE][REDIS] Pub error: {e}")
+                
+                if self.current_container == container_name:
+                    try:
+                        await self.ctx.room.local_participant.publish_data(
+                            payload,
+                            topic="log_stream"
+                        )
+                    except Exception:
+                        pass
+                
                 lines_streamed += 1
                 if lines_streamed % 50 == 0:
                     logger.info(f"[OCTANE][STREAM] Streamed {lines_streamed} log lines so far for '{container_name}'")
@@ -396,8 +423,9 @@ async def entrypoint(ctx: JobContext):
     chat_ctx = llm.ChatContext()
     chat_ctx.add_message(role="system", content=dynamic_prompt)
 
-    llm_plugin = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
-    logger.info("[OCTANE] GPT-4o-mini LLM client instantiated via OpenRouter.")
+    raw_llm = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
+    llm_plugin = TracedLLM(raw_llm, agent_name="OCTANE")
+    logger.info("[OCTANE] GPT-4o-mini LLM client instantiated via OpenRouter (TracedLLM wrapper active).")
 
     octane_tools = OctaneTools(ctx, sentry)
 
@@ -437,7 +465,6 @@ async def entrypoint(ctx: JobContext):
                 asyncio.run_coroutine_threadsafe(
                     self.room.local_participant.publish_data(
                         payload,
-                        reliable=False,
                         topic="log_stream"
                     ),
                     self.loop
@@ -597,7 +624,7 @@ async def entrypoint(ctx: JobContext):
             if msg.get("type") == "select_container":
                 container = msg.get("container")
                 logger.info(f"[OCTANE][DATA_RECEIVED] Switching logs stream target to '{container}'")
-                asyncio.create_task(octane_tools.stream_logs(container))
+                asyncio.create_task(octane_tools._start_streaming(container))
             elif msg.get("type") == "stop_stream":
                 logger.info("[OCTANE][DATA_RECEIVED] UI requested log stream termination.")
                 octane_tools.stop_active_stream()
@@ -611,8 +638,16 @@ async def entrypoint(ctx: JobContext):
     await session.start(room=ctx.room, agent=agent)
     logger.info(f"--- [SESSION] Octane Telemetry Active in Room {ctx.room.name} ---")
     
-    logger.info("[OCTANE] Auto-starting default livekit logs stream pipeline...")
-    asyncio.create_task(octane_tools.stream_logs("livekit-video-app-livekit-1"))
+    logger.info("[OCTANE] Auto-starting global background telemetry streams...")
+    containers_to_monitor = [
+        "livekit-video-app-livekit-1",
+        "livekit-video-app-redis-1",
+        "livekit-video-app-securelytix-sdk-1",
+        "livekit-video-app-securelytix-postgres-1",
+        "livekit-video-app-searxng-1"
+    ]
+    for c in containers_to_monitor:
+        asyncio.create_task(octane_tools._tail_logs_loop(c))
 
     async def _tail_swarm_master_loop():
         import re

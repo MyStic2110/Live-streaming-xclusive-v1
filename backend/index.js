@@ -83,6 +83,218 @@ app.get("/insights", roomController.getAstraInsights);
 app.get("/weather", roomController.getWeather);
 app.post("/trigger-reels", roomController.triggerReels);
 
+// --- LLM TRACING & TELEMETRY ---
+let llmTraces = [];
+const hallucinationStore = new Map(); // run_id -> evaluation result
+
+app.post("/api/llm-trace", (req, res) => {
+  const { event, run_id, data } = req.body;
+  
+  if (event === "llm_start") {
+    const newTrace = {
+      run_id,
+      agent: data.agent || null,
+      model: data.model,
+      inputs: data.inputs,
+      outputs: "",
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      input_cost: 0,
+      output_cost: 0,
+      total_cost: 0,
+      status: "streaming",
+      timestamp: new Date().toISOString(),
+      total_latency: 0,
+      ttft: 0,
+      tool_latency: 0,
+      otps: 0,
+      tool_calls: []
+    };
+    llmTraces.unshift(newTrace);
+    if (llmTraces.length > 100) llmTraces.pop();
+  } else if (event === "llm_chunk") {
+    const trace = llmTraces.find(t => t.run_id === run_id);
+    if (trace) trace.outputs += data.chunk;
+  } else if (event === "llm_end") {
+    const trace = llmTraces.find(t => t.run_id === run_id);
+    if (trace) {
+      trace.outputs         = data.outputs;
+      trace.prompt_tokens   = data.prompt_tokens;
+      trace.completion_tokens = data.completion_tokens;
+      trace.input_cost      = data.input_cost;
+      trace.output_cost     = data.output_cost;
+      trace.total_cost      = data.total_cost;
+      trace.agent           = data.agent || trace.agent;
+      trace.status          = "completed";
+      
+      // Update latency metrics
+      trace.total_latency   = data.total_latency || trace.total_latency || 0;
+      trace.ttft            = data.ttft || trace.ttft || 0;
+      trace.tool_latency    = data.tool_latency || trace.tool_latency || 0;
+      trace.otps            = data.otps || trace.otps || 0;
+    }
+  } else if (event === "llm_error") {
+    const trace = llmTraces.find(t => t.run_id === run_id);
+    if (trace) {
+      trace.status          = "failed";
+      trace.error_code      = data.error_code || "UNKNOWN_ERROR";
+      trace.error_message   = data.error_message || "An error occurred";
+      trace.total_latency   = data.total_latency || trace.total_latency || 0;
+      trace.agent           = data.agent || trace.agent;
+    } else {
+      const newTrace = {
+        run_id,
+        agent: data.agent || null,
+        model: "unknown",
+        inputs: [],
+        outputs: "",
+        prompt_tokens: 0,
+        completion_tokens: 0,
+        input_cost: 0,
+        output_cost: 0,
+        total_cost: 0,
+        status: "failed",
+        error_code: data.error_code || "UNKNOWN_ERROR",
+        error_message: data.error_message || "An error occurred",
+        timestamp: new Date().toISOString(),
+        total_latency: data.total_latency || 0,
+        ttft: 0,
+        tool_latency: 0,
+        otps: 0,
+        tool_calls: []
+      };
+      llmTraces.unshift(newTrace);
+      if (llmTraces.length > 100) llmTraces.pop();
+    }
+  }
+
+  io.emit("llm_trace", { event, run_id, data });
+  res.json({ success: true });
+});
+
+app.post("/api/llm-trace/tool-call", (req, res) => {
+  const { run_id, name, duration } = req.body;
+  if (!run_id || !name) {
+    return res.status(400).json({ error: "run_id and name are required" });
+  }
+
+  const trace = llmTraces.find(t => t.run_id === run_id);
+  if (trace) {
+    if (!trace.tool_calls) trace.tool_calls = [];
+    trace.tool_calls.push({ name, duration });
+    trace.tool_latency = (trace.tool_latency || 0) + duration;
+    
+    // Broadcast tool execution to frontend in real-time
+    io.emit("llm_trace", { event: "tool_call", run_id, data: { name, duration } });
+    console.log(`[TOOL CALL] run=${run_id} tool=${name} duration=${duration}ms`);
+  }
+  res.json({ success: true });
+});
+
+app.get("/api/llm-traces", (req, res) => {
+  res.json(llmTraces);
+});
+
+app.delete("/api/llm-traces", (req, res) => {
+  llmTraces = [];
+  hallucinationStore.clear();
+  io.emit("llm_trace_clear");
+  res.json({ success: true });
+});
+
+// --- HALLUCINATION EVALUATION ---
+const JUDGE_SYSTEM_PROMPT = `You are an expert AI hallucination detector.
+Given a conversation context (system prompt + user message) and the AI assistant's response,
+evaluate whether the response contains hallucinated claims — statements not grounded in the
+provided context or factually fabricated information.
+
+Return ONLY valid JSON (no markdown, no code fences):
+{
+  "score": <float 0.0 to 1.0>,
+  "reasoning": "<1-2 sentence summary>",
+  "flags": ["<specific unsupported claim>", ...]
+}
+
+Score guide:
+  0.00-0.20  Fully accurate and grounded in context
+  0.21-0.40  Minor unsupported elaborations
+  0.41-0.60  Moderate hallucinations present
+  0.61-0.80  Significant fabrications detected
+  0.81-1.00  Completely hallucinated or fabricated`;
+
+app.post("/api/evaluate-hallucination", async (req, res) => {
+  const { run_id, inputs, outputs, model } = req.body;
+  if (!run_id || !inputs || !outputs) {
+    return res.status(400).json({ error: "run_id, inputs and outputs are required" });
+  }
+
+  const contextSummary = inputs
+    .map(m => `[${m.role.toUpperCase()}]: ${String(m.content).slice(0, 800)}`)
+    .join("\n");
+
+  const judgeMessages = [
+    { role: "system", content: JUDGE_SYSTEM_PROMPT },
+    { role: "user", content: `CONVERSATION CONTEXT:\n${contextSummary}\n\nAI RESPONSE TO EVALUATE:\n${String(outputs).slice(0, 1200)}` }
+  ];
+
+  try {
+    const openRouterRes = await fetch(
+      `${process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1"}/chat/completions`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-4o-mini",
+          messages: judgeMessages,
+          temperature: 0.1,
+          max_tokens: 400
+        })
+      }
+    );
+
+    if (!openRouterRes.ok) {
+      const errText = await openRouterRes.text();
+      throw new Error(`OpenRouter error: ${openRouterRes.status} ${errText}`);
+    }
+
+    const judgeData = await openRouterRes.json();
+    const raw = judgeData.choices?.[0]?.message?.content?.trim() || "{}";
+
+    let parsed;
+    try {
+      // Strip accidental markdown fences
+      const clean = raw.replace(/^```[a-z]*\n?/i, "").replace(/```$/g, "").trim();
+      parsed = JSON.parse(clean);
+    } catch {
+      parsed = { score: 0.5, reasoning: "Failed to parse judge response.", flags: [] };
+    }
+
+    const result = {
+      run_id,
+      score:     Math.min(1, Math.max(0, parseFloat(parsed.score) || 0)),
+      reasoning: parsed.reasoning || "",
+      flags:     Array.isArray(parsed.flags) ? parsed.flags : [],
+      evaluated_at: new Date().toISOString()
+    };
+
+    hallucinationStore.set(run_id, result);
+    io.emit("hallucination_result", result);
+
+    console.log(`[HALLUCINATION] run=${run_id} score=${result.score}`);
+    res.json(result);
+  } catch (err) {
+    console.error("[HALLUCINATION] Evaluation error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/hallucination-results", (req, res) => {
+  res.json(Object.fromEntries(hallucinationStore));
+});
+
 // --- aivyuh Security Console Routes ---
 app.get("/security/status", roomController.getSecurityStatus);
 app.post("/security/scan", roomController.runSecurityScan);

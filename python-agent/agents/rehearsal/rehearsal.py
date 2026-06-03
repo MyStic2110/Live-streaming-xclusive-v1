@@ -18,6 +18,7 @@ from livekit.agents import (
 from livekit.plugins import silero, deepgram
 from speech_analyser import SpeechAnalyser
 from utils.cost_guard import CostGuard
+from utils.traced_llm import trace_raw_call, trace_raw_error
 
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
@@ -138,6 +139,7 @@ async def entrypoint(ctx: JobContext):
         prompt = analyser.critique_prompt()
         logger.info(f"[CRITIQUE] Feeding prompt to OpenRouter:\n{prompt}")
 
+        start_time = time.perf_counter()
         try:
             import httpx
             headers = {
@@ -152,15 +154,30 @@ async def entrypoint(ctx: JobContext):
             }
             
             logger.info("[CRITIQUE] Posting HTTP request to OpenRouter API...")
+            start_time = time.perf_counter()
             async with httpx.AsyncClient(timeout=30) as client:
                 resp = await client.post(
                     f"{os.getenv('OPENROUTER_BASE_URL')}/chat/completions",
                     headers=headers,
                     json=body
                 )
+                duration = time.perf_counter() - start_time
                 
                 raw = resp.json()["choices"][0]["message"]["content"].strip()
+                usage_data = resp.json().get("usage", {})
                 logger.info(f"[CRITIQUE] Raw LLM reply received: {raw[:300]}...")
+
+                # Trace the raw HTTP call with latency metrics
+                asyncio.create_task(trace_raw_call(
+                    agent_name="REHEARSAL",
+                    model="openai/gpt-4o-mini",
+                    messages=body["messages"],
+                    response_text=raw,
+                    prompt_tokens=usage_data.get("prompt_tokens", 0),
+                    completion_tokens=usage_data.get("completion_tokens", 0),
+                    duration=duration,
+                    ttft=duration # non-streaming raw call, first token received at completion
+                ))
 
                 # Strip markdown fences if any
                 if raw.startswith("```"):
@@ -188,6 +205,14 @@ async def entrypoint(ctx: JobContext):
 
         except Exception as e:
             logger.error(f"[CRITIQUE] Critique generation crashed: {e}", exc_info=True)
+            duration = time.perf_counter() - start_time
+            asyncio.create_task(trace_raw_error(
+                agent_name="REHEARSAL",
+                model="openai/gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                exception=e,
+                duration=duration
+            ))
             err_payload = json.dumps({
                 "type": "rehearsal_critique",
                 "error": str(e)

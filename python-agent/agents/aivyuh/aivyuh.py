@@ -24,6 +24,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
+from utils.traced_llm import TracedLLM
 
 # Load environment configs
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -253,7 +254,8 @@ async def entrypoint(ctx: JobContext):
     stt = deepgram.STT(model="nova-2-general")
     tts = deepgram.TTS(model="aura-asteria-en")
 
-    llm_plugin = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
+    raw_llm = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
+    llm_plugin = TracedLLM(raw_llm, agent_name="AIVYUH")
 
     await ctx.connect(auto_subscribe=AutoSubscribe.SUBSCRIBE_ALL)
     await ctx.room.local_participant.set_metadata(json.dumps({"name": AGENT_NAME}))

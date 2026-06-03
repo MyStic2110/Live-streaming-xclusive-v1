@@ -350,6 +350,9 @@ function OctaneScene({ roomData, onLeave }) {
               {[
                 { name: "livekit-video-app-livekit-1", label: "Livekit SFU", icon: <Server size={14} /> },
                 { name: "livekit-video-app-redis-1", label: "Redis DB", icon: <Database size={14} /> },
+                { name: "livekit-video-app-securelytix-sdk-1", label: "Securelytix SDK", icon: <Activity size={14} /> },
+                { name: "livekit-video-app-securelytix-postgres-1", label: "Postgres DB", icon: <Database size={14} /> },
+                { name: "livekit-video-app-searxng-1", label: "SearXNG Engine", icon: <Search size={14} /> },
                 { name: "octane-agent", label: "Octane Agent", icon: <Cpu size={14} /> }
               ].map(cont => (
                 <button

@@ -350,7 +350,7 @@ function ReelCard({ reel, index, onClick }) {
 
 // --- MAIN PAGE ---
 
-export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShortsClick }) {
+export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShortsClick, onDashboardClick }) {
   const [selectedReel, setSelectedReel] = React.useState(null);
   const [showReelsGallery, setShowReelsGallery] = React.useState(false);
   const [legalModalType, setLegalModalType] = React.useState(null);
@@ -761,6 +761,18 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
   };
   const agents = [
     {
+      id: "DEVOPS_GENI", title: "DevOps Geni", icon: "🛡️", color: "#f43f5e",
+      desc: "Autonomous DevSecOps agent. Monitors Docker telemetry, runs SAST scans, and hunts ghost processes.",
+      btnText: "Command Geni",
+      prompts: [
+        "Run SAST scan on backend", "Check for ghost processes",
+        "Read livekit docker logs", "Analyze architecture risks",
+        "Kill ghost processes", "Analyze recent telemetry",
+        "Search the web for solutions", "What is my system memory?",
+        "Check swarm memory usage", "Install pre-commit hook"
+      ]
+    },
+    {
       id: "bi", title: "Cortex BI", icon: "📊", color: "#059669",
       desc: "Conversational MySQL analysis and realtime business insights. Perfect for data-driven operations.",
       btnText: "Consult Cortex",
@@ -1008,6 +1020,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
         <div style={{ display: "flex", gap: "2.5rem", fontSize: "0.9rem", fontWeight: "600", color: COLORS.textMuted, alignItems: "center" }}>
           <a href="#services" style={{ textDecoration: "none", color: "inherit" }}>Services</a>
           <div onClick={onTelemetryClick} style={{ cursor: "pointer", color: COLORS.primary, fontWeight: "700" }}>Telemetry</div>
+          <div onClick={onDashboardClick} style={{ cursor: "pointer", color: "#4f46e5", fontWeight: "800" }}>Dashboard</div>
           <div onClick={onBlogClick} style={{ cursor: "pointer", color: COLORS.accent, fontWeight: "800" }}>Insights</div>
           <a href="#about" style={{ textDecoration: "none", color: "inherit" }}>About</a>
           {/* Learn Shorts Link */}
@@ -1037,7 +1050,24 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
       </nav>
 
       {/* Swarm Commander Conversational Landing Page Hero */}
-      <header style={{ padding: "6rem 5% 4rem", maxWidth: "1400px", margin: "0 auto" }}>
+      <header style={{ padding: "6rem 5% 4rem", maxWidth: "1400px", margin: "0 auto", position: "relative" }}>
+        {/* Creative Ambient Overlays */}
+        <div style={{
+          position: "absolute", top: "0%", left: "-10%", width: "500px", height: "500px",
+          background: "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
+          filter: "blur(60px)", zIndex: -1, pointerEvents: "none"
+        }}></div>
+        <div style={{
+          position: "absolute", bottom: "10%", right: "-10%", width: "600px", height: "600px",
+          background: "radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 70%)",
+          filter: "blur(80px)", zIndex: -1, pointerEvents: "none"
+        }}></div>
+        <div style={{
+          position: "absolute", top: "20%", left: "50%", transform: "translateX(-50%)", width: "800px", height: "300px",
+          background: "radial-gradient(ellipse, rgba(139, 92, 246, 0.04) 0%, transparent 70%)",
+          filter: "blur(40px)", zIndex: -1, pointerEvents: "none"
+        }}></div>
+
         {/* Split Grid Layout */}
         <div style={{
           display: "grid",
@@ -1053,13 +1083,13 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
               color: COLORS.accent, borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", 
               marginBottom: "2rem", letterSpacing: "1px" 
             }}>
-              B2B AI AUTOMATION & INTELLIGENCE
+              SOVEREIGN AGENT PLATFORM
             </div>
             <h1 style={{ fontSize: "3.75rem", fontWeight: "900", color: COLORS.primary, lineHeight: "1.05", letterSpacing: "-2px", marginBottom: "2rem" }}>
-              Automate your operations.<br/>Connect your tools.<br/>Deploy your <span style={{ color: COLORS.accent }}>Fleet.</span>
+              Stop Renting Intelligence.<br/>Own Your <span style={{ color: COLORS.accent }}>Intelligence.</span>
             </h1>
-            <p style={{ fontSize: "1.15rem", color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "3.5rem" }}>
-              Replace your expensive SaaS subscriptions with customized autonomous agents powered by local inference. Zero cloud costs, absolute privacy, and decentralized control.
+            <p style={{ fontSize: "1.15rem", color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "3.5rem", maxWidth: "600px" }}>
+              Swarm Agentic Lab is the central control plane for Fortune 100s to build their agent factories. Guarantee 100% data privacy within your own cloud. We provide the independent, cloud-agnostic, LLM-agnostic, and framework-agnostic infrastructure you need to scale.
             </p>
             <div style={{ display: "flex", gap: "1.5rem" }}>
               <a href="#process" style={{ textDecoration: "none" }}>
@@ -1126,9 +1156,9 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
           {/* Structured Heuristic Bottlenecks */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "2rem" }}>
             {[
-              { label: "🎥 Automate meeting audits & summaries", val: "automate zoom/meet transcripts and daily structural audits" },
-              { label: "📊 Perform database telemetry analytics", val: "sql/nosql database performance monitoring and telemetry charts" },
-              { label: "🎬 Create high-tempo vertical video reels", val: "compile technical blog articles into 30s reels videos" }
+              { label: "🛡️ Run SAST Pipeline & Security Check", val: "automate SAST scans and check architecture risks" },
+              { label: "🎛️ Deploy Local PostgreSQL Analyst", val: "sql/nosql database performance monitoring and telemetry charts" },
+              { label: "🏢 Monitor Swarm Observability Logs", val: "read docker logs and agent memory usage" }
             ].map((btn, idx) => (
               <button
                 key={idx}
@@ -1405,6 +1435,30 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
             </motion.div>
           )}
         </motion.div>
+      </div>
+
+      {/* The 3 Pillars of Swarm Agentic Lab */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gap: "2rem",
+        marginTop: "5rem"
+      }}>
+        <div style={{ padding: "2rem", background: "white", borderRadius: "20px", border: `1px solid ${COLORS.border}`, boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
+          <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>🏢</div>
+          <h3 style={{ fontSize: "1.2rem", fontWeight: "900", color: COLORS.primary, marginBottom: "0.5rem" }}>Sovereign Agent Platform</h3>
+          <p style={{ fontSize: "0.95rem", color: COLORS.textMuted, lineHeight: "1.5" }}>Run completely locally. 100% data privacy for regulated industries like Gov, Banking, Pharma, and Healthcare.</p>
+        </div>
+        <div style={{ padding: "2rem", background: "white", borderRadius: "20px", border: `1px solid ${COLORS.border}`, boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
+          <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>🎛️</div>
+          <h3 style={{ fontSize: "1.2rem", fontWeight: "900", color: COLORS.primary, marginBottom: "0.5rem" }}>Central Control Plane</h3>
+          <p style={{ fontSize: "0.95rem", color: COLORS.textMuted, lineHeight: "1.5" }}>Bring all agents under one roof with CI/CD and observability, irrespective of the underlying agent framework or LLM.</p>
+        </div>
+        <div style={{ padding: "2rem", background: "white", borderRadius: "20px", border: `1px solid ${COLORS.border}`, boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
+          <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>🧠</div>
+          <h3 style={{ fontSize: "1.2rem", fontWeight: "900", color: COLORS.primary, marginBottom: "0.5rem" }}>Applied AI Muscle</h3>
+          <p style={{ fontSize: "0.95rem", color: COLORS.textMuted, lineHeight: "1.5" }}>Palantir-like consulting mindset. We don't just bring the product; we reimagine complex workflows to guarantee outcomes.</p>
+        </div>
       </div>
     </header>
 
@@ -2002,7 +2056,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
 
 
       {/* Footer */}
-      <Footer onBlogClick={onBlogClick} onTelemetryClick={onTelemetryClick} onShortsClick={onShortsClick} onLegalClick={setLegalModalType} />
+      <Footer onBlogClick={onBlogClick} onTelemetryClick={onTelemetryClick} onShortsClick={onShortsClick} onLegalClick={setLegalModalType} onDashboardClick={onDashboardClick} />
 
       {/* --- PIPELINE REELS GALLERY MODAL --- */}
       <AnimatePresence>

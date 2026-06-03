@@ -23,6 +23,7 @@ import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
+from utils.traced_llm import TracedLLM
 from integrations.securelytix import SecurelytixClient
 
 # Load environment variables from the root directory
@@ -89,7 +90,8 @@ async def entrypoint(ctx: JobContext):
 
     # LLM: Large Language Model (OpenAI via OpenRouter)
     # Using GPT-4o-mini for speed and emotional intelligence
-    llm_plugin = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
+    raw_llm = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
+    llm_plugin = TracedLLM(raw_llm, agent_name="LINA")
 
     # TTS: Text-to-Speech (Deepgram Aura)
     # Using 'Aura Luna' for a warm, natural feminine voice

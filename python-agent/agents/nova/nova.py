@@ -24,6 +24,7 @@ import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard
+from utils.traced_llm import TracedLLM
 from integrations.securelytix import SecurelytixClient
 from pydantic import BaseModel, Field
 
@@ -396,7 +397,8 @@ SECURITY RULES:
     chat_ctx = llm.ChatContext()
     # chat_ctx.add_message(role="system", content=system_prompt)
 
-    llm_plugin = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
+    raw_llm = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
+    llm_plugin = TracedLLM(raw_llm, agent_name="NOVA")
 
     agent = voice.Agent(turn_handling={"interruption": {"mode": "vad"}}, 
         instructions=system_prompt,
