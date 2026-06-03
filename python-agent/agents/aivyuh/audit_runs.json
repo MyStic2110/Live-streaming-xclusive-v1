@@ -1,5 +1,16 @@
 [
     {
+        "id": "run-0021",
+        "date": "2026-06-03 18:59",
+        "agent": "SEVA",
+        "status": "completed",
+        "open": 0,
+        "resolved": 10,
+        "ignored": 0,
+        "cvss": "0.0",
+        "utility": "81%"
+    },
+    {
         "id": "run-0020",
         "date": "2026-05-26 18:26",
         "agent": "SEVA",

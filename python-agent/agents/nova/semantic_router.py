@@ -1,8 +1,9 @@
 import json
 import math
-from collections import Counter
 import os
 import logging
+import numpy as np
+from openai import OpenAI
 
 logger = logging.getLogger("semantic_router")
 logger.setLevel(logging.INFO)
@@ -11,6 +12,7 @@ class SemanticRouter:
     def __init__(self, map_file="product_map.json"):
         self.raw_data = {}
         self.routes = []
+        self.client = OpenAI() # Assumes OPENAI_API_KEY is in environment
         
         file_path = os.path.join(os.path.dirname(__file__), map_file)
         if os.path.exists(file_path):
@@ -30,38 +32,44 @@ class SemanticRouter:
         else:
             logger.warning(f"[ROUTER] Product Map not found at {file_path}")
         
-        # Precompute term frequencies for all routes
-        self.stop_words = {"the", "a", "an", "and", "or", "but", "is", "are", "was", "were", "to", "of", "in", "with"}
+        # Precompute vector embeddings for all routes
         self.documents = []
         for r in self.routes:
             # Combine route, description, and keywords for a rich search space
-            text = f"{r.get('route', '')} {r.get('description', '')} {' '.join(r.get('keywords', []))}".lower()
-            tokens = [w for w in text.split() if w not in self.stop_words]
-            self.documents.append(Counter(tokens))
+            text = f"{r.get('route', '')}. {r.get('description', '')}. Keywords: {', '.join(r.get('keywords', []))}"
+            try:
+                response = self.client.embeddings.create(
+                    input=text,
+                    model="text-embedding-3-small"
+                )
+                embedding = response.data[0].embedding
+                self.documents.append(np.array(embedding))
+            except Exception as e:
+                logger.error(f"[ROUTER] Error generating embedding for route {r.get('route')}: {e}")
+                self.documents.append(np.zeros(1536))
 
     def _cosine_similarity(self, vec1, vec2):
-        intersection = set(vec1.keys()) & set(vec2.keys())
-        numerator = sum([vec1[x] * vec2[x] for x in intersection])
-        
-        sum1 = sum([val**2 for val in vec1.values()])
-        sum2 = sum([val**2 for val in vec2.values()])
-        denominator = math.sqrt(sum1) * math.sqrt(sum2)
-        
-        if not denominator:
+        norm1 = np.linalg.norm(vec1)
+        norm2 = np.linalg.norm(vec2)
+        if norm1 == 0 or norm2 == 0:
             return 0.0
-        else:
-            return float(numerator) / denominator
+        return np.dot(vec1, vec2) / (norm1 * norm2)
 
-    def search(self, query: str, threshold=0.2):
+    def search(self, query: str, threshold=0.45):
         """Returns the best matching route for the user's query."""
         if not query or not self.routes:
             return None
             
-        # Basic text normalization
-        clean_query = ''.join(e for e in query.lower() if e.isalnum() or e.isspace())
-        query_tokens = [w for w in clean_query.split() if w not in self.stop_words]
-        query_vec = Counter(query_tokens)
-        
+        try:
+            response = self.client.embeddings.create(
+                input=query,
+                model="text-embedding-3-small"
+            )
+            query_vec = np.array(response.data[0].embedding)
+        except Exception as e:
+            logger.error(f"[ROUTER] Error embedding query '{query}': {e}")
+            return None
+            
         best_match = None
         highest_score = 0.0
         

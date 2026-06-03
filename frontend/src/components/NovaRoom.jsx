@@ -8,16 +8,48 @@ const DashboardContent = ({ roomData, onLeave }) => {
     const room = useRoomContext(); // Access the LiveKit room instance
 
     // Relay ALL Data Events to Iframe (Fast-Path Support)
+    const [isThinking, setIsThinking] = React.useState(false);
+    const [highlightId, setHighlightId] = React.useState(null);
+
     React.useEffect(() => {
         if (!room) return;
         const onData = (payload, participant, kind, topic) => {
-            if (topic === "ui_control" && iframeRef.current) {
-                const data = JSON.parse(new TextDecoder().decode(payload));
-                iframeRef.current.contentWindow.postMessage({ type: 'nova_command', ...data }, '*');
+            const dataStr = new TextDecoder().decode(payload);
+            let data = {};
+            try { data = JSON.parse(dataStr); } catch (e) {}
+
+            if (topic === "ui_control") {
+                if (data.key === 'thinking') {
+                    setIsThinking(true);
+                } else if (data.key === 'thinking_complete') {
+                    setIsThinking(false);
+                } else if (data.key === 'highlight') {
+                    setHighlightId(data.parameters.element_id);
+                    setTimeout(() => setHighlightId(null), 3000); // clear after 3s
+                }
+
+                if (iframeRef.current) {
+                    iframeRef.current.contentWindow.postMessage({ type: 'nova_command', ...data }, '*');
+                }
             }
         };
         room.on('dataReceived', onData);
         return () => room.off('dataReceived', onData);
+    }, [room]);
+
+    // Listen for UI state updates from Iframe for Contextual Grounding
+    React.useEffect(() => {
+        const onMessage = (event) => {
+            if (event.data?.type === 'ui_state_update' && room && room.localParticipant) {
+                const payload = new TextEncoder().encode(JSON.stringify({
+                    route: event.data.route,
+                    tab: event.data.tab
+                }));
+                room.localParticipant.publishData(payload, { topic: "ui_context" });
+            }
+        };
+        window.addEventListener('message', onMessage);
+        return () => window.removeEventListener('message', onMessage);
     }, [room]);
 
     // Track Nova's Usage Metadata
@@ -74,8 +106,6 @@ const DashboardContent = ({ roomData, onLeave }) => {
         }
     });
 
-
-
     return (
         <div style={{ 
             height: '100dvh', 
@@ -107,6 +137,31 @@ const DashboardContent = ({ roomData, onLeave }) => {
                 </div>
 
                 <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+                    {isThinking && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                            padding: '6px 12px',
+                            borderRadius: '16px',
+                            border: '1px solid rgba(56, 189, 248, 0.3)'
+                        }}>
+                            <div className="nova-spinner" style={{
+                                width: '14px',
+                                height: '14px',
+                                border: '2px solid rgba(56, 189, 248, 0.3)',
+                                borderTop: '2px solid #38bdf8',
+                                borderRadius: '50%',
+                                animation: 'spin 1s linear infinite'
+                            }} />
+                            <span style={{ color: '#38bdf8', fontSize: '0.75rem', fontWeight: '600', animation: 'pulse 1.5s infinite' }}>Nova is analyzing data...</span>
+                            <style>{`
+                                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                                @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+                            `}</style>
+                        </div>
+                    )}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                         <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.65rem', fontWeight: '800', textTransform: 'uppercase' }}>Session Tokens</span>
                         <span style={{ color: '#fff', fontSize: '0.9rem', fontWeight: '900', fontFamily: 'monospace' }}>
@@ -141,7 +196,7 @@ const DashboardContent = ({ roomData, onLeave }) => {
             {/* The Live Client Product Portal */}
             <iframe 
                 ref={iframeRef}
-                src={`http://localhost:8000?demo=true`} 
+                src={`http://localhost:8000?demo=true${highlightId ? `&highlight=${highlightId}` : ''}`} 
                 style={{ 
                     flex: 1, 
                     border: 'none',

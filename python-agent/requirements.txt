@@ -5,3 +5,5 @@ python-dotenv
 httpx
 google-genai
 redis
+openai
+numpy

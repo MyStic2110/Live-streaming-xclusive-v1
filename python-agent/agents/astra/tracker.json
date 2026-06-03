@@ -1,8 +1,8 @@
 {
-    "current_day": 13,
+    "current_day": 1,
     "total_days": 10,
-    "start_date": "2026-05-21",
-    "last_published_date": "2026-06-01",
+    "start_date": "2026-06-03",
+    "last_published_date": "2026-06-03",
     "published_slugs": [
         "rethinking-ai-architectures-agent-execution",
         "vector-policy-optimization-in-agentic-architecture",
@@ -14,7 +14,8 @@
         "from-demo-to-production-agent-systems",
         "transforming-legal-workflows-with-autonomous-swarms",
         "applying-ai-research-to-create-autonomous-agents",
-        "how-nvidia-humanoid-robot-is-transforming-industries"
+        "how-nvidia-humanoid-robot-is-transforming-industries",
+        "hybrid-light-matter-ai-computing"
     ],
     "cumulative_usage": {
         "input_tokens": 226352,

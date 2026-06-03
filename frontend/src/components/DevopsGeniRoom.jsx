@@ -84,6 +84,25 @@ function DevopsGeniChat({ roomData, onLeave }) {
     setIsTyping(true);
   };
 
+  const handleQuickAction = (actionText) => {
+    if (!room || !localParticipant) return;
+    const payload = {
+      type: "chat_message",
+      sender: "USER",
+      message: actionText,
+      timestamp: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, {
+      id: Math.random().toString(36).substring(7),
+      sender: "USER",
+      text: actionText,
+      timestamp: payload.timestamp
+    }]);
+    const data = new TextEncoder().encode(JSON.stringify(payload));
+    localParticipant.publishData(data, { topic: "chat_message", reliable: true });
+    setIsTyping(true);
+  };
+
   return (
     <div style={{
       height: "100vh",
@@ -288,6 +307,32 @@ function DevopsGeniChat({ roomData, onLeave }) {
         borderTop: "1px solid #e5e7eb"
       }}>
         <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+          {/* Quick Actions */}
+          <div style={{ display: "flex", gap: "8px", overflowX: "auto", marginBottom: "16px", paddingBottom: "4px", scrollbarWidth: "none" }}>
+            {[
+              "Run SAST scan on the backend directory",
+              "Analyze architecture risks of docker setup",
+              "Install pre-commit security gate",
+              "Check for ghost processes"
+            ].map((action) => (
+              <button
+                key={action}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleQuickAction(action);
+                }}
+                style={{
+                  whiteSpace: "nowrap", padding: "8px 16px", borderRadius: "20px", border: "1px solid #e5e7eb",
+                  backgroundColor: "#ffffff", fontSize: "0.85rem", color: "#374151", cursor: "pointer",
+                  boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f9fafb"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#ffffff"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+              >
+                {action}
+              </button>
+            ))}
+          </div>
           <form 
             onSubmit={handleSend}
             style={{

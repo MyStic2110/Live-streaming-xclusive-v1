@@ -144,7 +144,9 @@ SECURITY RULES:
     # --- SESSION STATE (DYNAMIC AUTH) ---
     session_context = {
         "auth_token": "nexus_demo_token", # Fallback
-        "user_id": None
+        "user_id": None,
+        "ui_route": "dashboard",
+        "ui_tab": "LIVE"
     }
 
     @ctx.room.on("participant_metadata_changed")
@@ -232,15 +234,25 @@ SECURITY RULES:
             Use this when the user wants to know their competition or who is leading the arena.
             """
             try:
+                # Emit thinking state
+                thinking_payload = json.dumps({"key": "thinking"}).encode("utf-8")
+                await ctx.room.local_participant.publish_data(thinking_payload, topic="ui_control")
+                
                 import aiohttp
                 async with aiohttp.ClientSession() as session:
                     async with session.get("http://localhost:8000/matches/leaderboard/global", timeout=5) as resp:
+                        # Clear thinking state
+                        done_payload = json.dumps({"key": "thinking_complete"}).encode("utf-8")
+                        await ctx.room.local_participant.publish_data(done_payload, topic="ui_control")
+                        
                         if resp.status == 200:
                             data = await resp.json()
                             summary = [f"{i+1}. {u['user']}: {u['score']} pts" for i, u in enumerate(data[:10])]
                             return "Nexus Global Standings:\n" + "\n".join(summary)
                         return "Failed to synchronize with Nexus Global Standings."
             except Exception as e:
+                done_payload = json.dumps({"key": "thinking_complete"}).encode("utf-8")
+                await ctx.room.local_participant.publish_data(done_payload, topic="ui_control")
                 return f"Error connecting to Nexus Leaderboard: {str(e)}"
 
         @llm.function_tool(description="Fetch the current user's strategic multiplier and active referral count.")
@@ -268,10 +280,16 @@ SECURITY RULES:
             Use this to analyze their past accuracy and points earned.
             """
             try:
+                thinking_payload = json.dumps({"key": "thinking"}).encode("utf-8")
+                await ctx.room.local_participant.publish_data(thinking_payload, topic="ui_control")
+                
                 import aiohttp
                 headers = {"Authorization": f"Bearer {session_context['auth_token']}"}
                 async with aiohttp.ClientSession() as session:
                     async with session.get("http://localhost:8000/matches/users/me/history", headers=headers, timeout=5) as resp:
+                        done_payload = json.dumps({"key": "thinking_complete"}).encode("utf-8")
+                        await ctx.room.local_participant.publish_data(done_payload, topic="ui_control")
+                        
                         if resp.status == 200:
                             history = await resp.json()
                             if not history: return "No past performance records found for this operator."
@@ -280,7 +298,24 @@ SECURITY RULES:
                             return self._clear_speech(result)
                         return "Failed to synchronize with Historical Engine."
             except Exception as e:
+                done_payload = json.dumps({"key": "thinking_complete"}).encode("utf-8")
+                await ctx.room.local_participant.publish_data(done_payload, topic="ui_control")
                 return f"Error connecting to Nexus Historical Engine: {str(e)}"
+
+        class HighlightArgs(BaseModel):
+            element_id: str = Field(description="The DOM element ID to visually highlight")
+
+        @llm.function_tool(description="Visually pulse or highlight an element on the screen for the user.")
+        async def highlight_element(self, args: HighlightArgs):
+            """
+            Draw the user's attention to a specific part of the UI.
+            Example element IDs: 'multiplier-card', 'leaderboard-table', 'live-score'
+            """
+            payload = json.dumps({
+                "key": "highlight", "parameters": {"element_id": args.element_id}
+            }).encode("utf-8")
+            await ctx.room.local_participant.publish_data(payload, topic="ui_control")
+            return f"Highlighted {args.element_id} on the user's screen."
 
         class SwitchTabArgs(BaseModel):
             tab: str = Field(description="The tab to switch to")
@@ -483,7 +518,18 @@ SECURITY RULES:
 
     @ctx.room.on("data_received")
     def on_data_received(dp):
-        if dp.topic == "ui_control":
+        if dp.topic == "ui_context":
+            try:
+                msg = json.loads(dp.data.decode("utf-8"))
+                session_context["ui_route"] = msg.get("route", session_context["ui_route"])
+                session_context["ui_tab"] = msg.get("tab", session_context["ui_tab"])
+                
+                # Dynamically update context grounding message
+                context_msg = f"[SYSTEM] The user is currently viewing Route: {session_context['ui_route']} | Tab: {session_context['ui_tab']}."
+                chat_ctx.add_message(role="system", content=context_msg)
+            except: pass
+            
+        elif dp.topic == "ui_control":
             try:
                 msg = json.loads(dp.data.decode("utf-8"))
                 if msg.get("type") == "ack":

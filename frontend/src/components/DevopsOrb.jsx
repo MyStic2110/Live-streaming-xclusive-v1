@@ -116,6 +116,15 @@ function DevopsGeniPanelChat({ initialError }) {
     setIsTyping(true);
   };
 
+  const handleQuickAction = (actionText) => {
+    if (!room || !localParticipant) return;
+    const payload = { type: "chat_message", sender: "USER", message: actionText, timestamp: new Date().toISOString() };
+    setMessages(prev => [...prev, { id: Math.random().toString(36).substring(7), sender: "USER", text: actionText, timestamp: payload.timestamp }]);
+    const data = new TextEncoder().encode(JSON.stringify(payload));
+    localParticipant.publishData(data, { topic: "chat_message", reliable: true });
+    setIsTyping(true);
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", fontFamily: "'Inter', sans-serif" }}>
       {/* Live Connection Status */}
@@ -199,30 +208,24 @@ function DevopsGeniPanelChat({ initialError }) {
                     {/* Default Prompts below the Welcome Message */}
                     {msg.id === "init" && messages.length <= 1 && !initialError && (
                       <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "16px" }}>
-                        <button 
-                          onClick={() => setInputValue("Check for ghost Python processes")}
-                          style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #d1d5db", background: "#ffffff", fontSize: "0.8rem", color: "#374151", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}
-                          onMouseOver={(e) => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.borderColor = "#9ca3af"; }}
-                          onMouseOut={(e) => { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.borderColor = "#d1d5db"; }}
-                        >
-                          👻 Find Ghost Processes
-                        </button>
-                        <button 
-                          onClick={() => setInputValue("Analyze Node.js backend crash logs")}
-                          style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #d1d5db", background: "#ffffff", fontSize: "0.8rem", color: "#374151", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}
-                          onMouseOver={(e) => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.borderColor = "#9ca3af"; }}
-                          onMouseOut={(e) => { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.borderColor = "#d1d5db"; }}
-                        >
-                          🖥️ Analyze Backend Logs
-                        </button>
-                        <button 
-                          onClick={() => setInputValue("What is the current Swarm memory usage?")}
-                          style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #d1d5db", background: "#ffffff", fontSize: "0.8rem", color: "#374151", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}
-                          onMouseOver={(e) => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.borderColor = "#9ca3af"; }}
-                          onMouseOut={(e) => { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.borderColor = "#d1d5db"; }}
-                        >
-                          📊 Swarm Memory Usage
-                        </button>
+                        {[
+                          { text: "Run SAST scan on backend directory", icon: "🛡️" },
+                          { text: "Analyze architecture risks of docker setup", icon: "🏗️" },
+                          { text: "Install pre-commit security gate", icon: "🔒" },
+                          { text: "Check for ghost Python processes", icon: "👻" },
+                          { text: "Analyze Node.js backend crash logs", icon: "🖥️" },
+                          { text: "What is the current Swarm memory usage?", icon: "📊" }
+                        ].map(action => (
+                          <button 
+                            key={action.text}
+                            onClick={() => handleQuickAction(action.text)}
+                            style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #d1d5db", background: "#ffffff", fontSize: "0.8rem", color: "#374151", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}
+                            onMouseOver={(e) => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.borderColor = "#9ca3af"; }}
+                            onMouseOut={(e) => { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+                          >
+                            {action.icon} {action.text}
+                          </button>
+                        ))}
                       </div>
                     )}
                     {isSystem && (

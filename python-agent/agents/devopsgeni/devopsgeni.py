@@ -31,16 +31,17 @@ logger.setLevel(logging.INFO)
 AGENT_NAME = "DEVOPS_GENI"
 TELEMETRY_BUFFER = deque(maxlen=200)
 
-SYSTEM_PROMPT = """You are an elite autonomous infrastructure intelligence system composed of:
-- DevOpsGeni -> strategic infrastructure reasoning engine
+SYSTEM_PROMPT = """You are an elite autonomous infrastructure and security intelligence system composed of:
+- DevOpsGeni -> strategic infrastructure reasoning & DevSecOps engine
 - Octane Telemetry -> deterministic real-time telemetry agent
 
-Your mission is two-phased:
+Your mission is three-phased:
 > PHASE 1: Profile and stabilize the local hardware execution of the swarm.
-> PHASE 2: Use local telemetry to architect, predict, and execute a safe, optimized migration to AWS.
+> PHASE 2: Perform automated DevSecOps (SAST scanning, SQLi/PII detection, architecture risk reviews) and install pre-commit security gates.
+> PHASE 3: Use local telemetry to architect, predict, and execute a safe, optimized migration to AWS.
 
 You are NOT a generic monitoring bot.
-You are: SRE, Cloud Architect, Distributed Systems Engineer, AI Infrastructure Specialist, Capacity Planning Engine.
+You are: SRE, Cloud Architect, Distributed Systems Engineer, DevSecOps Specialist, Capacity Planning Engine.
 
 CURRENT SYSTEM CONTEXT
 Architecture: swarm-based AI orchestration currently running LOCALLY as multiple Python processes. Docker is used locally for Redis and LiveKit. The ultimate deployment target is AWS.
@@ -49,8 +50,9 @@ SYSTEM RESPONSIBILITIES
 1. Understand local host hardware limits (RAM, CPU, Local Networking).
 2. Profile the local Swarm Agent processes for memory leaks and CPU saturation.
 3. Actively monitor for "Ghost Processes" (orphaned Python instances eating RAM).
-   - CRITICAL KNOWLEDGE: A healthy local swarm running 1 agent + Core Infra naturally spawns 9-10 Python processes (loggers, main agents, and LiveKit multiprocessing forks). Do NOT flag these active 9-10 processes as "ghosts".
-4. Translate local performance metrics into AWS Capacity Requirements.
+4. Run SAST scans to detect vulnerabilities like SQL injections and PII exposure before they reach the repository. Provide AI-powered auto-fix suggestions.
+5. Provide architecture risk reviews with quantified findings and remediation paths.
+6. Install pre-commit security gates to enforce clean code.
 
 COMMIT IMPACT ANALYSIS RULE (CRITICAL)
 For every architecture change, proposed action, or code commit discussed, you MUST explicitly state what will break OR exactly what resources were saved (e.g. "By removing Voice Plugins, we just saved ~150MB of RAM and eliminated Deepgram API polling costs."). Always quantify risks and savings.
@@ -168,6 +170,183 @@ def read_backend_crash_logs():
     except Exception as e:
         return f"Error reading backend crash logs: {str(e)}"
 
+def run_sast_scan(directory_path: str = "."):
+    import subprocess
+    import os
+    try:
+        try:
+            import bandit
+            has_bandit = True
+        except ImportError:
+            has_bandit = False
+        
+        target_dir = os.path.abspath(directory_path)
+        output = f"Running SAST Scan on {target_dir}...\n\n"
+        
+        if has_bandit:
+            result = subprocess.run(["bandit", "-r", target_dir, "-f", "custom"], capture_output=True, text=True)
+            output += "Bandit Python SAST Results:\n"
+            output += result.stdout if result.stdout else "No Python vulnerabilities found by Bandit.\n"
+        else:
+            output += "Bandit is not installed natively. Falling back to regex-based SAST scanning...\n"
+        
+        import re
+        sql_pattern = re.compile(r"(SELECT|UPDATE|DELETE|INSERT).*(%s|\?|f['\"].*\{.*\}.*['\"])", re.IGNORECASE)
+        pii_pattern = re.compile(r"(api_key|password|secret|token)\s*=\s*['\"][a-zA-Z0-9_\-]+['\"]", re.IGNORECASE)
+        
+        found_issues = []
+        for root, dirs, files in os.walk(target_dir):
+            dirs[:] = [d for d in dirs if d not in ['node_modules', '.git', '__pycache__', '.venv', 'venv', 'dist', 'build', 'out', 'coverage']]
+            for file in files:
+                if not file.endswith(('.py', '.js', '.ts', '.env.example')):
+                    continue
+                filepath = os.path.join(root, file)
+                try:
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        for i, line in enumerate(f):
+                            if sql_pattern.search(line) or pii_pattern.search(line):
+                                stripped = line.strip()
+                                if len(stripped) > 150:
+                                    stripped = stripped[:147] + "..."
+                                
+                                if sql_pattern.search(line):
+                                    found_issues.append(f"[SQLi Risk] {filepath}:{i+1} -> {stripped}")
+                                if pii_pattern.search(line):
+                                    found_issues.append(f"[PII/Secret Exposure] {filepath}:{i+1} -> {stripped}")
+                                    
+                            if len(found_issues) > 50:
+                                break
+                except Exception:
+                    pass
+                if len(found_issues) > 50:
+                    break
+            if len(found_issues) > 50:
+                found_issues.append("... [Truncated: Too many issues found] ...")
+                break
+                    
+        if found_issues:
+            output += "\nRegex SAST Findings:\n" + "\n".join(found_issues)
+            output += "\n\nACTION REQUIRED: Please analyze these findings and provide AI-powered auto-fix suggestions."
+        else:
+            output += "\nRegex SAST Findings: Clean. No obvious SQLi or hardcoded secrets found."
+            
+        return output
+    except Exception as e:
+        return f"Error running SAST scan: {str(e)}"
+
+def analyze_architecture_risks():
+    import os
+    try:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+        files_to_check = ['docker-compose.yml', 'python-agent/.env', 'backend/package.json', 'python-agent/requirements.txt']
+        
+        findings = []
+        for file in files_to_check:
+            filepath = os.path.join(base_dir, file)
+            if os.path.exists(filepath):
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    
+                if file == 'docker-compose.yml':
+                    if 'ports:' in content and '5432:5432' in content:
+                        findings.append("[HIGH RISK] PostgreSQL port 5432 is exposed to the host network in docker-compose.yml. Remediation: Restrict to internal docker network.")
+                    if 'restart: always' not in content and 'restart: unless-stopped' not in content:
+                        findings.append("[MEDIUM RISK] Docker containers lack restart policies. Remediation: Add 'restart: unless-stopped'.")
+                
+                if file.endswith('.env'):
+                    if 'password' in content.lower() or 'secret' in content.lower():
+                        findings.append(f"[CRITICAL RISK] Potential secrets stored in plain text in {file}. Remediation: Use a secrets manager like AWS Secrets Manager or HashiCorp Vault.")
+                        
+        if not findings:
+            return "Architecture configuration files look secure. No immediate misconfigurations found."
+            
+        report = "Architecture Risk Review Findings:\n" + "\n".join(findings)
+        report += "\n\nPlease provide a quantified risk review and detailed remediation paths based on this data."
+        return report
+    except Exception as e:
+        return f"Error analyzing architecture risks: {str(e)}"
+
+def install_pre_commit_gate():
+    import os
+    try:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+        git_hooks_dir = os.path.join(base_dir, '.git', 'hooks')
+        
+        if not os.path.exists(git_hooks_dir):
+            return f"Error: Git repository not found at {base_dir}. Cannot install pre-commit hooks."
+            
+        pre_commit_path = os.path.join(git_hooks_dir, 'pre-commit')
+        
+        hook_script = '''#!/bin/sh
+# DevOps Geni Automated Security Gate
+echo "Running DevOps Geni Pre-Commit Security Gate..."
+
+# Simple regex scan for secrets
+if git diff --cached | grep -iE "(api_key|password|secret|token)\\\\s*=\\\\s*['\\\"][a-zA-Z0-9_\\\\-]+['\\\"]"; then
+    echo "[REJECTED] Hardcoded secrets detected in commit!"
+    exit 1
+fi
+
+# Scan for basic SQLi patterns in changed files
+if git diff --cached | grep -iE "(SELECT|UPDATE|DELETE|INSERT).*(%s|\\\\?|f['\\\"].*\\\\{.*\\\\}.*['\\\"])"; then
+    echo "[WARNING] Potential SQL injection vectors detected in commit!"
+fi
+
+echo "Security gate passed."
+exit 0
+'''
+        with open(pre_commit_path, 'w', encoding='utf-8') as f:
+            f.write(hook_script)
+            
+        try:
+            os.chmod(pre_commit_path, 0o755)
+        except:
+            pass
+            
+        return f"Successfully installed DevSecOps pre-commit security gate at {pre_commit_path}. Commits containing hardcoded secrets or PII will now be automatically rejected."
+    except Exception as e:
+        return f"Error installing pre-commit gate: {str(e)}"
+
+def list_docker_containers():
+    import subprocess
+    try:
+        result = subprocess.run(["docker", "ps", "-a", "--format", "table {{.Names}}\t{{.Status}}\t{{.Image}}"], capture_output=True, text=True)
+        if result.returncode != 0:
+            return f"Error running docker ps: {result.stderr}"
+        return f"Docker Containers:\n{result.stdout}"
+    except Exception as e:
+        return f"Failed to list docker containers: {str(e)}"
+
+def read_docker_logs(container_name: str, lines: int = 50):
+    import subprocess
+    try:
+        result = subprocess.run(["docker", "logs", "--tail", str(lines), container_name], capture_output=True, text=True)
+        if result.returncode != 0:
+            return f"Error reading logs for {container_name}: {result.stderr}"
+        logs = result.stdout + "\n" + result.stderr
+        if not logs.strip():
+            return f"No logs found for container {container_name}."
+        return f"Recent logs for {container_name}:\n{logs.strip()}"
+    except Exception as e:
+        return f"Failed to read docker logs: {str(e)}"
+def search_web(query: str):
+    import urllib.request
+    import urllib.parse
+    import json
+    try:
+        url = f"http://localhost:8081/search?q={urllib.parse.quote(query)}&format=json"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode())
+            results = []
+            for item in data.get('results', [])[:5]:
+                results.append(f"Title: {item.get('title')}\nURL: {item.get('url')}\nContent: {item.get('content')}\n")
+            if not results:
+                return "No results found."
+            return "Search Results:\n\n" + "\n".join(results)
+    except Exception as e:
+        return f"Search failed: {str(e)}"
+
 AVAILABLE_TOOLS = [
     {
         "type": "function",
@@ -209,6 +388,48 @@ AVAILABLE_TOOLS = [
         "function": {
             "name": "read_backend_crash_logs",
             "description": "Read and analyze the raw backend_errors.log file containing Node.js uncaught exceptions and crashes."
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "run_sast_scan",
+            "description": "Run a Static Application Security Testing (SAST) scan on the codebase to detect SQL injections and PII exposure."
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "analyze_architecture_risks",
+            "description": "Perform an architecture risk review on infrastructure files (docker-compose, env) and output quantified findings."
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "install_pre_commit_gate",
+            "description": "Install a git pre-commit hook to automatically block commits containing critical vulnerabilities or secrets."
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_docker_containers",
+            "description": "List all docker containers (running and exited) to find their exact names."
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "read_docker_logs",
+            "description": "Read the recent logs of a specific docker container. Pass the container_name exactly as listed in list_docker_containers."
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_web",
+            "description": "Search the web for up-to-date information, documentation, or solutions using the local SearxNG instance."
         }
     }
 ]
@@ -316,6 +537,21 @@ async def entrypoint(ctx: JobContext):
                         result = read_backend_crash_logs()
                     elif fn_name == "get_swarm_memory_usage":
                         result = get_swarm_memory_usage()
+                    elif fn_name == "run_sast_scan":
+                        args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
+                        result = run_sast_scan(args.get("directory_path", "."))
+                    elif fn_name == "analyze_architecture_risks":
+                        result = analyze_architecture_risks()
+                    elif fn_name == "install_pre_commit_gate":
+                        result = install_pre_commit_gate()
+                    elif fn_name == "list_docker_containers":
+                        result = list_docker_containers()
+                    elif fn_name == "read_docker_logs":
+                        args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
+                        result = read_docker_logs(args.get("container_name", ""), args.get("lines", 50))
+                    elif fn_name == "search_web":
+                        args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
+                        result = search_web(args.get("query", ""))
                     
                     messages.append({
                         "role": "tool",
