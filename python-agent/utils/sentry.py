@@ -155,16 +155,16 @@ class SwarmSentry:
                                 stt_model: str, stt_seconds: float,
                                 tts_model: str, tts_characters: int) -> dict:
         """Calculate the full session cost across LLM, STT, and TTS."""
-        llm_cost = self.calculate_cost(llm_model, input_tokens, output_tokens)
-        stt_cost = self.calculate_stt_cost(stt_model, stt_seconds)
-        tts_cost = self.calculate_tts_cost(tts_model, tts_characters)
-        total = llm_cost + stt_cost + tts_cost
+        llm_cost = round(self.calculate_cost(llm_model, input_tokens, output_tokens), 6)
+        stt_cost = round(self.calculate_stt_cost(stt_model, stt_seconds), 6)
+        tts_cost = round(self.calculate_tts_cost(tts_model, tts_characters), 6)
+        total = round(llm_cost + stt_cost + tts_cost, 6)
 
         summary = {
-            "llm_cost_usd": round(llm_cost, 6),
-            "stt_cost_usd": round(stt_cost, 6),
-            "tts_cost_usd": round(tts_cost, 6),
-            "total_cost_usd": round(total, 6)
+            "llm_cost_usd": llm_cost,
+            "stt_cost_usd": stt_cost,
+            "tts_cost_usd": tts_cost,
+            "total_cost_usd": total
         }
         self.log_transaction("cost_audit_session_total", summary)
         self.logger.info(f"[COST] LLM=${llm_cost:.4f} | STT=${stt_cost:.4f} | TTS=${tts_cost:.4f} | TOTAL=${total:.4f}")

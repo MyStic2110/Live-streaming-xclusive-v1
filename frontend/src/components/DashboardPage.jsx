@@ -234,6 +234,7 @@ function DashboardPage({ onBack }) {
       setHallucinationResults(prev => ({ ...prev, [trace.run_id]: res.data }));
     } catch (err) {
       console.error("Evaluation failed:", err);
+      alert(`Evaluation failed: ${err.response?.data?.error || err.message}`);
     } finally {
       setEvaluating(prev => ({ ...prev, [trace.run_id]: false }));
     }

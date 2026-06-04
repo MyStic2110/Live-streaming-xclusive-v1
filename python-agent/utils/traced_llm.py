@@ -5,6 +5,7 @@ import asyncio
 import uuid
 import aiohttp
 import time
+import re
 from livekit.agents import llm
 
 logger = logging.getLogger("traced_llm")
@@ -22,6 +23,43 @@ def is_voice_agent(agent_name: str) -> bool:
     if not agent_name:
         return False
     return agent_name.upper() in VOICE_AGENTS
+
+def estimate_spoken_chars(text: str) -> int:
+    if not text:
+        return 0
+    # 1. Strip code blocks
+    clean_text = re.sub(r"```.*?```", " [code block omitted, please refer to the cockpit console card] ", text, flags=re.DOTALL)
+    clean_text = clean_text.replace("`", "")
+    
+    # 2. Strip markdown (bold, italic, headings, links)
+    clean_text = re.sub(r"\*\*|__", "", clean_text)
+    clean_text = re.sub(r"\*|_", "", clean_text)
+    clean_text = re.sub(r"^#+\s+", "", clean_text, flags=re.MULTILINE)
+    clean_text = re.sub(r"\[(.*?)\]\(.*?\)", r"\1", clean_text)
+    
+    # 3. Strip emojis
+    emoji_pattern = re.compile(
+        "["
+        "\U00010000-\U0010ffff"
+        "\u2600-\u27BF"
+        "\u2300-\u23FF"
+        "\u2b50"
+        "]+",
+        flags=re.UNICODE
+    )
+    clean_text = emoji_pattern.sub("", clean_text)
+    
+    # 4. Truncate like filter_code_blocks_and_long_text
+    MAX_CHAR_LIMIT = 800
+    if len(clean_text) > MAX_CHAR_LIMIT:
+        truncated = clean_text[:MAX_CHAR_LIMIT]
+        last_period = truncated.rfind(".")
+        if last_period > MAX_CHAR_LIMIT // 2:
+            clean_text = truncated[:last_period + 1] + " [response truncated, please check the console cards for the full report]"
+        else:
+            clean_text = truncated + "... [response truncated, please check the console cards for the full report]"
+            
+    return len(clean_text)
 
 _cumulative_stt_seconds = 0.0
 _cumulative_tts_chars = 0
@@ -181,14 +219,15 @@ class TracedLLMStream(llm.LLMStream):
                     rates = PRICING[key]
                     break
                     
-            input_cost = (self.prompt_tokens / 1_000_000) * rates["input"]
-            output_cost = (self.completion_tokens / 1_000_000) * rates["output"]
-            llm_cost = input_cost + output_cost
+            input_cost = round((self.prompt_tokens / 1_000_000) * rates["input"], 6)
+            output_cost = round((self.completion_tokens / 1_000_000) * rates["output"], 6)
+            llm_cost = round(input_cost + output_cost, 6)
 
             is_voice = is_voice_agent(self.agent_name)
-            stt_cost = (self.stt_duration / 60.0) * 0.0043 if is_voice else 0.0
-            tts_cost = (len(self.output_text) / 1000.0) * 0.015 if is_voice else 0.0
-            total_cost = llm_cost + stt_cost + tts_cost
+            stt_cost = round((self.stt_duration / 60.0) * 0.0043, 6) if is_voice else 0.0
+            spoken_len = estimate_spoken_chars(self.output_text) if is_voice else 0
+            tts_cost = round((spoken_len / 1000.0) * 0.015, 6) if is_voice else 0.0
+            total_cost = round(llm_cost + stt_cost + tts_cost, 6)
 
             post_trace(
                 "llm_end",
@@ -196,11 +235,11 @@ class TracedLLMStream(llm.LLMStream):
                     "outputs": self.output_text,
                     "prompt_tokens": self.prompt_tokens,
                     "completion_tokens": self.completion_tokens,
-                    "input_cost": round(input_cost, 6),
-                    "output_cost": round(output_cost, 6),
-                    "stt_cost": round(stt_cost, 6),
-                    "tts_cost": round(tts_cost, 6),
-                    "total_cost": round(total_cost, 6),
+                    "input_cost": input_cost,
+                    "output_cost": output_cost,
+                    "stt_cost": stt_cost,
+                    "tts_cost": tts_cost,
+                    "total_cost": total_cost,
                     "agent": self.agent_name,
                     "total_latency": round(total_latency * 1000, 2), # ms
                     "ttft": round(ttft * 1000, 2), # ms
@@ -214,9 +253,10 @@ class TracedLLMStream(llm.LLMStream):
             err_code, err_msg = classify_exception(e)
 
             is_voice = is_voice_agent(self.agent_name)
-            stt_cost = (self.stt_duration / 60.0) * 0.0043 if is_voice else 0.0
-            tts_cost = (len(self.output_text) / 1000.0) * 0.015 if is_voice else 0.0
-            total_cost = stt_cost + tts_cost
+            stt_cost = round((self.stt_duration / 60.0) * 0.0043, 6) if is_voice else 0.0
+            spoken_len = estimate_spoken_chars(self.output_text) if is_voice else 0
+            tts_cost = round((spoken_len / 1000.0) * 0.015, 6) if is_voice else 0.0
+            total_cost = round(stt_cost + tts_cost, 6)
 
             post_trace(
                 "llm_error",
@@ -225,9 +265,9 @@ class TracedLLMStream(llm.LLMStream):
                     "error_message": err_msg,
                     "total_latency": round(total_latency * 1000, 2),
                     "agent": self.agent_name,
-                    "stt_cost": round(stt_cost, 6),
-                    "tts_cost": round(tts_cost, 6),
-                    "total_cost": round(total_cost, 6)
+                    "stt_cost": stt_cost,
+                    "tts_cost": tts_cost,
+                    "total_cost": total_cost
                 },
                 self.run_id
             )
@@ -349,8 +389,8 @@ async def trace_raw_call(
             rates = PRICING[key]
             break
 
-    input_cost  = (prompt_tokens    / 1_000_000) * rates["input"]
-    output_cost = (completion_tokens / 1_000_000) * rates["output"]
+    input_cost  = round((prompt_tokens    / 1_000_000) * rates["input"], 6)
+    output_cost = round((completion_tokens / 1_000_000) * rates["output"], 6)
     total_cost  = round(input_cost + output_cost, 6)
 
     # Compute OTPS
@@ -385,11 +425,12 @@ async def trace_raw_call(
                 "outputs": response_text,
                 "prompt_tokens": prompt_tokens,
                 "completion_tokens": completion_tokens,
-                "input_cost": round(input_cost, 6),
-                "output_cost": round(output_cost, 6),
+                "input_cost": input_cost,
+                "output_cost": output_cost,
                 "stt_cost": 0.0,
                 "tts_cost": 0.0,
                 "total_cost": total_cost,
+
                 "agent": agent_name,
                 "total_latency": round(duration * 1000, 2), # ms
                 "ttft": round((ttft if ttft > 0 else duration) * 1000, 2), # ms

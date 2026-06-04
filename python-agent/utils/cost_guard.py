@@ -155,12 +155,13 @@ class CostGuard:
                 usage_dict["tts_chars"] = getattr(m, "characters_count", 0)
 
         # Recalculate total cost (stored back into dict)
-        llm_cost = (
+        llm_cost = round(
             usage_dict.get("input_tokens",  0) / 1_000_000 * 0.15 +
-            usage_dict.get("output_tokens", 0) / 1_000_000 * 0.60
+            usage_dict.get("output_tokens", 0) / 1_000_000 * 0.60,
+            6
         )
-        stt_cost = usage_dict.get("stt_seconds", 0.0) / 60 * 0.0043
-        tts_cost = usage_dict.get("tts_chars",   0)   / 1000 * 0.015
+        stt_cost = round(usage_dict.get("stt_seconds", 0.0) / 60 * 0.0043, 6)
+        tts_cost = round(usage_dict.get("tts_chars",   0)   / 1000 * 0.015, 6)
         usage_dict["total_cost"] = round(llm_cost + stt_cost + tts_cost, 6)
 
         # Propagate cumulative usage to traced_llm telemetry

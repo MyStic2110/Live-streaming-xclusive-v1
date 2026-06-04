@@ -109,6 +109,36 @@ const saveTraces = () => {
   }
 };
 
+const estimateSpokenChars = (text) => {
+  if (!text) return 0;
+  // 1. Strip code blocks
+  let cleanText = text.replace(/```[\s\S]*?```/g, " [code block omitted, please refer to the cockpit console card] ");
+  cleanText = cleanText.replace(/`/g, "");
+  
+  // 2. Strip markdown (bold, italic, headers, links)
+  cleanText = cleanText.replace(/\*\*|__/g, "");
+  cleanText = cleanText.replace(/\*|_/g, "");
+  cleanText = cleanText.replace(/^#+\s+/gm, "");
+  cleanText = cleanText.replace(/\[([\s\S]*?)\]\([\s\S]*?\)/g, "$1");
+  
+  // 3. Strip emojis
+  const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B50}]/gu;
+  cleanText = cleanText.replace(emojiRegex, "");
+  
+  // 4. Truncate to 800 chars like the python filter
+  const MAX_CHAR_LIMIT = 800;
+  if (cleanText.length > MAX_CHAR_LIMIT) {
+    let truncated = cleanText.substring(0, MAX_CHAR_LIMIT);
+    let lastPeriod = truncated.lastIndexOf(".");
+    if (lastPeriod > MAX_CHAR_LIMIT / 2) {
+      cleanText = truncated.substring(0, lastPeriod + 1) + " [response truncated, please check the console cards for the full report]";
+    } else {
+      cleanText = truncated + "... [response truncated, please check the console cards for the full report]";
+    }
+  }
+  return cleanText.length;
+};
+
 let llmTraces = loadTraces();
 const hallucinationStore = new Map(); // run_id -> evaluation result
 
@@ -151,8 +181,9 @@ app.post("/api/llm-trace", (req, res) => {
       const voiceAgents = ['NOVA', 'CORTEX_BI', 'CORTEX_BI2', 'LINA', 'AIVYUH', 'ASTRA', 'MARTECH', 'OCTANE', 'SEVA', 'VONE', 'BI', 'BI2', 'CORTEX', 'CORTEX2'];
       const isVoice = trace.agent && voiceAgents.includes(trace.agent.toUpperCase());
       if (isVoice) {
-        trace.tts_cost = (trace.outputs.length / 1000) * 0.015;
-        trace.total_cost = trace.llm_cost + trace.stt_cost + trace.tts_cost;
+        const spokenLen = estimateSpokenChars(trace.outputs);
+        trace.tts_cost = parseFloat(((spokenLen / 1000) * 0.015).toFixed(6));
+        trace.total_cost = parseFloat((trace.llm_cost + trace.stt_cost + trace.tts_cost).toFixed(6));
       }
     }
   } else if (event === "llm_end") {
@@ -163,10 +194,10 @@ app.post("/api/llm-trace", (req, res) => {
       trace.completion_tokens = data.completion_tokens;
       trace.input_cost      = data.input_cost || 0;
       trace.output_cost     = data.output_cost || 0;
-      trace.llm_cost        = trace.input_cost + trace.output_cost;
+      trace.llm_cost        = parseFloat((trace.input_cost + trace.output_cost).toFixed(6));
       trace.stt_cost        = data.stt_cost !== undefined ? data.stt_cost : trace.stt_cost || 0;
       trace.tts_cost        = data.tts_cost !== undefined ? data.tts_cost : trace.tts_cost || 0;
-      trace.total_cost      = data.total_cost !== undefined ? data.total_cost : (trace.llm_cost + trace.stt_cost + trace.tts_cost);
+      trace.total_cost      = data.total_cost !== undefined ? data.total_cost : parseFloat((trace.llm_cost + trace.stt_cost + trace.tts_cost).toFixed(6));
       trace.agent           = data.agent || trace.agent;
       trace.status          = "completed";
       
@@ -186,8 +217,8 @@ app.post("/api/llm-trace", (req, res) => {
       trace.agent           = data.agent || trace.agent;
       trace.stt_cost        = data.stt_cost !== undefined ? data.stt_cost : trace.stt_cost || 0;
       trace.tts_cost        = data.tts_cost !== undefined ? data.tts_cost : trace.tts_cost || 0;
-      trace.llm_cost        = (trace.input_cost || 0) + (trace.output_cost || 0);
-      trace.total_cost      = data.total_cost !== undefined ? data.total_cost : (trace.llm_cost + trace.stt_cost + trace.tts_cost);
+      trace.llm_cost        = parseFloat(((trace.input_cost || 0) + (trace.output_cost || 0)).toFixed(6));
+      trace.total_cost      = data.total_cost !== undefined ? data.total_cost : parseFloat((trace.llm_cost + trace.stt_cost + trace.tts_cost).toFixed(6));
     } else {
       const stt_cost = data.stt_cost || 0;
       const tts_cost = data.tts_cost || 0;
@@ -289,12 +320,28 @@ Score guide:
 
 app.post("/api/evaluate-hallucination", async (req, res) => {
   const { run_id, inputs, outputs, model } = req.body;
-  if (!run_id || !inputs || !outputs) {
-    return res.status(400).json({ error: "run_id, inputs and outputs are required" });
+  
+  if (!run_id || outputs === undefined || outputs === null) {
+    return res.status(400).json({ error: "run_id and outputs are required" });
   }
 
-  const contextSummary = inputs
-    .map(m => `[${m.role.toUpperCase()}]: ${String(m.content).slice(0, 800)}`)
+  const cleanInputs = inputs || [];
+
+  if (typeof outputs === 'string' && outputs.trim() === '') {
+    const result = {
+      run_id,
+      score: 0.0,
+      reasoning: "The assistant did not produce any text output to evaluate (e.g. tool call or empty response).",
+      flags: [],
+      evaluated_at: new Date().toISOString()
+    };
+    hallucinationStore.set(run_id, result);
+    io.emit("hallucination_result", result);
+    return res.json(result);
+  }
+
+  const contextSummary = cleanInputs
+    .map(m => `[${(m.role || 'user').toUpperCase()}]: ${String(m.content || '').slice(0, 800)}`)
     .join("\n");
 
   const judgeMessages = [
