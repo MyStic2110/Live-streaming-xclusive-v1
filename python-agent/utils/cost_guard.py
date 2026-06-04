@@ -295,3 +295,31 @@ class CostGuard:
             await room.disconnect()
         except Exception as e:
             logger.error(f"[COST_GUARD] Error disconnecting room: {e}")
+
+
+def filter_code_blocks_and_long_text(text: str) -> str:
+    """
+    Custom text transform for voice agents to strip out code blocks 
+    and avoid sending massive payloads to the TTS synthesizer.
+    """
+    if not text:
+        return ""
+        
+    import re
+    # Replace triple-backtick code blocks with a brief notice
+    text_no_code = re.sub(r"```.*?```", " [code block omitted, please refer to the cockpit console card] ", text, flags=re.DOTALL)
+    
+    # Replace inline single-backtick code expressions (remove the backticks)
+    text_no_code = text_no_code.replace("`", "")
+    
+    # Truncate text if it exceeds character limit to prevent Deepgram WebSocket 1008 failures
+    MAX_CHAR_LIMIT = 800
+    if len(text_no_code) > MAX_CHAR_LIMIT:
+        truncated = text_no_code[:MAX_CHAR_LIMIT]
+        last_period = truncated.rfind(".")
+        if last_period > MAX_CHAR_LIMIT // 2:
+            text_no_code = truncated[:last_period + 1] + " [response truncated, please check the console cards for the full report]"
+        else:
+            text_no_code = truncated + "... [response truncated, please check the console cards for the full report]"
+            
+    return text_no_code

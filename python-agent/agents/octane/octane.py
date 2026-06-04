@@ -25,7 +25,7 @@ from livekit.agents import (
     voice
 )
 from livekit.plugins import silero, openai, deepgram
-from utils.cost_guard import CostGuard
+from utils.cost_guard import CostGuard, filter_code_blocks_and_long_text
 from utils.traced_llm import TracedLLM
 from integrations.securelytix import SecurelytixClient
 from pydantic import BaseModel, Field
@@ -496,7 +496,7 @@ async def entrypoint(ctx: JobContext):
         stt=STT_PLUGIN,
         llm=llm_plugin,
         tts=TTS_PLUGIN,
-        tts_text_transforms=[voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji],
+        tts_text_transforms=[filter_code_blocks_and_long_text, voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji],
         turn_handling={"interruption": {"enabled": False}, "endpointing": {"min_delay": 1.2}},
     )
     logger.info("[OCTANE] Voice AgentSession created. Turn-handling: interruption=False, min_delay=1.2s")

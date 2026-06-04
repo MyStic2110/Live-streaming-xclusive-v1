@@ -26,7 +26,7 @@ import sys
 import time
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
-from utils.cost_guard import CostGuard
+from utils.cost_guard import CostGuard, filter_code_blocks_and_long_text
 from utils.traced_llm import TracedLLM
 from integrations.securelytix import SecurelytixClient
 
@@ -287,7 +287,7 @@ async def entrypoint(ctx: JobContext):
         stt=STT_PLUGIN,
         llm=llm_plugin,
         tts=TTS_PLUGIN,
-        tts_text_transforms=[voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji, detokenize_stream],
+        tts_text_transforms=[filter_code_blocks_and_long_text, voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji, detokenize_stream],
         turn_handling={"interruption": {"enabled": True}, "endpointing": {"min_delay": 2.0}},
     )
 

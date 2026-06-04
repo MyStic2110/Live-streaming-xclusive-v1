@@ -22,6 +22,6 @@
         "output_tokens": 19886,
         "total_cost": 0.5030549999999999,
         "stt_cost": 0.0,
-        "tts_cost": 0.004425
+        "tts_cost": 0.0
     }
 }

@@ -25,7 +25,7 @@ from livekit.plugins import silero, openai, deepgram
 # Append parent path for shared utilities
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
-from utils.cost_guard import CostGuard
+from utils.cost_guard import CostGuard, filter_code_blocks_and_long_text
 from utils.traced_llm import TracedLLM
 from integrations.securelytix import SecurelytixClient
 from pydantic import BaseModel, Field
@@ -722,7 +722,7 @@ SECURITY RULES:
         stt=stt_plugin,
         llm=llm_plugin,
         tts=tts_plugin,
-        tts_text_transforms=[voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji],
+        tts_text_transforms=[filter_code_blocks_and_long_text, voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji],
         turn_handling={"interruption": {"enabled": True}, "endpointing": {"min_delay": 2.0}},
     )
 
