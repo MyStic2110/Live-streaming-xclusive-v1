@@ -297,17 +297,23 @@ class CostGuard:
             logger.error(f"[COST_GUARD] Error disconnecting room: {e}")
 
 
-def filter_code_blocks_and_long_text(text: str) -> str:
+from typing import AsyncIterable
+
+async def filter_code_blocks_and_long_text(text: AsyncIterable[str]) -> AsyncIterable[str]:
     """
     Custom text transform for voice agents to strip out code blocks 
     and avoid sending massive payloads to the TTS synthesizer.
     """
-    if not text:
-        return ""
+    buffer = ""
+    async for chunk in text:
+        buffer += chunk
+
+    if not buffer:
+        return
         
     import re
     # Replace triple-backtick code blocks with a brief notice
-    text_no_code = re.sub(r"```.*?```", " [code block omitted, please refer to the cockpit console card] ", text, flags=re.DOTALL)
+    text_no_code = re.sub(r"```.*?```", " [code block omitted, please refer to the cockpit console card] ", buffer, flags=re.DOTALL)
     
     # Replace inline single-backtick code expressions (remove the backticks)
     text_no_code = text_no_code.replace("`", "")
@@ -322,4 +328,4 @@ def filter_code_blocks_and_long_text(text: str) -> str:
         else:
             text_no_code = truncated + "... [response truncated, please check the console cards for the full report]"
             
-    return text_no_code
+    yield text_no_code
