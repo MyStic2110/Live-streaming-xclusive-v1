@@ -46,7 +46,7 @@ AGENT_NAME = "OCTANE"
 SESSION_COST_CEILING_USD = 0.15
 
 # Context window: max conversation turns kept in LLM history (1 turn = 1 user + 1 assistant msg)
-MAX_CONTEXT_TURNS = 15
+MAX_CONTEXT_TURNS = int(os.getenv("OCTANE_CONTEXT_TURNS") or os.getenv("DEFAULT_CONTEXT_TURNS") or "15")
 
 # Broadcast throttle: minimum seconds between usage metric broadcasts
 USAGE_BROADCAST_INTERVAL_S = 10.0
@@ -421,7 +421,6 @@ async def entrypoint(ctx: JobContext):
 
     logger.info("[OCTANE] Initializing ChatContext system prompts...")
     chat_ctx = llm.ChatContext()
-    chat_ctx.add_message(role="system", content=dynamic_prompt)
 
     raw_llm = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
     llm_plugin = TracedLLM(raw_llm, agent_name="OCTANE")
@@ -497,6 +496,7 @@ async def entrypoint(ctx: JobContext):
         stt=STT_PLUGIN,
         llm=llm_plugin,
         tts=TTS_PLUGIN,
+        tts_text_transforms=[voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji],
         turn_handling={"interruption": {"enabled": False}, "endpointing": {"min_delay": 1.2}},
     )
     logger.info("[OCTANE] Voice AgentSession created. Turn-handling: interruption=False, min_delay=1.2s")

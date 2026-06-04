@@ -411,6 +411,7 @@ SECURITY RULES:
         stt=STT_PLUGIN,
         llm=llm_plugin,
         tts=TTS_PLUGIN,
+        tts_text_transforms=[voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji],
         turn_handling={"interruption": {"enabled": True}, "endpointing": {"min_delay": 2.0}},
     )
 

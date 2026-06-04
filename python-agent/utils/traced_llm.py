@@ -16,6 +16,22 @@ PRICING = {
     "default": {"input": 0.15, "output": 0.60}
 }
 
+VOICE_AGENTS = {"NOVA", "CORTEX_BI", "CORTEX_BI2", "LINA", "AIVYUH", "ASTRA", "MARTECH", "OCTANE", "SEVA", "VONE", "BI", "BI2", "CORTEX", "CORTEX2"}
+
+def is_voice_agent(agent_name: str) -> bool:
+    if not agent_name:
+        return False
+    return agent_name.upper() in VOICE_AGENTS
+
+_cumulative_stt_seconds = 0.0
+_cumulative_tts_chars = 0
+_last_turn_stt_seconds = 0.0
+
+def update_session_usage(stt_seconds: float, tts_chars: int):
+    global _cumulative_stt_seconds, _cumulative_tts_chars
+    _cumulative_stt_seconds = stt_seconds
+    _cumulative_tts_chars = tts_chars
+
 def classify_exception(e: Exception) -> tuple[str, str]:
     msg = str(e).lower()
     err_type = type(e).__name__
@@ -92,12 +108,35 @@ class TracedLLMStream(llm.LLMStream):
                 "content": str(msg.content)
             })
 
+        # Calculate exact STT duration for this turn
+        global _cumulative_stt_seconds, _last_turn_stt_seconds
+        stt_duration = max(0.0, _cumulative_stt_seconds - _last_turn_stt_seconds)
+
+        # Fallback to word-count-based estimate if metric is not yet updated
+        word_count = 0
+        user_msgs = [m for m in self.input_messages if m.get("role") == "user"]
+        if user_msgs:
+            last_user_msg = user_msgs[-1].get("content", "")
+            word_count = len(last_user_msg.split())
+
+        if stt_duration == 0.0 and word_count > 0:
+            stt_duration = word_count / 2.5
+
+        _last_turn_stt_seconds = _cumulative_stt_seconds
+        self.stt_duration = stt_duration
+
+        is_voice = is_voice_agent(self.agent_name)
+        stt_cost = (stt_duration / 60.0) * 0.0043 if is_voice else 0.0
+
         post_trace(
             "llm_start",
             {
                 "inputs": self.input_messages,
                 "model": self.inner_stream._llm.model,
-                "agent": self.agent_name
+                "agent": self.agent_name,
+                "stt_cost": round(stt_cost, 6),
+                "tts_cost": 0.0,
+                "total_cost": round(stt_cost, 6)
             },
             self.run_id
         )
@@ -120,13 +159,6 @@ class TracedLLMStream(llm.LLMStream):
                 if self.ttft == 0.0:
                     self.ttft = time.perf_counter() - self.start_time
                 self.output_text += chunk.delta.content
-                post_trace(
-                    "llm_chunk",
-                    {
-                        "chunk": chunk.delta.content
-                    },
-                    self.run_id
-                )
             if chunk.usage:
                 self.prompt_tokens = chunk.usage.prompt_tokens
                 self.completion_tokens = chunk.usage.completion_tokens
@@ -151,7 +183,12 @@ class TracedLLMStream(llm.LLMStream):
                     
             input_cost = (self.prompt_tokens / 1_000_000) * rates["input"]
             output_cost = (self.completion_tokens / 1_000_000) * rates["output"]
-            total_cost = input_cost + output_cost
+            llm_cost = input_cost + output_cost
+
+            is_voice = is_voice_agent(self.agent_name)
+            stt_cost = (self.stt_duration / 60.0) * 0.0043 if is_voice else 0.0
+            tts_cost = (len(self.output_text) / 1000.0) * 0.015 if is_voice else 0.0
+            total_cost = llm_cost + stt_cost + tts_cost
 
             post_trace(
                 "llm_end",
@@ -161,6 +198,8 @@ class TracedLLMStream(llm.LLMStream):
                     "completion_tokens": self.completion_tokens,
                     "input_cost": round(input_cost, 6),
                     "output_cost": round(output_cost, 6),
+                    "stt_cost": round(stt_cost, 6),
+                    "tts_cost": round(tts_cost, 6),
                     "total_cost": round(total_cost, 6),
                     "agent": self.agent_name,
                     "total_latency": round(total_latency * 1000, 2), # ms
@@ -173,13 +212,22 @@ class TracedLLMStream(llm.LLMStream):
         except Exception as e:
             total_latency = time.perf_counter() - self.start_time
             err_code, err_msg = classify_exception(e)
+
+            is_voice = is_voice_agent(self.agent_name)
+            stt_cost = (self.stt_duration / 60.0) * 0.0043 if is_voice else 0.0
+            tts_cost = (len(self.output_text) / 1000.0) * 0.015 if is_voice else 0.0
+            total_cost = stt_cost + tts_cost
+
             post_trace(
                 "llm_error",
                 {
                     "error_code": err_code,
                     "error_message": err_msg,
                     "total_latency": round(total_latency * 1000, 2),
-                    "agent": self.agent_name
+                    "agent": self.agent_name,
+                    "stt_cost": round(stt_cost, 6),
+                    "tts_cost": round(tts_cost, 6),
+                    "total_cost": round(total_cost, 6)
                 },
                 self.run_id
             )
@@ -215,6 +263,8 @@ class TracedLLM(llm.LLM):
                     tool_name = t.info.name
                     
                     def make_wrapper(orig_f, name, rid):
+                        import functools
+                        @functools.wraps(orig_f)
                         async def wrapper(*args, **kwargs):
                             start = time.perf_counter()
                             res = await orig_f(*args, **kwargs)
@@ -229,6 +279,8 @@ class TracedLLM(llm.LLM):
                         info=t.info,
                         instance=t._instance
                     )
+                    if hasattr(t, "__signature__"):
+                        wrapped_t.__signature__ = t.__signature__
                     wrapped_tools.append(wrapped_t)
             else:
                 wrapped_tools = tools
@@ -316,7 +368,14 @@ async def trace_raw_call(
         # start event
         await post_trace_async(
             "llm_start",
-            {"inputs": clean_messages, "model": model, "agent": agent_name},
+            {
+                "inputs": clean_messages,
+                "model": model,
+                "agent": agent_name,
+                "stt_cost": 0.0,
+                "tts_cost": 0.0,
+                "total_cost": 0.0
+            },
             run_id
         )
         # end event (full output in one go for non-streaming paths)
@@ -328,6 +387,8 @@ async def trace_raw_call(
                 "completion_tokens": completion_tokens,
                 "input_cost": round(input_cost, 6),
                 "output_cost": round(output_cost, 6),
+                "stt_cost": 0.0,
+                "tts_cost": 0.0,
                 "total_cost": total_cost,
                 "agent": agent_name,
                 "total_latency": round(duration * 1000, 2), # ms
@@ -362,7 +423,14 @@ async def trace_raw_error(
         # start event
         await post_trace_async(
             "llm_start",
-            {"inputs": clean_messages, "model": model, "agent": agent_name},
+            {
+                "inputs": clean_messages,
+                "model": model,
+                "agent": agent_name,
+                "stt_cost": 0.0,
+                "tts_cost": 0.0,
+                "total_cost": 0.0
+            },
             run_id
         )
         # error event
@@ -372,7 +440,10 @@ async def trace_raw_error(
                 "error_code": err_code,
                 "error_message": err_msg,
                 "total_latency": round(duration * 1000, 2),
-                "agent": agent_name
+                "agent": agent_name,
+                "stt_cost": 0.0,
+                "tts_cost": 0.0,
+                "total_cost": 0.0
             },
             run_id
         )

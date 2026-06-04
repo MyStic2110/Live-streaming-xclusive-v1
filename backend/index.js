@@ -84,13 +84,42 @@ app.get("/weather", roomController.getWeather);
 app.post("/trigger-reels", roomController.triggerReels);
 
 // --- LLM TRACING & TELEMETRY ---
-let llmTraces = [];
+const TRACES_FILE = path.join(__dirname, 'llm_traces_persistent.json');
+
+const loadTraces = () => {
+  try {
+    if (fs.existsSync(TRACES_FILE)) {
+      const data = fs.readFileSync(TRACES_FILE, 'utf8');
+      const loaded = JSON.parse(data);
+      if (Array.isArray(loaded)) {
+        return loaded.slice(0, 100);
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load persistent traces:", err);
+  }
+  return [];
+};
+
+const saveTraces = () => {
+  try {
+    fs.writeFileSync(TRACES_FILE, JSON.stringify(llmTraces, null, 2), 'utf8');
+  } catch (err) {
+    console.error("Failed to save persistent traces:", err);
+  }
+};
+
+let llmTraces = loadTraces();
 const hallucinationStore = new Map(); // run_id -> evaluation result
 
 app.post("/api/llm-trace", (req, res) => {
   const { event, run_id, data } = req.body;
   
   if (event === "llm_start") {
+    const stt_cost = data.stt_cost || 0;
+    const tts_cost = data.tts_cost || 0;
+    const total_cost = data.total_cost || stt_cost;
+
     const newTrace = {
       run_id,
       agent: data.agent || null,
@@ -101,7 +130,10 @@ app.post("/api/llm-trace", (req, res) => {
       completion_tokens: 0,
       input_cost: 0,
       output_cost: 0,
-      total_cost: 0,
+      stt_cost,
+      tts_cost,
+      llm_cost: 0,
+      total_cost,
       status: "streaming",
       timestamp: new Date().toISOString(),
       total_latency: 0,
@@ -114,16 +146,27 @@ app.post("/api/llm-trace", (req, res) => {
     if (llmTraces.length > 100) llmTraces.pop();
   } else if (event === "llm_chunk") {
     const trace = llmTraces.find(t => t.run_id === run_id);
-    if (trace) trace.outputs += data.chunk;
+    if (trace) {
+      trace.outputs += data.chunk;
+      const voiceAgents = ['NOVA', 'CORTEX_BI', 'CORTEX_BI2', 'LINA', 'AIVYUH', 'ASTRA', 'MARTECH', 'OCTANE', 'SEVA', 'VONE', 'BI', 'BI2', 'CORTEX', 'CORTEX2'];
+      const isVoice = trace.agent && voiceAgents.includes(trace.agent.toUpperCase());
+      if (isVoice) {
+        trace.tts_cost = (trace.outputs.length / 1000) * 0.015;
+        trace.total_cost = trace.llm_cost + trace.stt_cost + trace.tts_cost;
+      }
+    }
   } else if (event === "llm_end") {
     const trace = llmTraces.find(t => t.run_id === run_id);
     if (trace) {
       trace.outputs         = data.outputs;
       trace.prompt_tokens   = data.prompt_tokens;
       trace.completion_tokens = data.completion_tokens;
-      trace.input_cost      = data.input_cost;
-      trace.output_cost     = data.output_cost;
-      trace.total_cost      = data.total_cost;
+      trace.input_cost      = data.input_cost || 0;
+      trace.output_cost     = data.output_cost || 0;
+      trace.llm_cost        = trace.input_cost + trace.output_cost;
+      trace.stt_cost        = data.stt_cost !== undefined ? data.stt_cost : trace.stt_cost || 0;
+      trace.tts_cost        = data.tts_cost !== undefined ? data.tts_cost : trace.tts_cost || 0;
+      trace.total_cost      = data.total_cost !== undefined ? data.total_cost : (trace.llm_cost + trace.stt_cost + trace.tts_cost);
       trace.agent           = data.agent || trace.agent;
       trace.status          = "completed";
       
@@ -141,7 +184,14 @@ app.post("/api/llm-trace", (req, res) => {
       trace.error_message   = data.error_message || "An error occurred";
       trace.total_latency   = data.total_latency || trace.total_latency || 0;
       trace.agent           = data.agent || trace.agent;
+      trace.stt_cost        = data.stt_cost !== undefined ? data.stt_cost : trace.stt_cost || 0;
+      trace.tts_cost        = data.tts_cost !== undefined ? data.tts_cost : trace.tts_cost || 0;
+      trace.llm_cost        = (trace.input_cost || 0) + (trace.output_cost || 0);
+      trace.total_cost      = data.total_cost !== undefined ? data.total_cost : (trace.llm_cost + trace.stt_cost + trace.tts_cost);
     } else {
+      const stt_cost = data.stt_cost || 0;
+      const tts_cost = data.tts_cost || 0;
+      const total_cost = data.total_cost || (stt_cost + tts_cost);
       const newTrace = {
         run_id,
         agent: data.agent || null,
@@ -152,7 +202,10 @@ app.post("/api/llm-trace", (req, res) => {
         completion_tokens: 0,
         input_cost: 0,
         output_cost: 0,
-        total_cost: 0,
+        stt_cost,
+        tts_cost,
+        llm_cost: 0,
+        total_cost,
         status: "failed",
         error_code: data.error_code || "UNKNOWN_ERROR",
         error_message: data.error_message || "An error occurred",
@@ -168,7 +221,17 @@ app.post("/api/llm-trace", (req, res) => {
     }
   }
 
+  // Enrich emitted socket payload with current cost calculations
+  const trace = llmTraces.find(t => t.run_id === run_id);
+  if (trace) {
+    data.stt_cost = trace.stt_cost;
+    data.tts_cost = trace.tts_cost;
+    data.llm_cost = trace.llm_cost;
+    data.total_cost = trace.total_cost;
+  }
+
   io.emit("llm_trace", { event, run_id, data });
+  saveTraces();
   res.json({ success: true });
 });
 
@@ -187,6 +250,7 @@ app.post("/api/llm-trace/tool-call", (req, res) => {
     // Broadcast tool execution to frontend in real-time
     io.emit("llm_trace", { event: "tool_call", run_id, data: { name, duration } });
     console.log(`[TOOL CALL] run=${run_id} tool=${name} duration=${duration}ms`);
+    saveTraces();
   }
   res.json({ success: true });
 });
@@ -199,6 +263,7 @@ app.delete("/api/llm-traces", (req, res) => {
   llmTraces = [];
   hallucinationStore.clear();
   io.emit("llm_trace_clear");
+  saveTraces();
   res.json({ success: true });
 });
 

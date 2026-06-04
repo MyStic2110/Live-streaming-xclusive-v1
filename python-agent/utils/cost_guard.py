@@ -108,7 +108,17 @@ class CostGuard:
         else:
             self.session_cost_ceiling = session_cost_ceiling
             
-        self.max_context_turns = max_context_turns
+        # Override max_context_turns with environment variables if they exist
+        env_turns_specific = os.getenv(f"{agent_name.upper()}_CONTEXT_TURNS")
+        env_turns_global = os.getenv("DEFAULT_CONTEXT_TURNS")
+        
+        if env_turns_specific:
+            self.max_context_turns = int(env_turns_specific)
+        elif env_turns_global:
+            self.max_context_turns = int(env_turns_global)
+        else:
+            self.max_context_turns = max_context_turns
+            
         self.usage_broadcast_interval_s = usage_broadcast_interval_s
         self.min_stt_words = min_stt_words
 
@@ -120,7 +130,7 @@ class CostGuard:
 
         logger.info(
             f"[COST_GUARD] Initialized for {agent_name} | "
-            f"ceiling=${session_cost_ceiling} | max_turns={max_context_turns} | "
+            f"ceiling=${self.session_cost_ceiling} | max_turns={self.max_context_turns} | "
             f"broadcast_interval={usage_broadcast_interval_s}s | min_words={min_stt_words}"
         )
 
@@ -152,6 +162,16 @@ class CostGuard:
         stt_cost = usage_dict.get("stt_seconds", 0.0) / 60 * 0.0043
         tts_cost = usage_dict.get("tts_chars",   0)   / 1000 * 0.015
         usage_dict["total_cost"] = round(llm_cost + stt_cost + tts_cost, 6)
+
+        # Propagate cumulative usage to traced_llm telemetry
+        try:
+            from utils import traced_llm
+            traced_llm.update_session_usage(
+                stt_seconds=usage_dict.get("stt_seconds", 0.0),
+                tts_chars=usage_dict.get("tts_chars", 0)
+            )
+        except Exception as e:
+            logger.warning(f"[COST_GUARD] Failed to update traced_llm session usage: {e}")
 
         # Cost ceiling check
         if (

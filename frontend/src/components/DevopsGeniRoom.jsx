@@ -292,20 +292,89 @@ function DevopsGeniChat({ roomData, onLeave }) {
                   <div 
                     className="markdown-chat-bubble"
                     style={{
-                      backgroundColor: isUser ? "#3b82f6" : "#ffffff",
-                      color: isUser ? "#ffffff" : "#1f2937",
-                      padding: "12px 16px",
-                      borderRadius: "16px",
-                      borderTopRightRadius: isUser ? "4px" : "16px",
-                      borderTopLeftRadius: !isUser ? "4px" : "16px",
-                      boxShadow: isUser ? "none" : "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-                      border: isUser ? "none" : "1px solid #e5e7eb",
+                      background: isUser ? "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)" : "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+                      color: isUser ? "#ffffff" : "#cbd5e1",
+                      padding: "16px 20px",
+                      borderRadius: "20px",
+                      borderTopRightRadius: isUser ? "4px" : "20px",
+                      borderTopLeftRadius: !isUser ? "4px" : "20px",
+                      boxShadow: isUser ? "0 4px 12px rgba(37, 99, 235, 0.2)" : "0 10px 30px rgba(0, 0, 0, 0.15)",
+                      border: isUser ? "none" : "1px solid rgba(255, 255, 255, 0.08)",
                       fontSize: "0.95rem",
-                      lineHeight: "1.5"
+                      lineHeight: "1.6"
                     }}
                   >
                     {!isUser ? (
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h1: ({node, ...props}) => <h1 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#f8fafc", borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: "4px", marginBottom: "12px" }} {...props} />,
+                          h2: ({node, ...props}) => <h2 style={{ fontSize: "1.15rem", fontWeight: "800", color: "#f8fafc", marginBottom: "10px", marginTop: "14px" }} {...props} />,
+                          h3: ({node, ...props}) => <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#38bdf8", marginBottom: "8px", marginTop: "12px" }} {...props} />,
+                          p: ({node, ...props}) => <p style={{ marginBottom: "10px", lineHeight: "1.6", color: "#cbd5e1" }} {...props} />,
+                          li: ({node, ...props}) => <li style={{ marginBottom: "6px", color: "#cbd5e1", lineHeight: "1.6" }} {...props} />,
+                          ul: ({node, ...props}) => <ul style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
+                          ol: ({node, ...props}) => <ol style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
+                          strong: ({node, ...props}) => {
+                            const text = props.children[0];
+                            if (typeof text === 'string') {
+                              if (text.includes("Action Recommended") || text.includes("Recommended Action")) {
+                                return (
+                                  <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#38bdf8", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                    🔧 {text}
+                                  </span>
+                                );
+                              }
+                              if (text.includes("Impact Analysis") || text.includes("Resource Savings")) {
+                                return (
+                                  <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#34d399", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                    📈 {text}
+                                  </span>
+                                );
+                              }
+                              if (text.includes("Risk Assessment") || text.includes("Critical Risk") || text.includes("High Risk")) {
+                                return (
+                                  <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#f87171", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                    ⚠️ {text}
+                                  </span>
+                                );
+                              }
+                            }
+                            return <strong style={{ color: "#ffffff", fontWeight: "700" }} {...props} />;
+                          },
+                          code: ({node, inline, className, children, ...props}) => {
+                            return (
+                              <code 
+                                style={{ 
+                                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace", 
+                                  backgroundColor: "rgba(255, 255, 255, 0.1)", 
+                                  color: "#38bdf8", 
+                                  padding: "2px 6px", 
+                                  borderRadius: "6px", 
+                                  fontSize: "0.9em" 
+                                }} 
+                                {...props}
+                              >
+                                {children}
+                              </code>
+                            );
+                          },
+                          pre: ({node, ...props}) => (
+                            <pre 
+                              style={{ 
+                                backgroundColor: "#020617", 
+                                border: "1px solid rgba(255,255,255,0.08)", 
+                                borderRadius: "12px", 
+                                padding: "14px", 
+                                overflowX: "auto", 
+                                margin: "14px 0",
+                                fontFamily: "'JetBrains Mono', monospace"
+                              }} 
+                              {...props} 
+                            />
+                          )
+                        }}
+                      >
                         {msg.text || msg.message || ""}
                       </ReactMarkdown>
                     ) : (

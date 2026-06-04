@@ -36,3 +36,6 @@ frontend/*.pdf
 
 # Lina agent source video assets
 python-agent/agents/lina/Video/
+
+# persistent trace storage
+backend/llm_traces_persistent.json

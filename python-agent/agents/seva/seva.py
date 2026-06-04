@@ -697,7 +697,6 @@ async def entrypoint(ctx: JobContext):
     # Build system prompt with current timestamp
     system_prompt = build_system_prompt()
     chat_ctx = SecurityChatContext()
-    chat_ctx.add_message(role="system", content=system_prompt)
 
     # Bind tools to this session's local participant
     seva_tools = SevaTools(participant=ctx.room.local_participant)
@@ -713,6 +712,7 @@ async def entrypoint(ctx: JobContext):
         stt=stt,
         llm=llm_plugin,
         tts=tts,
+        tts_text_transforms=[voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji],
         turn_handling={
             "interruption": {"enabled": True},
             "endpointing": {"min_delay": 1.6}

@@ -182,7 +182,6 @@ async def entrypoint(ctx: JobContext):
     dynamic_prompt = f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}\n\nLIVE SCHEMA SNAPSHOT:\n{json.dumps(SCHEMA_CACHE, indent=2)}"
 
     chat_ctx = llm.ChatContext()
-    chat_ctx.add_message(role="system", content=dynamic_prompt)
 
     raw_llm = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
     llm_plugin = TracedLLM(raw_llm, agent_name="CORTEX_BI2")
@@ -280,6 +279,7 @@ async def entrypoint(ctx: JobContext):
         stt=STT_PLUGIN,
         llm=llm_plugin,
         tts=TTS_PLUGIN,
+        tts_text_transforms=[voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji],
         turn_handling={"interruption": {"enabled": True}, "endpointing": {"min_delay": 2.0}},
     )
 
@@ -326,6 +326,7 @@ async def entrypoint(ctx: JobContext):
     def on_conversation_item(event: voice.ConversationItemAddedEvent):
         item = event.item
         if isinstance(item, llm.ChatMessage):
+            guard.prune_context(chat_ctx)
             content = item.content[0] if isinstance(item.content, list) else item.content
             if item.role == "assistant":
                 logger.info(f"CORTEX2: {content}")

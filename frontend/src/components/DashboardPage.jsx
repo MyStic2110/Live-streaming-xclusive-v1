@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { io } from "socket.io-client";
 import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -52,7 +54,10 @@ function DashboardPage({ onBack }) {
               completion_tokens: 0,
               input_cost: 0,
               output_cost: 0,
-              total_cost: 0,
+              stt_cost: data.stt_cost || 0,
+              tts_cost: data.tts_cost || 0,
+              llm_cost: data.llm_cost || 0,
+              total_cost: data.total_cost || 0,
               status: "streaming",
               timestamp: new Date().toISOString(),
               total_latency: 0,
@@ -65,7 +70,14 @@ function DashboardPage({ onBack }) {
           }
         } else if (event === "llm_chunk") {
           if (index !== -1) {
-            list[index] = { ...list[index], outputs: list[index].outputs + data.chunk };
+            list[index] = { 
+              ...list[index], 
+              outputs: list[index].outputs + data.chunk,
+              stt_cost: data.stt_cost !== undefined ? data.stt_cost : list[index].stt_cost,
+              tts_cost: data.tts_cost !== undefined ? data.tts_cost : list[index].tts_cost,
+              llm_cost: data.llm_cost !== undefined ? data.llm_cost : list[index].llm_cost,
+              total_cost: data.total_cost !== undefined ? data.total_cost : list[index].total_cost
+            };
             return list;
           }
         } else if (event === "llm_end") {
@@ -77,7 +89,10 @@ function DashboardPage({ onBack }) {
               completion_tokens: data.completion_tokens,
               input_cost: data.input_cost,
               output_cost: data.output_cost,
-              total_cost: data.total_cost,
+              stt_cost: data.stt_cost !== undefined ? data.stt_cost : list[index].stt_cost || 0,
+              tts_cost: data.tts_cost !== undefined ? data.tts_cost : list[index].tts_cost || 0,
+              llm_cost: data.llm_cost !== undefined ? data.llm_cost : (data.input_cost + data.output_cost) || 0,
+              total_cost: data.total_cost !== undefined ? data.total_cost : list[index].total_cost,
               agent: data.agent || list[index].agent,
               status: "completed",
               total_latency: data.total_latency || list[index].total_latency || 0,
@@ -95,7 +110,11 @@ function DashboardPage({ onBack }) {
               error_code: data.error_code || "UNKNOWN_ERROR",
               error_message: data.error_message || "An error occurred during generation",
               total_latency: data.total_latency || list[index].total_latency || 0,
-              agent: data.agent || list[index].agent
+              agent: data.agent || list[index].agent,
+              stt_cost: data.stt_cost !== undefined ? data.stt_cost : list[index].stt_cost || 0,
+              tts_cost: data.tts_cost !== undefined ? data.tts_cost : list[index].tts_cost || 0,
+              llm_cost: data.llm_cost !== undefined ? data.llm_cost : list[index].llm_cost || 0,
+              total_cost: data.total_cost !== undefined ? data.total_cost : list[index].total_cost
             };
             return list;
           } else {
@@ -109,7 +128,10 @@ function DashboardPage({ onBack }) {
               completion_tokens: 0,
               input_cost: 0,
               output_cost: 0,
-              total_cost: 0,
+              stt_cost: data.stt_cost || 0,
+              tts_cost: data.tts_cost || 0,
+              llm_cost: data.llm_cost || 0,
+              total_cost: data.total_cost || 0,
               status: "failed",
               error_code: data.error_code || "UNKNOWN_ERROR",
               error_message: data.error_message || "An error occurred",
@@ -165,12 +187,14 @@ function DashboardPage({ onBack }) {
     let totalSpend = 0;
     let totalPromptTokens = 0;
     let totalCompletionTokens = 0;
-    let totalRequests = traces.length;
     let completedRuns = 0;
     let sumLatency = 0;
     let sumSpeed = 0;
 
-    traces.forEach(t => {
+    const nonStreaming = traces.filter(t => t.status !== "streaming");
+    const totalRequests = nonStreaming.length;
+
+    nonStreaming.forEach(t => {
       totalSpend += (t.total_cost || 0);
       totalPromptTokens += (t.prompt_tokens || 0);
       totalCompletionTokens += (t.completion_tokens || 0);
@@ -193,9 +217,9 @@ function DashboardPage({ onBack }) {
 
   // Filter traces
   const filteredTraces = React.useMemo(() => {
-    if (filter === "streaming") return traces.filter(t => t.status === "streaming");
-    if (filter === "completed") return traces.filter(t => t.status === "completed");
-    return traces;
+    const nonStreaming = traces.filter(t => t.status !== "streaming");
+    if (filter === "completed") return nonStreaming.filter(t => t.status === "completed");
+    return nonStreaming;
   }, [traces, filter]);
 
   const handleEvaluate = async (trace) => {
@@ -416,6 +440,8 @@ function DashboardPage({ onBack }) {
             const totalTokens = trace.prompt_tokens + trace.completion_tokens;
             const evalResult = hallucinationResults[trace.run_id];
             const col = evalResult ? getScoreColour(evalResult.score) : null;
+            const voiceAgents = ['NOVA', 'CORTEX_BI', 'CORTEX_BI2', 'LINA', 'AIVYUH', 'ASTRA', 'MARTECH', 'OCTANE', 'SEVA', 'VONE', 'BI', 'BI2', 'CORTEX', 'CORTEX2'];
+            const isVoice = trace.agent && voiceAgents.includes(trace.agent.toUpperCase());
 
             return (
               <div
@@ -581,13 +607,12 @@ function DashboardPage({ onBack }) {
 
                   <div style={{
                     fontSize: "0.88rem",
-                    color: isFailed ? "#fca5a5" : (trace.outputs ? "#e2e8f0" : "#475569"),
+                    color: isFailed ? "#fca5a5" : (trace.outputs ? "#cbd5e1" : "#475569"),
                     lineHeight: "1.5",
-                    whiteSpace: "pre-wrap",
                     minHeight: "24px"
                   }}>
                     {isFailed ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px", whiteSpace: "pre-wrap" }}>
                         <div style={{ fontWeight: "800", textTransform: "uppercase", fontSize: "0.75rem", color: "#f87171" }}>
                           Code: {trace.error_code}
                         </div>
@@ -596,7 +621,82 @@ function DashboardPage({ onBack }) {
                         </div>
                       </div>
                     ) : (
-                      trace.outputs || (isStreaming ? "Initializing prompt run..." : "Empty completion")
+                      trace.outputs ? (
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            h1: ({node, ...props}) => <h1 style={{ fontSize: "1.2rem", fontWeight: "800", color: "#f8fafc", borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: "4px", marginBottom: "12px" }} {...props} />,
+                            h2: ({node, ...props}) => <h2 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#f8fafc", marginBottom: "10px", marginTop: "14px" }} {...props} />,
+                            h3: ({node, ...props}) => <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#38bdf8", marginBottom: "8px", marginTop: "12px" }} {...props} />,
+                            p: ({node, ...props}) => <p style={{ marginBottom: "10px", lineHeight: "1.6", color: "#cbd5e1" }} {...props} />,
+                            li: ({node, ...props}) => <li style={{ marginBottom: "6px", color: "#cbd5e1", lineHeight: "1.6" }} {...props} />,
+                            ul: ({node, ...props}) => <ul style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
+                            ol: ({node, ...props}) => <ol style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
+                            strong: ({node, ...props}) => {
+                              const text = props.children[0];
+                              if (typeof text === 'string') {
+                                if (text.includes("Action Recommended") || text.includes("Recommended Action")) {
+                                  return (
+                                    <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#38bdf8", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                      🔧 {text}
+                                    </span>
+                                  );
+                                }
+                                if (text.includes("Impact Analysis") || text.includes("Resource Savings")) {
+                                  return (
+                                    <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#34d399", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                      📈 {text}
+                                    </span>
+                                  );
+                                }
+                                if (text.includes("Risk Assessment") || text.includes("Critical Risk") || text.includes("High Risk")) {
+                                  return (
+                                    <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#f87171", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                      ⚠️ {text}
+                                    </span>
+                                  );
+                                }
+                              }
+                              return <strong style={{ color: "#ffffff", fontWeight: "700" }} {...props} />;
+                            },
+                            code: ({node, inline, className, children, ...props}) => {
+                              return (
+                                <code 
+                                  style={{ 
+                                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace", 
+                                    backgroundColor: "rgba(255, 255, 255, 0.1)", 
+                                    color: "#38bdf8", 
+                                    padding: "2px 6px", 
+                                    borderRadius: "6px", 
+                                    fontSize: "0.9em" 
+                                  }} 
+                                  {...props}
+                                >
+                                  {children}
+                                </code>
+                              );
+                            },
+                            pre: ({node, ...props}) => (
+                              <pre 
+                                style={{ 
+                                  backgroundColor: "#020617", 
+                                  border: "1px solid rgba(255,255,255,0.08)", 
+                                  borderRadius: "12px", 
+                                  padding: "14px", 
+                                  overflowX: "auto", 
+                                  margin: "14px 0",
+                                  fontFamily: "'JetBrains Mono', monospace"
+                                }} 
+                                {...props} 
+                              />
+                            )
+                          }}
+                        >
+                          {trace.outputs}
+                        </ReactMarkdown>
+                      ) : (
+                        isStreaming ? "Initializing prompt run..." : "Empty completion"
+                      )
                     )}
                     {isStreaming && (
                       <span className="blink-cursor" style={{ 
@@ -675,23 +775,28 @@ function DashboardPage({ onBack }) {
                 {!isStreaming && (
                   <div style={{ display: "flex", gap: "1rem", fontSize: "0.68rem", color: "#64748b", flexWrap: "wrap", borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: "0.75rem", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ color: "#60a5fa", fontWeight: "700" }}>IN</span>
-                      <span>{trace.prompt_tokens} tokens</span>
+                      <span style={{ color: "#60a5fa", fontWeight: "700" }}>LLM</span>
+                      <span>({trace.prompt_tokens} IN / {trace.completion_tokens} OUT)</span>
                       <span style={{ color: "#475569" }}>·</span>
-                      <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>${trace.input_cost.toFixed(6)}</span>
+                      <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>${(trace.llm_cost || (trace.input_cost + trace.output_cost) || 0).toFixed(6)}</span>
                     </div>
-                    <div style={{ color: "#334155" }}>|</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ color: "#34d399", fontWeight: "700" }}>OUT</span>
-                      <span>{trace.completion_tokens} tokens</span>
-                      <span style={{ color: "#475569" }}>·</span>
-                      <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>${trace.output_cost.toFixed(6)}</span>
-                    </div>
+                    {isVoice && (
+                      <>
+                        <div style={{ color: "#334155" }}>|</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ color: "#fb7185", fontWeight: "700" }}>STT</span>
+                          <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>${(trace.stt_cost || 0).toFixed(6)}</span>
+                        </div>
+                        <div style={{ color: "#334155" }}>|</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ color: "#38bdf8", fontWeight: "700" }}>TTS</span>
+                          <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>${(trace.tts_cost || 0).toFixed(6)}</span>
+                        </div>
+                      </>
+                    )}
                     <div style={{ color: "#334155" }}>|</div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                       <span style={{ color: "#a78bfa", fontWeight: "700" }}>TOTAL</span>
-                      <span>{trace.prompt_tokens + trace.completion_tokens} tokens</span>
-                      <span style={{ color: "#475569" }}>·</span>
                       <span style={{ color: "#10b981", fontFamily: "monospace", fontWeight: "700" }}>${trace.total_cost.toFixed(6)}</span>
                     </div>
                        {/* Evaluate button / loader (only if NOT evaluated yet) */}

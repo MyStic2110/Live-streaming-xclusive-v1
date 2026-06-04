@@ -189,10 +189,6 @@ function SwarmTelemetryPage({ onBack }) {
                       <h3 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#ffffff", textTransform: "uppercase", letterSpacing: "1px", margin: 0 }}>
                         {agentId}
                       </h3>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(16, 185, 129, 0.1)", padding: "3px 8px", borderRadius: "12px", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
-                        <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#10b981", boxShadow: "0 0 6px #10b981" }} />
-                        <span style={{ fontSize: "0.65rem", fontWeight: "800", color: "#34d399", letterSpacing: "0.5px" }}>ONLINE</span>
-                      </div>
                     </div>
                     <div style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "4px" }}>
                       Last Audit: {dateStr}

@@ -664,7 +664,6 @@ SECURITY RULES:
 """
 
     chat_ctx = llm.ChatContext()
-    chat_ctx.add_message(role="system", content=dynamic_prompt)
 
     # Setup function tools for agent to call dynamically
     class MartechTools:
@@ -723,6 +722,7 @@ SECURITY RULES:
         stt=stt_plugin,
         llm=llm_plugin,
         tts=tts_plugin,
+        tts_text_transforms=[voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji],
         turn_handling={"interruption": {"enabled": True}, "endpointing": {"min_delay": 2.0}},
     )
 

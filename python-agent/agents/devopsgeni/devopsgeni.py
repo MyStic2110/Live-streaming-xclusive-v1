@@ -435,6 +435,25 @@ AVAILABLE_TOOLS = [
     }
 ]
 
+def prune_chat_context_list(msg_list: list, max_turns: int) -> int:
+    """
+    Prunes the text-only chat context to keep at most `max_turns` conversation turns,
+    always preserving the system prompt message(s).
+    """
+    system_msgs = [m for m in msg_list if m.get("role") == "system"]
+    convo_msgs  = [m for m in msg_list if m.get("role") != "system"]
+
+    max_convo_messages = max_turns * 2
+    if len(convo_msgs) <= max_convo_messages:
+        return 0
+
+    removed_count = len(convo_msgs) - max_convo_messages
+    trimmed_convo = convo_msgs[removed_count:]
+
+    msg_list.clear()
+    msg_list.extend(system_msgs + trimmed_convo)
+    return removed_count
+
 async def entrypoint(ctx: JobContext):
     logger.info(f"--- [ENTRYPOINT] STARTING DEVOPS_GENI TEXT-ONLY (ROOM: {ctx.room.name}) ---")
     sentry = get_sentry(AGENT_NAME)
@@ -506,6 +525,11 @@ async def entrypoint(ctx: JobContext):
     ctx.add_shutdown_callback(_cleanup_redis)
 
     async def process_chat(user_text: str):
+        # Prune context before appending new user message
+        removed = prune_chat_context_list(messages, guard.max_context_turns)
+        if removed > 0:
+            logger.info(f"[DEVOPS_GENI] Chat context pruned: removed {removed} old messages.")
+
         messages.append({"role": "user", "content": user_text})
         
         try:

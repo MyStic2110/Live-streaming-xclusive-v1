@@ -310,8 +310,8 @@ You are not a generic writer. You are Astra — driving enterprise demand for cu
             import urllib.request
             import urllib.parse
             
-            # Use SEARXNG_URL if provided, else fallback to a public SearXNG instance
-            searxng_url = os.getenv("SEARXNG_URL", "https://searx.be")
+            # Use SEARXNG_URL if provided, else fallback to the local SearXNG service
+            searxng_url = os.getenv("SEARXNG_URL", "http://localhost:8081")
             
             try:
                 encoded_query = urllib.parse.quote(query)
@@ -607,7 +607,6 @@ You are not a generic writer. You are Astra — driving enterprise demand for cu
     astra_tools = AstraTools(participant=ctx.room.local_participant)
 
     chat_ctx = llm.ChatContext()
-    chat_ctx.add_message(role="system", content=system_prompt)
 
     raw_llm = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
     llm_plugin = TracedLLM(raw_llm, agent_name="ASTRA")
@@ -623,6 +622,7 @@ You are not a generic writer. You are Astra — driving enterprise demand for cu
         stt=stt,
         llm=llm_plugin,
         tts=tts,
+        tts_text_transforms=[voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji],
         turn_handling={"interruption": {"enabled": True}, "endpointing": {"min_delay": 1.2}},
     )
 

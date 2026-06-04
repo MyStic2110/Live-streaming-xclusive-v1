@@ -114,6 +114,7 @@ async def entrypoint(ctx: JobContext):
         stt=stt_plugin,
         llm=llm_plugin,
         tts=tts_plugin,
+        tts_text_transforms=[voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji],
         turn_handling={
             "interruption": {"enabled": True}, 
             "endpointing": {"min_delay": 1.0} 

@@ -262,7 +262,6 @@ async def entrypoint(ctx: JobContext):
 
     # Chat Context
     chat_ctx = llm.ChatContext()
-    chat_ctx.add_message(role="system", content=SYSTEM_PROMPT)
 
     usage = {
         "input_tokens": 0, "output_tokens": 0,
@@ -296,6 +295,7 @@ async def entrypoint(ctx: JobContext):
         stt=stt,
         llm=llm_plugin,
         tts=tts,
+        tts_text_transforms=[voice.text_transforms.filter_markdown, voice.text_transforms.filter_emoji],
         turn_handling={
             "interruption": {"enabled": True},
             "endpointing": {"min_delay": 1.4}
