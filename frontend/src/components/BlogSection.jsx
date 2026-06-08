@@ -388,6 +388,9 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
                   if (line.startsWith('## ')) {
                     return <h2 key={idx} style={{ fontSize: "2.5rem", fontWeight: "900", marginTop: "4rem", marginBottom: "1.5rem", letterSpacing: "-1px" }}>{parseInlineMarkdown(line.replace('## ', '').trim())}</h2>;
                   }
+                  if (line.startsWith('#### ')) {
+                    return <h4 key={idx} style={{ fontSize: "1.4rem", fontWeight: "800", marginTop: "2.5rem", marginBottom: "0.8rem", color: COLORS.primary }}>{parseInlineMarkdown(line.replace('#### ', '').trim())}</h4>;
+                  }
                   if (line.startsWith('### ')) {
                     return <h3 key={idx} style={{ fontSize: "1.8rem", fontWeight: "800", marginTop: "3rem", marginBottom: "1rem", color: COLORS.accent }}>{parseInlineMarkdown(line.replace('### ', '').trim())}</h3>;
                   }

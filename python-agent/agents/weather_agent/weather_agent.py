@@ -276,9 +276,10 @@ async def entrypoint(ctx: JobContext):
         def on_stt(event: voice.UserInputTranscribedEvent):
             if event.is_final:
                 if not guard.allow_transcript(event.transcript):
+                    return
                 if guard.is_ceiling_exceeded:
                     asyncio.create_task(guard.disconnect_with_alert(ctx.room))
-                return
+                    return
                 # 1. Guardrail Check
                 if not sentry.check_guardrails(event.transcript):
                     return

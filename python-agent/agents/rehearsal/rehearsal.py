@@ -168,15 +168,26 @@ async def entrypoint(ctx: JobContext):
                 logger.info(f"[CRITIQUE] Raw LLM reply received: {raw[:300]}...")
 
                 # Trace the raw HTTP call with latency metrics
+                p_tokens = usage_data.get("prompt_tokens", 0)
+                c_tokens = usage_data.get("completion_tokens", 0)
+                i_cost = round((p_tokens / 1_000_000) * 0.15, 6)
+                o_cost = round((c_tokens / 1_000_000) * 0.60, 6)
+                tot_cost = round(i_cost + o_cost, 6)
+
                 asyncio.create_task(trace_raw_call(
                     agent_name="REHEARSAL",
                     model="openai/gpt-4o-mini",
                     messages=body["messages"],
                     response_text=raw,
-                    prompt_tokens=usage_data.get("prompt_tokens", 0),
-                    completion_tokens=usage_data.get("completion_tokens", 0),
+                    prompt_tokens=p_tokens,
+                    completion_tokens=c_tokens,
                     duration=duration,
-                    ttft=duration # non-streaming raw call, first token received at completion
+                    ttft=duration, # non-streaming raw call, first token received at completion
+                    cum_prompt_tokens=p_tokens,
+                    cum_completion_tokens=c_tokens,
+                    cum_input_cost=i_cost,
+                    cum_output_cost=o_cost,
+                    cum_total_cost=tot_cost
                 ))
 
                 # Strip markdown fences if any

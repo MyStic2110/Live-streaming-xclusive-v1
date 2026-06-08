@@ -440,8 +440,11 @@ def prune_chat_context_list(msg_list: list, max_turns: int) -> int:
     Prunes the text-only chat context to keep at most `max_turns` conversation turns,
     always preserving the system prompt message(s).
     """
-    system_msgs = [m for m in msg_list if m.get("role") == "system"]
-    convo_msgs  = [m for m in msg_list if m.get("role") != "system"]
+    def _get_role(m):
+        return m.get("role") if isinstance(m, dict) else getattr(m, "role", None)
+
+    system_msgs = [m for m in msg_list if _get_role(m) == "system"]
+    convo_msgs  = [m for m in msg_list if _get_role(m) != "system"]
 
     max_convo_messages = max_turns * 2
     if len(convo_msgs) <= max_convo_messages:
@@ -471,6 +474,12 @@ async def entrypoint(ctx: JobContext):
     dynamic_prompt = f"{SYSTEM_PROMPT}\n\nCURRENT_TIME: {current_time}"
 
     messages = [{"role": "system", "content": dynamic_prompt}]
+
+    cum_prompt_tokens = 0
+    cum_completion_tokens = 0
+    cum_input_cost = 0.0
+    cum_output_cost = 0.0
+    cum_total_cost = 0.0
 
     client = AsyncOpenAI(
         api_key=os.getenv("OPENROUTER_API_KEY"),
@@ -525,6 +534,7 @@ async def entrypoint(ctx: JobContext):
     ctx.add_shutdown_callback(_cleanup_redis)
 
     async def process_chat(user_text: str):
+        nonlocal cum_prompt_tokens, cum_completion_tokens, cum_input_cost, cum_output_cost, cum_total_cost
         # Prune context before appending new user message
         removed = prune_chat_context_list(messages, guard.max_context_turns)
         if removed > 0:
@@ -607,16 +617,34 @@ async def entrypoint(ctx: JobContext):
 
                 # Trace the full conversation turn with metrics
                 usage = getattr(response, "usage", None)
+                p_tokens = usage.prompt_tokens if usage else 0
+                c_tokens = usage.completion_tokens if usage else 0
+                
+                i_cost = round((p_tokens / 1_000_000) * 0.15, 6)
+                o_cost = round((c_tokens / 1_000_000) * 0.60, 6)
+                tot_cost = round(i_cost + o_cost, 6)
+                
+                cum_prompt_tokens += p_tokens
+                cum_completion_tokens += c_tokens
+                cum_input_cost = round(cum_input_cost + i_cost, 6)
+                cum_output_cost = round(cum_output_cost + o_cost, 6)
+                cum_total_cost = round(cum_total_cost + tot_cost, 6)
+
                 asyncio.create_task(trace_raw_call(
                     agent_name="DEVOPS_GENI",
                     model="openai/gpt-4o-mini",
                     messages=messages[:-1],  # everything before the last assistant msg
                     response_text=final_text,
-                    prompt_tokens=usage.prompt_tokens if usage else 0,
-                    completion_tokens=usage.completion_tokens if usage else 0,
+                    prompt_tokens=p_tokens,
+                    completion_tokens=c_tokens,
                     duration=duration,
                     ttft=ttft,
-                    tool_latency=tool_latency
+                    tool_latency=tool_latency,
+                    cum_prompt_tokens=cum_prompt_tokens,
+                    cum_completion_tokens=cum_completion_tokens,
+                    cum_input_cost=cum_input_cost,
+                    cum_output_cost=cum_output_cost,
+                    cum_total_cost=cum_total_cost
                 ))
                 
                 payload = json.dumps({
@@ -635,7 +663,12 @@ async def entrypoint(ctx: JobContext):
                 model="openai/gpt-4o-mini",
                 messages=messages,
                 exception=e,
-                duration=duration
+                duration=duration,
+                cum_prompt_tokens=cum_prompt_tokens,
+                cum_completion_tokens=cum_completion_tokens,
+                cum_input_cost=cum_input_cost,
+                cum_output_cost=cum_output_cost,
+                cum_total_cost=cum_total_cost
             ))
 
     @ctx.room.on("data_received")

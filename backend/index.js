@@ -82,6 +82,8 @@ app.post("/deploy-shadow", roomController.deployShadow);
 app.get("/insights", roomController.getAstraInsights);
 app.get("/weather", roomController.getWeather);
 app.post("/trigger-reels", roomController.triggerReels);
+app.post("/api/copilot/chat", roomController.copilotChat);
+app.post("/api/copilot/session/clear", roomController.clearCopilotSession);
 
 // --- LLM TRACING & TELEMETRY ---
 const TRACES_FILE = path.join(__dirname, 'llm_traces_persistent.json');
@@ -164,6 +166,15 @@ app.post("/api/llm-trace", (req, res) => {
       tts_cost,
       llm_cost: 0,
       total_cost,
+      
+      cum_prompt_tokens: data.cum_prompt_tokens || 0,
+      cum_completion_tokens: data.cum_completion_tokens || 0,
+      cum_input_cost: data.cum_input_cost || 0,
+      cum_output_cost: data.cum_output_cost || 0,
+      cum_stt_cost: data.cum_stt_cost || 0,
+      cum_tts_cost: data.cum_tts_cost || 0,
+      cum_total_cost: data.cum_total_cost || 0,
+      
       status: "streaming",
       timestamp: new Date().toISOString(),
       total_latency: 0,
@@ -198,6 +209,15 @@ app.post("/api/llm-trace", (req, res) => {
       trace.stt_cost        = data.stt_cost !== undefined ? data.stt_cost : trace.stt_cost || 0;
       trace.tts_cost        = data.tts_cost !== undefined ? data.tts_cost : trace.tts_cost || 0;
       trace.total_cost      = data.total_cost !== undefined ? data.total_cost : parseFloat((trace.llm_cost + trace.stt_cost + trace.tts_cost).toFixed(6));
+      
+      trace.cum_prompt_tokens = data.cum_prompt_tokens !== undefined ? data.cum_prompt_tokens : trace.cum_prompt_tokens || 0;
+      trace.cum_completion_tokens = data.cum_completion_tokens !== undefined ? data.cum_completion_tokens : trace.cum_completion_tokens || 0;
+      trace.cum_input_cost = data.cum_input_cost !== undefined ? data.cum_input_cost : trace.cum_input_cost || 0;
+      trace.cum_output_cost = data.cum_output_cost !== undefined ? data.cum_output_cost : trace.cum_output_cost || 0;
+      trace.cum_stt_cost = data.cum_stt_cost !== undefined ? data.cum_stt_cost : trace.cum_stt_cost || 0;
+      trace.cum_tts_cost = data.cum_tts_cost !== undefined ? data.cum_tts_cost : trace.cum_tts_cost || 0;
+      trace.cum_total_cost = data.cum_total_cost !== undefined ? data.cum_total_cost : trace.cum_total_cost || 0;
+      
       trace.agent           = data.agent || trace.agent;
       trace.status          = "completed";
       
@@ -219,6 +239,14 @@ app.post("/api/llm-trace", (req, res) => {
       trace.tts_cost        = data.tts_cost !== undefined ? data.tts_cost : trace.tts_cost || 0;
       trace.llm_cost        = parseFloat(((trace.input_cost || 0) + (trace.output_cost || 0)).toFixed(6));
       trace.total_cost      = data.total_cost !== undefined ? data.total_cost : parseFloat((trace.llm_cost + trace.stt_cost + trace.tts_cost).toFixed(6));
+      
+      trace.cum_prompt_tokens = data.cum_prompt_tokens !== undefined ? data.cum_prompt_tokens : trace.cum_prompt_tokens || 0;
+      trace.cum_completion_tokens = data.cum_completion_tokens !== undefined ? data.cum_completion_tokens : trace.cum_completion_tokens || 0;
+      trace.cum_input_cost = data.cum_input_cost !== undefined ? data.cum_input_cost : trace.cum_input_cost || 0;
+      trace.cum_output_cost = data.cum_output_cost !== undefined ? data.cum_output_cost : trace.cum_output_cost || 0;
+      trace.cum_stt_cost = data.cum_stt_cost !== undefined ? data.cum_stt_cost : trace.cum_stt_cost || 0;
+      trace.cum_tts_cost = data.cum_tts_cost !== undefined ? data.cum_tts_cost : trace.cum_tts_cost || 0;
+      trace.cum_total_cost = data.cum_total_cost !== undefined ? data.cum_total_cost : trace.cum_total_cost || 0;
     } else {
       const stt_cost = data.stt_cost || 0;
       const tts_cost = data.tts_cost || 0;
@@ -237,6 +265,15 @@ app.post("/api/llm-trace", (req, res) => {
         tts_cost,
         llm_cost: 0,
         total_cost,
+        
+        cum_prompt_tokens: data.cum_prompt_tokens || 0,
+        cum_completion_tokens: data.cum_completion_tokens || 0,
+        cum_input_cost: data.cum_input_cost || 0,
+        cum_output_cost: data.cum_output_cost || 0,
+        cum_stt_cost: data.cum_stt_cost || 0,
+        cum_tts_cost: data.cum_tts_cost || 0,
+        cum_total_cost: data.cum_total_cost || 0,
+        
         status: "failed",
         error_code: data.error_code || "UNKNOWN_ERROR",
         error_message: data.error_message || "An error occurred",
@@ -259,6 +296,14 @@ app.post("/api/llm-trace", (req, res) => {
     data.tts_cost = trace.tts_cost;
     data.llm_cost = trace.llm_cost;
     data.total_cost = trace.total_cost;
+    
+    data.cum_prompt_tokens = trace.cum_prompt_tokens;
+    data.cum_completion_tokens = trace.cum_completion_tokens;
+    data.cum_input_cost = trace.cum_input_cost;
+    data.cum_output_cost = trace.cum_output_cost;
+    data.cum_stt_cost = trace.cum_stt_cost;
+    data.cum_tts_cost = trace.cum_tts_cost;
+    data.cum_total_cost = trace.cum_total_cost;
   }
 
   io.emit("llm_trace", { event, run_id, data });
@@ -444,3 +489,5 @@ httpServer.listen(config.port, "0.0.0.0", () => {
   console.log(`[ENTERPRISE] Business Layers Active on ${config.port}`);
   console.log(`[ENTERPRISE] LiveKit Target: ${config.livekit.url}`);
 });
+// Trigger restart to reload persistent JSON
+

@@ -131,7 +131,7 @@ STORY-DRIVEN INSIGHT STRUCTURE (CRITICAL):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Your blog content must strictly follow this narrative structure:
 1. **Hook & Stake**: A scroll-stopping opening line. Define a massive problem or high stakes.
-2. **Case Study / Story**: A narrative of how a custom agent swarm was built to solve this problem. Use realistic scenarios.
+2. **Case Study / Story**: A narrative of how a custom agent swarm was built to solve this problem. Use real-world, verified case studies of actual companies (no fictional scenarios).
 3. **Technical Architecture or Strategic Steps**: Write this section using Markdown Blockquote format (every line starting with `> `). Use bullet points and paragraphs inside the blockquotes. This triggers a premium styled box in the UI.
    Example:
    > **Layer 1: Orchestration Layer**
@@ -139,6 +139,15 @@ Your blog content must strictly follow this narrative structure:
    > - State manager tracks session memory.
 4. **Bold Takeaways**: Standout lessons formatted exactly as `- **[Key Point]**: text`.
 5. **Comments Hook & CTA**: Close with an engaging question to drive community discussion, and a soft sell prompting readers to hire Cortex Swarm to build their custom agentic fleets.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AUTHENTICITY & TRUTH-GROUNDING RULES (ABSOLUTE CRITICAL):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- NEVER FABRICATE OR HALLUCINATE company names, statistics, or case studies.
+- ONLY write about established, real-world companies (e.g., Salesforce, Stripe, OpenAI, Microsoft, Siemens, etc.) and real-world events that have actually occurred.
+- The company must be trending in recent news or have well-documented, verifiable case studies of using automation/AI.
+- DO NOT invent generic placeholders (e.g. "Streamline AI", "MediBot", "Autoops") or fictional success stories. Fictional storytelling or generic case studies are strictly forbidden.
+- Ground all statistics and claims in real, search-verified facts from your SearXNG searches.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FORMATTING & METADATA RULES:
@@ -181,6 +190,9 @@ You are not a generic writer. You are Astra — driving enterprise demand for cu
         seoTitle: str = Field(description="Title optimized for SEO")
         seoDesc: str = Field(description="Description optimized for SEO")
         aeoSchema: str = Field(default="", description="Stringified JSON schema for Answer Engine Optimization")
+
+    class SearchWebArgs(BaseModel):
+        query: str = Field(description="The search query")
 
     class AstraTools:
         def __init__(self, participant):
@@ -255,22 +267,6 @@ You are not a generic writer. You are Astra — driving enterprise demand for cu
             else:
                 trends_data["gaps"] = ["All pillars covered — pick the least-recently-published pillar."]
 
-            # --- LIVE TREND FETCH: ArXiv cs.AI latest papers ---
-            try:
-                req = urllib.request.Request(
-                    "http://export.arxiv.org/api/query?search_query=cat:cs.AI&start=0&max_results=5&sortBy=submittedDate&sortOrder=descending",
-                    headers={'User-Agent': 'Mozilla/5.0'}
-                )
-                with urllib.request.urlopen(req, timeout=5) as response:
-                    xml_data = response.read()
-                    root = ET.fromstring(xml_data)
-                    ns = {'atom': 'http://www.w3.org/2005/Atom'}
-                    for entry in root.findall('atom:entry', ns):
-                        title = entry.find('atom:title', ns).text.replace('\n', ' ')
-                        trends_data["trends"].append(f"[ArXiv Research] {title}")
-            except Exception as e:
-                logger.error(f"[ASTRA] Failed to fetch ArXiv: {e}")
-                
             # --- LIVE TREND FETCH: HackerNews front page ---
             try:
                 req = urllib.request.Request(
@@ -301,8 +297,9 @@ You are not a generic writer. You are Astra — driving enterprise demand for cu
             return json.dumps(trends_data)
 
         @llm.function_tool(description="Search the live web for real-time information, news, and deep research on any topic using SearXNG.")
-        async def search_web(self, query: str = Field(description="The search query")):
+        async def search_web(self, args: SearchWebArgs):
             """Perform a deep-dive search on the live web using SearXNG."""
+            query = args.query
             logger.info(f"[ASTRA] Searching web for: {query}")
             await self.ui_log(f"🔍 SEARCHING WEB: '{query}'...", "info")
             self.sentry.log_transaction("web_search", {"query": query})
@@ -541,20 +538,25 @@ You are not a generic writer. You are Astra — driving enterprise demand for cu
             sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
             from utils import telegram_gateway
             
-            if telegram_gateway.is_configured():
-                await self.ui_log(f"🛰️ HITL GATEWAY: Requesting publication approval via Telegram...", "milestone")
-                msg_id = await telegram_gateway.send_approval_request(slug, title, category, excerpt, content)
-                if msg_id != -1:
-                    await self.ui_log(f"Waiting for Swarm Commander's authorization on Telegram...", "system")
-                    approved = await telegram_gateway.poll_approval(slug, msg_id)
-                    if not approved:
-                        await self.ui_log(f"❌ HITL GATEWAY: Draft rejected by Swarm Commander.", "error")
-                        return f"Mission Aborted: The strategic insight draft '{title}' was rejected by the human-in-the-loop Commander on Telegram. Please draft a different approach or terminate session."
-                    await self.ui_log(f"✅ HITL GATEWAY: Draft approved! Finalizing publication...", "success")
-                else:
-                    await self.ui_log("⚠️ HITL Warning: Failed to send Telegram approval card, bypassing gatekeeper.", "warning")
-            else:
-                await self.ui_log("ℹ️ HITL: Telegram Bot not configured. Bypassing approval loop.", "system")
+            if not telegram_gateway.is_configured():
+                err_msg = "CRITICAL ERROR: Telegram credentials not configured in .env! Bypassing the gatekeeper is strictly forbidden. Publication blocked."
+                await self.ui_log(f"❌ {err_msg}", "error")
+                return f"Mission Blocked: {err_msg}"
+                
+            await self.ui_log(f"🛰️ HITL GATEWAY: Requesting publication approval via Telegram...", "milestone")
+            msg_id = await telegram_gateway.send_approval_request(slug, title, category, excerpt, content)
+            if msg_id == -1:
+                err_msg = "CRITICAL ERROR: Failed to send Telegram approval card. Bypassing the gatekeeper is strictly forbidden. Publication blocked."
+                await self.ui_log(f"❌ {err_msg}", "error")
+                return f"Mission Blocked: {err_msg}"
+                
+            await self.ui_log(f"Waiting for Swarm Commander's authorization on Telegram...", "system")
+            approved = await telegram_gateway.poll_approval(slug, msg_id)
+            if not approved:
+                await self.ui_log(f"❌ HITL GATEWAY: Draft rejected by Swarm Commander.", "error")
+                return f"Mission Aborted: The strategic insight draft '{title}' was rejected by the human-in-the-loop Commander on Telegram. Please draft a different approach or terminate session."
+                
+            await self.ui_log(f"✅ HITL GATEWAY: Draft approved! Finalizing publication...", "success")
 
             # Persist to local storage
             blog_path = os.path.join(os.path.dirname(__file__), "blogs", f"{slug}.json")

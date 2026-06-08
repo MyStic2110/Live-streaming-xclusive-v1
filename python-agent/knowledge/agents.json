@@ -1,0 +1,980 @@
+{
+  "vertical": "agents",
+  "last_updated": "2026-06-05",
+  "total_agents": 15,
+  "agent_details": [
+    {
+      "id": "aivyuh",
+      "name": "Aivyuh",
+      "status": "Production-ready",
+      "purpose": "Aivyuh is Swarm's autonomous Security Auditor agent. It scans every active agent in your Swarm deployment against the OWASP Top 10 LLM vulnerability framework, identifies security weaknesses before they reach production, and delivers structured audit reports. Think of it as a continuous penetration tester that lives inside your platform.",
+      "capabilities": [
+        "Full OWASP Top 10 LLM vulnerability scanning",
+        "Active Swarm agent manifest discovery",
+        "Heuristic-based prompt injection detection",
+        "Structured security audit report generation"
+      ],
+      "integrations": [
+        "OpenAI APIs"
+      ],
+      "methods": [
+        {
+          "name": "get_swarm_agent_manifest",
+          "description": "Scan python-agent/agents subdirectories to list active swarm nodes.",
+          "parameters": []
+        },
+        {
+          "name": "run_full_owasp_audit",
+          "description": "Runs heuristics for all 10 OWASP Top 10 LLM vulnerabilities against the target agent.",
+          "parameters": [
+            "agent_name"
+          ]
+        }
+      ],
+      "use_cases": [
+        "Run a full OWASP Top 10 LLM security audit across all your Swarm agents",
+        "Detect prompt injection, insecure output handling, and data leakage risks",
+        "Get a manifest of all active Swarm nodes and their exposure surface",
+        "Receive structured audit reports with risk ratings and remediation steps"
+      ]
+    },
+    {
+      "id": "astra",
+      "name": "Astra",
+      "status": "Production-ready",
+      "purpose": "Astra is Swarm's autonomous content research and publishing agent. It monitors live web trends, identifies high-intent topics, researches them in depth using real-time web search, and publishes insights autonomously — all without human intervention. Astra is purpose-built for teams who want a continuous, always-on content intelligence pipeline.",
+      "capabilities": [
+        "Real-time trend research and high-intent topic discovery",
+        "Live web deep-dive search via SearXNG",
+        "Autonomous insight publishing pipeline",
+        "Sprint day tracking and session lifecycle management",
+        "Duplicate topic prevention across content runs"
+      ],
+      "integrations": [
+        "SearXNG Search Engine",
+        "REST APIs",
+        "OpenAI APIs"
+      ],
+      "methods": [
+        {
+          "name": "ui_log",
+          "description": "Sends a real-time log message to the AstraRoom UI.",
+          "parameters": [
+            "message",
+            "level"
+          ]
+        },
+        {
+          "name": "research_trends",
+          "description": "Returns current high-intent topics AND already-published topics to prevent duplication.",
+          "parameters": []
+        },
+        {
+          "name": "search_web",
+          "description": "Perform a deep-dive search on the live web using SearXNG.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "publish_autonomous_insight",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "mark_day_complete",
+          "description": "Increments the sprint day in the local tracker.",
+          "parameters": []
+        },
+        {
+          "name": "terminate_session",
+          "description": "Shuts down the agent session for the day.",
+          "parameters": []
+        }
+      ],
+      "use_cases": [
+        "Automatically discover and research trending topics in your industry",
+        "Prevent duplicate content by tracking already-published topics",
+        "Publish autonomous insights and reports on a sprint schedule",
+        "Stream real-time research progress to your team's dashboard"
+      ]
+    },
+    {
+      "id": "bi",
+      "name": "Cortex (BI)",
+      "status": "Production-ready",
+      "purpose": "Cortex is Swarm's Business Intelligence agent for relational databases. It connects directly to your MySQL database, understands your schema automatically, and lets you query your business data in plain English — no SQL knowledge required. Cortex converts natural language into precise queries and streams results back in real time.",
+      "capabilities": [
+        "Natural language to SQL query conversion",
+        "Automatic MySQL schema discovery and caching",
+        "Real-time result streaming",
+        "Database connection management and schema pre-warming"
+      ],
+      "integrations": [
+        "MySQL Database",
+        "OpenAI APIs"
+      ],
+      "methods": [
+        {
+          "name": "get_connection",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "initialize_schema",
+          "description": "Executes task.",
+          "parameters": [
+            "force_refresh"
+          ]
+        },
+        {
+          "name": "execute_query",
+          "description": "Executes task.",
+          "parameters": [
+            "query"
+          ]
+        },
+        {
+          "name": "get_database_schema",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "query_data",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "detokenize_stream",
+          "description": "Executes task.",
+          "parameters": [
+            "text_stream"
+          ]
+        },
+        {
+          "name": "prewarm_schema",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "run_warmup",
+          "description": "Executes task.",
+          "parameters": []
+        }
+      ],
+      "use_cases": [
+        "Query your MySQL database using plain English questions",
+        "Get automatic schema discovery without writing any SQL",
+        "Stream large query results in real time without timeouts",
+        "Generate business reports from raw relational data on demand"
+      ]
+    },
+    {
+      "id": "bi2",
+      "name": "Cortex II (MongoDB BI)",
+      "status": "Production-ready",
+      "purpose": "Cortex II is Swarm's Business Intelligence agent for MongoDB. It connects to your MongoDB instance, maps your collections and document structures automatically, and answers business questions through plain-English queries. It supports aggregation pipelines, document counts, and live dashboard chart rendering — making NoSQL data instantly accessible to non-technical teams.",
+      "capabilities": [
+        "Natural language to MongoDB aggregation pipeline conversion",
+        "Automatic collection schema discovery and sampling",
+        "Read-only document find and count operations",
+        "Live dashboard chart rendering",
+        "MongoDB data snapshot export"
+      ],
+      "integrations": [
+        "MongoDB Database",
+        "OpenAI APIs"
+      ],
+      "methods": [
+        {
+          "name": "default",
+          "description": "Executes task.",
+          "parameters": [
+            "o"
+          ]
+        },
+        {
+          "name": "connect",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "discover_schema",
+          "description": "Sample each collection to build a schema snapshot for the LLM.",
+          "parameters": []
+        },
+        {
+          "name": "find",
+          "description": "Read-only find query.",
+          "parameters": [
+            "collection",
+            "filter_dict",
+            "limit"
+          ]
+        },
+        {
+          "name": "aggregate",
+          "description": "Read-only aggregation pipeline.",
+          "parameters": [
+            "collection",
+            "pipeline"
+          ]
+        },
+        {
+          "name": "count",
+          "description": "Count documents in a collection.",
+          "parameters": [
+            "collection",
+            "filter_dict"
+          ]
+        },
+        {
+          "name": "find_documents",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "aggregate_collection",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "count_documents",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "list_schema",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "render_dashboard_chart",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "mongo_dumps",
+          "description": "Executes task.",
+          "parameters": [
+            "obj"
+          ]
+        }
+      ],
+      "use_cases": [
+        "Query MongoDB collections using plain English",
+        "Automatically map document schemas across all your collections",
+        "Run aggregation pipelines without writing any code",
+        "Render dashboard charts directly from live MongoDB data",
+        "Export data snapshots on demand"
+      ]
+    },
+    {
+      "id": "devopsgeni",
+      "name": "DevOps Geni",
+      "status": "Production-ready",
+      "purpose": "DevOps Geni is Swarm's autonomous infrastructure and security intelligence agent. It monitors your deployment environment in real-time, performs automated security scans (SAST), analyzes system telemetry, manages Docker containers, reads backend crash logs, and detects ghost processes. DevOps Geni is designed for engineering and DevOps teams who need continuous visibility and automated remediation across their infrastructure — without writing a single line of ops script.",
+      "use_cases": [
+        "Run automated SAST (Static Application Security Testing) scans on your codebase",
+        "Monitor and kill ghost processes consuming system resources",
+        "Analyze crash logs from the backend to identify root causes",
+        "Inspect running Docker containers and read their logs",
+        "Perform architecture risk assessments",
+        "Install pre-commit security gates to block vulnerable code from being pushed"
+      ],
+      "capabilities": [
+        "Machine spec collection and hardware diagnostics",
+        "Ghost process detection and termination",
+        "Swarm memory usage monitoring",
+        "Recent telemetry analysis and anomaly detection",
+        "Backend crash log reader",
+        "SAST security scan runner",
+        "Architecture risk analysis",
+        "Pre-commit gate installer",
+        "Docker container listing and log reading",
+        "Web search for CVE and security advisories"
+      ],
+      "integrations": [
+        "Docker Engine",
+        "AWS Cloud Services",
+        "Redis Cache",
+        "OpenAI APIs",
+        "SearXNG Search Engine",
+        "PostgreSQL Database"
+      ],
+      "methods": [
+        {
+          "name": "get_local_machine_specs",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "check_ghost_processes",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "get_swarm_memory_usage",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "kill_ghost_processes",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "analyze_recent_telemetry",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "read_backend_crash_logs",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "run_sast_scan",
+          "description": "Executes task.",
+          "parameters": [
+            "directory_path"
+          ]
+        },
+        {
+          "name": "analyze_architecture_risks",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "install_pre_commit_gate",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "list_docker_containers",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "read_docker_logs",
+          "description": "Executes task.",
+          "parameters": [
+            "container_name",
+            "lines"
+          ]
+        },
+        {
+          "name": "search_web",
+          "description": "Executes task.",
+          "parameters": [
+            "query"
+          ]
+        },
+        {
+          "name": "prune_chat_context_list",
+          "description": "Prunes the text-only chat context to keep at most `max_turns` conversation turns,",
+          "parameters": [
+            "msg_list",
+            "max_turns"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lina",
+      "name": "Lina",
+      "status": "Production-ready",
+      "purpose": "Lina is Swarm's voice-based emotional intelligence companion agent. She engages users in warm, natural spoken conversations — making her ideal for mental wellness applications, companion experiences, and voice-first products. Lina uses real-time speech synthesis and adapts her tone to the emotional context of the conversation.",
+      "capabilities": [
+        "Real-time voice synthesis and speech output",
+        "Emotionally adaptive conversational tone",
+        "Natural spoken dialogue management",
+        "Integration with LiveKit voice pipelines"
+      ],
+      "integrations": [
+        "OpenAI APIs"
+      ],
+      "methods": [],
+      "use_cases": [
+        "Build voice-first companion or wellness applications",
+        "Add emotionally intelligent conversational AI to your product",
+        "Create personalized, empathetic user experiences over voice",
+        "Power mental health check-in or journaling voice flows"
+      ]
+    },
+    {
+      "id": "martech",
+      "name": "Martech",
+      "status": "Production-ready",
+      "purpose": "Martech is Swarm's autonomous Marketing Technology intelligence agent. It connects directly to Google Analytics 4 (GA4) and Google Search Console (GSC), fetches your live traffic and SEO data, detects anomalies, identifies content opportunities, and generates executive-level marketing reports — all autonomously. No spreadsheet exports or manual dashboards needed.",
+      "capabilities": [
+        "GA4 report fetching and traffic trend analysis",
+        "Google Search Console SEO opportunity identification",
+        "Anomaly detection across traffic and ranking data",
+        "Cross-channel data correlation engine",
+        "Executive markdown report generation",
+        "Automated marketing performance audits"
+      ],
+      "integrations": [
+        "REST APIs",
+        "OpenAI APIs"
+      ],
+      "methods": [
+        {
+          "name": "refresh_token",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "fetch_ga4_report",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "fetch_gsc_report",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "detect_anomalies",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "identify_seo_opportunities",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "correlate_data",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "get_summary_comparison",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "generate_comprehensive_audit",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "fetch_seo_opportunities",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "check_anomaly_alerts",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "build_executive_markdown",
+          "description": "Executes task.",
+          "parameters": [
+            "comp",
+            "anomalies",
+            "opportunities",
+            "correlations"
+          ]
+        }
+      ],
+      "use_cases": [
+        "Pull live GA4 traffic reports and identify traffic drop anomalies",
+        "Fetch Google Search Console data to find SEO keyword opportunities",
+        "Correlate traffic, ranking, and click-through data in one report",
+        "Generate executive markdown summaries of your marketing performance",
+        "Set up automated weekly marketing health checks"
+      ]
+    },
+    {
+      "id": "nova",
+      "name": "Nova",
+      "status": "Production-ready",
+      "purpose": "Nova is Swarm's real-time sports intelligence and prediction agent, built for the IPL Nexus 2026 live prediction platform. It tracks live cricket matches ball-by-ball, surfaces real-time leaderboards, retrieves player multipliers, and lets users submit live predictions through a fully agentic UI. Nova bridges live sports data with interactive fan engagement.",
+      "capabilities": [
+        "Real-time live match listing and status tracking",
+        "Ball-by-ball prediction submission",
+        "Global leaderboard and user ranking retrieval",
+        "User multiplier and performance history analytics",
+        "Guided UI navigation and element highlighting"
+      ],
+      "integrations": [
+        "OpenAI APIs"
+      ],
+      "methods": [
+        {
+          "name": "list_live_matches",
+          "description": "Retrieves the real-time list of matches, including their IDs, teams, and current status.",
+          "parameters": []
+        },
+        {
+          "name": "navigate",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "get_global_leaderboard",
+          "description": "Retrieves the top 10 users by score.",
+          "parameters": []
+        },
+        {
+          "name": "get_user_multiplier",
+          "description": "Retrieves real-time multiplier data for the current user.",
+          "parameters": []
+        },
+        {
+          "name": "get_performance_history",
+          "description": "Retrieves the match-by-match history for the user.",
+          "parameters": []
+        },
+        {
+          "name": "highlight_element",
+          "description": "Draw the user's attention to a specific part of the UI.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "switch_dashboard_tab",
+          "description": "Filters the match arena to show specific categories.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "execute_action",
+          "description": "Execute a strategic UI action like refreshing data or triggering deep-dive analysis.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "predict",
+          "description": "Submit ball-by-ball predictions.",
+          "parameters": [
+            "args"
+          ]
+        }
+      ],
+      "use_cases": [
+        "Track live IPL match status and scores in real time",
+        "Submit ball-by-ball predictions through an agentic interface",
+        "View global leaderboards and personal performance history",
+        "Highlight key UI elements and guide users through prediction flows",
+        "Switch between match categories and analysis dashboards"
+      ]
+    },
+    {
+      "id": "octane",
+      "name": "Octane",
+      "status": "Production-ready",
+      "purpose": "Octane is Swarm's Infrastructure Telemetry agent. It connects to your Docker environment, streams live container logs in real time, and provides instant visibility into the health of every running service. Octane is built for teams who need always-on observability without navigating raw terminal sessions.",
+      "capabilities": [
+        "Real-time Docker container log streaming",
+        "Active container listing and status inspection",
+        "Log stream start, stop, and lifecycle management",
+        "Context-aware chat history pruning for long sessions"
+      ],
+      "integrations": [
+        "Docker Engine",
+        "Redis Cache",
+        "OpenAI APIs",
+        "SearXNG Search Engine",
+        "PostgreSQL Database"
+      ],
+      "methods": [
+        {
+          "name": "list_containers",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "get_container_logs",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "stream_logs",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "stop_streaming",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "stop_active_stream",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "emit",
+          "description": "Executes task.",
+          "parameters": [
+            "record"
+          ]
+        },
+        {
+          "name": "prune_chat_context",
+          "description": "Prunes the chat context to keep at most `max_turns` conversation turns",
+          "parameters": [
+            "chat_ctx",
+            "max_turns"
+          ]
+        }
+      ],
+      "use_cases": [
+        "Stream live logs from any running Docker container",
+        "List all active containers and their current status",
+        "Monitor service health across your entire Docker environment",
+        "Automatically stop stale or failed log streams"
+      ]
+    },
+    {
+      "id": "reels",
+      "name": "Reels",
+      "status": "Production-ready",
+      "purpose": "Reels is Swarm's autonomous video content creation agent. Feed it a blog post and it converts the content into a 30-second vertical reel automatically — handling script generation, visual composition, and output rendering through a fully local pipeline. Reels is built for marketing teams that want to repurpose written content into short-form video at scale.",
+      "capabilities": [
+        "End-to-end blog-to-reel pipeline coordination",
+        "Script extraction and visual composition from text content",
+        "Vertical reel rendering and export",
+        "Fully local processing without cloud video dependencies"
+      ],
+      "integrations": [],
+      "methods": [
+        {
+          "name": "generate_reel",
+          "description": "Coordinates the entire local pipeline to digest a blog and output a vertical reel.",
+          "parameters": [
+            "blog_json_path"
+          ]
+        }
+      ],
+      "use_cases": [
+        "Convert blog posts into 30-second vertical reels automatically",
+        "Repurpose long-form written content into short-form video",
+        "Run a fully local video generation pipeline without external APIs",
+        "Scale video content production without manual editing"
+      ]
+    },
+    {
+      "id": "rehearsal",
+      "name": "Silent Rehearsal",
+      "status": "Production-ready",
+      "purpose": "Silent Rehearsal is Swarm's professional speech coaching agent. It listens to your presentation or speech practice, provides structured feedback on delivery, pacing, and clarity, and guides you through iterative improvement sessions. Ideal for professionals preparing for high-stakes presentations, pitches, or public speaking events.",
+      "capabilities": [
+        "Real-time speech coaching and delivery feedback",
+        "Structured rehearsal session management",
+        "Iterative improvement guidance across multiple sessions",
+        "Integration with voice and REST APIs for live interaction"
+      ],
+      "integrations": [
+        "REST APIs",
+        "OpenAI APIs"
+      ],
+      "methods": [
+        {
+          "name": "llm_node",
+          "description": "Executes task.",
+          "parameters": [
+            "chat_ctx",
+            "tools",
+            "model_settings"
+          ]
+        }
+      ],
+      "use_cases": [
+        "Practice pitches, presentations, or speeches with real-time AI coaching",
+        "Get structured feedback on pacing, clarity, and delivery",
+        "Run multiple rehearsal iterations with guided improvement prompts",
+        "Prepare for interviews, demos, or public speaking events"
+      ]
+    },
+    {
+      "id": "seva",
+      "name": "Seva",
+      "status": "Production-ready",
+      "purpose": "Seva is Swarm's intelligent scheduling and booking agent. It manages user profiles, surfaces available time slots, creates and updates bookings, and processes payments via Google Pay — all through a conversational interface. Seva is designed for service businesses that want to automate their entire appointment booking workflow end-to-end.",
+      "capabilities": [
+        "User profile creation and management",
+        "Real-time availability slot discovery",
+        "End-to-end booking creation, update, and cancellation",
+        "Google Pay payment request integration",
+        "Persistent booking and profile storage"
+      ],
+      "integrations": [
+        "OpenAI APIs"
+      ],
+      "methods": [
+        {
+          "name": "get_user_profile",
+          "description": "Args:",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "save_user_profile",
+          "description": "Args:",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "get_available_slots",
+          "description": "Args:",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "create_booking",
+          "description": "Args:",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "list_bookings",
+          "description": "Args:",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "update_booking",
+          "description": "Args:",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "cancel_booking",
+          "description": "Args:",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "request_gpay_payment",
+          "description": "Args:",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "append",
+          "description": "Executes task.",
+          "parameters": [
+            "item"
+          ]
+        },
+        {
+          "name": "extend",
+          "description": "Executes task.",
+          "parameters": [
+            "items"
+          ]
+        },
+        {
+          "name": "insert",
+          "description": "Executes task.",
+          "parameters": [
+            "index",
+            "item"
+          ]
+        },
+        {
+          "name": "load_bookings",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "save_bookings",
+          "description": "Executes task.",
+          "parameters": [
+            "data"
+          ]
+        },
+        {
+          "name": "load_profiles",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "save_profiles",
+          "description": "Executes task.",
+          "parameters": [
+            "data"
+          ]
+        },
+        {
+          "name": "build_system_prompt",
+          "description": "Executes task.",
+          "parameters": []
+        },
+        {
+          "name": "time_ns",
+          "description": "Nanosecond-precision timestamp for unique booking IDs.",
+          "parameters": []
+        }
+      ],
+      "use_cases": [
+        "Let customers book appointments through a conversational AI interface",
+        "Manage service availability and real-time slot allocation",
+        "Collect payments via Google Pay directly within the booking flow",
+        "View, update, or cancel bookings without manual admin work",
+        "Maintain persistent user profiles across sessions"
+      ]
+    },
+    {
+      "id": "shadow_agent",
+      "name": "Shadow Agent",
+      "status": "Production-ready",
+      "purpose": "Shadow Agent is Swarm's autonomous meeting intelligence agent. It silently joins video meetings, listens to conversations, captures key decisions and action items, and surfaces structured summaries — without disrupting the meeting flow. Shadow Agent is built for teams who never want to lose a decision made in a call.",
+      "capabilities": [
+        "Autonomous video meeting join and session management",
+        "Real-time conversation listening and transcription",
+        "Structured meeting summary and action item extraction",
+        "Silent background operation without disrupting participants"
+      ],
+      "integrations": [],
+      "methods": [
+        {
+          "name": "join_meeting",
+          "description": "Executes task.",
+          "parameters": [
+            "url"
+          ]
+        }
+      ],
+      "use_cases": [
+        "Automatically join and listen to video meetings",
+        "Capture decisions, action items, and key discussion points",
+        "Generate structured meeting summaries without manual note-taking",
+        "Build an institutional memory of every team meeting"
+      ]
+    },
+    {
+      "id": "vision",
+      "name": "Vision",
+      "status": "Production-ready",
+      "purpose": "Vision is Swarm's real-time computer vision and biometric verification agent. It processes live video streams, performs face verification using OpenCV's YuNet and SFace models, and integrates voice output for multimodal interactions. Vision is used in secure access control, identity verification, and live video intelligence applications.",
+      "capabilities": [
+        "Real-time face detection and verification (YuNet + SFace models)",
+        "Live video track processing",
+        "Voice synthesis output for multimodal experiences",
+        "Pure OpenCV-based biometric verification (no cloud dependency)"
+      ],
+      "integrations": [
+        "OpenAI APIs"
+      ],
+      "methods": [
+        {
+          "name": "speak",
+          "description": "Executes task.",
+          "parameters": [
+            "text"
+          ]
+        },
+        {
+          "name": "verify_face",
+          "description": "Verify face using Pure OpenCV (YuNet + SFace).",
+          "parameters": [
+            "frame",
+            "identity"
+          ]
+        },
+        {
+          "name": "process_video_track",
+          "description": "Executes task.",
+          "parameters": [
+            "track"
+          ]
+        }
+      ],
+      "use_cases": [
+        "Perform real-time face verification for secure access control",
+        "Process live video streams for identity confirmation",
+        "Add biometric verification to onboarding or login flows",
+        "Build multimodal applications combining vision and voice"
+      ]
+    },
+    {
+      "id": "weather_agent",
+      "name": "Weather Agent",
+      "status": "Production-ready",
+      "purpose": "Weather Agent is Swarm's real-time weather intelligence agent. It fetches live current conditions and detailed multi-day forecasts for any location, and integrates voice input so users can ask weather questions naturally by speaking. It's built for applications that need contextual weather awareness baked into their user experience.",
+      "capabilities": [
+        "Real-time current weather data retrieval",
+        "Detailed multi-day weather forecast generation",
+        "Speech-to-text (STT) input for voice-based weather queries",
+        "MistralAI-powered natural language weather responses"
+      ],
+      "integrations": [
+        "MistralAI APIs"
+      ],
+      "methods": [
+        {
+          "name": "get_current_weather",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "get_detailed_forecast",
+          "description": "Executes task.",
+          "parameters": [
+            "args"
+          ]
+        },
+        {
+          "name": "stt_node",
+          "description": "Executes task.",
+          "parameters": [
+            "audio",
+            "model_settings"
+          ]
+        }
+      ],
+      "use_cases": [
+        "Fetch real-time weather conditions for any city or location",
+        "Get detailed multi-day weather forecasts on demand",
+        "Add voice-based weather queries to your application",
+        "Trigger weather-aware automation based on live conditions"
+      ]
+    }
+  ]
+}

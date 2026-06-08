@@ -1,0 +1,30 @@
+{
+  "vertical": "pricing",
+  "last_updated": "2026-06-05",
+  "philosophy": {
+    "title": "Stop Renting Intelligence. Own Your Intelligence.",
+    "description": "Swarm Agentic Lab does not offer fixed subscription tiers or one-size-fits-all pricing. Our platform serves as the central control plane for organizations building large-scale agent ecosystems and AI-powered operations."
+  },
+  "pricing_factors": [
+    "Business problem complexity",
+    "Number of agents and workflows required",
+    "Deployment architecture",
+    "Training and enablement requirements",
+    "Ongoing support and governance needs",
+    "Security and compliance requirements"
+  ],
+  "why_no_fixed_plans": [
+    "Cloud-agnostic",
+    "LLM-agnostic",
+    "Framework-agnostic",
+    "Enterprise-focused",
+    "Designed for deployment within your environment"
+  ],
+  "limits": "There are no predefined public limits on active agents, workflows, or execution capacity. Capacity planning and deployment architecture are designed around your specific use case and infrastructure requirements.",
+  "contact": {
+    "cta": "To receive a tailored proposal, implementation roadmap, and pricing estimate, please contact us directly.",
+    "name": "Murali Dharan",
+    "role": "Founder, Swarm Agentic Lab",
+    "phone": "+91 97913 88549"
+  }
+}

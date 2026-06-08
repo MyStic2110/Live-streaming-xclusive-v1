@@ -1,4 +1,5 @@
 import { tokenService } from '../services/tokenService.js';
+import { processCopilotMessage } from '../services/copilotService.js';
 
 let ioInstance = null;
 export const setSocketIO = (io) => {
@@ -311,3 +312,136 @@ export const triggerReels = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export const copilotChat = async (req, res) => {
+  const { query, sessionId } = req.body;
+  if (!query) {
+    return res.status(400).json({ error: "Query is required" });
+  }
+
+  // Set response headers for Server-Sent Events (SSE)
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  try {
+    let activeSessionId = sessionId;
+
+    await processCopilotMessage({
+      query,
+      sessionId,
+      onChunk: (chunk) => {
+        res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+      },
+      onDone: async ({ response, sessionId: returnedSessionId, runId, model, messages, promptTokens, completionTokens, duration, exception }) => {
+        activeSessionId = returnedSessionId;
+        res.write(`data: ${JSON.stringify({ sessionId: returnedSessionId })}\n\n`);
+
+        // Emit traces to backend trace logger via local POST requests
+        const port = process.env.BACKEND_PORT || "3002";
+        const traceUrl = `http://localhost:${port}/api/llm-trace`;
+
+        try {
+          if (messages && model) {
+            await fetch(traceUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                event: "llm_start",
+                run_id: runId,
+                data: {
+                  inputs: messages,
+                  model: model,
+                  agent: "SWARM_COPILOT",
+                  stt_cost: 0, tts_cost: 0, total_cost: 0,
+                  cum_prompt_tokens: 0, cum_completion_tokens: 0, cum_input_cost: 0, cum_output_cost: 0, cum_stt_cost: 0, cum_tts_cost: 0, cum_total_cost: 0
+                }
+              })
+            });
+
+            if (exception) {
+              await fetch(traceUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  event: "llm_error",
+                  run_id: runId,
+                  data: {
+                    error_code: "API_ERROR",
+                    error_message: exception.message || "Network request failed",
+                    total_latency: Math.round(duration * 1000),
+                    agent: "SWARM_COPILOT",
+                    stt_cost: 0, tts_cost: 0, total_cost: 0,
+                    cum_prompt_tokens: 0, cum_completion_tokens: 0, cum_input_cost: 0, cum_output_cost: 0, cum_stt_cost: 0, cum_tts_cost: 0, cum_total_cost: 0
+                  }
+                })
+              });
+            } else {
+              const inputCost = parseFloat(((promptTokens / 1000000) * 0.15).toFixed(6));
+              const outputCost = parseFloat(((completionTokens / 1000000) * 0.60).toFixed(6));
+              const totalCost = parseFloat((inputCost + outputCost).toFixed(6));
+              const otps = duration > 0 ? parseFloat((completionTokens / duration).toFixed(2)) : 0;
+
+              await fetch(traceUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  event: "llm_end",
+                  run_id: runId,
+                  data: {
+                    outputs: response,
+                    prompt_tokens: promptTokens,
+                    completion_tokens: completionTokens,
+                    input_cost: inputCost,
+                    output_cost: outputCost,
+                    stt_cost: 0, tts_cost: 0,
+                    total_cost: totalCost,
+                    cum_prompt_tokens: 0, cum_completion_tokens: 0, cum_input_cost: 0, cum_output_cost: 0, cum_stt_cost: 0, cum_tts_cost: 0, cum_total_cost: 0,
+                    agent: "SWARM_COPILOT",
+                    total_latency: Math.round(duration * 1000),
+                    ttft: Math.round(duration * 1000),
+                    tool_latency: 0,
+                    otps
+                  }
+                })
+              });
+            }
+          }
+        } catch (e) {
+          console.error("[COPILOT] Trace logging failed:", e.message);
+        }
+
+        res.write("data: [DONE]\n\n");
+        res.end();
+      }
+    });
+
+  } catch (err) {
+    console.error("[COPILOT] Native router failed:", err.message);
+    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+    res.end();
+  }
+};
+
+export const clearCopilotSession = async (req, res) => {
+  const { sessionId } = req.body;
+  if (!sessionId) {
+    return res.status(400).json({ error: "Session ID is required" });
+  }
+  try {
+    const sessionFile = path.resolve(__dirname, `../../../python-agent/sessions/${sessionId}.json`);
+    if (fs.existsSync(sessionFile)) {
+      fs.unlinkSync(sessionFile);
+      console.log(`[COPILOT] Successfully deleted session file: ${sessionId}.json`);
+      res.json({ success: true, message: "Session cleared successfully" });
+    } else {
+      console.log(`[COPILOT] Session file not found: ${sessionId}.json`);
+      res.json({ success: true, message: "Session file already absent" });
+    }
+  } catch (err) {
+    console.error("[COPILOT] Failed to clear session:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+

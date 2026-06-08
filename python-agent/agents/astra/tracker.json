@@ -1,8 +1,8 @@
 {
-    "current_day": 3,
+    "current_day": 9,
     "total_days": 10,
     "start_date": "2026-06-03",
-    "last_published_date": "2026-06-04",
+    "last_published_date": "2026-06-08",
     "published_slugs": [
         "rethinking-ai-architectures-agent-execution",
         "vector-policy-optimization-in-agentic-architecture",
@@ -16,13 +16,14 @@
         "applying-ai-research-to-create-autonomous-agents",
         "how-nvidia-humanoid-robot-is-transforming-industries",
         "hybrid-light-matter-ai-computing",
-        "ai-agent-swarms-revolutionizing-logistics"
+        "ai-agent-swarms-revolutionizing-logistics",
+        "building-resilience-lessons-from-deploying-custom-ai-swarms"
     ],
     "cumulative_usage": {
         "input_tokens": 226352,
         "output_tokens": 19886,
-        "total_cost": 0.5089199999999999,
+        "total_cost": 0.5510849999999998,
         "stt_cost": 0.0,
-        "tts_cost": 0.005865
+        "tts_cost": 0.02592
     }
 }

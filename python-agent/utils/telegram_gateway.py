@@ -149,17 +149,9 @@ async def poll_approval(slug: str, message_id: int) -> bool:
 
     logger.info(f"Starting async polling loop for slug: {slug} (Message: {message_id})...")
 
-    # Set up offset to only capture updates starting from this execution moment
+    # Start with offset 0 to fetch all unacknowledged updates.
+    # We validate updates against our specific message_id to ensure we process only the correct request.
     offset = 0
-    try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{BASE_URL}/getUpdates", params={"limit": 1, "offset": -1})
-            if resp.status_code == 200:
-                updates = resp.json().get("result", [])
-                if updates:
-                    offset = updates[-1]["update_id"] + 1
-    except Exception as e:
-        logger.warning(f"Could not fetch initial Telegram update offset: {e}")
 
     while True:
         try:
@@ -182,39 +174,61 @@ async def poll_approval(slug: str, message_id: int) -> bool:
                         cb = update["callback_query"]
                         cb_data = cb.get("data", "")
                         cb_id = cb.get("id")
+                        cb_msg_id = cb.get("message", {}).get("message_id")
 
-                        # Validate it relates to our active blog draft
-                        if cb_data == f"approve_{slug}":
-                            logger.info(f"Received Telegram APPROVE callback for {slug}")
-                            
-                            # 1. Answer callback spinner
-                            await client.post(f"{BASE_URL}/answerCallbackQuery", json={"callback_query_id": cb_id, "text": "Draft Approved! 🚀"})
-                            
-                            # 2. Update Telegram message text to confirm approval
-                            edit_text = f"✅ *Approved and Publishing Insight*\n\nDraft '{slug}' has been approved by the Swarm Commander. Moving to publishing and Reels synthesis pipeline... 🎬"
-                            await client.post(f"{BASE_URL}/editMessageText", json={
-                                "chat_id": TELEGRAM_CHAT_ID,
-                                "message_id": message_id,
-                                "text": edit_text,
-                                "parse_mode": "Markdown"
-                            })
-                            return True
+                        # Validate it relates to our active message ID
+                        if cb_msg_id == message_id:
+                            if cb_data == f"approve_{slug}":
+                                logger.info(f"Received Telegram APPROVE callback for {slug}")
+                                
+                                # 1. Answer callback spinner
+                                await client.post(f"{BASE_URL}/answerCallbackQuery", json={"callback_query_id": cb_id, "text": "Draft Approved! 🚀"})
+                                
+                                # 2. Update Telegram message text to confirm approval
+                                edit_text = f"✅ *Approved and Publishing Insight*\n\nDraft '{slug}' has been approved by the Swarm Commander. Moving to publishing and Reels synthesis pipeline... 🎬"
+                                try:
+                                    edit_resp = await client.post(f"{BASE_URL}/editMessageText", json={
+                                        "chat_id": TELEGRAM_CHAT_ID,
+                                        "message_id": message_id,
+                                        "text": edit_text,
+                                        "parse_mode": "Markdown"
+                                    })
+                                    if edit_resp.status_code != 200:
+                                        logger.warning(f"Telegram Markdown edit failed ({edit_resp.status_code}). Retrying in plain text...")
+                                        await client.post(f"{BASE_URL}/editMessageText", json={
+                                            "chat_id": TELEGRAM_CHAT_ID,
+                                            "message_id": message_id,
+                                            "text": edit_text.replace("*", "").replace("_", ""),
+                                        })
+                                except Exception as e:
+                                    logger.error(f"Failed to edit message text: {e}")
+                                return True
 
-                        elif cb_data == f"reject_{slug}":
-                            logger.info(f"Received Telegram REJECT callback for {slug}")
-                            
-                            # 1. Answer callback spinner
-                            await client.post(f"{BASE_URL}/answerCallbackQuery", json={"callback_query_id": cb_id, "text": "Draft Rejected ❌"})
-                            
-                            # 2. Update Telegram message text to confirm rejection
-                            edit_text = f"❌ *Draft Publication Rejected*\n\nDraft '{slug}' has been rejected. Astra will abort this publication cycle and log the rejection."
-                            await client.post(f"{BASE_URL}/editMessageText", json={
-                                "chat_id": TELEGRAM_CHAT_ID,
-                                "message_id": message_id,
-                                "text": edit_text,
-                                "parse_mode": "Markdown"
-                            })
-                            return False
+                            elif cb_data == f"reject_{slug}":
+                                logger.info(f"Received Telegram REJECT callback for {slug}")
+                                
+                                # 1. Answer callback spinner
+                                await client.post(f"{BASE_URL}/answerCallbackQuery", json={"callback_query_id": cb_id, "text": "Draft Rejected ❌"})
+                                
+                                # 2. Update Telegram message text to confirm rejection
+                                edit_text = f"❌ *Draft Publication Rejected*\n\nDraft '{slug}' has been rejected. Astra will abort this publication cycle and log the rejection."
+                                try:
+                                    edit_resp = await client.post(f"{BASE_URL}/editMessageText", json={
+                                        "chat_id": TELEGRAM_CHAT_ID,
+                                        "message_id": message_id,
+                                        "text": edit_text,
+                                        "parse_mode": "Markdown"
+                                    })
+                                    if edit_resp.status_code != 200:
+                                        logger.warning(f"Telegram Markdown edit failed ({edit_resp.status_code}). Retrying in plain text...")
+                                        await client.post(f"{BASE_URL}/editMessageText", json={
+                                            "chat_id": TELEGRAM_CHAT_ID,
+                                            "message_id": message_id,
+                                            "text": edit_text.replace("*", "").replace("_", ""),
+                                        })
+                                except Exception as e:
+                                    logger.error(f"Failed to edit message text: {e}")
+                                return False
 
         except Exception as e:
             logger.error(f"Error polling Telegram updates: {e}")

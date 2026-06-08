@@ -1,0 +1,46 @@
+{
+  "vertical": "features",
+  "last_updated": "2026-06-05",
+  "core_features": [
+    {
+      "name": "Custom Agent Creation",
+      "description": "Swarm lets you build fully custom agents tailored to your business workflows. You can define agent behavior, connect it to your own data sources, give it tools and APIs, and deploy it in production. No pre-built templates required — you own the full agent logic."
+    },
+    {
+      "name": "Sandbox Environment",
+      "description": "Every agent runs inside a secure, ephemeral Docker sandbox before going to production. Swarm provides a full sandbox environment where you can test agent behavior, simulate edge cases, and validate integrations without affecting live data or users."
+    },
+    {
+      "name": "Visual Workflow Designer",
+      "description": "Drag-and-drop workspace to sequence agents, construct branching logic, and wire up database triggers without writing code."
+    },
+    {
+      "name": "Human-in-the-Loop Approval",
+      "description": "Enables critical agent decisions (e.g. database mutations, deployment execution) to pause and wait for explicit human approval via Slack, email, or Web UI."
+    },
+    {
+      "name": "Context Isolation Sandboxing",
+      "description": "Every agent runs inside a secure, ephemeral Docker sandbox, preventing cross-agent data contamination and securing sensitive file system operations."
+    },
+    {
+      "name": "Multi-Agent Orchestration",
+      "description": "Swarm supports deploying multiple specialized agents that collaborate autonomously — each handling a specific domain (security, analytics, scheduling, content) while sharing a unified orchestration layer."
+    },
+    {
+      "name": "Bring Your Own LLM",
+      "description": "Swarm is LLM-agnostic. You can connect any language model — OpenAI GPT-4o, Mistral, Anthropic Claude, Gemini, or a locally hosted open-source model — to power your agents."
+    }
+  ],
+  "platform_capabilities": {
+    "custom_agents": "Yes — fully custom agents can be built, configured, and deployed on Swarm for any business use case",
+    "sandbox_testing": "Yes — a full sandbox environment is provided to test agents before production deployment",
+    "agent_monitoring": "Real-time telemetry, cost tracking, and run traces for every agent execution",
+    "multi_turn_memory": "Agents maintain stateful session memory across conversation turns",
+    "human_approval_gates": "Agents can pause and request human approval before executing critical actions"
+  },
+  "execution_specs": {
+    "max_runtime_per_agent": "15 minutes",
+    "supported_languages": ["Python 3.10+", "Node.js 18+", "Go 1.20"],
+    "supported_triggers": ["Webhook", "Cron Schedule", "Database Event (PostgreSQL WAL, MongoDB Change Stream)"]
+  }
+}

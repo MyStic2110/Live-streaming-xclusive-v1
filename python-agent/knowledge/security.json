@@ -1,0 +1,22 @@
+{
+  "vertical": "security",
+  "last_updated": "2026-06-05",
+  "philosophy": {
+    "title": "Central Control Plane in Your Environment",
+    "description": "Swarm Agentic Lab is not a traditional SaaS platform. Our mission is to help organizations replace fragmented SaaS workflows with autonomous agent systems that run within their own environment."
+  },
+  "data_residency": [
+    "Customer-owned infrastructure supported",
+    "Private cloud deployments supported",
+    "Hybrid deployments supported",
+    "Data remains under customer control",
+    "No training on customer data without explicit agreement",
+    "Role-based access controls available",
+    "Audit logging and observability supported",
+    "Enterprise identity provider integrations available",
+    "SAML SSO and OIDC integrations available based on deployment requirements"
+  ],
+  "compliance": {
+    "description": "Compliance requirements vary by customer environment and deployment architecture. Because Swarm is designed to operate within customer-controlled infrastructure, security, governance, and compliance controls can align with your organization's existing requirements and policies. All agents developed will undergo all compliance standards across the globe and pass it eventually. Furthermore, you can build your own custom compliance agents for your organization to enforce internal standards."
+  }
+}

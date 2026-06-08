@@ -128,10 +128,11 @@ def post_tool_call(run_id: str, tool_name: str, duration: float):
 
 
 class TracedLLMStream(llm.LLMStream):
-    def __init__(self, inner_stream: llm.LLMStream, run_id: str, agent_name: str = None):
+    def __init__(self, inner_stream: llm.LLMStream, run_id: str, agent_name: str = None, parent_tracer = None):
         self.inner_stream = inner_stream
         self.run_id = run_id
         self.agent_name = agent_name
+        self.parent_tracer = parent_tracer
         self.output_text = ""
         self.prompt_tokens = 0
         self.completion_tokens = 0
@@ -166,6 +167,14 @@ class TracedLLMStream(llm.LLMStream):
         is_voice = is_voice_agent(self.agent_name)
         stt_cost = (stt_duration / 60.0) * 0.0043 if is_voice else 0.0
 
+        cum_p_tokens = self.parent_tracer.cum_prompt_tokens if self.parent_tracer else 0
+        cum_c_tokens = self.parent_tracer.cum_completion_tokens if self.parent_tracer else 0
+        cum_i_cost = self.parent_tracer.cum_input_cost if self.parent_tracer else 0.0
+        cum_o_cost = self.parent_tracer.cum_output_cost if self.parent_tracer else 0.0
+        cum_stt_c = round(self.parent_tracer.cum_stt_cost + stt_cost, 6) if self.parent_tracer else round(stt_cost, 6)
+        cum_tts_c = self.parent_tracer.cum_tts_cost if self.parent_tracer else 0.0
+        cum_tot_c = round(self.parent_tracer.cum_total_cost + stt_cost, 6) if self.parent_tracer else round(stt_cost, 6)
+
         post_trace(
             "llm_start",
             {
@@ -174,7 +183,15 @@ class TracedLLMStream(llm.LLMStream):
                 "agent": self.agent_name,
                 "stt_cost": round(stt_cost, 6),
                 "tts_cost": 0.0,
-                "total_cost": round(stt_cost, 6)
+                "total_cost": round(stt_cost, 6),
+                
+                "cum_prompt_tokens": cum_p_tokens,
+                "cum_completion_tokens": cum_c_tokens,
+                "cum_input_cost": cum_i_cost,
+                "cum_output_cost": cum_o_cost,
+                "cum_stt_cost": cum_stt_c,
+                "cum_tts_cost": cum_tts_c,
+                "cum_total_cost": cum_tot_c,
             },
             self.run_id
         )
@@ -229,6 +246,31 @@ class TracedLLMStream(llm.LLMStream):
             tts_cost = round((spoken_len / 1000.0) * 0.015, 6) if is_voice else 0.0
             total_cost = round(llm_cost + stt_cost + tts_cost, 6)
 
+            cum_p_tokens = self.prompt_tokens
+            cum_c_tokens = self.completion_tokens
+            cum_i_cost = input_cost
+            cum_o_cost = output_cost
+            cum_stt_c = stt_cost
+            cum_tts_c = tts_cost
+            cum_tot_c = total_cost
+
+            if self.parent_tracer:
+                self.parent_tracer.cum_prompt_tokens += self.prompt_tokens
+                self.parent_tracer.cum_completion_tokens += self.completion_tokens
+                self.parent_tracer.cum_input_cost = round(self.parent_tracer.cum_input_cost + input_cost, 6)
+                self.parent_tracer.cum_output_cost = round(self.parent_tracer.cum_output_cost + output_cost, 6)
+                self.parent_tracer.cum_stt_cost = round(self.parent_tracer.cum_stt_cost + stt_cost, 6)
+                self.parent_tracer.cum_tts_cost = round(self.parent_tracer.cum_tts_cost + tts_cost, 6)
+                self.parent_tracer.cum_total_cost = round(self.parent_tracer.cum_total_cost + total_cost, 6)
+                
+                cum_p_tokens = self.parent_tracer.cum_prompt_tokens
+                cum_c_tokens = self.parent_tracer.cum_completion_tokens
+                cum_i_cost = self.parent_tracer.cum_input_cost
+                cum_o_cost = self.parent_tracer.cum_output_cost
+                cum_stt_c = self.parent_tracer.cum_stt_cost
+                cum_tts_c = self.parent_tracer.cum_tts_cost
+                cum_tot_c = self.parent_tracer.cum_total_cost
+
             post_trace(
                 "llm_end",
                 {
@@ -240,6 +282,15 @@ class TracedLLMStream(llm.LLMStream):
                     "stt_cost": stt_cost,
                     "tts_cost": tts_cost,
                     "total_cost": total_cost,
+                    
+                    "cum_prompt_tokens": cum_p_tokens,
+                    "cum_completion_tokens": cum_c_tokens,
+                    "cum_input_cost": cum_i_cost,
+                    "cum_output_cost": cum_o_cost,
+                    "cum_stt_cost": cum_stt_c,
+                    "cum_tts_cost": cum_tts_c,
+                    "cum_total_cost": cum_tot_c,
+
                     "agent": self.agent_name,
                     "total_latency": round(total_latency * 1000, 2), # ms
                     "ttft": round(ttft * 1000, 2), # ms
@@ -258,6 +309,27 @@ class TracedLLMStream(llm.LLMStream):
             tts_cost = round((spoken_len / 1000.0) * 0.015, 6) if is_voice else 0.0
             total_cost = round(stt_cost + tts_cost, 6)
 
+            cum_p_tokens = self.prompt_tokens
+            cum_c_tokens = self.completion_tokens
+            cum_i_cost = 0.0
+            cum_o_cost = 0.0
+            cum_stt_c = stt_cost
+            cum_tts_c = tts_cost
+            cum_tot_c = total_cost
+
+            if self.parent_tracer:
+                self.parent_tracer.cum_stt_cost = round(self.parent_tracer.cum_stt_cost + stt_cost, 6)
+                self.parent_tracer.cum_tts_cost = round(self.parent_tracer.cum_tts_cost + tts_cost, 6)
+                self.parent_tracer.cum_total_cost = round(self.parent_tracer.cum_total_cost + total_cost, 6)
+                
+                cum_p_tokens = self.parent_tracer.cum_prompt_tokens
+                cum_c_tokens = self.parent_tracer.cum_completion_tokens
+                cum_i_cost = self.parent_tracer.cum_input_cost
+                cum_o_cost = self.parent_tracer.cum_output_cost
+                cum_stt_c = self.parent_tracer.cum_stt_cost
+                cum_tts_c = self.parent_tracer.cum_tts_cost
+                cum_tot_c = self.parent_tracer.cum_total_cost
+
             post_trace(
                 "llm_error",
                 {
@@ -267,7 +339,15 @@ class TracedLLMStream(llm.LLMStream):
                     "agent": self.agent_name,
                     "stt_cost": stt_cost,
                     "tts_cost": tts_cost,
-                    "total_cost": total_cost
+                    "total_cost": total_cost,
+                    
+                    "cum_prompt_tokens": cum_p_tokens,
+                    "cum_completion_tokens": cum_c_tokens,
+                    "cum_input_cost": cum_i_cost,
+                    "cum_output_cost": cum_o_cost,
+                    "cum_stt_cost": cum_stt_c,
+                    "cum_tts_cost": cum_tts_c,
+                    "cum_total_cost": cum_tot_c,
                 },
                 self.run_id
             )
@@ -283,6 +363,14 @@ class TracedLLM(llm.LLM):
         self.inner_llm = inner_llm
         self.agent_name = agent_name
         self.enabled = os.getenv("ENABLE_LLM_TRACING", "false").lower() == "true"
+        # Cumulative session metrics
+        self.cum_prompt_tokens = 0
+        self.cum_completion_tokens = 0
+        self.cum_input_cost = 0.0
+        self.cum_output_cost = 0.0
+        self.cum_stt_cost = 0.0
+        self.cum_tts_cost = 0.0
+        self.cum_total_cost = 0.0
 
     @property
     def model(self):
@@ -326,7 +414,7 @@ class TracedLLM(llm.LLM):
                 wrapped_tools = tools
 
             stream = self.inner_llm.chat(chat_ctx=chat_ctx, tools=wrapped_tools, **kwargs)
-            return TracedLLMStream(stream, run_id, agent_name=self.agent_name)
+            return TracedLLMStream(stream, run_id, agent_name=self.agent_name, parent_tracer=self)
         else:
             return self.inner_llm.chat(chat_ctx=chat_ctx, tools=tools, **kwargs)
 
@@ -369,7 +457,14 @@ async def trace_raw_call(
     completion_tokens: int = 0,
     duration: float = 0.0, # seconds
     ttft: float = 0.0, # seconds
-    tool_latency: float = 0.0 # seconds
+    tool_latency: float = 0.0, # seconds
+    cum_prompt_tokens: int = 0,
+    cum_completion_tokens: int = 0,
+    cum_input_cost: float = 0.0,
+    cum_output_cost: float = 0.0,
+    cum_stt_cost: float = 0.0,
+    cum_tts_cost: float = 0.0,
+    cum_total_cost: float = 0.0
 ):
     """
     Post a complete LLM trace for agents that use raw HTTP / SDK calls directly.
@@ -414,7 +509,14 @@ async def trace_raw_call(
                 "agent": agent_name,
                 "stt_cost": 0.0,
                 "tts_cost": 0.0,
-                "total_cost": 0.0
+                "total_cost": 0.0,
+                "cum_prompt_tokens": cum_prompt_tokens,
+                "cum_completion_tokens": cum_completion_tokens,
+                "cum_input_cost": cum_input_cost,
+                "cum_output_cost": cum_output_cost,
+                "cum_stt_cost": cum_stt_cost,
+                "cum_tts_cost": cum_tts_cost,
+                "cum_total_cost": cum_total_cost
             },
             run_id
         )
@@ -430,6 +532,13 @@ async def trace_raw_call(
                 "stt_cost": 0.0,
                 "tts_cost": 0.0,
                 "total_cost": total_cost,
+                "cum_prompt_tokens": cum_prompt_tokens,
+                "cum_completion_tokens": cum_completion_tokens,
+                "cum_input_cost": cum_input_cost,
+                "cum_output_cost": cum_output_cost,
+                "cum_stt_cost": cum_stt_cost,
+                "cum_tts_cost": cum_tts_cost,
+                "cum_total_cost": cum_total_cost,
 
                 "agent": agent_name,
                 "total_latency": round(duration * 1000, 2), # ms
@@ -440,7 +549,10 @@ async def trace_raw_call(
             run_id
         )
 
-    asyncio.create_task(_post_all())
+    if agent_name == "SWARM_COPILOT":
+        await _post_all()
+    else:
+        asyncio.create_task(_post_all())
 
 
 async def trace_raw_error(
@@ -448,7 +560,14 @@ async def trace_raw_error(
     model: str,
     messages: list[dict],
     exception: Exception,
-    duration: float = 0.0
+    duration: float = 0.0,
+    cum_prompt_tokens: int = 0,
+    cum_completion_tokens: int = 0,
+    cum_input_cost: float = 0.0,
+    cum_output_cost: float = 0.0,
+    cum_stt_cost: float = 0.0,
+    cum_tts_cost: float = 0.0,
+    cum_total_cost: float = 0.0
 ):
     """
     Post a failed LLM trace for agents that use raw HTTP / SDK calls directly.
@@ -470,7 +589,14 @@ async def trace_raw_error(
                 "agent": agent_name,
                 "stt_cost": 0.0,
                 "tts_cost": 0.0,
-                "total_cost": 0.0
+                "total_cost": 0.0,
+                "cum_prompt_tokens": cum_prompt_tokens,
+                "cum_completion_tokens": cum_completion_tokens,
+                "cum_input_cost": cum_input_cost,
+                "cum_output_cost": cum_output_cost,
+                "cum_stt_cost": cum_stt_cost,
+                "cum_tts_cost": cum_tts_cost,
+                "cum_total_cost": cum_total_cost
             },
             run_id
         )
@@ -484,9 +610,19 @@ async def trace_raw_error(
                 "agent": agent_name,
                 "stt_cost": 0.0,
                 "tts_cost": 0.0,
-                "total_cost": 0.0
+                "total_cost": 0.0,
+                "cum_prompt_tokens": cum_prompt_tokens,
+                "cum_completion_tokens": cum_completion_tokens,
+                "cum_input_cost": cum_input_cost,
+                "cum_output_cost": cum_output_cost,
+                "cum_stt_cost": cum_stt_cost,
+                "cum_tts_cost": cum_tts_cost,
+                "cum_total_cost": cum_total_cost
             },
             run_id
         )
 
-    asyncio.create_task(_post_all())
+    if agent_name == "SWARM_COPILOT":
+        await _post_all()
+    else:
+        asyncio.create_task(_post_all())

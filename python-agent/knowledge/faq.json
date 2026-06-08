@@ -1,0 +1,22 @@
+{
+  "vertical": "faq",
+  "last_updated": "2026-06-05",
+  "general_faqs": [
+    {
+      "question": "What is the Swarm Agentic Platform?",
+      "answer": "Swarm is an enterprise-grade multi-agent platform designed to build, deploy, orchestrate, and optimize autonomous AI workflows that run inside secure sandboxed environments."
+    },
+    {
+      "question": "How do I deploy a Swarm Agent?",
+      "answer": "You can deploy agents using the Swarm CLI (`swarm deploy <agent-name>`), via the Visual Workflow Designer in the web dashboard, or using our Git-integrated auto-deployment triggers."
+    },
+    {
+      "question": "Do I need coding experience to use Swarm?",
+      "answer": "No. Non-technical users can construct complex workflows using the drag-and-drop Visual Workflow Designer, while developers can write customized agent logic in Python, Javascript, or Go."
+    },
+    {
+      "question": "Where is my data stored?",
+      "answer": "By default, customer metadata is stored in our secure Cloud environment. Enterprise customers can opt for on-premise deployments or choose data residency regions (US, EU, Singapore) so that execution logs never leave their network."
+    }
+  ]
+}

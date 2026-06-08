@@ -58,6 +58,15 @@ function DashboardPage({ onBack }) {
               tts_cost: data.tts_cost || 0,
               llm_cost: data.llm_cost || 0,
               total_cost: data.total_cost || 0,
+              
+              cum_prompt_tokens: data.cum_prompt_tokens || 0,
+              cum_completion_tokens: data.cum_completion_tokens || 0,
+              cum_input_cost: data.cum_input_cost || 0,
+              cum_output_cost: data.cum_output_cost || 0,
+              cum_stt_cost: data.cum_stt_cost || 0,
+              cum_tts_cost: data.cum_tts_cost || 0,
+              cum_total_cost: data.cum_total_cost || 0,
+              
               status: "streaming",
               timestamp: new Date().toISOString(),
               total_latency: 0,
@@ -76,7 +85,15 @@ function DashboardPage({ onBack }) {
               stt_cost: data.stt_cost !== undefined ? data.stt_cost : list[index].stt_cost,
               tts_cost: data.tts_cost !== undefined ? data.tts_cost : list[index].tts_cost,
               llm_cost: data.llm_cost !== undefined ? data.llm_cost : list[index].llm_cost,
-              total_cost: data.total_cost !== undefined ? data.total_cost : list[index].total_cost
+              total_cost: data.total_cost !== undefined ? data.total_cost : list[index].total_cost,
+              
+              cum_prompt_tokens: data.cum_prompt_tokens !== undefined ? data.cum_prompt_tokens : list[index].cum_prompt_tokens,
+              cum_completion_tokens: data.cum_completion_tokens !== undefined ? data.cum_completion_tokens : list[index].cum_completion_tokens,
+              cum_input_cost: data.cum_input_cost !== undefined ? data.cum_input_cost : list[index].cum_input_cost,
+              cum_output_cost: data.cum_output_cost !== undefined ? data.cum_output_cost : list[index].cum_output_cost,
+              cum_stt_cost: data.cum_stt_cost !== undefined ? data.cum_stt_cost : list[index].cum_stt_cost,
+              cum_tts_cost: data.cum_tts_cost !== undefined ? data.cum_tts_cost : list[index].cum_tts_cost,
+              cum_total_cost: data.cum_total_cost !== undefined ? data.cum_total_cost : list[index].cum_total_cost
             };
             return list;
           }
@@ -93,6 +110,15 @@ function DashboardPage({ onBack }) {
               tts_cost: data.tts_cost !== undefined ? data.tts_cost : list[index].tts_cost || 0,
               llm_cost: data.llm_cost !== undefined ? data.llm_cost : (data.input_cost + data.output_cost) || 0,
               total_cost: data.total_cost !== undefined ? data.total_cost : list[index].total_cost,
+              
+              cum_prompt_tokens: data.cum_prompt_tokens !== undefined ? data.cum_prompt_tokens : list[index].cum_prompt_tokens || 0,
+              cum_completion_tokens: data.cum_completion_tokens !== undefined ? data.cum_completion_tokens : list[index].cum_completion_tokens || 0,
+              cum_input_cost: data.cum_input_cost !== undefined ? data.cum_input_cost : list[index].cum_input_cost || 0,
+              cum_output_cost: data.cum_output_cost !== undefined ? data.cum_output_cost : list[index].cum_output_cost || 0,
+              cum_stt_cost: data.cum_stt_cost !== undefined ? data.cum_stt_cost : list[index].cum_stt_cost || 0,
+              cum_tts_cost: data.cum_tts_cost !== undefined ? data.cum_tts_cost : list[index].cum_tts_cost || 0,
+              cum_total_cost: data.cum_total_cost !== undefined ? data.cum_total_cost : list[index].cum_total_cost || 0,
+              
               agent: data.agent || list[index].agent,
               status: "completed",
               total_latency: data.total_latency || list[index].total_latency || 0,
@@ -114,7 +140,15 @@ function DashboardPage({ onBack }) {
               stt_cost: data.stt_cost !== undefined ? data.stt_cost : list[index].stt_cost || 0,
               tts_cost: data.tts_cost !== undefined ? data.tts_cost : list[index].tts_cost || 0,
               llm_cost: data.llm_cost !== undefined ? data.llm_cost : list[index].llm_cost || 0,
-              total_cost: data.total_cost !== undefined ? data.total_cost : list[index].total_cost
+              total_cost: data.total_cost !== undefined ? data.total_cost : list[index].total_cost,
+              
+              cum_prompt_tokens: data.cum_prompt_tokens !== undefined ? data.cum_prompt_tokens : list[index].cum_prompt_tokens || 0,
+              cum_completion_tokens: data.cum_completion_tokens !== undefined ? data.cum_completion_tokens : list[index].cum_completion_tokens || 0,
+              cum_input_cost: data.cum_input_cost !== undefined ? data.cum_input_cost : list[index].cum_input_cost || 0,
+              cum_output_cost: data.cum_output_cost !== undefined ? data.cum_output_cost : list[index].cum_output_cost || 0,
+              cum_stt_cost: data.cum_stt_cost !== undefined ? data.cum_stt_cost : list[index].cum_stt_cost || 0,
+              cum_tts_cost: data.cum_tts_cost !== undefined ? data.cum_tts_cost : list[index].cum_tts_cost || 0,
+              cum_total_cost: data.cum_total_cost !== undefined ? data.cum_total_cost : list[index].cum_total_cost || 0,
             };
             return list;
           } else {
@@ -132,6 +166,15 @@ function DashboardPage({ onBack }) {
               tts_cost: data.tts_cost || 0,
               llm_cost: data.llm_cost || 0,
               total_cost: data.total_cost || 0,
+              
+              cum_prompt_tokens: data.cum_prompt_tokens || 0,
+              cum_completion_tokens: data.cum_completion_tokens || 0,
+              cum_input_cost: data.cum_input_cost || 0,
+              cum_output_cost: data.cum_output_cost || 0,
+              cum_stt_cost: data.cum_stt_cost || 0,
+              cum_tts_cost: data.cum_tts_cost || 0,
+              cum_total_cost: data.cum_total_cost || 0,
+              
               status: "failed",
               error_code: data.error_code || "UNKNOWN_ERROR",
               error_message: data.error_message || "An error occurred",
@@ -497,14 +540,18 @@ function DashboardPage({ onBack }) {
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: "0.6rem", color: "#64748b", fontWeight: "700" }}>TOKENS</div>
                       <div style={{ fontSize: "0.95rem", fontWeight: "900", fontFamily: "monospace", color: "#f8fafc" }}>
-                        {isStreaming ? "Calculating..." : isFailed ? "N/A" : totalTokens}
+                        {isStreaming ? "Calculating..." : isFailed ? "N/A" : (
+                          trace.cum_prompt_tokens > 0 ? (trace.cum_prompt_tokens + trace.cum_completion_tokens) : totalTokens
+                        )}
                       </div>
                     </div>
                     <div style={{ width: "1px", height: "24px", background: "rgba(255,255,255,0.08)" }} />
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: "0.6rem", color: "#64748b", fontWeight: "700" }}>TRANSACTION COST</div>
                       <div style={{ fontSize: "0.95rem", fontWeight: "900", fontFamily: "monospace", color: isStreaming ? "#a78bfa" : isFailed ? "#f87171" : "#10b981" }}>
-                        {isStreaming ? "Streaming..." : isFailed ? "N/A" : `$${trace.total_cost.toFixed(6)}`}
+                        {isStreaming ? "Streaming..." : isFailed ? "N/A" : (
+                          `$${(trace.cum_total_cost > 0 ? trace.cum_total_cost : trace.total_cost).toFixed(6)}`
+                        )}
                       </div>
                     </div>
                   </div>
@@ -777,28 +824,38 @@ function DashboardPage({ onBack }) {
                   <div style={{ display: "flex", gap: "1rem", fontSize: "0.68rem", color: "#64748b", flexWrap: "wrap", borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: "0.75rem", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                       <span style={{ color: "#60a5fa", fontWeight: "700" }}>LLM</span>
-                      <span>({trace.prompt_tokens} IN / {trace.completion_tokens} OUT)</span>
+                      <span>
+                        ({trace.cum_prompt_tokens > 0 ? trace.cum_prompt_tokens : trace.prompt_tokens} IN / {trace.cum_completion_tokens > 0 ? trace.cum_completion_tokens : trace.completion_tokens} OUT)
+                      </span>
                       <span style={{ color: "#475569" }}>·</span>
-                      <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>${(trace.llm_cost || (trace.input_cost + trace.output_cost) || 0).toFixed(6)}</span>
+                      <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>
+                        ${(trace.cum_prompt_tokens > 0 ? (trace.cum_input_cost + trace.cum_output_cost) : (trace.llm_cost || (trace.input_cost + trace.output_cost) || 0)).toFixed(6)}
+                      </span>
                     </div>
                     {isVoice && (
                       <>
                         <div style={{ color: "#334155" }}>|</div>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                           <span style={{ color: "#fb7185", fontWeight: "700" }}>STT</span>
-                          <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>${(trace.stt_cost || 0).toFixed(6)}</span>
+                          <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>
+                            ${(trace.cum_stt_cost > 0 ? trace.cum_stt_cost : (trace.stt_cost || 0)).toFixed(6)}
+                          </span>
                         </div>
                         <div style={{ color: "#334155" }}>|</div>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                           <span style={{ color: "#38bdf8", fontWeight: "700" }}>TTS</span>
-                          <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>${(trace.tts_cost || 0).toFixed(6)}</span>
+                          <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>
+                            ${(trace.cum_tts_cost > 0 ? trace.cum_tts_cost : (trace.tts_cost || 0)).toFixed(6)}
+                          </span>
                         </div>
                       </>
                     )}
                     <div style={{ color: "#334155" }}>|</div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                       <span style={{ color: "#a78bfa", fontWeight: "700" }}>TOTAL</span>
-                      <span style={{ color: "#10b981", fontFamily: "monospace", fontWeight: "700" }}>${trace.total_cost.toFixed(6)}</span>
+                      <span style={{ color: "#10b981", fontFamily: "monospace", fontWeight: "700" }}>
+                        ${(trace.cum_total_cost > 0 ? trace.cum_total_cost : trace.total_cost).toFixed(6)}
+                      </span>
                     </div>
                        {/* Evaluate button / loader (only if NOT evaluated yet) */}
                     {(!hallucinationResults[trace.run_id] || evaluating[trace.run_id]) && (

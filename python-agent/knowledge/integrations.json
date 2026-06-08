@@ -1,0 +1,48 @@
+{
+  "vertical": "integrations",
+  "last_updated": "2026-06-05",
+  "philosophy": {
+    "title": "Stop Renting Intelligence. Own Your Intelligence.",
+    "description": "Swarm Agentic Lab is not sold as a fixed SaaS subscription. Every deployment is designed around the customer's operational goals, infrastructure, security requirements, and agent adoption roadmap. We help organizations replace repetitive SaaS workflows with agent-powered systems while maintaining full ownership of their data, intelligence, and infrastructure."
+  },
+  "design_principles": [
+    "Cloud-agnostic — works on AWS, GCP, Azure, or on-premise",
+    "LLM-agnostic — bring your own OpenAI, Mistral, Anthropic, or open-source model",
+    "Framework-agnostic — integrates with your existing stack without ripping it out"
+  ],
+  "communication_platforms": {
+    "description": "Swarm agents can send notifications, alerts, and human-in-the-loop approval requests through communication platforms.",
+    "supported": ["Slack", "Email (SMTP)", "Web UI notifications", "Webhooks"]
+  },
+  "developer_platforms": {
+    "description": "Swarm integrates with developer toolchains for trigger-based automation and CI/CD workflows.",
+    "supported": ["GitHub (webhooks, repository events)", "GitLab", "Bitbucket", "Jira", "Linear"]
+  },
+  "api_protocols": {
+    "description": "Swarm agents connect to external systems through standard API protocols.",
+    "supported": ["REST APIs", "GraphQL", "gRPC", "WebSockets", "Webhooks (inbound and outbound)"]
+  },
+  "databases": {
+    "supported": ["PostgreSQL", "MySQL", "MongoDB", "Redis", "Supabase", "Firebase"]
+  },
+  "cloud_and_infra": {
+    "supported": ["AWS (S3, EC2, Lambda)", "Google Cloud Platform", "Azure", "Docker", "Kubernetes"]
+  },
+  "analytics_and_marketing": {
+    "supported": ["Google Analytics 4 (GA4)", "Google Search Console", "Mixpanel", "Amplitude"]
+  },
+  "identity_providers": {
+    "supported": ["Okta", "Auth0", "Azure AD", "Google Workspace SSO", "SAML 2.0", "OIDC"]
+  },
+  "payment_platforms": {
+    "supported": ["Google Pay", "Stripe (via REST API)", "Razorpay (via REST API)"]
+  },
+  "supported_triggers": [
+    "Webhook (inbound HTTP events from any external system)",
+    "Cron Schedule (time-based recurring execution)",
+    "Database Event (PostgreSQL WAL, MongoDB Change Stream)",
+    "API call from your own backend",
+    "Slack command or message",
+    "GitHub repository event (push, PR, release)"
+  ]
+}
