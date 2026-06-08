@@ -275,6 +275,20 @@ class SwarmCopilot:
                     "pricing philosophy, and supported integrations. Please launch the DevOps Geni agent to review live scans."
                 )
 
+            # Check if this is a deployment or hardware query
+            if any(kw in query_lower for kw in ["deploy", "deployment", "onprem", "vpc", "privatecloud", "hybrid", "hardware", "tier"]):
+                governed = sec.get("governed_deployment", {})
+                models = governed.get("models", {})
+                model_names = [m.get("title", "") for m in models.values()]
+                hardware = sec.get("hardware_requirements_by_tier", {})
+                tier_gpus = [t.get("recommended_gpu", "") for t in hardware.values()]
+                
+                return (
+                    f"According to Swarm Trust and Security Portal, Swarm Agentic Lab offers Governed Deployment "
+                    f"models: {', '.join(model_names)}. All components operate inside your controlled infrastructure. "
+                    f"Hardware options range from Tier 1 ({tier_gpus[0]} for development) up to Tier 3 ({tier_gpus[2]} for hyper-scale swarms)."
+                )
+
             # Otherwise return standard compliance info
             data_residency = sec.get("data_residency", [])
             compliance_desc = sec.get("compliance", {}).get("description", "")

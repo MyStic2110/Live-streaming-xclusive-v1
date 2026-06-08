@@ -11,7 +11,7 @@ const COLORS = {
   border: "rgba(255, 255, 255, 0.08)"
 };
 
-const Footer = ({ onBlogClick, onTelemetryClick, onShortsClick, onLegalClick, onDashboardClick }) => {
+const Footer = ({ onBlogClick, onTelemetryClick, onShortsClick, onLegalClick, onDashboardClick, onDeploymentClick }) => {
   return (
     <footer style={{
       background: COLORS.bg,
@@ -54,6 +54,7 @@ const Footer = ({ onBlogClick, onTelemetryClick, onShortsClick, onLegalClick, on
           <a href="#" onClick={(e) => { e.preventDefault(); if (onTelemetryClick) onTelemetryClick(); }} style={linkStyle}>Security Telemetry</a>
           <a href="#" onClick={(e) => { e.preventDefault(); if (onShortsClick) onShortsClick(); }} style={linkStyle}>Swarm Shorts</a>
           <a href="#" onClick={(e) => { e.preventDefault(); if (onDashboardClick) onDashboardClick(); }} style={linkStyle}>LLM Telemetry Dashboard</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); if (onDeploymentClick) onDeploymentClick(); }} style={linkStyle}>Governed Deployment</a>
           <a href="https://wa.me/919791388549" target="_blank" rel="noreferrer" style={linkStyle}>Enterprise Sales</a>
         </div>
 

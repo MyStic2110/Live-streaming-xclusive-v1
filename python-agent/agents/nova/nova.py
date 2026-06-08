@@ -27,6 +27,10 @@ from utils.cost_guard import CostGuard, filter_code_blocks_and_long_text
 from utils.traced_llm import TracedLLM
 from integrations.securelytix import SecurelytixClient
 from pydantic import BaseModel, Field
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+from livekit.agents.llm.tool_context import RawFunctionTool, RawFunctionToolInfo, ToolFlag, ToolError
+from contextlib import AsyncExitStack
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -64,6 +68,47 @@ VAD_PLUGIN = silero.VAD.load(min_silence_duration=0.8)
 STT_PLUGIN = deepgram.STT(model="nova-2-general")
 TTS_PLUGIN = deepgram.TTS(model="aura-luna-en")
 
+def create_mcp_wrapper(mcp_tool, mcp_session):
+    original_name = mcp_tool.name
+    registered_name = f"devtools_{original_name}"
+    
+    async def mcp_tool_fn(**kwargs):
+        logger.info(f"[MCP:CALL] Calling {registered_name} (original: {original_name}) with args: {kwargs}")
+        try:
+            result = await mcp_session.call_tool(original_name, arguments=kwargs)
+            logger.info(f"[MCP:RESULT] Tool {registered_name} returned success: {result}")
+            if hasattr(result, "content") and result.content:
+                text_contents = []
+                for c in result.content:
+                    if hasattr(c, "text"):
+                        text_contents.append(c.text)
+                    elif isinstance(c, dict) and "text" in c:
+                        text_contents.append(c["text"])
+                    else:
+                        text_contents.append(str(c))
+                return "\n".join(text_contents)
+            return str(result)
+        except Exception as e:
+            logger.error(f"[MCP:ERROR] Tool {registered_name} failed: {e}")
+            raise ToolError(f"Tool {registered_name} failed: {str(e)}")
+            
+    mcp_tool_fn.__name__ = registered_name
+    mcp_tool_fn.__doc__ = mcp_tool.description or f"Execute MCP tool {original_name}"
+    
+    raw_schema = {
+        "name": registered_name,
+        "description": mcp_tool.description or "",
+        "parameters": mcp_tool.inputSchema or {"type": "object", "properties": {}},
+    }
+    
+    info = RawFunctionToolInfo(
+        name=registered_name,
+        raw_schema=raw_schema,
+        flags=ToolFlag.NONE
+    )
+    
+    return RawFunctionTool(mcp_tool_fn, info)
+
 async def entrypoint(ctx: JobContext):
     logger.info(f"--- NOVA (Strategic Intelligence Copilot) CONNECTING ---")
     try:
@@ -79,6 +124,29 @@ async def entrypoint(ctx: JobContext):
     except Exception as e:
         logger.error(f"Failed to initialize entrypoint: {e}")
         return
+
+    # Initialize chrome-devtools-mcp client
+    server_params = StdioServerParameters(
+        command="npx",
+        args=["-y", "chrome-devtools-mcp@latest", "--browser-url=http://127.0.0.1:9222"],
+    )
+    mcp_stack = AsyncExitStack()
+    mcp_tools = []
+    try:
+        logger.info("Connecting to chrome-devtools-mcp...")
+        read, write = await mcp_stack.enter_async_context(stdio_client(server_params))
+        mcp_session = await mcp_stack.enter_async_context(ClientSession(read, write))
+        await mcp_session.initialize()
+        
+        mcp_tools_list = await mcp_session.list_tools()
+        for tool in mcp_tools_list.tools:
+            mcp_tools.append(create_mcp_wrapper(tool, mcp_session))
+        logger.info(f"Connected to chrome-devtools-mcp successfully. Registered {len(mcp_tools)} tools.")
+    except Exception as mcp_err:
+        logger.error(f"Failed to connect to chrome-devtools-mcp: {mcp_err}. Running without devtools capability.")
+        await mcp_stack.aclose()
+        mcp_stack = None
+        mcp_tools = []
 
     max_retries = 3
     for attempt in range(1, max_retries + 1):
@@ -400,10 +468,24 @@ SECURITY RULES:
     raw_llm = openai.LLM(model="openai/gpt-4o-mini", api_key=os.getenv("OPENROUTER_API_KEY"), base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"))
     llm_plugin = TracedLLM(raw_llm, agent_name="NOVA")
 
+    all_tools = []
+    all_tools.extend(llm.find_function_tools(copilot_tools))
+    if mcp_tools:
+        all_tools.extend(mcp_tools)
+
+    agent_instructions = system_prompt
+    if mcp_tools:
+        agent_instructions += """
+
+--- DEVTOOLS CAPABILITY ---
+You have access to Chrome DevTools tools (prefixed with `devtools_`). Use them to inspect, debug, take screenshots, navigate, click, or type on the browser window running with remote debugging at http://127.0.0.1:9222.
+When the user asks you to take a screenshot or perform actions on the screen, use these tools.
+"""
+
     agent = voice.Agent(turn_handling={"interruption": {"mode": "vad"}}, 
-        instructions=system_prompt,
+        instructions=agent_instructions,
         chat_ctx=chat_ctx,
-        tools=llm.find_function_tools(copilot_tools),
+        tools=all_tools,
     )
 
     session = AgentSession(
@@ -455,8 +537,16 @@ SECURITY RULES:
         try:
             # Wait for user's WebRTC audio connection to fully initialize
             await asyncio.sleep(2.0)
+            greeting_text = (
+                "Hey! Welcome back to Nexus IPL 2026. I’m Nova. I’ve just plugged into your Match Arena "
+                "and enabled DevTools browser integration. I can show you live scores, analyze predictions, "
+                "or even take screenshots and interact with the page. What are we feeling like checking out first?"
+            ) if mcp_tools else (
+                "Hey! Welcome back to Nexus IPL 2026. I’m Nova. I’ve just plugged into your Match Arena—I can show you live scores, "
+                "analyze your predictions, or even walkthrough the standings. What are we feeling like checking out first?"
+            )
             await session.say(
-                "Hey! Welcome back to Nexus IPL 2026. I’m Nova. I’ve just plugged into your Match Arena—I can show you live scores, analyze your predictions, or even walkthrough the standings. What are we feeling like checking out first?",
+                greeting_text,
                 allow_interruptions=True
             )
         except Exception as err:
@@ -552,6 +642,9 @@ SECURITY RULES:
         logger.error(f"Voice pipeline crashed: {e}")
     finally:
         logger.info("--- NOVA SESSION TERMINATED ---")
+        if mcp_stack:
+            logger.info("Closing chrome-devtools-mcp client...")
+            await mcp_stack.aclose()
 
     @ctx.room.on("data_received")
     def on_data_received(dp):

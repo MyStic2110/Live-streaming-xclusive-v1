@@ -1,9 +1,69 @@
 {
   "vertical": "security",
-  "last_updated": "2026-06-05",
+  "last_updated": "2026-06-09",
   "philosophy": {
     "title": "Central Control Plane in Your Environment",
-    "description": "Swarm Agentic Lab is not a traditional SaaS platform. Our mission is to help organizations replace fragmented SaaS workflows with autonomous agent systems that run within their own environment."
+    "description": "Swarm Agentic Lab is not a traditional SaaS platform. Our mission is to help organizations replace fragmented SaaS workflows with autonomous agent systems that run within their own environment. We deploy the AI control plane, not another model server."
+  },
+  "governed_deployment": {
+    "description": "Swarm Agentic Lab does not require public SaaS hosting. All components operate inside your controlled infrastructure.",
+    "models": {
+      "on_prem": {
+        "title": "On-Prem",
+        "description": "GPU servers in your data centre. Full control, zero external dependencies. Recommended for regulated industries and air-gapped requirements. Runs on VMware, OpenStack, or Proxmox.",
+        "specs": ["Local hardware isolation", "Physical security perimeter", "Zero latency data ingress"]
+      },
+      "private_cloud": {
+        "title": "Private Cloud",
+        "description": "AWS, Azure, or GCP — deployed inside your VPC. No data leaves your cloud account. Supports GPU instance types across all major providers.",
+        "specs": ["AWS / GCP / Azure Native", "IAM & Private Link integration", "Dynamic scaling of GPU groups"]
+      },
+      "self_hosted_private_cloud": {
+        "title": "Self-Hosted Private Cloud",
+        "description": "VMware, OpenStack, or Proxmox on your existing data centre infrastructure. Swarm Agentic Lab deploys via Docker Compose or Kubernetes.",
+        "specs": ["Docker Compose & K8s ready", "Enterprise virtualization support", "Multi-tenant resource pools"]
+      },
+      "hybrid": {
+        "title": "Hybrid",
+        "description": "On-prem inference combined with cloud integrations. Run your models on owned hardware while connecting to cloud-based storage or services.",
+        "specs": ["Edge inference optimization", "Secure cloud gateway tunnels", "Distributed agent orchestrator"]
+      }
+    }
+  },
+  "hardware_requirements_by_tier": {
+    "tier_1_developer_pilot": {
+      "target_workload": "Testing & prototyping (2-5 concurrent active agents)",
+      "recommended_gpu": "1x NVIDIA RTX 4090 or A10G (24GB VRAM)",
+      "cpu": "8-Core AMD EPYC / Intel Xeon",
+      "system_ram": "32GB System RAM",
+      "storage": "500GB NVMe SSD (Gen 4)",
+      "deployment_mode": "Docker Compose Single Node"
+    },
+    "tier_2_production_enterprise": {
+      "target_workload": "Medium operational fleet (15-20 concurrent active agents)",
+      "recommended_gpu": "2x - 4x NVIDIA A100 or H100 (80GB VRAM)",
+      "cpu": "32-Core AMD EPYC / Intel Xeon",
+      "system_ram": "256GB System RAM",
+      "storage": "2TB NVMe RAID SSD",
+      "deployment_mode": "Kubernetes / Helm Chart"
+    },
+    "tier_3_hyper_scale_swarms": {
+      "target_workload": "Enterprise orchestrations (100+ concurrent active agents)",
+      "recommended_gpu": "8x NVIDIA H100 or H200 Nodes (80GB / 141GB VRAM)",
+      "cpu": "Dual 64-Core EPYC (128 Cores Total)",
+      "system_ram": "512GB - 1TB System RAM",
+      "storage": "8TB High-Performance NVMe Pool",
+      "deployment_mode": "Kubernetes Multi-Node Cluster"
+    }
+  },
+  "pricing_and_budgeting": {
+    "pricing_philosophy": {
+      "heading": "Why pricing starts with scope, not seats.",
+      "description": "Swarm Agentic Lab rejects public per-user licensing and token-only billing models. Because governed AI deployments depend heavily on your unique infrastructure profile, GPU provisioning, concurrent traffic patterns, memory partitions, compliance frameworks, validation layers, and SLA guarantees, we tailormake every installation scope. The architectural foundation remains consistent, while the final investment is optimized directly for your specific operating environment."
+    },
+    "budgeting_guidance": {
+      "description": "Most enterprise integrations begin with a readiness diagnostic or a proof-of-concept pilot before transitioning to annual platform subscriptions. Underlying infrastructure costs (dedicated GPU clusters, cloud storage hosts, VPC networking interfaces) remain completely separate and are managed directly within your customer accounts."
+    }
   },
   "data_residency": [
     "Customer-owned infrastructure supported",

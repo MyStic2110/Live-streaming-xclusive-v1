@@ -7,3 +7,4 @@ google-genai
 redis
 openai
 numpy
+mcp

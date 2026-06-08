@@ -350,7 +350,7 @@ function ReelCard({ reel, index, onClick }) {
 
 // --- MAIN PAGE ---
 
-export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShortsClick, onDashboardClick }) {
+export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShortsClick, onDashboardClick, onDeploymentClick }) {
   const [selectedReel, setSelectedReel] = React.useState(null);
   const [showReelsGallery, setShowReelsGallery] = React.useState(false);
   const [legalModalType, setLegalModalType] = React.useState(null);
@@ -492,6 +492,22 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "₹0 in recurring cloud API fees. Running models locally or on dedicated hardware removes all message volume-based SaaS bills."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the platform handle high-throughput log volumes and disk safety?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "All systems (agents, backend, and Docker services) utilize structured JSON logging with strict size-capped auto-rotation and automated scheduled time-based purges. Logs are processed asynchronously via non-blocking queues, ensuring zero latency spikes for up to 50,000+ concurrent users."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can the platform self-diagnose system health and hardware issues?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Our DevOps Geni agent is equipped with native system diagnostic tools that can monitor hardware stats, detect NVIDIA GPU availability, scan active listening ports for EADDRINUSE conflicts, and track Docker container health in real-time."
           }
         }
       ]
@@ -1021,6 +1037,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
           <a href="#services" style={{ textDecoration: "none", color: "inherit" }}>Services</a>
           <div onClick={onTelemetryClick} style={{ cursor: "pointer", color: COLORS.primary, fontWeight: "700" }}>Telemetry</div>
           <div onClick={onDashboardClick} style={{ cursor: "pointer", color: "#4f46e5", fontWeight: "800" }}>Dashboard</div>
+          <div onClick={onDeploymentClick} style={{ cursor: "pointer", color: "#8b5cf6", fontWeight: "800" }}>Deployment</div>
           <div onClick={onBlogClick} style={{ cursor: "pointer", color: COLORS.accent, fontWeight: "800" }}>Insights</div>
           <a href="#about" style={{ textDecoration: "none", color: "inherit" }}>About</a>
           {/* Learn Shorts Link */}
@@ -1438,7 +1455,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
       </div>
 
       {/* The 3 Pillars of Swarm Agentic Lab */}
-      <div style={{
+      <div className="pillars-grid" style={{
         display: "grid",
         gridTemplateColumns: "repeat(3, 1fr)",
         gap: "2rem",
@@ -1775,7 +1792,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
           title="A clear, proven process." 
           subtitle="No surprises, no delays. We move from initial audit to production-ready agent in 2 weeks."
         />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
+        <div className="process-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
           {[
             { step: "01", title: "Audit", desc: "Deep-dive into your workflows. Find bottlenecks and the highest-ROI AI opportunities." },
             { step: "02", title: "Architect", desc: "Design the agent logic. Choose tools, plan integrations, map the data flow." },
@@ -2022,7 +2039,9 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
             { q: "How long does a typical build take?", a: "Most agents are live in production within 1–2 weeks, including local model fine-tuning." },
             { q: "Do you use my data for training?", a: "Never. Because your agents run entirely on your own local hardware or private VPC, your data never leaves your infrastructure." },
             { q: "Can the agents talk to my existing tools?", a: "Yes. We specialize in connecting local agent inference to MySQL, MongoDB, Slack, and custom CRM APIs." },
-            { q: "What are the running costs?", a: "₹0 in recurring cloud API fees. Running models locally or on dedicated hardware removes all message volume-based SaaS bills." }
+            { q: "What are the running costs?", a: "₹0 in recurring cloud API fees. Running models locally or on dedicated hardware removes all message volume-based SaaS bills." },
+            { q: "How does the platform handle high-throughput log volumes and disk safety?", a: "All systems (agents, backend, and Docker services) utilize structured JSON logging with strict size-capped auto-rotation and automated scheduled time-based purges. Logs are processed asynchronously via non-blocking queues, ensuring zero latency spikes for up to 50,000+ concurrent users." },
+            { q: "Can the platform self-diagnose system health and hardware issues?", a: "Yes. Our DevOps Geni agent is equipped with native system diagnostic tools that can monitor hardware stats, detect NVIDIA GPU availability, scan active listening ports for EADDRINUSE conflicts, and track Docker container health in real-time." }
           ].map((item, i) => (
             <div 
               key={i} 
@@ -2056,7 +2075,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
 
 
       {/* Footer */}
-      <Footer onBlogClick={onBlogClick} onTelemetryClick={onTelemetryClick} onShortsClick={onShortsClick} onLegalClick={setLegalModalType} onDashboardClick={onDashboardClick} />
+      <Footer onBlogClick={onBlogClick} onTelemetryClick={onTelemetryClick} onShortsClick={onShortsClick} onLegalClick={setLegalModalType} onDashboardClick={onDashboardClick} onDeploymentClick={onDeploymentClick} />
 
       {/* --- PIPELINE REELS GALLERY MODAL --- */}
       <AnimatePresence>

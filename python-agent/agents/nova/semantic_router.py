@@ -12,7 +12,22 @@ class SemanticRouter:
     def __init__(self, map_file="product_map.json"):
         self.raw_data = {}
         self.routes = []
-        self.client = OpenAI() # Assumes OPENAI_API_KEY is in environment
+        
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if openai_key:
+            self.client = OpenAI(api_key=openai_key)
+            self.embedding_model = "text-embedding-3-small"
+        else:
+            openrouter_key = os.getenv("OPENROUTER_API_KEY")
+            if openrouter_key:
+                logger.info("[ROUTER] OPENAI_API_KEY not found. Using OpenRouter fallback for embeddings.")
+                self.client = OpenAI(
+                    api_key=openrouter_key,
+                    base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+                )
+                self.embedding_model = "openai/text-embedding-3-small"
+            else:
+                raise ValueError("Neither OPENAI_API_KEY nor OPENROUTER_API_KEY was found in environment.")
         
         file_path = os.path.join(os.path.dirname(__file__), map_file)
         if os.path.exists(file_path):
@@ -40,7 +55,7 @@ class SemanticRouter:
             try:
                 response = self.client.embeddings.create(
                     input=text,
-                    model="text-embedding-3-small"
+                    model=self.embedding_model
                 )
                 embedding = response.data[0].embedding
                 self.documents.append(np.array(embedding))
@@ -63,7 +78,7 @@ class SemanticRouter:
         try:
             response = self.client.embeddings.create(
                 input=query,
-                model="text-embedding-3-small"
+                model=self.embedding_model
             )
             query_vec = np.array(response.data[0].embedding)
         except Exception as e:

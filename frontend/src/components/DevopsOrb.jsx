@@ -9,6 +9,98 @@ import remarkGfm from "remark-gfm";
 
 const API = import.meta.env.VITE_API_URL || "";
 
+const CollapsiblePre = ({ children, ...props }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Extract raw text recursively to count lines
+  const getRawText = (nodes) => {
+    if (!nodes) return "";
+    return React.Children.toArray(nodes)
+      .map(child => {
+        if (typeof child === "string") return child;
+        if (child?.props?.children) return getRawText(child.props.children);
+        return "";
+      })
+      .join("");
+  };
+
+  const rawText = getRawText(children);
+  const lineCount = rawText.split("\n").filter(Boolean).length;
+
+  if (lineCount <= 5) {
+    return (
+      <pre 
+        style={{ 
+          background: "#1f2937", 
+          color: "#f8fafc", 
+          padding: "10px", 
+          borderRadius: "8px", 
+          overflowX: "auto", 
+          margin: "8px 0", 
+          fontFamily: "'Courier New', Courier, monospace", 
+          fontSize: "0.8rem"
+        }} 
+        {...props}
+      >
+        {children}
+      </pre>
+    );
+  }
+
+  return (
+    <div style={{
+      border: "1px solid rgba(255, 255, 255, 0.08)",
+      borderRadius: "12px",
+      margin: "14px 0",
+      backgroundColor: "#030712",
+      overflow: "hidden",
+      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+    }}>
+      <div 
+        onClick={() => setIsExpanded(!isExpanded)}
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "10px 16px",
+          backgroundColor: "#0f172a",
+          cursor: "pointer",
+          userSelect: "none",
+          borderBottom: isExpanded ? "1px solid rgba(255,255,255,0.08)" : "none",
+          transition: "background-color 0.2s"
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#1e293b"}
+        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#0f172a"}
+      >
+        <span style={{ fontSize: "0.85rem", color: "#38bdf8", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
+          🖥️ Diagnostics Log Output ({lineCount} lines)
+        </span>
+        <span style={{ fontSize: "0.75rem", color: "#94a3b8", display: "flex", alignItems: "center", gap: "4px" }}>
+          {isExpanded ? "Click to collapse ▲" : "Click to expand ▼"}
+        </span>
+      </div>
+      {isExpanded && (
+        <pre 
+          style={{ 
+            backgroundColor: "#020617", 
+            padding: "14px", 
+            overflowX: "auto", 
+            margin: 0,
+            maxHeight: "350px",
+            overflowY: "auto",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: "0.85rem",
+            color: "#cbd5e1"
+          }} 
+          {...props}
+        >
+          {children}
+        </pre>
+      )}
+    </div>
+  );
+};
+
 // The Chat Logic inside the Slide-out Panel
 function DevopsGeniPanelChat({ initialError }) {
   const room = useRoomContext();
@@ -193,10 +285,10 @@ function DevopsGeniPanelChat({ initialError }) {
                           ul: ({node, ...props}) => <ul style={{margin: "4px 0", paddingLeft: "20px"}} {...props} />,
                           ol: ({node, ...props}) => <ol style={{margin: "4px 0", paddingLeft: "20px"}} {...props} />,
                           li: ({node, ...props}) => <li style={{marginBottom: "2px"}} {...props} />,
-                          code: ({node, inline, ...props}) => 
+                          code: ({node, inline, children, ...props}) => 
                             inline 
-                              ? <code style={{background: "rgba(0,0,0,0.08)", padding: "2px 4px", borderRadius: "4px", fontFamily: "'Courier New', Courier, monospace", fontSize: "0.8rem"}} {...props} />
-                              : <pre style={{background: "#1f2937", color: "#f8fafc", padding: "10px", borderRadius: "8px", overflowX: "auto", margin: "8px 0", fontFamily: "'Courier New', Courier, monospace", fontSize: "0.8rem"}}><code {...props} /></pre>,
+                              ? <code style={{background: "rgba(0,0,0,0.08)", padding: "2px 4px", borderRadius: "4px", fontFamily: "'Courier New', Courier, monospace", fontSize: "0.8rem"}} {...props}>{children}</code>
+                              : <CollapsiblePre {...props}><code>{children}</code></CollapsiblePre>,
                           table: ({node, ...props}) => <div style={{overflowX: "auto"}}><table style={{width: "100%", borderCollapse: "collapse", margin: "8px 0"}} {...props} /></div>,
                           th: ({node, ...props}) => <th style={{border: "1px solid #d1d5db", padding: "6px", backgroundColor: "#e5e7eb", textAlign: "left"}} {...props} />,
                           td: ({node, ...props}) => <td style={{border: "1px solid #d1d5db", padding: "6px"}} {...props} />,
@@ -455,9 +547,21 @@ export default function DevopsOrb() {
       {/* CSS Animation for violent pulsing */}
       <style>{`
         @keyframes pulse-red-3d {
-          0% { transform: scale(1); box-shadow: inset -6px -6px 15px rgba(0,0,0,0.6), inset 6px 6px 15px rgba(255,255,255,0.4), 0 0 0 0 rgba(239, 68, 68, 0.8); }
-          50% { transform: scale(1.05); box-shadow: inset -6px -6px 15px rgba(0,0,0,0.6), inset 6px 6px 15px rgba(255,255,255,0.4), 0 0 0 25px rgba(239, 68, 68, 0); }
-          100% { transform: scale(1); box-shadow: inset -6px -6px 15px rgba(0,0,0,0.6), inset 6px 6px 15px rgba(255,255,255,0.4), 0 0 0 0 rgba(239, 68, 68, 0); }
+          0% { 
+            transform: scale(1); 
+            box-shadow: inset -6px -6px 15px rgba(0,0,0,0.6), inset 6px 6px 15px rgba(255,255,255,0.4), 0 0 0 0 rgba(239, 68, 68, 0.8), 0 0 15px rgba(239, 68, 68, 0.5);
+            filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.8));
+          }
+          50% { 
+            transform: scale(1.08); 
+            box-shadow: inset -6px -6px 15px rgba(0,0,0,0.6), inset 6px 6px 15px rgba(255,255,255,0.4), 0 0 0 25px rgba(239, 68, 68, 0), 0 0 35px rgba(239, 68, 68, 0.9);
+            filter: drop-shadow(0 0 25px rgba(239, 68, 68, 1));
+          }
+          100% { 
+            transform: scale(1); 
+            box-shadow: inset -6px -6px 15px rgba(0,0,0,0.6), inset 6px 6px 15px rgba(255,255,255,0.4), 0 0 0 0 rgba(239, 68, 68, 0), 0 0 15px rgba(239, 68, 68, 0.5);
+            filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.8));
+          }
         }
       `}</style>
 
@@ -465,13 +569,13 @@ export default function DevopsOrb() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ x: "100%", opacity: 0 }}
+            initial={{ x: "-100%", opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: "100%", opacity: 0 }}
+            exit={{ x: "-100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             style={{
-              position: "fixed", top: 0, right: 0, width: "600px", height: "100vh",
-              background: "#ffffff", boxShadow: "-5px 0 25px rgba(0,0,0,0.1)",
+              position: "fixed", top: 0, left: 0, width: "600px", height: "100vh",
+              background: "#ffffff", boxShadow: "5px 0 25px rgba(0,0,0,0.1)",
               zIndex: 10000, display: "flex", flexDirection: "column"
             }}
           >

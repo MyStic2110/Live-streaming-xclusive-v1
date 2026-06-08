@@ -2,8 +2,11 @@ import os
 import json
 import logging
 import time
+import queue
+import atexit
 from datetime import datetime
 from typing import Dict, Any, List
+from logging.handlers import RotatingFileHandler, QueueHandler, QueueListener
 
 # --- CONFIG ---
 LOGS_DIR = os.path.join(os.path.dirname(__file__), "../swarm_logs")
@@ -34,6 +37,18 @@ DEEPGRAM_PRICING = {
     }
 }
 
+# Global registry of active listeners to flush and stop on process shutdown
+_audit_listeners = {}
+
+def shutdown_audit_listeners():
+    for listener in _audit_listeners.values():
+        try:
+            listener.stop()
+        except Exception:
+            pass
+
+atexit.register(shutdown_audit_listeners)
+
 class SwarmSentry:
     def __init__(self, agent_name: str):
         self.agent_name = agent_name
@@ -43,6 +58,33 @@ class SwarmSentry:
         # Setup agent-specific logger
         self.logger = logging.getLogger(f"sentry.{agent_name}")
         self.logger.setLevel(logging.INFO)
+        
+        # Setup agent-specific audit logger for high-throughput async logs
+        self.audit_logger = logging.getLogger(f"sentry.audit.{agent_name}")
+        self.audit_logger.setLevel(logging.INFO)
+        self.audit_logger.propagate = False
+        
+        # Initialize async queue and background thread listener once per agent
+        if not self.audit_logger.handlers:
+            # Rotating file handler: 50MB max, keeping up to 5 backups (auto-deletes 6th)
+            file_handler = RotatingFileHandler(
+                self.log_file,
+                maxBytes=50_000_000,
+                backupCount=5,
+                encoding="utf-8"
+            )
+            file_formatter = logging.Formatter("%(message)s")
+            file_handler.setFormatter(file_formatter)
+            
+            # Non-blocking Queue implementation
+            log_queue = queue.Queue(-1)
+            q_handler = QueueHandler(log_queue)
+            self.audit_logger.addHandler(q_handler)
+            
+            # Start background thread to listen and execute writes
+            listener = QueueListener(log_queue, file_handler)
+            listener.start()
+            _audit_listeners[agent_name] = listener
         
         # Guardrail Settings
         self.prohibited_keywords = ["password", "secret_key", "internal_db_admin", "drop table", "delete from"]
@@ -98,8 +140,8 @@ class SwarmSentry:
             "type": event_type,
             **data
         }
-        with open(self.log_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps(entry) + "\n")
+        # Log asynchronously through the queue (non-blocking)
+        self.audit_logger.info(json.dumps(entry))
         
         # Print trace to the terminal
         if event_type == "performance_audit":

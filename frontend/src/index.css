@@ -347,3 +347,35 @@ body {
   height: 18px;
 }
 
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Responsive Grid Overrides */
+@media (max-width: 1024px) {
+  .hero-split-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+  .pillars-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+    margin-top: 3rem !important;
+  }
+  .process-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1.5rem !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .process-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .navbar {
+    padding: 1rem 1.5rem !important;
+  }
+}
+
+

@@ -54,7 +54,10 @@ class ContextRouter:
             "security": [
                 "soc2", "gdpr", "compliance", "encryption", "privacy", "secure",
                 "dataresidency", "sso", "saml", "tls", "aes256", "auth",
-                "owasp", "audit", "scanner", "scan", "runs", "history"
+                "owasp", "audit", "scanner", "scan", "runs", "history",
+                "deploy", "deployment", "governed", "onprem", "onpremises",
+                "privatecloud", "hybrid", "vpc", "kubernetes", "k8s",
+                "dockercompose", "hardware", "requirements"
             ],
             "features": [
                 "workflow", "capabilities", "limit", "run", "platform",

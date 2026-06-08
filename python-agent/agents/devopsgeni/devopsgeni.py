@@ -66,20 +66,53 @@ SECURITY RULES:
 def get_local_machine_specs():
     import platform
     import psutil
+    import subprocess
     try:
         uname = platform.uname()
         mem = psutil.virtual_memory()
         cpu_freq = psutil.cpu_freq()
         cpu_percent = psutil.cpu_percent(interval=1)
         
+        # Detect GPU availability via nvidia-smi
+        gpu_status = "GPU: None detected (or nvidia-smi not available)"
+        try:
+            res = subprocess.run(["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"], capture_output=True, text=True)
+            if res.returncode == 0 and res.stdout.strip():
+                gpu_lines = res.stdout.strip().split("\n")
+                gpu_status = f"GPU: {', '.join(gpu_lines)}"
+        except Exception:
+            pass
+            
         specs = (
             f"System: {uname.system} {uname.release} ({uname.machine})\n"
             f"CPU: {psutil.cpu_count(logical=True)} logical cores @ {getattr(cpu_freq, 'max', 'unknown')}Mhz (Current Usage: {cpu_percent}%)\n"
             f"RAM: Total: {mem.total / (1024**3):.2f} GB | Available: {mem.available / (1024**3):.2f} GB | Used: {mem.percent}%\n"
+            f"{gpu_status}\n"
         )
         return specs
     except Exception as e:
         return f"Error retrieving specs: {str(e)}"
+
+def check_active_ports():
+    import socket
+    ports_to_check = {
+        3002: "Node.js Express Backend",
+        5432: "PostgreSQL Database",
+        6379: "Redis Cache/Observability Stream",
+        7880: "LiveKit SFU Server",
+        8080: "Securelytix SDK / Vault API",
+        8081: "SearXNG Engine"
+    }
+    results = []
+    for port, service in ports_to_check.items():
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(0.2)
+            result = s.connect_ex(('127.0.0.1', port))
+            if result == 0:
+                results.append(f"Port {port} ({service}): OCCUPIED (Active/Listening)")
+            else:
+                results.append(f"Port {port} ({service}): FREE (Offline/Available)")
+    return "System Port Occupancy Status:\n" + "\n".join(results)
 
 def check_ghost_processes():
     import psutil
@@ -170,6 +203,21 @@ def read_backend_crash_logs():
         return "Recent Node.js Backend Crash Logs:\n" + "".join(lines[-30:])
     except Exception as e:
         return f"Error reading backend crash logs: {str(e)}"
+
+def read_swarm_master_logs(lines: int = 50):
+    import os
+    try:
+        log_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../swarm_master.log"))
+        if not os.path.exists(log_path):
+            return "No swarm_master.log file found. Swarm master orchestration logs are not active."
+        with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+            all_lines = f.readlines()
+        if not all_lines:
+            return "The swarm_master.log file is empty."
+        selected = all_lines[-lines:]
+        return f"Recent Swarm Master Logs (Last {len(selected)} lines):\n" + "".join(selected)
+    except Exception as e:
+        return f"Error reading swarm master logs: {str(e)}"
 
 def run_sast_scan(directory_path: str = "."):
     import subprocess
@@ -353,7 +401,14 @@ AVAILABLE_TOOLS = [
         "type": "function",
         "function": {
             "name": "get_local_machine_specs",
-            "description": "Get the hardware specifications and current resource utilization of the local host machine."
+            "description": "Get the hardware specifications (including system architecture, CPU usage, RAM stats, and GPU presence) of the host machine."
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "check_active_ports",
+            "description": "Check the status of common application ports (e.g. 3002, 5432, 6379, 7880, 8080, 8081) to detect active/listening status and conflicts."
         }
     },
     {
@@ -389,6 +444,22 @@ AVAILABLE_TOOLS = [
         "function": {
             "name": "read_backend_crash_logs",
             "description": "Read and analyze the raw backend_errors.log file containing Node.js uncaught exceptions and crashes."
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "read_swarm_master_logs",
+            "description": "Read the recent lines from the unified swarm master log file (swarm_master.log) containing merged agent outputs and Node.js server console logs.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "lines": {
+                        "type": "integer",
+                        "description": "Number of lines to read from the end of the log file. Default is 50."
+                    }
+                }
+            }
         }
     },
     {
@@ -568,6 +639,8 @@ async def entrypoint(ctx: JobContext):
                     tool_start = time.perf_counter()
                     if fn_name == "get_local_machine_specs":
                         result = get_local_machine_specs()
+                    elif fn_name == "check_active_ports":
+                        result = check_active_ports()
                     elif fn_name == "check_ghost_processes":
                         result = check_ghost_processes()
                     elif fn_name == "kill_ghost_processes":
@@ -576,6 +649,9 @@ async def entrypoint(ctx: JobContext):
                         result = analyze_recent_telemetry()
                     elif fn_name == "read_backend_crash_logs":
                         result = read_backend_crash_logs()
+                    elif fn_name == "read_swarm_master_logs":
+                        args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
+                        result = read_swarm_master_logs(args.get("lines", 50))
                     elif fn_name == "get_swarm_memory_usage":
                         result = get_swarm_memory_usage()
                     elif fn_name == "run_sast_scan":

@@ -18,6 +18,7 @@ import AivyuhRoom from "./components/AivyuhRoom";
 import DevopsOrb from "./components/DevopsOrb";
 import SwarmShortsPage from "./components/SwarmShortsPage";
 import DashboardPage from "./components/DashboardPage";
+import GovernedDeployment from "./components/GovernedDeployment";
 import NotFoundPage from "./components/NotFoundPage";
 import CopilotWidget from "./components/CopilotWidget";
 import '@livekit/components-styles/index.css';
@@ -72,6 +73,12 @@ function App() {
     setShowShorts(false);
   };
 
+  const navigateToDeployment = () => {
+    window.history.pushState({}, "", "/governed-deployment");
+    setCurrentPath("/governed-deployment");
+    setShowShorts(false);
+  };
+
   const navigateHome = () => {
     window.history.pushState({}, "", "/");
     setCurrentPath("/");
@@ -120,6 +127,12 @@ function App() {
     window.location.hash === "#/dashboard" ||
     window.location.hash === "#dashboard";
 
+  const isDeploymentPath =
+    currentPath.replace(/\/$/, "") === "/governed-deployment" ||
+    window.location.hash.replace(/\/$/, "") === "#/governed-deployment" ||
+    window.location.hash === "#governed-deployment" ||
+    window.location.hash === "#/governed-deployment/";
+
   let content;
   if (showBlog) {
     content = <BlogSection onBack={() => setShowBlog(false)} />;
@@ -129,6 +142,8 @@ function App() {
     content = <SwarmTelemetryPage onBack={navigateHome} />;
   } else if (isDashboardPath) {
     content = <DashboardPage onBack={navigateHome} />;
+  } else if (isDeploymentPath) {
+    content = <GovernedDeployment onBack={navigateHome} />;
   } else if (roomData) {
     content = isDevopsGeni ? (
       <DevopsGeniRoom roomData={roomData} onLeave={handleLeave} />
@@ -173,6 +188,7 @@ function App() {
         onTelemetryClick={navigateToTelemetry}
         onShortsClick={navigateToShorts}
         onDashboardClick={navigateToDashboard}
+        onDeploymentClick={navigateToDeployment}
       />
     );
   } else {

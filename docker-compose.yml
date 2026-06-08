@@ -38,6 +38,11 @@ services:
     ports:
       - "5432:5432"
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
   securelytix-sdk:
     image: securelytix2026/dev-sdk:1.0.4
     env_file:
@@ -50,7 +55,12 @@ services:
       - "8080:8080"
     depends_on:
       - securelytix-postgres
-    restart: unless-stopped
+    restart: "no"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   searxng:
     image: searxng/searxng:latest
@@ -62,3 +72,8 @@ services:
       - BASE_URL=http://localhost:8081/
       - SEARXNG_BASE_URL=http://localhost:8081/
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

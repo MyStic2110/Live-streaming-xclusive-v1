@@ -38,7 +38,8 @@ async function runSSG() {
   const sitemapUrls = [
     `<url><loc>${DOMAIN}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
     `<url><loc>${DOMAIN}/learn</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>`,
-    `<url><loc>${DOMAIN}/agents-value-technicals-business</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`
+    `<url><loc>${DOMAIN}/agents-value-technicals-business</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
+    `<url><loc>${DOMAIN}/governed-deployment</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`
   ];
 
   console.log(`[SSG] Found ${blogFiles.length} blog posts to pre-render.`);
@@ -84,6 +85,33 @@ async function runSSG() {
     } catch (e) {
       console.error(`[SSG] Error processing ${file}:`, e);
     }
+  }
+
+  // Pre-render Governed Deployment page
+  try {
+    const deploymentTitle = "Governed Deployment | Private AI Swarm Infrastructure";
+    const deploymentDesc = "Deploy the AI control plane inside your secure VPC or data centre. Supports On-Prem, Private Cloud, Self-Hosted, and Hybrid deployment models.";
+    const deploymentUrl = `${DOMAIN}/governed-deployment`;
+    const deploymentImg = `${DOMAIN}/logo.jpeg`;
+
+    const updatedHtml = originalHtml
+      .replace(/<title>.*?<\/title>/g, `<title>${deploymentTitle}</title>`)
+      .replace(/<meta name="description" content=".*?"\s*\/>/g, `<meta name="description" content="${deploymentDesc}" />`)
+      .replace(/<meta property="og:url" content=".*?"\s*\/>/g, `<meta property="og:url" content="${deploymentUrl}" />`)
+      .replace(/<meta property="og:title" content=".*?"\s*\/>/g, `<meta property="og:title" content="${deploymentTitle}" />`)
+      .replace(/<meta property="og:description" content=".*?"\s*\/>/g, `<meta property="og:description" content="${deploymentDesc}" />`)
+      .replace(/<meta property="og:image" content=".*?"\s*\/>/g, `<meta property="og:image" content="${deploymentImg}" />`)
+      .replace(/<meta property="twitter:url" content=".*?"\s*\/>/g, `<meta property="twitter:url" content="${deploymentUrl}" />`)
+      .replace(/<meta property="twitter:title" content=".*?"\s*\/>/g, `<meta property="twitter:title" content="${deploymentTitle}" />`)
+      .replace(/<meta property="twitter:description" content=".*?"\s*\/>/g, `<meta property="twitter:description" content="${deploymentDesc}" />`)
+      .replace(/<meta property="twitter:image" content=".*?"\s*\/>/g, `<meta property="twitter:image" content="${deploymentImg}" />`);
+
+    const deploymentDir = path.join(DIST_DIR, 'governed-deployment');
+    fs.mkdirSync(deploymentDir, { recursive: true });
+    fs.writeFileSync(path.join(deploymentDir, 'index.html'), updatedHtml);
+    console.log('[SSG] Rendered: /governed-deployment');
+  } catch (err) {
+    console.error('[SSG] Error pre-rendering governed deployment page:', err);
   }
 
   // Generate dynamic sitemap

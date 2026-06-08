@@ -8,6 +8,19 @@ import { fileURLToPath } from 'url';
 import { createClient } from 'redis';
 import { config } from './src/config/livekit.js';
 import * as roomController from './src/controllers/roomController.js';
+import logger from './src/config/logger.js';
+
+// Global console redirection to Pino structured JSON logger for high-throughput enterprise performance
+console.log = (...args) => logger.info(args.join(' '));
+console.info = (...args) => logger.info(args.join(' '));
+console.warn = (...args) => logger.warn(args.join(' '));
+console.error = (...args) => {
+  if (args[0] instanceof Error) {
+    logger.error({ err: args[0] }, args[0].message);
+  } else {
+    logger.error(args.join(' '));
+  }
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,13 +69,15 @@ const logBackendError = (type, error) => {
   const logEntry = `[${timestamp}] [${type}] ${errorMsg}\n`;
   const logPath = path.resolve(__dirname, "../backend_errors.log");
   
-  try {
-    fs.appendFileSync(logPath, logEntry);
-    console.error(`[TELEMETRY] ${type} appended to backend_errors.log`);
-    io.emit("backend_error", { type, message: errorMsg, timestamp });
-  } catch (err) {
-    console.error(`[TELEMETRY] Failed to write error log:`, err);
-  }
+  // Asynchronous append to avoid event loop blocking
+  fs.appendFile(logPath, logEntry, 'utf8', (err) => {
+    if (err) {
+      console.error(`[TELEMETRY] Failed to write error log:`, err);
+    } else {
+      console.error(`[TELEMETRY] ${type} appended to backend_errors.log`);
+    }
+  });
+  io.emit("backend_error", { type, message: errorMsg, timestamp });
 };
 
 process.on("uncaughtException", (err) => {

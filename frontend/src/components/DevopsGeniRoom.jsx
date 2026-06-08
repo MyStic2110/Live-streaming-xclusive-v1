@@ -6,6 +6,98 @@ import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+const CollapsiblePre = ({ children, ...props }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Extract raw text recursively to count lines
+  const getRawText = (nodes) => {
+    if (!nodes) return "";
+    return React.Children.toArray(nodes)
+      .map(child => {
+        if (typeof child === "string") return child;
+        if (child?.props?.children) return getRawText(child.props.children);
+        return "";
+      })
+      .join("");
+  };
+
+  const rawText = getRawText(children);
+  const lineCount = rawText.split("\n").filter(Boolean).length;
+
+  if (lineCount <= 5) {
+    return (
+      <pre 
+        style={{ 
+          backgroundColor: "#020617", 
+          border: "1px solid rgba(255,255,255,0.08)", 
+          borderRadius: "12px", 
+          padding: "14px", 
+          overflowX: "auto", 
+          margin: "14px 0",
+          fontFamily: "'JetBrains Mono', monospace",
+          color: "#cbd5e1"
+        }} 
+        {...props}
+      >
+        {children}
+      </pre>
+    );
+  }
+
+  return (
+    <div style={{
+      border: "1px solid rgba(255, 255, 255, 0.08)",
+      borderRadius: "12px",
+      margin: "14px 0",
+      backgroundColor: "#030712",
+      overflow: "hidden",
+      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+    }}>
+      <div 
+        onClick={() => setIsExpanded(!isExpanded)}
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "10px 16px",
+          backgroundColor: "#0f172a",
+          cursor: "pointer",
+          userSelect: "none",
+          borderBottom: isExpanded ? "1px solid rgba(255,255,255,0.08)" : "none",
+          transition: "background-color 0.2s"
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#1e293b"}
+        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#0f172a"}
+      >
+        <span style={{ fontSize: "0.85rem", color: "#38bdf8", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
+          🖥️ Diagnostics Log Output ({lineCount} lines)
+        </span>
+        <span style={{ fontSize: "0.75rem", color: "#94a3b8", display: "flex", alignItems: "center", gap: "4px" }}>
+          {isExpanded ? "Click to collapse ▲" : "Click to expand ▼"}
+        </span>
+      </div>
+      {isExpanded && (
+        <pre 
+          style={{ 
+            backgroundColor: "#020617", 
+            padding: "14px", 
+            overflowX: "auto", 
+            margin: 0,
+            maxHeight: "350px",
+            overflowY: "auto",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: "0.85rem",
+            color: "#cbd5e1"
+          }} 
+          {...props}
+        >
+          {children}
+        </pre>
+      )}
+    </div>
+  );
+};
+
 function DevopsGeniChat({ roomData, onLeave }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
@@ -359,20 +451,7 @@ function DevopsGeniChat({ roomData, onLeave }) {
                               </code>
                             );
                           },
-                          pre: ({node, ...props}) => (
-                            <pre 
-                              style={{ 
-                                backgroundColor: "#020617", 
-                                border: "1px solid rgba(255,255,255,0.08)", 
-                                borderRadius: "12px", 
-                                padding: "14px", 
-                                overflowX: "auto", 
-                                margin: "14px 0",
-                                fontFamily: "'JetBrains Mono', monospace"
-                              }} 
-                              {...props} 
-                            />
-                          )
+                          pre: ({node, ...props}) => <CollapsiblePre {...props} />
                         }}
                       >
                         {msg.text || msg.message || ""}
