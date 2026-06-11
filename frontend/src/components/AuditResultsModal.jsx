@@ -49,7 +49,7 @@ export default function AuditResultsModal({ isOpen, results = {}, onReset, onBoo
     <AnimatePresence>
       <div style={{
         position: "fixed", inset: 0, zIndex: 100,
-        background: "rgba(2, 6, 23, 0.95)",
+        background: "rgba(255, 255, 255, 0.7)",
         backdropFilter: "blur(20px)",
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: "2rem", fontFamily: "'Inter', sans-serif"
@@ -59,38 +59,38 @@ export default function AuditResultsModal({ isOpen, results = {}, onReset, onBoo
           animate={{ opacity: 1, scale: 1, y: 0 }}
           style={{
             width: "100%", maxWidth: "600px",
-            background: "#0f172a", border: "1px solid rgba(59, 130, 246, 0.3)",
+            background: "#ffffff", border: "1px solid rgba(0, 0, 0, 0.06)",
             borderRadius: "16px", padding: "2.5rem",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.06)",
             position: "relative", overflow: "hidden"
           }}
         >
           {/* Background Glow */}
-          <div style={{ position: "absolute", top: "-50px", right: "-50px", width: "150px", height: "150px", background: "rgba(59, 130, 246, 0.15)", filter: "blur(60px)", borderRadius: "50%" }} />
+          <div style={{ position: "absolute", top: "-50px", right: "-50px", width: "150px", height: "150px", background: "rgba(59, 130, 246, 0.08)", filter: "blur(60px)", borderRadius: "50%" }} />
 
           <header style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-            <h2 style={{ color: "white", fontSize: "1.5rem", fontWeight: 800, letterSpacing: "1px", marginBottom: "0.5rem" }}>
+            <h2 style={{ color: "#0f172a", fontSize: "1.5rem", fontWeight: 800, letterSpacing: "1px", marginBottom: "0.5rem" }}>
               ASSESSMENT COMPLETE
             </h2>
-            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.85rem" }}>Your Incident Response Maturity Report</p>
+            <p style={{ color: "#64748b", fontSize: "0.85rem" }}>Your Incident Response Maturity Report</p>
           </header>
 
           {/* Main Score */}
-          <div style={{ display: "flex", alignItems: "center", gap: "2rem", marginBottom: "3rem", background: "rgba(255,255,255,0.03)", padding: "1.5rem", borderRadius: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "2rem", marginBottom: "3rem", background: "#f8fafc", border: "1px solid #e2e8f0", padding: "1.5rem", borderRadius: "12px" }}>
             <div style={{ position: "relative", width: "100px", height: "100px", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }} viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
+                <circle cx="50" cy="50" r="45" fill="transparent" stroke="rgba(15, 23, 42, 0.05)" strokeWidth="8" />
                 <motion.circle 
                   cx="50" cy="50" r="45" fill="transparent" stroke={maturity.color} strokeWidth="8" 
                   strokeDasharray="283" initial={{ strokeDashoffset: 283 }} animate={{ strokeDashoffset: 283 - (283 * overall / 100) }}
                   transition={{ duration: 1.5, ease: "easeOut" }}
                 />
               </svg>
-              <span style={{ fontSize: "1.5rem", fontWeight: 900, color: "white" }}>{overall}%</span>
+              <span style={{ fontSize: "1.5rem", fontWeight: 900, color: "#0f172a" }}>{overall}%</span>
             </div>
             <div>
               <div style={{ color: maturity.color, fontSize: "0.7rem", fontWeight: 900, letterSpacing: "2px", marginBottom: "4px" }}>STATUS: {maturity.label}</div>
-              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.85rem", lineHeight: "1.4" }}>
+              <div style={{ color: "#475569", fontSize: "0.85rem", lineHeight: "1.4" }}>
                 Vigil has identified several key areas for improvement in your IR posture.
               </div>
             </div>
@@ -103,11 +103,11 @@ export default function AuditResultsModal({ isOpen, results = {}, onReset, onBoo
               const pct = dScore.total === 0 ? 0 : Math.round((dScore.earned / dScore.total) * 100);
               return (
                 <div key={domain}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", fontSize: "0.7rem", fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: "1px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", fontSize: "0.7rem", fontWeight: 700, color: "#64748b", letterSpacing: "1px" }}>
                     <span>{domain.toUpperCase()}</span>
                     <span>{pct}%</span>
                   </div>
-                  <div style={{ height: "4px", background: "rgba(255,255,255,0.05)", borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{ height: "4px", background: "#e2e8f0", borderRadius: "2px", overflow: "hidden" }}>
                     <motion.div 
                       initial={{ width: 0 }} animate={{ width: `${pct}%` }} 
                       transition={{ duration: 1, delay: 0.2 }}
@@ -126,7 +126,7 @@ export default function AuditResultsModal({ isOpen, results = {}, onReset, onBoo
               style={{
                 background: "#3b82f6", color: "white", border: "none",
                 padding: "1rem", borderRadius: "8px", fontWeight: "bold",
-                cursor: "pointer", fontSize: "0.9rem", boxShadow: "0 10px 15px -3px rgba(59, 130, 246, 0.3)"
+                cursor: "pointer", fontSize: "0.9rem", boxShadow: "0 4px 12px rgba(59, 130, 246, 0.25)"
               }}
             >
               SCHEDULE EXPERT CONSULTATION
@@ -134,10 +134,12 @@ export default function AuditResultsModal({ isOpen, results = {}, onReset, onBoo
             <button 
               onClick={onReset}
               style={{
-                background: "transparent", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.1)",
+                background: "#ffffff", color: "#475569", border: "1px solid #cbd5e1",
                 padding: "0.8rem", borderRadius: "8px", fontWeight: "bold",
-                cursor: "pointer", fontSize: "0.8rem"
+                cursor: "pointer", fontSize: "0.8rem", transition: "all 0.2s"
               }}
+              onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"}
+              onMouseLeave={e => e.currentTarget.style.background = "#ffffff"}
             >
               RETURN TO HUB
             </button>

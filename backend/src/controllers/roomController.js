@@ -15,6 +15,12 @@ import { spawn } from 'child_process';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const getPythonPath = () => {
+  const isWindows = process.platform === "win32";
+  const pythonExec = isWindows ? "venv/Scripts/python.exe" : "venv/bin/python";
+  return path.resolve(__dirname, `../../../python-agent/${pythonExec}`);
+};
+
 const ROOM_NAME  = "ai_room_MURALI";
 const AGENT_NAME = "AURA";
 const USER_ID    = "MURALI";
@@ -133,7 +139,7 @@ export const deployShadow = async (req, res) => {
   console.log(`[HTTP_CONTROLLER] --> POST /deploy-shadow | URL: ${url}`);
   
   try {
-    const pythonPath = path.resolve(__dirname, "../../../python-agent/venv/Scripts/python.exe");
+    const pythonPath = getPythonPath();
     const scriptPath = path.resolve(__dirname, "../../../python-agent/agents/shadow_agent/shadow_bot.py");
     
     console.log(`[HTTP_CONTROLLER] Spawning Shadow Bot background process...`);
@@ -165,7 +171,7 @@ export const getWeather = async (req, res) => {
     const url = `https://www.weatherunion.com/gw/weather/external/v0/get_weather_data?latitude=${latitude}&longitude=${longitude}`;
     const response = await fetch(url, {
       headers: {
-        "X-Zomato-Api-Key": "f2751361b695deef5c9f03f5a7f33bc9"
+        "X-Zomato-Api-Key": process.env.ZOMATO_API_KEY || "f2751361b695deef5c9f03f5a7f33bc9"
       }
     });
 
@@ -184,7 +190,7 @@ export const getWeather = async (req, res) => {
 // --- Agent aivyuh Security Controller Operations ---
 const runScanner = (args) => {
   return new Promise((resolve, reject) => {
-    const pythonPath = path.resolve(__dirname, "../../../python-agent/venv/Scripts/python.exe");
+    const pythonPath = getPythonPath();
     const scannerPath = path.resolve(__dirname, "../../../python-agent/agents/aivyuh/scanner.py");
     
     console.log(`[SECURITY] Running scanner: ${pythonPath} ${scannerPath} ${args.join(" ")}`);
@@ -262,7 +268,7 @@ export const triggerReels = async (req, res) => {
   }
   
   try {
-    const pythonPath = path.resolve(__dirname, "../../../python-agent/venv/Scripts/python.exe");
+    const pythonPath = getPythonPath();
     const scriptName = agentType === "face" ? "reels_face_agent.py" : "reels_agent.py";
     const scriptPath = path.resolve(__dirname, `../../../python-agent/agents/reels/${scriptName}`);
     

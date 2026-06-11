@@ -31,14 +31,15 @@ const CollapsiblePre = ({ children, ...props }) => {
     return (
       <pre 
         style={{ 
-          background: "#1f2937", 
-          color: "#f8fafc", 
+          background: "#f8fafc", 
+          color: "#0f172a", 
           padding: "10px", 
           borderRadius: "8px", 
           overflowX: "auto", 
           margin: "8px 0", 
-          fontFamily: "'Courier New', Courier, monospace", 
-          fontSize: "0.8rem"
+          fontFamily: "'JetBrains Mono', monospace", 
+          fontSize: "0.8rem",
+          border: "1px solid #cbd5e1"
         }} 
         {...props}
       >
@@ -49,12 +50,12 @@ const CollapsiblePre = ({ children, ...props }) => {
 
   return (
     <div style={{
-      border: "1px solid rgba(255, 255, 255, 0.08)",
+      border: "1px solid #cbd5e1",
       borderRadius: "12px",
       margin: "14px 0",
-      backgroundColor: "#030712",
+      backgroundColor: "#ffffff",
       overflow: "hidden",
-      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.03)"
     }}>
       <div 
         onClick={() => setIsExpanded(!isExpanded)}
@@ -63,26 +64,26 @@ const CollapsiblePre = ({ children, ...props }) => {
           justifyContent: "space-between",
           alignItems: "center",
           padding: "10px 16px",
-          backgroundColor: "#0f172a",
+          backgroundColor: "#f1f5f9",
           cursor: "pointer",
           userSelect: "none",
-          borderBottom: isExpanded ? "1px solid rgba(255,255,255,0.08)" : "none",
+          borderBottom: isExpanded ? "1px solid #cbd5e1" : "none",
           transition: "background-color 0.2s"
         }}
-        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#1e293b"}
-        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#0f172a"}
+        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e2e8f0"}
+        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#f1f5f9"}
       >
-        <span style={{ fontSize: "0.85rem", color: "#38bdf8", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ fontSize: "0.85rem", color: "#0284c7", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
           🖥️ Diagnostics Log Output ({lineCount} lines)
         </span>
-        <span style={{ fontSize: "0.75rem", color: "#94a3b8", display: "flex", alignItems: "center", gap: "4px" }}>
+        <span style={{ fontSize: "0.75rem", color: "#64748b", display: "flex", alignItems: "center", gap: "4px" }}>
           {isExpanded ? "Click to collapse ▲" : "Click to expand ▼"}
         </span>
       </div>
       {isExpanded && (
         <pre 
           style={{ 
-            backgroundColor: "#020617", 
+            backgroundColor: "#f8fafc", 
             padding: "14px", 
             overflowX: "auto", 
             margin: 0,
@@ -90,7 +91,7 @@ const CollapsiblePre = ({ children, ...props }) => {
             overflowY: "auto",
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: "0.85rem",
-            color: "#cbd5e1"
+            color: "#0f172a"
           }} 
           {...props}
         >
@@ -516,8 +517,8 @@ export default function DevopsOrb() {
             width: "72px",
             height: "72px",
             background: hasError 
-              ? "radial-gradient(circle at 30% 30%, #fca5a5 0%, #ef4444 30%, #991b1b 70%, #450a0a 100%)" // 3D Core Red
-              : "radial-gradient(circle at 30% 30%, #6ee7b7 0%, #10b981 30%, #047857 70%, #022c22 100%)", // 3D Core Green
+              ? "radial-gradient(circle at 30% 30%, #fca5a5 0%, #ef4444 40%, #b91c1c 100%)" // 3D Core Red
+              : "radial-gradient(circle at 30% 30%, #a7f3d0 0%, #10b981 40%, #047857 100%)", // 3D Core Green
             borderRadius: "50%",
             display: "flex",
             justifyContent: "center",
@@ -528,7 +529,7 @@ export default function DevopsOrb() {
             cursor: "pointer",
             transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
             animation: hasError ? "pulse-red-3d 1.5s infinite" : "none",
-            border: "1px solid rgba(255,255,255,0.1)"
+            border: "1px solid rgba(0,0,0,0.05)"
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "scale(1.1) rotate(5deg)";

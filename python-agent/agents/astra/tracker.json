@@ -1,29 +1,14 @@
 {
-    "current_day": 9,
+    "current_day": 1,
     "total_days": 10,
-    "start_date": "2026-06-03",
-    "last_published_date": "2026-06-08",
-    "published_slugs": [
-        "rethinking-ai-architectures-agent-execution",
-        "vector-policy-optimization-in-agentic-architecture",
-        "ai-revolutionizing-patient-care-healthcare",
-        "human-ai-workplace-collaboration",
-        "navigating-future-marketing-ai",
-        "impact-of-ai-on-electric-vehicle-manufacturing",
-        "unleashing-ai-potential-in-business",
-        "from-demo-to-production-agent-systems",
-        "transforming-legal-workflows-with-autonomous-swarms",
-        "applying-ai-research-to-create-autonomous-agents",
-        "how-nvidia-humanoid-robot-is-transforming-industries",
-        "hybrid-light-matter-ai-computing",
-        "ai-agent-swarms-revolutionizing-logistics",
-        "building-resilience-lessons-from-deploying-custom-ai-swarms"
-    ],
+    "start_date": "2026-06-10",
+    "last_published_date": null,
+    "published_slugs": [],
     "cumulative_usage": {
-        "input_tokens": 226352,
-        "output_tokens": 19886,
-        "total_cost": 0.5510849999999998,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_cost": 0.0,
         "stt_cost": 0.0,
-        "tts_cost": 0.02592
+        "tts_cost": 0.0
     }
 }

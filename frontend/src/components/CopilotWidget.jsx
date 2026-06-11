@@ -65,7 +65,9 @@ const CopilotWidget = () => {
     const activeSession = sessionId || sessionStorage.getItem("swarm_copilot_session_id");
     if (activeSession) {
       try {
-        await axios.post(`${API_URL}/api/copilot/session/clear`, { sessionId: activeSession });
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        await axios.post(`${API_URL}/copilot/session/clear`, { sessionId: activeSession }, { headers });
       } catch (e) {
         console.error("Failed to clear session on backend:", e);
       }
@@ -89,10 +91,19 @@ const CopilotWidget = () => {
     const handleUnload = () => {
       const savedSession = sessionStorage.getItem("swarm_copilot_session_id");
       if (savedSession) {
-        const url = `${API_URL}/api/copilot/session/clear`;
-        const headers = { type: 'application/json' };
-        const blob = new Blob([JSON.stringify({ sessionId: savedSession })], headers);
-        navigator.sendBeacon(url, blob);
+        const url = `${API_URL}/copilot/session/clear`;
+        const token = localStorage.getItem("token");
+        
+        // Use fetch with keepalive to send authenticated request during unload
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ sessionId: savedSession }),
+          keepalive: true
+        }).catch(err => console.error("Session cleanup failed on unload:", err));
       }
     };
     window.addEventListener("beforeunload", handleUnload);
@@ -117,11 +128,15 @@ const CopilotWidget = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/copilot/chat`, {
+      const token = localStorage.getItem("token");
+      const headers = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      };
+
+      const response = await fetch(`${API_URL}/copilot/chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers,
         body: JSON.stringify({ query: queryText, sessionId: sessionId })
       });
 

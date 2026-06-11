@@ -22,15 +22,15 @@ import {
 } from "lucide-react";
 
 const COLORS = {
-  bgDark: "#050914",
-  panelDark: "#0c1328",
-  borderCyan: "rgba(6, 182, 212, 0.2)",
-  cyanGlow: "#06b6d4",
-  warnYellow: "#f59e0b",
-  errRed: "#ef4444",
-  textGreen: "#10b981",
+  bgDark: "#ffffff",
+  panelDark: "#f8fafc",
+  borderCyan: "#cbd5e1",
+  cyanGlow: "#0284c7",
+  warnYellow: "#d97706",
+  errRed: "#dc2626",
+  textGreen: "#16a34a",
   textMuted: "#64748b",
-  textLight: "#f8fafc"
+  textLight: "#0f172a"
 };
 
 // Log Parser helper for color coding
@@ -327,7 +327,7 @@ function OctaneScene({ roomData, onLeave }) {
         overflow: "hidden",
         borderRadius: "12px",
         border: "1px solid #cbd5e1",
-        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)",
         background: COLORS.bgDark 
       }}>
         
@@ -360,10 +360,10 @@ function OctaneScene({ roomData, onLeave }) {
                   onClick={() => selectContainer(cont.name)}
                   style={{
                     padding: "10px 12px",
-                    background: activeContainer === cont.name ? "rgba(6, 182, 212, 0.12)" : "rgba(255, 255, 255, 0.02)",
-                    border: `1px solid ${activeContainer === cont.name ? COLORS.cyanGlow : "rgba(255, 255, 255, 0.08)"}`,
+                    background: activeContainer === cont.name ? "rgba(2, 132, 199, 0.08)" : "#ffffff",
+                    border: `1px solid ${activeContainer === cont.name ? COLORS.cyanGlow : "#cbd5e1"}`,
                     borderRadius: "8px",
-                    color: activeContainer === cont.name ? COLORS.cyanGlow : COLORS.textLight,
+                    color: activeContainer === cont.name ? COLORS.cyanGlow : "#334155",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
@@ -373,10 +373,10 @@ function OctaneScene({ roomData, onLeave }) {
                     transition: "all 0.25s"
                   }}
                   onMouseEnter={e => {
-                    if (activeContainer !== cont.name) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                    if (activeContainer !== cont.name) e.currentTarget.style.background = "#f1f5f9";
                   }}
                   onMouseLeave={e => {
-                    if (activeContainer !== cont.name) e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+                    if (activeContainer !== cont.name) e.currentTarget.style.background = "#ffffff";
                   }}
                 >
                   {cont.icon}
@@ -403,8 +403,8 @@ function OctaneScene({ roomData, onLeave }) {
                   onClick={() => setSeverityFilter(f.type)}
                   style={{
                     padding: "8px",
-                    background: severityFilter === f.type ? "rgba(255,255,255,0.08)" : "transparent",
-                    border: `1px solid ${severityFilter === f.type ? "rgba(255,255,255,0.2)" : "rgba(255, 255, 255, 0.08)"}`,
+                    background: severityFilter === f.type ? "rgba(15, 23, 42, 0.05)" : "transparent",
+                    border: `1px solid ${severityFilter === f.type ? "rgba(15, 23, 42, 0.15)" : "rgba(15, 23, 42, 0.05)"}`,
                     borderRadius: "6px",
                     color: f.color,
                     cursor: "pointer",
@@ -451,8 +451,8 @@ function OctaneScene({ roomData, onLeave }) {
                 onClick={() => setLogs([])}
                 style={{
                   padding: "10px",
-                  background: "rgba(255,255,255,0.02)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
                   color: COLORS.textLight,
                   borderRadius: "8px",
                   fontWeight: "700",
@@ -464,6 +464,8 @@ function OctaneScene({ roomData, onLeave }) {
                   gap: "8px",
                   transition: "all 0.2s"
                 }}
+                onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"}
+                onMouseLeave={e => e.currentTarget.style.background = "#ffffff"}
               >
                 <Trash2 size={12} />
                 Clear View
@@ -472,7 +474,7 @@ function OctaneScene({ roomData, onLeave }) {
           </div>
 
           {/* Speech Suggestions Desk */}
-          <div style={{ marginTop: "auto", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "16px" }}>
+          <div style={{ marginTop: "auto", borderTop: "1px solid #cbd5e1", paddingTop: "16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", color: COLORS.cyanGlow, marginBottom: "8px" }}>
               <Cpu size={12} />
               <span style={{ fontSize: "0.65rem", fontWeight: "900", letterSpacing: "1px" }}>OCTANE PROMPTS</span>
@@ -490,11 +492,11 @@ function OctaneScene({ roomData, onLeave }) {
                   key={i} 
                   style={{ 
                     padding: "6px 8px", 
-                    background: "rgba(255,255,255,0.02)", 
-                    border: "1px solid rgba(255,255,255,0.04)", 
+                    background: "#ffffff", 
+                    border: "1px solid #e2e8f0", 
                     borderRadius: "6px", 
                     fontSize: "0.65rem", 
-                    color: "rgba(255,255,255,0.5)",
+                    color: "#64748b",
                     fontStyle: "italic"
                   }}
                 >
@@ -509,15 +511,15 @@ function OctaneScene({ roomData, onLeave }) {
         <main style={{
           display: "flex",
           flexDirection: "column",
-          background: "#03060f",
+          background: "#f8fafc",
           overflow: "hidden"
         }}>
           {/* Console Header search bar controls */}
           <div style={{
             flexShrink: 0,
             height: "55px",
-            background: "rgba(10,18,35,0.3)",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
+            background: "#f1f5f9",
+            borderBottom: "1px solid #cbd5e1",
             padding: "0 20px",
             display: "flex",
             alignItems: "center",
@@ -525,7 +527,7 @@ function OctaneScene({ roomData, onLeave }) {
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <Terminal size={14} color={COLORS.cyanGlow} />
-              <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", fontWeight: "600", fontFamily: "monospace" }}>
+              <span style={{ fontSize: "0.75rem", color: "#475569", fontWeight: "600", fontFamily: "monospace" }}>
                 bash - octane_observer@{activeContainer}:~
               </span>
             </div>
@@ -534,8 +536,8 @@ function OctaneScene({ roomData, onLeave }) {
             <div style={{
               display: "flex",
               alignItems: "center",
-              background: "rgba(255, 255, 255, 0.03)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              background: "#ffffff",
+              border: "1px solid #cbd5e1",
               borderRadius: "6px",
               padding: "4px 10px",
               width: "280px",
@@ -579,17 +581,17 @@ function OctaneScene({ roomData, onLeave }) {
             flex: 1,
             overflowY: "auto",
             padding: "20px",
-            fontFamily: "'Courier New', Courier, monospace",
+            fontFamily: "'JetBrains Mono', 'Courier New', Courier, monospace",
             fontSize: "0.8rem",
             lineHeight: "1.5",
-            color: "rgba(255,255,255,0.85)"
+            color: "#334155"
           }}>
             <div style={{ color: COLORS.textMuted, marginBottom: "12px", fontSize: "0.75rem" }}>
               [SYSTEM] Telemetry pipeline established. Output terminal ready.
             </div>
 
             {filteredLogs.length === 0 ? (
-              <div style={{ color: "rgba(255,255,255,0.25)", fontStyle: "italic", textAlign: "center", marginTop: "40px" }}>
+              <div style={{ color: "#94a3b8", fontStyle: "italic", textAlign: "center", marginTop: "40px" }}>
                 {logs.length === 0 ? "Waiting for container log lines..." : "No logs match the current search filters."}
               </div>
             ) : (
@@ -626,8 +628,8 @@ function OctaneScene({ roomData, onLeave }) {
           <div style={{
             flexShrink: 0,
             height: "30px",
-            background: "rgba(10,18,35,0.5)",
-            borderTop: "1px solid rgba(255,255,255,0.05)",
+            background: "#f1f5f9",
+            borderTop: "1px solid #cbd5e1",
             padding: "0 20px",
             display: "flex",
             alignItems: "center",

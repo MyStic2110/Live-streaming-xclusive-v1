@@ -29,14 +29,14 @@ const CollapsiblePre = ({ children, ...props }) => {
     return (
       <pre 
         style={{ 
-          backgroundColor: "#020617", 
-          border: "1px solid rgba(255,255,255,0.08)", 
+          backgroundColor: "#f8fafc", 
+          border: "1px solid #cbd5e1", 
           borderRadius: "12px", 
           padding: "14px", 
           overflowX: "auto", 
           margin: "14px 0",
           fontFamily: "'JetBrains Mono', monospace",
-          color: "#cbd5e1"
+          color: "#0f172a"
         }} 
         {...props}
       >
@@ -47,12 +47,12 @@ const CollapsiblePre = ({ children, ...props }) => {
 
   return (
     <div style={{
-      border: "1px solid rgba(255, 255, 255, 0.08)",
+      border: "1px solid #cbd5e1",
       borderRadius: "12px",
       margin: "14px 0",
-      backgroundColor: "#030712",
+      backgroundColor: "#ffffff",
       overflow: "hidden",
-      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.03)"
     }}>
       <div 
         onClick={() => setIsExpanded(!isExpanded)}
@@ -61,26 +61,26 @@ const CollapsiblePre = ({ children, ...props }) => {
           justifyContent: "space-between",
           alignItems: "center",
           padding: "10px 16px",
-          backgroundColor: "#0f172a",
+          backgroundColor: "#f1f5f9",
           cursor: "pointer",
           userSelect: "none",
-          borderBottom: isExpanded ? "1px solid rgba(255,255,255,0.08)" : "none",
+          borderBottom: isExpanded ? "1px solid #cbd5e1" : "none",
           transition: "background-color 0.2s"
         }}
-        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#1e293b"}
-        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#0f172a"}
+        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e2e8f0"}
+        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#f1f5f9"}
       >
-        <span style={{ fontSize: "0.85rem", color: "#38bdf8", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ fontSize: "0.85rem", color: "#2563eb", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
           🖥️ Diagnostics Log Output ({lineCount} lines)
         </span>
-        <span style={{ fontSize: "0.75rem", color: "#94a3b8", display: "flex", alignItems: "center", gap: "4px" }}>
+        <span style={{ fontSize: "0.75rem", color: "#64748b", display: "flex", alignItems: "center", gap: "4px" }}>
           {isExpanded ? "Click to collapse ▲" : "Click to expand ▼"}
         </span>
       </div>
       {isExpanded && (
         <pre 
           style={{ 
-            backgroundColor: "#020617", 
+            backgroundColor: "#f8fafc", 
             padding: "14px", 
             overflowX: "auto", 
             margin: 0,
@@ -88,7 +88,7 @@ const CollapsiblePre = ({ children, ...props }) => {
             overflowY: "auto",
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: "0.85rem",
-            color: "#cbd5e1"
+            color: "#0f172a"
           }} 
           {...props}
         >
@@ -397,9 +397,9 @@ function DashboardPage({ onBack }) {
     <div
       style={{
         minHeight: "100vh",
-        background: "#0b0f19",
-        backgroundImage: "radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 45%), radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 45%)",
-        color: "#f1f5f9",
+        background: "#f8fafc",
+        backgroundImage: "radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 45%), radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 45%)",
+        color: "#0f172a",
         fontFamily: "'Outfit', sans-serif",
         padding: "2rem 6%",
         boxSizing: "border-box",
@@ -413,7 +413,7 @@ function DashboardPage({ onBack }) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          borderBottom: "1px solid rgba(0,0,0,0.06)",
           paddingBottom: "1.5rem"
         }}
       >
@@ -421,18 +421,18 @@ function DashboardPage({ onBack }) {
           <img
             src="/logo.jpeg"
             alt="Swarm Logo"
-            style={{ height: "48px", width: "48px", borderRadius: "12px", objectFit: "cover", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}
+            style={{ height: "48px", width: "48px", borderRadius: "12px", objectFit: "cover", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
           />
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "0.65rem", background: "rgba(139, 92, 246, 0.15)", color: "#a78bfa", padding: "2px 8px", borderRadius: "4px", fontWeight: "900", letterSpacing: "1.5px" }}>
+              <span style={{ fontSize: "0.65rem", background: "rgba(139, 92, 246, 0.1)", color: "#7c3aed", padding: "2px 8px", borderRadius: "4px", fontWeight: "900", letterSpacing: "1.5px" }}>
                 SWARM OBSERVABILITY
               </span>
-              <span style={{ fontSize: "0.65rem", background: "rgba(59, 130, 246, 0.15)", color: "#60a5fa", padding: "2px 8px", borderRadius: "4px", fontWeight: "900", letterSpacing: "1px" }}>
+              <span style={{ fontSize: "0.65rem", background: "rgba(59, 130, 246, 0.1)", color: "#2563eb", padding: "2px 8px", borderRadius: "4px", fontWeight: "900", letterSpacing: "1px" }}>
                 LLM TELEMETRY
               </span>
             </div>
-            <h1 style={{ fontSize: "1.9rem", fontWeight: "800", margin: "4px 0 0 0", color: "#ffffff", letterSpacing: "-0.5px" }}>
+            <h1 style={{ fontSize: "1.9rem", fontWeight: "800", margin: "4px 0 0 0", color: "#0f172a", letterSpacing: "-0.5px" }}>
               LLM Trace Cockpit
             </h1>
           </div>
@@ -442,17 +442,17 @@ function DashboardPage({ onBack }) {
           onClick={onBack}
           style={{
             padding: "0.75rem 1.5rem",
-            background: "rgba(255, 255, 255, 0.03)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            background: "#ffffff",
+            border: "1px solid #cbd5e1",
             borderRadius: "12px",
-            color: "#f8fafc",
+            color: "#0f172a",
             fontWeight: "600",
             cursor: "pointer",
             fontSize: "0.85rem",
             transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+          onMouseEnter={e => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.borderColor = "#94a3b8"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.borderColor = "#cbd5e1"; }}
         >
           ← Back to HQ
         </button>
@@ -460,57 +460,57 @@ function DashboardPage({ onBack }) {
 
       {/* Grid of Global Stats */}
       <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.5rem" }}>
-        <div style={{ background: "rgba(255,255,255,0.02)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem" }}>
-          <div style={{ background: "rgba(59, 130, 246, 0.08)", color: "#60a5fa", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>⚡</div>
+        <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02)" }}>
+          <div style={{ background: "rgba(59, 130, 246, 0.08)", color: "#2563eb", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>⚡</div>
           <div>
-            <div style={{ fontSize: "0.7rem", color: "#94a3b8", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Total Requests</div>
-            <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#ffffff", lineHeight: "1.2" }}>{stats.totalRequests}</div>
+            <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Total Requests</div>
+            <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#0f172a", lineHeight: "1.2" }}>{stats.totalRequests}</div>
           </div>
         </div>
 
-        <div style={{ background: "rgba(255,255,255,0.02)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem" }}>
-          <div style={{ background: "rgba(16, 185, 129, 0.08)", color: "#34d399", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>💵</div>
+        <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02)" }}>
+          <div style={{ background: "rgba(16, 185, 129, 0.08)", color: "#059669", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>💵</div>
           <div>
-            <div style={{ fontSize: "0.7rem", color: "#94a3b8", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Combined Spend</div>
+            <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Combined Spend</div>
             <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#10b981", lineHeight: "1.2", fontFamily: "monospace" }}>${stats.totalSpend}</div>
           </div>
         </div>
 
-        <div style={{ background: "rgba(255,255,255,0.02)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem" }}>
-          <div style={{ background: "rgba(139, 92, 246, 0.08)", color: "#a78bfa", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>📊</div>
+        <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02)" }}>
+          <div style={{ background: "rgba(139, 92, 246, 0.08)", color: "#7c3aed", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>📊</div>
           <div>
-            <div style={{ fontSize: "0.7rem", color: "#94a3b8", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Total Tokens</div>
-            <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#f8fafc", lineHeight: "1.2", fontFamily: "monospace" }}>{stats.totalTokens}</div>
+            <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Total Tokens</div>
+            <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#0f172a", lineHeight: "1.2", fontFamily: "monospace" }}>{stats.totalTokens}</div>
           </div>
         </div>
 
-        <div style={{ background: "rgba(255,255,255,0.02)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem" }}>
-          <div style={{ background: "rgba(245, 158, 11, 0.08)", color: "#fbbf24", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>📈</div>
+        <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02)" }}>
+          <div style={{ background: "rgba(245, 158, 11, 0.08)", color: "#d97706", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>📈</div>
           <div>
-            <div style={{ fontSize: "0.7rem", color: "#94a3b8", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Avg Cost / Run</div>
+            <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Avg Cost / Run</div>
             <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#fbbf24", lineHeight: "1.2", fontFamily: "monospace" }}>${stats.avgCost}</div>
           </div>
         </div>
 
-        <div style={{ background: "rgba(255,255,255,0.02)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem" }}>
-          <div style={{ background: "rgba(239, 68, 68, 0.08)", color: "#f87171", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>⏱️</div>
+        <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02)" }}>
+          <div style={{ background: "rgba(239, 68, 68, 0.08)", color: "#dc2626", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>⏱️</div>
           <div>
-            <div style={{ fontSize: "0.7rem", color: "#94a3b8", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Avg Latency</div>
-            <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#f87171", lineHeight: "1.2", fontFamily: "monospace" }}>{stats.avgLatency}ms</div>
+            <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Avg Latency</div>
+            <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#ef4444", lineHeight: "1.2", fontFamily: "monospace" }}>{stats.avgLatency}ms</div>
           </div>
         </div>
 
-        <div style={{ background: "rgba(255,255,255,0.02)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem" }}>
-          <div style={{ background: "rgba(6, 182, 212, 0.08)", color: "#22d3ee", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>🚀</div>
+        <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02)" }}>
+          <div style={{ background: "rgba(6, 182, 212, 0.08)", color: "#0891b2", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>🚀</div>
           <div>
-            <div style={{ fontSize: "0.7rem", color: "#94a3b8", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Avg Speed</div>
-            <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#22d3ee", lineHeight: "1.2", fontFamily: "monospace" }}>{stats.avgSpeed} t/s</div>
+            <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Avg Speed</div>
+            <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#0891b2", lineHeight: "1.2", fontFamily: "monospace" }}>{stats.avgSpeed} t/s</div>
           </div>
         </div>
       </section>
 
       {/* Filters and Controls */}
-      <section style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", padding: "10px 16px", borderRadius: "14px" }}>
+      <section style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", padding: "10px 16px", borderRadius: "14px", boxShadow: "0 2px 4px rgba(0,0,0,0.01)" }}>
         <div style={{ display: "flex", gap: "8px" }}>
           {["all", "completed"].map(type => (
             <button
@@ -525,8 +525,8 @@ function DashboardPage({ onBack }) {
                 textTransform: "uppercase",
                 letterSpacing: "0.5px",
                 cursor: "pointer",
-                background: filter === type ? "rgba(139, 92, 246, 0.2)" : "transparent",
-                color: filter === type ? "#c084fc" : "#94a3b8",
+                background: filter === type ? "rgba(124, 58, 237, 0.1)" : "transparent",
+                color: filter === type ? "#7c3aed" : "#64748b",
                 transition: "all 0.2s"
               }}
             >
@@ -545,15 +545,15 @@ function DashboardPage({ onBack }) {
                 padding: "6px 12px",
                 borderRadius: "8px",
                 border: "1px solid rgba(239, 68, 68, 0.25)",
-                background: "rgba(239, 68, 68, 0.08)",
-                color: "#f87171",
+                background: "rgba(239, 68, 68, 0.05)",
+                color: "#dc2626",
                 fontWeight: "700",
                 fontSize: "0.72rem",
                 cursor: "pointer",
                 transition: "all 0.2s"
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.18)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.12)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.05)"; }}
             >
               🗑 Clear Telemetry Logs
             </button>
@@ -564,7 +564,7 @@ function DashboardPage({ onBack }) {
       {/* Live Logs Stream */}
       <section style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
         {filteredTraces.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "6rem", background: "rgba(255,255,255,0.01)", border: "1.5px dashed rgba(255,255,255,0.05)", borderRadius: "20px", color: "#475569" }}>
+          <div style={{ textAlign: "center", padding: "6rem", background: "#ffffff", border: "1.5px dashed #cbd5e1", borderRadius: "20px", color: "#64748b" }}>
             <span style={{ fontSize: "2rem", display: "block", marginBottom: "8px" }}>📡</span>
             No traces recorded. Engage an agent to stream live telemetry.
           </div>
@@ -583,15 +583,14 @@ function DashboardPage({ onBack }) {
               <div
                 key={trace.run_id}
                 style={{
-                  background: "rgba(255,255,255,0.01)",
-                  backdropFilter: "blur(16px)",
-                  border: `1.5px solid ${isStreaming ? "rgba(139, 92, 246, 0.3)" : isFailed ? "rgba(239, 68, 68, 0.3)" : "rgba(255, 255, 255, 0.05)"}`,
+                  background: "#ffffff",
+                  border: `1.5px solid ${isStreaming ? "rgba(124, 58, 237, 0.3)" : isFailed ? "rgba(239, 68, 68, 0.3)" : "rgba(0,0,0,0.06)"}`,
                   borderRadius: "20px",
                   padding: "1.5rem",
                   display: "flex",
                   flexDirection: "column",
                   gap: "1.2rem",
-                  boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.015)",
                   transition: "border-color 0.3s ease"
                 }}
               >
@@ -601,28 +600,28 @@ function DashboardPage({ onBack }) {
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                       {trace.agent && (
-                        <span style={{ fontSize: "0.6rem", background: "rgba(139,92,246,0.12)", color: "#a78bfa", padding: "2px 7px", borderRadius: "4px", fontWeight: "800", letterSpacing: "0.5px", fontFamily: "monospace" }}>
+                        <span style={{ fontSize: "0.6rem", background: "rgba(124, 58, 237, 0.1)", color: "#7c3aed", padding: "2px 7px", borderRadius: "4px", fontWeight: "800", letterSpacing: "0.5px", fontFamily: "monospace" }}>
                           {trace.agent}
                         </span>
                       )}
-                      <span style={{ fontSize: "0.65rem", background: "rgba(59,130,246,0.15)", color: "#60a5fa", padding: "2px 6px", borderRadius: "4px", fontWeight: "900", fontFamily: "monospace" }}>
+                      <span style={{ fontSize: "0.65rem", background: "rgba(59, 130, 246, 0.1)", color: "#2563eb", padding: "2px 6px", borderRadius: "4px", fontWeight: "900", fontFamily: "monospace" }}>
                         {trace.model}
                       </span>
-                      <span style={{ color: "#475569", fontSize: "0.75rem" }}>•</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "0.75rem" }}>•</span>
                       <span style={{ color: "#64748b", fontSize: "0.75rem", fontWeight: "600" }}>{dateStr}</span>
                       {isStreaming && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(139,92,246,0.15)", padding: "2px 8px", borderRadius: "10px", border: "1px solid rgba(139,92,246,0.2)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(124, 58, 237, 0.15)", padding: "2px 8px", borderRadius: "10px", border: "1px solid rgba(124, 58, 237, 0.2)" }}>
                           <span className="live-dot" style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#a855f7", boxShadow: "0 0 8px #a855f7", display: "inline-block" }} />
-                          <span style={{ fontSize: "0.6rem", fontWeight: "800", color: "#c084fc", letterSpacing: "0.5px" }}>STREAMING</span>
+                          <span style={{ fontSize: "0.6rem", fontWeight: "800", color: "#7c3aed", letterSpacing: "0.5px" }}>STREAMING</span>
                         </div>
                       )}
                       {isFailed && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(239, 68, 68, 0.15)", padding: "2px 8px", borderRadius: "10px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
-                          <span style={{ fontSize: "0.6rem", fontWeight: "800", color: "#f87171", letterSpacing: "0.5px" }}>FAILED: {trace.error_code}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(239, 68, 68, 0.1)", padding: "2px 8px", borderRadius: "10px", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+                          <span style={{ fontSize: "0.6rem", fontWeight: "800", color: "#dc2626", letterSpacing: "0.5px" }}>FAILED: {trace.error_code}</span>
                         </div>
                       )}
                     </div>
-                    <div style={{ fontSize: "0.65rem", color: "#475569", fontFamily: "monospace" }}>
+                    <div style={{ fontSize: "0.65rem", color: "#64748b", fontFamily: "monospace" }}>
                       Run ID: {trace.run_id}
                     </div>
                   </div>
@@ -631,16 +630,16 @@ function DashboardPage({ onBack }) {
                   <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: "0.6rem", color: "#64748b", fontWeight: "700" }}>TOKENS</div>
-                      <div style={{ fontSize: "0.95rem", fontWeight: "900", fontFamily: "monospace", color: "#f8fafc" }}>
+                      <div style={{ fontSize: "0.95rem", fontWeight: "900", fontFamily: "monospace", color: "#0f172a" }}>
                         {isStreaming ? "Calculating..." : isFailed ? "N/A" : (
                           trace.cum_prompt_tokens > 0 ? (trace.cum_prompt_tokens + trace.cum_completion_tokens) : totalTokens
                         )}
                       </div>
                     </div>
-                    <div style={{ width: "1px", height: "24px", background: "rgba(255,255,255,0.08)" }} />
+                    <div style={{ width: "1px", height: "24px", background: "rgba(0,0,0,0.06)" }} />
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: "0.6rem", color: "#64748b", fontWeight: "700" }}>TRANSACTION COST</div>
-                      <div style={{ fontSize: "0.95rem", fontWeight: "900", fontFamily: "monospace", color: isStreaming ? "#a78bfa" : isFailed ? "#f87171" : "#10b981" }}>
+                      <div style={{ fontSize: "0.95rem", fontWeight: "900", fontFamily: "monospace", color: isStreaming ? "#7c3aed" : isFailed ? "#dc2626" : "#059669" }}>
                         {isStreaming ? "Streaming..." : isFailed ? "N/A" : (
                           `$${(trace.cum_total_cost > 0 ? trace.cum_total_cost : trace.total_cost).toFixed(6)}`
                         )}
@@ -655,11 +654,11 @@ function DashboardPage({ onBack }) {
                   <button
                     onClick={() => setExpandedTrace(expandedTrace === trace.run_id ? null : trace.run_id)}
                     style={{
-                      background: "rgba(255,255,255,0.02)",
-                      border: "1px solid rgba(255,255,255,0.05)",
+                      background: "#ffffff",
+                      border: "1px solid #cbd5e1",
                       padding: "8px 14px",
                       borderRadius: "8px",
-                      color: "#94a3b8",
+                      color: "#64748b",
                       fontSize: "0.75rem",
                       fontWeight: "700",
                       cursor: "pointer",
@@ -668,9 +667,11 @@ function DashboardPage({ onBack }) {
                       gap: "6px",
                       transition: "all 0.2s"
                     }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"}
+                    onMouseLeave={e => e.currentTarget.style.background = "#ffffff"}
                   >
                     <span>{expandedTrace === trace.run_id ? "Hide Prompt Context" : "Inspect Prompt Context"}</span>
-                    <span style={{ fontSize: "0.7rem", color: "#64748b" }}>
+                    <span style={{ fontSize: "0.7rem", color: "#94a3b8" }}>
                       ({trace.inputs ? trace.inputs.length : 0} items)
                     </span>
                   </button>
@@ -678,8 +679,8 @@ function DashboardPage({ onBack }) {
                   {expandedTrace === trace.run_id && trace.inputs && (
                     <div style={{
                       marginTop: "0.8rem",
-                      background: "rgba(0,0,0,0.2)",
-                      border: "1px solid rgba(255,255,255,0.05)",
+                      background: "#f8fafc",
+                      border: "1px solid #e2e8f0",
                       borderRadius: "10px",
                       padding: "1rem",
                       display: "flex",
@@ -693,12 +694,12 @@ function DashboardPage({ onBack }) {
                         const isUser = input.role === "user";
                         return (
                           <div key={idx} style={{ 
-                            borderBottom: idx < trace.inputs.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                            borderBottom: idx < trace.inputs.length - 1 ? "1px solid #cbd5e1" : "none",
                             paddingBottom: idx < trace.inputs.length - 1 ? "0.8rem" : "0"
                           }}>
                             <div style={{ 
                               fontSize: "0.6rem", 
-                              color: isSystem ? "#60a5fa" : isUser ? "#34d399" : "#fbbf24", 
+                              color: isSystem ? "#2563eb" : isUser ? "#059669" : "#d97706", 
                               fontWeight: "900", 
                               textTransform: "uppercase",
                               letterSpacing: "0.8px",
@@ -708,7 +709,7 @@ function DashboardPage({ onBack }) {
                             </div>
                             <div style={{ 
                               fontSize: "0.78rem", 
-                              color: "#cbd5e1", 
+                              color: "#334155", 
                               lineHeight: "1.4",
                               whiteSpace: "pre-wrap",
                               fontFamily: isSystem ? "monospace" : "inherit"
@@ -724,8 +725,8 @@ function DashboardPage({ onBack }) {
 
                 {/* Stream Output Text Area */}
                 <div style={{
-                  background: isFailed ? "rgba(239, 68, 68, 0.03)" : "rgba(0, 0, 0, 0.15)",
-                  border: `1px solid ${isFailed ? "rgba(239, 68, 68, 0.2)" : "rgba(255, 255, 255, 0.04)"}`,
+                  background: isFailed ? "rgba(239, 68, 68, 0.02)" : "#f8fafc",
+                  border: "1px solid #cbd5e1",
                   borderRadius: "12px",
                   padding: "1rem 1.2rem",
                   position: "relative"
@@ -734,26 +735,28 @@ function DashboardPage({ onBack }) {
                     position: "absolute", 
                     top: "-8px", 
                     left: "14px", 
-                    background: "#0b0f19", 
+                    background: "#ffffff", 
                     padding: "0 8px", 
                     fontSize: "0.58rem", 
-                    color: isStreaming ? "#c084fc" : isFailed ? "#f87171" : "#64748b",
+                    color: isStreaming ? "#7c3aed" : isFailed ? "#dc2626" : "#64748b",
                     fontWeight: "900",
                     textTransform: "uppercase",
-                    letterSpacing: "1px"
+                    letterSpacing: "1px",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "4px"
                   }}>
                     {isStreaming ? "STREAMING COMPLETION CHUNKS" : isFailed ? "FAILED RUN ERROR DETAILS" : "COMPLETED RESPONSE"}
                   </div>
 
                   <div style={{
                     fontSize: "0.88rem",
-                    color: isFailed ? "#fca5a5" : (trace.outputs ? "#cbd5e1" : "#475569"),
+                    color: isFailed ? "#b91c1c" : (trace.outputs ? "#334155" : "#64748b"),
                     lineHeight: "1.5",
                     minHeight: "24px"
                   }}>
                     {isFailed ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: "4px", whiteSpace: "pre-wrap" }}>
-                        <div style={{ fontWeight: "800", textTransform: "uppercase", fontSize: "0.75rem", color: "#f87171" }}>
+                        <div style={{ fontWeight: "800", textTransform: "uppercase", fontSize: "0.75rem", color: "#dc2626" }}>
                           Code: {trace.error_code}
                         </div>
                         <div style={{ fontSize: "0.85rem", opacity: 0.9 }}>
@@ -765,11 +768,11 @@ function DashboardPage({ onBack }) {
                         <ReactMarkdown 
                           remarkPlugins={[remarkGfm]}
                           components={{
-                            h1: ({node, ...props}) => <h1 style={{ fontSize: "1.2rem", fontWeight: "800", color: "#f8fafc", borderBottom: "1px solid rgba(255,255,255,0.1)", paddingBottom: "4px", marginBottom: "12px" }} {...props} />,
-                            h2: ({node, ...props}) => <h2 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#f8fafc", marginBottom: "10px", marginTop: "14px" }} {...props} />,
-                            h3: ({node, ...props}) => <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#38bdf8", marginBottom: "8px", marginTop: "12px" }} {...props} />,
-                            p: ({node, ...props}) => <p style={{ marginBottom: "10px", lineHeight: "1.6", color: "#cbd5e1" }} {...props} />,
-                            li: ({node, ...props}) => <li style={{ marginBottom: "6px", color: "#cbd5e1", lineHeight: "1.6" }} {...props} />,
+                            h1: ({node, ...props}) => <h1 style={{ fontSize: "1.2rem", fontWeight: "800", color: "#0f172a", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", marginBottom: "12px" }} {...props} />,
+                            h2: ({node, ...props}) => <h2 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#0f172a", marginBottom: "10px", marginTop: "14px" }} {...props} />,
+                            h3: ({node, ...props}) => <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#2563eb", marginBottom: "8px", marginTop: "12px" }} {...props} />,
+                            p: ({node, ...props}) => <p style={{ marginBottom: "10px", lineHeight: "1.6", color: "#334155" }} {...props} />,
+                            li: ({node, ...props}) => <li style={{ marginBottom: "6px", color: "#334155", lineHeight: "1.6" }} {...props} />,
                             ul: ({node, ...props}) => <ul style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
                             ol: ({node, ...props}) => <ol style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
                             strong: ({node, ...props}) => {
@@ -777,35 +780,35 @@ function DashboardPage({ onBack }) {
                               if (typeof text === 'string') {
                                 if (text.includes("Action Recommended") || text.includes("Recommended Action")) {
                                   return (
-                                    <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#38bdf8", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                    <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#2563eb", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                                       🔧 {text}
                                     </span>
                                   );
                                 }
                                 if (text.includes("Impact Analysis") || text.includes("Resource Savings")) {
                                   return (
-                                    <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#34d399", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                    <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#059669", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                                       📈 {text}
                                     </span>
                                   );
                                 }
                                 if (text.includes("Risk Assessment") || text.includes("Critical Risk") || text.includes("High Risk")) {
                                   return (
-                                    <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#f87171", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                    <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#dc2626", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
                                       ⚠️ {text}
                                     </span>
                                   );
                                 }
                               }
-                              return <strong style={{ color: "#ffffff", fontWeight: "700" }} {...props} />;
+                              return <strong style={{ color: "#0f172a", fontWeight: "700" }} {...props} />;
                             },
                             code: ({node, inline, className, children, ...props}) => {
                               return (
                                 <code 
                                   style={{ 
                                     fontFamily: "'JetBrains Mono', 'Fira Code', monospace", 
-                                    backgroundColor: "rgba(255, 255, 255, 0.1)", 
-                                    color: "#38bdf8", 
+                                    backgroundColor: "rgba(0, 0, 0, 0.04)", 
+                                    color: "#2563eb", 
                                     padding: "2px 6px", 
                                     borderRadius: "6px", 
                                     fontSize: "0.9em" 
@@ -831,7 +834,7 @@ function DashboardPage({ onBack }) {
                         marginLeft: "3px", 
                         width: "6px", 
                         height: "14px", 
-                        background: "#c084fc",
+                        background: "#7c3aed",
                         animation: "blink 1s step-end infinite" 
                       }} />
                     )}
@@ -840,53 +843,53 @@ function DashboardPage({ onBack }) {
 
                 {/* Performance Metrics (Latency & Speed) */}
                 {!isStreaming && (
-                  <div style={{ display: "flex", gap: "1rem", fontSize: "0.68rem", color: "#64748b", flexWrap: "wrap", borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: "0.75rem", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: "1rem", fontSize: "0.68rem", color: "#64748b", flexWrap: "wrap", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "0.75rem", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ color: "#f87171", fontWeight: "700" }}>TOTAL LATENCY</span>
+                      <span style={{ color: "#dc2626", fontWeight: "700" }}>TOTAL LATENCY</span>
                       <span style={{ 
                         fontFamily: "monospace", 
                         fontWeight: "700",
-                        color: (trace.agent !== "REHEARSAL" && trace.agent !== "DEVOPS_GENI" && trace.total_latency > 1000) ? "#f87171" : "#e2e8f0"
+                        color: (trace.agent !== "REHEARSAL" && trace.agent !== "DEVOPS_GENI" && trace.total_latency > 1000) ? "#dc2626" : "#0f172a"
                       }}>
                         {trace.total_latency ? `${trace.total_latency}ms` : "N/A"}
                       </span>
                       {trace.agent !== "REHEARSAL" && trace.agent !== "DEVOPS_GENI" && trace.total_latency > 1000 && (
-                        <span style={{ color: "#f87171", fontSize: "0.6rem", fontWeight: "700" }}>⚠️ VOICE LATENCY OVER 1000ms</span>
+                        <span style={{ color: "#dc2626", fontSize: "0.6rem", fontWeight: "700" }}>⚠️ VOICE LATENCY OVER 1000ms</span>
                       )}
                     </div>
-                    <div style={{ color: "#334155" }}>|</div>
+                    <div style={{ color: "#cbd5e1" }}>|</div>
                     
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ color: "#fbbf24", fontWeight: "700" }}>TTFT</span>
+                      <span style={{ color: "#d97706", fontWeight: "700" }}>TTFT</span>
                       <span style={{ 
                         fontFamily: "monospace", 
                         fontWeight: "700",
-                        color: trace.ttft > 800 ? "#fbbf24" : "#e2e8f0"
+                        color: trace.ttft > 800 ? "#d97706" : "#0f172a"
                       }}>
                         {trace.ttft ? `${trace.ttft}ms` : "N/A"}
                       </span>
                     </div>
-                    <div style={{ color: "#334155" }}>|</div>
+                    <div style={{ color: "#cbd5e1" }}>|</div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ color: "#22d3ee", fontWeight: "700" }}>SPEED</span>
-                      <span style={{ fontFamily: "monospace", fontWeight: "700", color: "#e2e8f0" }}>
+                      <span style={{ color: "#0891b2", fontWeight: "700" }}>SPEED</span>
+                      <span style={{ fontFamily: "monospace", fontWeight: "700", color: "#0f172a" }}>
                         {trace.otps ? `${trace.otps} tokens/s` : "N/A"}
                       </span>
                     </div>
 
                     {(trace.tool_latency > 0 || (trace.tool_calls && trace.tool_calls.length > 0)) && (
                       <>
-                        <div style={{ color: "#334155" }}>|</div>
+                        <div style={{ color: "#cbd5e1" }}>|</div>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <span style={{ color: "#34d399", fontWeight: "700" }}>TOOL LATENCY</span>
-                          <span style={{ fontFamily: "monospace", fontWeight: "700", color: "#34d399" }}>
+                          <span style={{ color: "#059669", fontWeight: "700" }}>TOOL LATENCY</span>
+                          <span style={{ fontFamily: "monospace", fontWeight: "700", color: "#059669" }}>
                             {trace.tool_latency || 0}ms
                           </span>
                           {trace.tool_calls && trace.tool_calls.length > 0 && (
                             <div style={{ display: "flex", gap: "6px", marginLeft: "10px", flexWrap: "wrap" }}>
                               {trace.tool_calls.map((tool, idx) => (
-                                <span key={idx} style={{ background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.18)", color: "#34d399", fontSize: "0.6rem", padding: "1px 5px", borderRadius: "4px", fontFamily: "monospace" }}>
+                                <span key={idx} style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.18)", color: "#059669", fontSize: "0.6rem", padding: "1px 5px", borderRadius: "4px", fontFamily: "monospace" }}>
                                   {tool.name}: {tool.duration}ms
                                 </span>
                               ))}
@@ -900,38 +903,38 @@ function DashboardPage({ onBack }) {
 
                 {/* Token Pricing Breakdowns (Only when completed) */}
                 {!isStreaming && (
-                  <div style={{ display: "flex", gap: "1rem", fontSize: "0.68rem", color: "#64748b", flexWrap: "wrap", borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: "0.75rem", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: "1rem", fontSize: "0.68rem", color: "#64748b", flexWrap: "wrap", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "0.75rem", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ color: "#60a5fa", fontWeight: "700" }}>LLM</span>
+                      <span style={{ color: "#2563eb", fontWeight: "700" }}>LLM</span>
                       <span>
                         ({trace.cum_prompt_tokens > 0 ? trace.cum_prompt_tokens : trace.prompt_tokens} IN / {trace.cum_completion_tokens > 0 ? trace.cum_completion_tokens : trace.completion_tokens} OUT)
                       </span>
-                      <span style={{ color: "#475569" }}>·</span>
-                      <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>
+                      <span style={{ color: "#cbd5e1" }}>·</span>
+                      <span style={{ color: "#475569", fontFamily: "monospace" }}>
                         ${(trace.cum_prompt_tokens > 0 ? (trace.cum_input_cost + trace.cum_output_cost) : (trace.llm_cost || (trace.input_cost + trace.output_cost) || 0)).toFixed(6)}
                       </span>
                     </div>
                     {isVoice && (
                       <>
-                        <div style={{ color: "#334155" }}>|</div>
+                        <div style={{ color: "#cbd5e1" }}>|</div>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <span style={{ color: "#fb7185", fontWeight: "700" }}>STT</span>
-                          <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>
+                          <span style={{ color: "#db2777", fontWeight: "700" }}>STT</span>
+                          <span style={{ color: "#475569", fontFamily: "monospace" }}>
                             ${(trace.cum_stt_cost > 0 ? trace.cum_stt_cost : (trace.stt_cost || 0)).toFixed(6)}
                           </span>
                         </div>
-                        <div style={{ color: "#334155" }}>|</div>
+                        <div style={{ color: "#cbd5e1" }}>|</div>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <span style={{ color: "#38bdf8", fontWeight: "700" }}>TTS</span>
-                          <span style={{ color: "#94a3b8", fontFamily: "monospace" }}>
+                          <span style={{ color: "#0891b2", fontWeight: "700" }}>TTS</span>
+                          <span style={{ color: "#475569", fontFamily: "monospace" }}>
                             ${(trace.cum_tts_cost > 0 ? trace.cum_tts_cost : (trace.tts_cost || 0)).toFixed(6)}
                           </span>
                         </div>
                       </>
                     )}
-                    <div style={{ color: "#334155" }}>|</div>
+                    <div style={{ color: "#cbd5e1" }}>|</div>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ color: "#a78bfa", fontWeight: "700" }}>TOTAL</span>
+                      <span style={{ color: "#7c3aed", fontWeight: "700" }}>TOTAL</span>
                       <span style={{ color: "#10b981", fontFamily: "monospace", fontWeight: "700" }}>
                         ${(trace.cum_total_cost > 0 ? trace.cum_total_cost : trace.total_cost).toFixed(6)}
                       </span>
@@ -940,8 +943,8 @@ function DashboardPage({ onBack }) {
                     {(!hallucinationResults[trace.run_id] || evaluating[trace.run_id]) && (
                       <div style={{ marginLeft: "auto" }}>
                         {evaluating[trace.run_id] ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#94a3b8", fontSize: "0.7rem" }}>
-                            <span style={{ display: "inline-block", width: "10px", height: "10px", border: "2px solid #a78bfa", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#64748b", fontSize: "0.7rem" }}>
+                            <span style={{ display: "inline-block", width: "10px", height: "10px", border: "2px solid #7c3aed", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
                             Evaluating...
                           </div>
                         ) : (
@@ -952,15 +955,15 @@ function DashboardPage({ onBack }) {
                               fontWeight: "700",
                               padding: "4px 12px",
                               borderRadius: "7px",
-                              border: "1px solid rgba(139,92,246,0.25)",
-                              background: "rgba(139,92,246,0.08)",
-                              color: "#c084fc",
+                              border: "1px solid rgba(124, 58, 237, 0.25)",
+                              background: "rgba(124, 58, 237, 0.05)",
+                              color: "#7c3aed",
                               cursor: "pointer",
                               letterSpacing: "0.3px",
                               transition: "all 0.2s"
                             }}
-                            onMouseEnter={e => { e.currentTarget.style.background = "rgba(139,92,246,0.18)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = "rgba(139,92,246,0.08)"; }}
+                            onMouseEnter={e => { e.currentTarget.style.background = "rgba(124, 58, 237, 0.12)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "rgba(124, 58, 237, 0.05)"; }}
                           >
                             ⚗ Evaluate
                           </button>
@@ -973,7 +976,7 @@ function DashboardPage({ onBack }) {
                 {/* Evaluation Results Section (Full Width, below the breakdown row) */}
                 {!isStreaming && evalResult && !evaluating[trace.run_id] && (
                     <div style={{
-                      borderTop: "1px solid rgba(255,255,255,0.04)",
+                      borderTop: "1px solid rgba(0,0,0,0.06)",
                       paddingTop: "0.75rem",
                       display: "flex",
                       flexDirection: "column",
@@ -987,7 +990,7 @@ function DashboardPage({ onBack }) {
                           <span style={{ color: col.fg, fontFamily: "monospace", fontWeight: "700", fontSize: "0.75rem" }}>{evalResult.score.toFixed(2)}</span>
                         </div>
                         {/* Progress bar */}
-                        <div style={{ flex: 1, height: "5px", background: "rgba(255,255,255,0.05)", borderRadius: "99px", overflow: "hidden", maxWidth: "120px" }}>
+                        <div style={{ flex: 1, height: "5px", background: "rgba(0,0,0,0.05)", borderRadius: "99px", overflow: "hidden", maxWidth: "120px" }}>
                           <div style={{ width: `${evalResult.score * 100}%`, height: "100%", background: col.fg, borderRadius: "99px", transition: "width 0.6s ease" }} />
                         </div>
                         <button
@@ -997,7 +1000,7 @@ function DashboardPage({ onBack }) {
                       </div>
                       {/* Reasoning */}
                       {evalResult.reasoning && (
-                        <div style={{ fontSize: "0.75rem", color: "#94a3b8", lineHeight: "1.4" }}>
+                        <div style={{ fontSize: "0.75rem", color: "#334155", lineHeight: "1.4" }}>
                           {evalResult.reasoning}
                         </div>
                       )}
@@ -1005,7 +1008,7 @@ function DashboardPage({ onBack }) {
                       {evalResult.flags && evalResult.flags.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "2px" }}>
                           {evalResult.flags.map((flag, fi) => (
-                            <span key={fi} style={{ fontSize: "0.6rem", background: "rgba(248,113,113,0.08)", color: "#fca5a5", border: "1px solid rgba(248,113,113,0.18)", borderRadius: "4px", padding: "2px 6px" }}>
+                            <span key={fi} style={{ fontSize: "0.6rem", background: "rgba(220,38,38,0.05)", color: "#dc2626", border: "1px solid rgba(220,38,38,0.18)", borderRadius: "4px", padding: "2px 6px" }}>
                               ⚑ {flag}
                             </span>
                           ))}
@@ -1024,7 +1027,7 @@ function DashboardPage({ onBack }) {
       <style>{`
         @keyframes blink {
           from, to { background-color: transparent }
-          50% { background-color: #c084fc }
+          50% { background-color: #7c3aed }
         }
         @keyframes spin {
           to { transform: rotate(360deg); }
@@ -1033,14 +1036,14 @@ function DashboardPage({ onBack }) {
           width: 5px;
         }
         .terminal-scroll::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.1);
+          background: rgba(0, 0, 0, 0.05);
         }
         .terminal-scroll::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(0, 0, 0, 0.12);
           border-radius: 99px;
         }
         .terminal-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.15);
+          background: rgba(0, 0, 0, 0.2);
         }
       `}</style>
     </div>

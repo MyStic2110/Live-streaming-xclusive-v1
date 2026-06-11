@@ -42,11 +42,13 @@ async def send_approval_request(slug: str, title: str, category: str, excerpt: s
         f"Select an action below to command your autonomous publishing fleet:"
     )
 
+    # Telegram callback_data has a strict 64-byte limit. We truncate the slug to keep callback_data safe.
+    truncated_slug = slug[:40]
     reply_markup = {
         "inline_keyboard": [
             [
-                {"text": "✅ Approve & Publish", "callback_data": f"approve_{slug}"},
-                {"text": "❌ Reject Draft", "callback_data": f"reject_{slug}"}
+                {"text": "✅ Approve & Publish", "callback_data": f"approve_{truncated_slug}"},
+                {"text": "❌ Reject Draft", "callback_data": f"reject_{truncated_slug}"}
             ]
         ]
     }
@@ -152,6 +154,7 @@ async def poll_approval(slug: str, message_id: int) -> bool:
     # Start with offset 0 to fetch all unacknowledged updates.
     # We validate updates against our specific message_id to ensure we process only the correct request.
     offset = 0
+    truncated_slug = slug[:40]
 
     while True:
         try:
@@ -178,7 +181,7 @@ async def poll_approval(slug: str, message_id: int) -> bool:
 
                         # Validate it relates to our active message ID
                         if cb_msg_id == message_id:
-                            if cb_data == f"approve_{slug}":
+                            if cb_data == f"approve_{truncated_slug}":
                                 logger.info(f"Received Telegram APPROVE callback for {slug}")
                                 
                                 # 1. Answer callback spinner
@@ -204,7 +207,7 @@ async def poll_approval(slug: str, message_id: int) -> bool:
                                     logger.error(f"Failed to edit message text: {e}")
                                 return True
 
-                            elif cb_data == f"reject_{slug}":
+                            elif cb_data == f"reject_{truncated_slug}":
                                 logger.info(f"Received Telegram REJECT callback for {slug}")
                                 
                                 # 1. Answer callback spinner

@@ -37,6 +37,8 @@ services:
     command: ["postgres", "-c", "timezone=UTC"]
     ports:
       - "5432:5432"
+    volumes:
+      - ./Calcutta:/usr/share/zoneinfo/Asia/Calcutta:ro
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -56,6 +58,25 @@ services:
     depends_on:
       - securelytix-postgres
     restart: "no"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  swarm-postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: swarm
+      POSTGRES_HOST_AUTH_METHOD: trust
+      TZ: UTC
+    command: ["postgres", "-c", "timezone=UTC"]
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+    volumes:
+      - ./Calcutta:/usr/share/zoneinfo/Asia/Calcutta:ro
     logging:
       driver: "json-file"
       options:

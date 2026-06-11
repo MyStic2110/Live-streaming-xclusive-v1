@@ -213,11 +213,11 @@ function LinaOrbScene({ onLeave }) {
       flexDirection: "column",
       width: isMobile ? "100%" : "440px",
       height: "100%",
-      background: "rgba(15, 23, 42, 0.45)",
+      background: "rgba(255, 255, 255, 0.75)",
       backdropFilter: "blur(16px)",
-      border: "1px solid rgba(255, 255, 255, 0.08)",
+      border: "1px solid rgba(0, 0, 0, 0.08)",
       borderRadius: isMobile ? "24px 24px 0 0" : "28px",
-      boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+      boxShadow: "0 20px 40px rgba(0, 0, 0, 0.04)",
       overflow: "hidden",
       transition: "all 0.3s ease",
       fontFamily: "'Outfit', sans-serif"
@@ -225,11 +225,11 @@ function LinaOrbScene({ onLeave }) {
       {/* Panel Header */}
       <div style={{
         padding: "1.2rem 1.5rem",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+        borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        background: "rgba(15, 23, 42, 0.2)"
+        background: "rgba(255, 255, 255, 0.4)"
       }}>
         <div>
           <h3 style={{
@@ -237,14 +237,14 @@ function LinaOrbScene({ onLeave }) {
             fontSize: "0.85rem",
             fontWeight: "900",
             letterSpacing: "1.5px",
-            color: "#ffffff",
+            color: "#0f172a",
             textTransform: "uppercase"
           }}>
             CONVERSATION CONTEXT
           </h3>
           <span style={{
             fontSize: "0.65rem",
-            color: "rgba(255,255,255,0.4)",
+            color: "#64748b",
             fontWeight: "700",
             letterSpacing: "0.5px"
           }}>
@@ -255,9 +255,9 @@ function LinaOrbScene({ onLeave }) {
           <button
             onClick={() => setShowContext(false)}
             style={{
-              background: "rgba(255, 255, 255, 0.05)",
+              background: "#f1f5f9",
               border: "none",
-              color: "#ffffff",
+              color: "#0f172a",
               width: "28px",
               height: "28px",
               borderRadius: "50%",
@@ -309,15 +309,15 @@ function LinaOrbScene({ onLeave }) {
             alignItems: "center",
             justifyContent: "center",
             gap: "12px",
-            color: "rgba(255, 255, 255, 0.25)",
+            color: "#64748b",
             textAlign: "center",
             padding: "2rem"
           }}>
             <span style={{ fontSize: "1.8rem", animation: "pulse 2s infinite" }}>🎙️</span>
-            <p style={{ margin: 0, fontSize: "0.8rem", fontWeight: "700", color: "rgba(255, 255, 255, 0.5)" }}>
+            <p style={{ margin: 0, fontSize: "0.8rem", fontWeight: "700", color: "#0f172a" }}>
               Awaiting voice synchronization...
             </p>
-            <p style={{ margin: 0, fontSize: "0.68rem", color: "rgba(255, 255, 255, 0.2)", maxWidth: "220px" }}>
+            <p style={{ margin: 0, fontSize: "0.68rem", color: "#94a3b8", maxWidth: "220px" }}>
               Lina is active. Speak to begin your visual transcript.
             </p>
           </div>
@@ -348,14 +348,14 @@ function LinaOrbScene({ onLeave }) {
                     letterSpacing: "0.5px"
                   }}>
                     <span>{isLina ? "LINA" : "YOU"}</span>
-                    <span style={{ color: "rgba(255, 255, 255, 0.25)", fontWeight: "500" }}>{m.time}</span>
+                    <span style={{ color: "#94a3b8", fontWeight: "500" }}>{m.time}</span>
                   </div>
                   <div style={{
-                    background: isLina ? "rgba(16, 185, 129, 0.07)" : "rgba(255, 255, 255, 0.03)",
-                    border: isLina ? "1px solid rgba(16, 185, 129, 0.12)" : "1px solid rgba(255, 255, 255, 0.06)",
+                    background: isLina ? "rgba(16, 185, 129, 0.08)" : "#ffffff",
+                    border: isLina ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid #e2e8f0",
                     borderRadius: isLina ? "4px 16px 16px 16px" : "16px 4px 16px 16px",
                     padding: "10px 14px",
-                    color: "#ffffff",
+                    color: "#0f172a",
                     fontSize: "0.82rem",
                     lineHeight: "1.4",
                     fontWeight: "500",
@@ -376,11 +376,11 @@ function LinaOrbScene({ onLeave }) {
     <div style={{
       position: "fixed",
       inset: 0,
-      background: "radial-gradient(circle at center, #0c101d 0%, #02040a 100%)",
+      background: "radial-gradient(circle at center, #f8fafc 0%, #eff6ff 100%)",
       display: "flex",
       flexDirection: "column",
       fontFamily: "'Outfit', sans-serif",
-      color: "#ffffff",
+      color: "#0f172a",
       overflow: "hidden"
     }}>
       <RoomAudioRenderer />
@@ -389,9 +389,9 @@ function LinaOrbScene({ onLeave }) {
       <div style={{
         position: "absolute",
         inset: 0,
-        backgroundImage: "radial-gradient(#1e293b 0.5px, transparent 0.5px)",
+        backgroundImage: "radial-gradient(#cbd5e1 0.7px, transparent 0.7px)",
         backgroundSize: "30px 30px",
-        opacity: 0.15,
+        opacity: 0.25,
         pointerEvents: "none",
         zIndex: 1
       }} />
@@ -403,9 +403,9 @@ function LinaOrbScene({ onLeave }) {
         left: 0,
         right: 0,
         height: "80px",
-        background: "rgba(15, 23, 42, 0.65)",
+        background: "rgba(255, 255, 255, 0.8)",
         backdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+        borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
@@ -424,10 +424,10 @@ function LinaOrbScene({ onLeave }) {
             animation: "pulse 2s infinite"
           }} />
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontSize: "1.15rem", fontWeight: "900", letterSpacing: "1px", color: "#ffffff" }}>
+            <span style={{ fontSize: "1.15rem", fontWeight: "900", letterSpacing: "1px", color: "#0f172a" }}>
               LINA
             </span>
-            <span style={{ fontSize: "0.62rem", color: "rgba(255, 255, 255, 0.4)", fontWeight: "800", letterSpacing: "0.8px" }}>
+            <span style={{ fontSize: "0.62rem", color: "#64748b", fontWeight: "800", letterSpacing: "0.8px" }}>
               EMOTIONAL PARTNER
             </span>
           </div>
@@ -439,9 +439,9 @@ function LinaOrbScene({ onLeave }) {
             <button
               onClick={() => setShowContext(!showContext)}
               style={{
-                background: showContext ? "rgba(59, 130, 246, 0.15)" : "rgba(255, 255, 255, 0.03)",
-                border: showContext ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid rgba(255, 255, 255, 0.08)",
-                color: showContext ? "#60a5fa" : "#ffffff",
+                background: showContext ? "rgba(59, 130, 246, 0.08)" : "#ffffff",
+                border: showContext ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid #cbd5e1",
+                color: showContext ? "#2563eb" : "#334155",
                 padding: "8px 16px",
                 borderRadius: "8px",
                 fontSize: "0.72rem",
@@ -469,7 +469,7 @@ function LinaOrbScene({ onLeave }) {
               transition: "all 0.3s ease"
             }}
             onMouseEnter={e => {
-              e.target.style.background = "rgba(239, 68, 68, 0.1)";
+              e.target.style.background = "rgba(239, 68, 68, 0.05)";
             }}
             onMouseLeave={e => {
               e.target.style.background = "transparent";
@@ -507,21 +507,22 @@ function LinaOrbScene({ onLeave }) {
             height: "100%",
             aspectRatio: isMobile ? "auto" : (showContext ? "auto" : "9/16"),
             position: "relative",
-            background: "rgba(15, 23, 42, 0.4)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            background: "rgba(255, 255, 255, 0.6)",
+            border: "1px solid #cbd5e1",
             borderRadius: "24px",
             overflow: "hidden",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             minHeight: isMobile ? "300px" : "auto",
-            transition: "all 0.3s ease"
+            transition: "all 0.3s ease",
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.02)"
           }}>
             {/* Ambient Background Glow */}
             <div style={{
               position: "absolute",
               inset: 0,
-              background: "radial-gradient(circle at center, rgba(59, 130, 246, 0.04) 0%, transparent 70%)",
+              background: "radial-gradient(circle at center, rgba(59, 130, 246, 0.06) 0%, transparent 70%)",
               zIndex: 1,
               pointerEvents: "none"
             }} />
@@ -541,13 +542,13 @@ function LinaOrbScene({ onLeave }) {
                 bottom: "1.2rem",
                 left: "1.2rem",
                 right: "1.2rem",
-                background: "rgba(15, 23, 42, 0.8)",
+                background: "rgba(255, 255, 255, 0.9)",
                 backdropFilter: "blur(12px)",
-                border: "1px solid rgba(255, 255, 255, 0.12)",
+                border: "1px solid rgba(0, 0, 0, 0.06)",
                 borderRadius: "16px",
                 padding: "10px 14px",
                 zIndex: 4,
-                boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+                boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
                 animation: "fadeIn 0.2s ease-out"
               }}>
                 <div style={{
@@ -564,7 +565,7 @@ function LinaOrbScene({ onLeave }) {
                   margin: 0,
                   fontSize: "0.82rem",
                   lineHeight: "1.4",
-                  color: "#ffffff",
+                  color: "#0f172a",
                   fontWeight: "600"
                 }}>
                   {activeTranscription}
@@ -577,16 +578,16 @@ function LinaOrbScene({ onLeave }) {
               position: "absolute",
               top: "1.2rem",
               left: "1.2rem",
-              background: "rgba(15, 23, 42, 0.65)",
+              background: "rgba(255, 255, 255, 0.85)",
               backdropFilter: "blur(12px)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(0, 0, 0, 0.06)",
               borderRadius: "99px",
               padding: "6px 14px",
               display: "flex",
               alignItems: "center",
               gap: "8px",
               zIndex: 2,
-              boxShadow: "0 8px 20px rgba(0, 0, 0, 0.4)",
+              boxShadow: "0 8px 20px rgba(0, 0, 0, 0.04)",
               animation: "fadeIn 0.3s ease-out"
             }}>
               {agentState === "thinking" ? (
@@ -647,15 +648,15 @@ function LinaOrbScene({ onLeave }) {
           left: 0,
           right: 0,
           height: showContext ? "52vh" : "0px",
-          background: "rgba(15, 23, 42, 0.9)",
+          background: "rgba(255, 255, 255, 0.95)",
           backdropFilter: "blur(20px)",
-          borderTop: showContext ? "1px solid rgba(255, 255, 255, 0.1)" : "none",
+          borderTop: showContext ? "1px solid #cbd5e1" : "none",
           borderRadius: "24px 24px 0 0",
           zIndex: 100,
           transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
           display: "flex",
           flexDirection: "column",
-          boxShadow: "0 -15px 40px rgba(0,0,0,0.5)"
+          boxShadow: "0 -10px 30px rgba(0,0,0,0.05)"
         }}>
           {showContext && renderContextPanel()}
         </div>
@@ -671,10 +672,10 @@ function LinaOrbScene({ onLeave }) {
             left: 0,
             right: 0,
             height: "60px",
-            background: "rgba(15, 23, 42, 0.75)",
+            background: "rgba(255, 255, 255, 0.85)",
             backdropFilter: "blur(12px)",
-            borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-            color: "#ffffff",
+            borderTop: "1px solid #cbd5e1",
+            color: "#0f172a",
             fontSize: "0.75rem",
             fontWeight: "800",
             letterSpacing: "1px",
@@ -684,7 +685,7 @@ function LinaOrbScene({ onLeave }) {
             alignItems: "center",
             justifyContent: "center",
             gap: "8px",
-            boxShadow: "0 -5px 15px rgba(0,0,0,0.3)"
+            boxShadow: "0 -5px 15px rgba(0,0,0,0.02)"
           }}
         >
           💬 VIEW CONTEXT ({messages.length} MESSAGE{messages.length !== 1 ? "S" : ""})

@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { query } from "../config/db.js";
 import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
 
@@ -320,8 +321,10 @@ const compilePrompt = (matchedVerticals, contextJson, session) => {
   ].join("\n");
 };
 
-// --- SESSION MANAGER ---
-const loadSession = (sessionId) => {
+// --- SESSION DATABASE / MEMORY FALLBACK ---
+const localSessionMemory = new Map();
+
+const loadSession = async (sessionId) => {
   if (!sessionId) {
     return {
       session: {
@@ -334,13 +337,24 @@ const loadSession = (sessionId) => {
     };
   }
 
-  const sessionFile = path.join(SESSIONS_DIR, `${sessionId}.json`);
-  if (fs.existsSync(sessionFile)) {
-    try {
-      const data = JSON.parse(fs.readFileSync(sessionFile, "utf-8"));
-      return { session: data, sessionId };
-    } catch (e) {
-      console.error("Error loading session:", e);
+  try {
+    const res = await query('SELECT session_data FROM copilot_sessions WHERE session_id = $1', [sessionId]);
+    if (res && res.rows && res.rows.length > 0) {
+      return { session: res.rows[0].session_data, sessionId };
+    }
+  } catch (dbError) {
+    console.warn(`[COPILOT_SESSION] DB lookup failed, falling back to storage: ${dbError.message}`);
+    if (localSessionMemory.has(sessionId)) {
+      return { session: localSessionMemory.get(sessionId), sessionId };
+    }
+    const sessionFile = path.join(SESSIONS_DIR, `${sessionId}.json`);
+    if (fs.existsSync(sessionFile)) {
+      try {
+        const data = JSON.parse(fs.readFileSync(sessionFile, "utf-8"));
+        return { session: data, sessionId };
+      } catch (e) {
+        console.error("Error loading session from file:", e);
+      }
     }
   }
 
@@ -355,12 +369,24 @@ const loadSession = (sessionId) => {
   };
 };
 
-const saveSession = (sessionId, session) => {
-  const sessionFile = path.join(SESSIONS_DIR, `${sessionId}.json`);
+const saveSession = async (sessionId, session) => {
   try {
-    fs.writeFileSync(sessionFile, JSON.stringify(session, null, 2), "utf-8");
-  } catch (e) {
-    console.error("Error saving session:", e);
+    await query(
+      `INSERT INTO copilot_sessions (session_id, session_data, updated_at)
+       VALUES ($1, $2, CURRENT_TIMESTAMP)
+       ON CONFLICT (session_id) DO UPDATE
+       SET session_data = EXCLUDED.session_data, updated_at = CURRENT_TIMESTAMP`,
+      [sessionId, JSON.stringify(session)]
+    );
+  } catch (dbError) {
+    console.warn(`[COPILOT_SESSION] DB save failed, saving to file: ${dbError.message}`);
+    localSessionMemory.set(sessionId, session);
+    const sessionFile = path.join(SESSIONS_DIR, `${sessionId}.json`);
+    try {
+      await fs.promises.writeFile(sessionFile, JSON.stringify(session, null, 2), "utf-8");
+    } catch (e) {
+      console.error("Error saving session to file:", e);
+    }
   }
 };
 
@@ -385,20 +411,20 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
   // 1. Guardrail input validation
   const [isSafe, refusalMessage] = validateInput(query);
   if (!isSafe) {
-    const { session: s, sessionId: sid } = loadSession(sessionId);
+    const { session: s, sessionId: sid } = await loadSession(sessionId);
     onChunk(refusalMessage);
     onDone({ response: refusalMessage, sessionId: sid, runId: uuidv4().replace(/-/g, "") });
     return;
   }
 
   // 2. Load Session state
-  const { session, sessionId: activeSessionId } = loadSession(sessionId);
+  const { session, sessionId: activeSessionId } = await loadSession(sessionId);
 
   // If query is empty, return welcome directly
   if (!query.trim()) {
     const welcome = "Hello! I am your Swarm Customer Success & Onboarding Copilot. How can I help you learn about Swarm's features, custom pricing philosophy, or supported integrations today?";
     session.memory_summary = "Copilot greeted the user.";
-    saveSession(activeSessionId, session);
+    await saveSession(activeSessionId, session);
     onChunk(welcome);
     onDone({ response: welcome, sessionId: activeSessionId, runId: uuidv4().replace(/-/g, "") });
     return;
@@ -415,7 +441,7 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
     const redirection = "According to Swarm Trust and Security Portal, technical scans, live agent audits, and vulnerability reports are managed by our DevOps Geni infrastructure agent. As your Customer Success Copilot, I can assist you with onboarding, high-level compliance queries (like SOC2 or GDPR), pricing philosophy, and supported integrations. Please launch the DevOps Geni agent to review live scans.";
     session.turn_count += 1;
     updateSessionMemory(session, query, redirection);
-    saveSession(activeSessionId, session);
+    await saveSession(activeSessionId, session);
     onChunk(redirection);
     onDone({ response: redirection, sessionId: activeSessionId, runId: uuidv4().replace(/-/g, "") });
     return;
@@ -428,7 +454,7 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
     const greetingMsg = "Hello! I am your Swarm Customer Success & Onboarding Copilot. How can I help you learn about Swarm's features, custom pricing philosophy, or supported integrations today?";
     session.turn_count += 1;
     updateSessionMemory(session, query, greetingMsg);
-    saveSession(activeSessionId, session);
+    await saveSession(activeSessionId, session);
     onChunk(greetingMsg);
     onDone({ response: greetingMsg, sessionId: activeSessionId, runId: uuidv4().replace(/-/g, "") });
     return;
@@ -535,7 +561,7 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
     }
 
     updateSessionMemory(session, query, safeResponse);
-    saveSession(activeSessionId, session);
+    await saveSession(activeSessionId, session);
 
     const duration = (performance.now() - startTime) / 1000;
     
@@ -554,7 +580,7 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
     const errorMsg = `Network request failed: ${err.message}`;
     session.turn_count += 1;
     updateSessionMemory(session, query, errorMsg);
-    saveSession(activeSessionId, session);
+    await saveSession(activeSessionId, session);
     onChunk(errorMsg);
     onDone({
       response: errorMsg,

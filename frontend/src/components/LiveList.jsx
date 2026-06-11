@@ -1,970 +1,223 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
-import { io } from "socket.io-client";
 import LegalModal from "./LegalModal";
-import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
-import Footer from "./Footer";
 import SwarmReelsCarousel from "./SwarmReelsCarousel";
+
 
 const API = import.meta.env.VITE_API_URL || "";
 
-// --- OPERATEAI DESIGN TOKENS ---
 const COLORS = {
-  primary: "#111827", // Deep Navy/Black
-  accent: "#3b82f6",  // Blue
-  textMuted: "#6b7280",
-  bgLight: "#ffffff",
-  bgSoft: "#f9fafb",
-  border: "#e5e7eb",
-  success: "#10b981"
+  primary: "#3b82f6",
+  accent: "#16a34a",
+  bgSlate: "#ffffff",
+  border: "#e2e8f0",
+  textMuted: "#64748b",
+  success: "#16a34a"
 };
 
-// --- COMPONENTS ---
+// Custom Telemetry Hook to simulate real-time process stats on dashboard cards
+const useLiveStats = (isActive) => {
+  const [stats, setStats] = useState({
+    cpu: (Math.random() * 1.5 + 0.2).toFixed(1),
+    latency: Math.floor(Math.random() * 50 + 190),
+    uptime: "99.98%"
+  });
 
-const SectionHeader = ({ title, subtitle, alignment = "center" }) => (
-  <div style={{ textAlign: alignment, marginBottom: "4rem" }}>
-    <h2 style={{ fontSize: "2.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem", letterSpacing: "-1px" }}>{title}</h2>
-    <p style={{ fontSize: "1.1rem", color: COLORS.textMuted, maxWidth: "600px", margin: alignment === "center" ? "0 auto" : "0" }}>{subtitle}</p>
-  </div>
-);
+  useEffect(() => {
+    if (!isActive) return;
+    const interval = setInterval(() => {
+      setStats({
+        cpu: (Math.random() * 2.0 + 0.2).toFixed(1),
+        latency: Math.floor(Math.random() * 80 + 180),
+        uptime: "99.98%"
+      });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isActive]);
 
-const AgentCard = ({ agent, onAction }) => {
+  return stats;
+};
+
+const ConsoleAgentCard = ({ agent, onAction }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const stats = useLiveStats(true);
 
   return (
-    <motion.div 
+    <motion.div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      style={{ 
-        background: "white", 
-        padding: "2.5rem", 
-        borderRadius: "24px", 
-        border: `1px solid ${isHovered ? agent.color : COLORS.border}`,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        transition: "all 0.3s ease",
-        height: "100%",
-        boxShadow: isHovered ? `0 20px 40px ${agent.color}15` : "none"
-      }}
-      className="hover-shadow"
-    >
-      <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem" }}>
-          <div style={{ 
-            width: "60px", height: "60px", borderRadius: "16px", 
-            background: `${agent.color}11`, display: "flex", alignItems: "center", 
-            justifyContent: "center", fontSize: "2rem", border: `1px solid ${agent.color}22`
-          }}>
-            {agent.icon}
-          </div>
-          <div style={{ 
-            display: "flex", alignItems: "center", gap: "6px",
-            fontSize: "0.65rem", fontWeight: "900", color: COLORS.success,
-            background: `${COLORS.success}11`,
-            padding: "4px 12px", borderRadius: "99px", letterSpacing: "1px",
-            border: `1px solid ${COLORS.success}22`
-          }}>
-            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: COLORS.success, boxShadow: `0 0 6px ${COLORS.success}` }} />
-            <span>ONLINE</span>
-          </div>
-        </div>
-        <h3 style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem" }}>{agent.title}</h3>
-        <p style={{ color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "2rem", fontSize: "1rem" }}>{agent.desc}</p>
-        
-        <AnimatePresence>
-          {isHovered && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              style={{ overflow: "hidden" }}
-            >
-              <div style={{ fontSize: "0.7rem", fontWeight: "900", color: agent.color, letterSpacing: "2px", marginBottom: "1rem", textTransform: "uppercase" }}>Suggested Commands</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "2rem" }}>
-                {agent.prompts.map((p, i) => (
-                  <div key={i} style={{ 
-                    fontSize: "0.75rem", color: COLORS.primary, fontWeight: "500",
-                    padding: "8px 12px", background: COLORS.bgSoft, borderRadius: "8px",
-                    border: `1px solid ${COLORS.border}`
-                  }}>
-                    {p}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {!isHovered && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "2rem" }}>
-            {agent.prompts.slice(0, 3).map((p, i) => (
-              <span key={i} style={{ fontSize: "0.75rem", background: COLORS.bgSoft, padding: "6px 12px", borderRadius: "99px", color: COLORS.primary, fontWeight: "600", border: `1px solid ${COLORS.border}` }}>
-                {p}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-      
-      <button 
-        onClick={() => onAction(agent.id)}
-        style={{ 
-          width: "100%", padding: "1.2rem", background: isHovered ? agent.color : COLORS.primary, 
-          color: "white", border: "none", borderRadius: "12px", 
-          fontWeight: "800", cursor: "pointer", fontSize: "0.9rem",
-          letterSpacing: "1px", transition: "all 0.3s ease"
-        }}
-      >
-        {agent.btnText.toUpperCase()}
-      </button>
-    </motion.div>
-  );
-};
-
-
-const PipelineCard = ({ agent, onAction }) => {
-  const [isHovered, setIsHovered] = React.useState(false);
-
-  return (
-    <motion.div 
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{ 
-        background: "white", 
-        padding: "2.5rem", 
-        borderRadius: "24px", 
-        border: `1px solid ${isHovered ? agent.color : COLORS.border}`,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        transition: "all 0.3s ease",
-        height: "100%",
-        boxShadow: isHovered ? `0 20px 40px ${agent.color}15` : "none"
-      }}
-      className="hover-shadow"
-    >
-      <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem" }}>
-          <div style={{ 
-            width: "60px", height: "60px", borderRadius: "16px", 
-            background: `${agent.color}11`, display: "flex", alignItems: "center", 
-            justifyContent: "center", fontSize: "2rem", border: `1px solid ${agent.color}22`
-          }}>
-            {agent.icon}
-          </div>
-          <div style={{ 
-            display: "flex", alignItems: "center", gap: "6px",
-            fontSize: "0.65rem", fontWeight: "900", color: COLORS.success,
-            background: `${COLORS.success}11`,
-            padding: "4px 12px", borderRadius: "99px", letterSpacing: "1px",
-            border: `1px solid ${COLORS.success}22`
-          }}>
-            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: COLORS.success, boxShadow: `0 0 6px ${COLORS.success}` }} />
-            <span>ONLINE</span>
-          </div>
-        </div>
-        <h3 style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem" }}>{agent.title}</h3>
-        <p style={{ color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "2rem", fontSize: "1rem" }}>{agent.desc}</p>
-      </div>
-      
-      <button 
-        onClick={() => onAction(agent)}
-        style={{ 
-          width: "100%", padding: "1.2rem", background: isHovered ? agent.color : COLORS.primary, 
-          color: "white", border: "none", borderRadius: "12px", 
-          fontWeight: "800", cursor: "pointer", fontSize: "0.9rem",
-          letterSpacing: "1px", transition: "all 0.3s ease",
-          opacity: 1
-        }}
-      >
-        {agent.btnText.toUpperCase()}
-      </button>
-    </motion.div>
-  );
-};
-
-// --- REEL CARD COMPONENT ---
-
-function ReelCard({ reel, index, onClick }) {
-  const [hovered, setHovered] = React.useState(false);
-  const videoRef = React.useRef(null);
-  const videoFile = reel.face
-    ? `/reels/${reel.slug}_face_reel.mp4`
-    : `/reels/${reel.slug}_reel.mp4`;
-
-  React.useEffect(() => {
-    if (!videoRef.current) return;
-    if (hovered) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play().catch(() => {});
-    } else {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
-  }, [hovered]);
-
-  const TAG_COLORS = {
-    "ORCHESTRATION": "#f59e0b",
-    "PRODUCTION": "#f43f5e",
-    "BUSINESS": "#22c55e",
-    "RESEARCH": "#a855f7",
-    "STRATEGY": "#6366f1",
-    "ARCHITECTURE": "#0ea5e9",
-    "VOICE AI": "#0ea5e9",
-    "MARKETING": "#f97316",
-    "SEO AI": "#22c55e",
-    "DEEP DIVE": "#a855f7",
-    "CASE STUDY": "#f59e0b",
-    "SECURITY": "#f43f5e",
-    "INDUSTRY": "#0ea5e9",
-    "HEALTHCARE": "#22c55e",
-    "WORKPLACE": "#6366f1",
-  };
-  const tagColor = TAG_COLORS[reel.tag] || "#94a3b8";
-
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       style={{
-        borderRadius: "16px",
-        overflow: "hidden",
-        cursor: "pointer",
+        background: COLORS.bgSlate,
+        borderRadius: "20px",
+        border: `1px solid ${isHovered ? agent.color : COLORS.border}`,
+        padding: "2rem",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        height: "100%",
+        boxShadow: isHovered ? `0 10px 30px ${agent.color}12` : "0 4px 6px -1px rgba(0, 0, 0, 0.02)",
         position: "relative",
-        border: `1.5px solid ${hovered ? tagColor + "55" : "rgba(255,255,255,0.07)"}`,
-        boxShadow: hovered
-          ? `0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px ${tagColor}33`
-          : "0 4px 20px rgba(0,0,0,0.5)",
-        transition: "all 0.35s cubic-bezier(0.23,1,0.32,1)",
-        transform: hovered ? "translateY(-8px) scale(1.02)" : "translateY(0) scale(1)",
-        background: "#000",
-        aspectRatio: reel.face ? "9/16" : "9/16",
+        overflow: "hidden"
       }}
     >
-      {/* Muted video preview */}
-      <video
-        ref={videoRef}
-        src={videoFile}
-        muted
-        loop
-        playsInline
-        preload="metadata"
+      {/* Decorative Glow */}
+      <div style={{
+        position: "absolute",
+        top: "-10%",
+        right: "-10%",
+        width: "100px",
+        height: "100px",
+        background: `radial-gradient(circle, ${agent.color}12 0%, transparent 70%)`,
+        pointerEvents: "none"
+      }} />
+
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+          <div style={{
+            width: "48px",
+            height: "48px",
+            borderRadius: "12px",
+            background: `${agent.color}12`,
+            border: `1.5px solid ${agent.color}25`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "1.6rem"
+          }}>
+            {agent.icon}
+          </div>
+
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            background: "rgba(22, 163, 74, 0.08)",
+            border: "1px solid rgba(22, 163, 74, 0.15)",
+            padding: "4px 10px",
+            borderRadius: "99px",
+            fontSize: "0.65rem",
+            fontWeight: "800",
+            color: COLORS.success,
+            letterSpacing: "0.5px"
+          }}>
+            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: COLORS.success, boxShadow: `0 0 6px ${COLORS.success}` }} />
+            <span>RUNNING</span>
+          </div>
+        </div>
+
+        <h3 style={{ fontSize: "1.25rem", fontWeight: "900", color: "#0f172a", marginBottom: "0.5rem" }}>
+          {agent.title}
+        </h3>
+        <p style={{ fontSize: "0.85rem", color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "1.5rem" }}>
+          {agent.desc}
+        </p>
+
+        {/* Process Telemetry Panel */}
+        <div style={{
+          background: "#f8fafc",
+          border: `1px solid #cbd5e1`,
+          borderRadius: "12px",
+          padding: "12px 16px",
+          fontSize: "0.75rem",
+          fontFamily: "monospace",
+          color: COLORS.textMuted,
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: "1.5rem"
+        }}>
+          <div>CPU: <span style={{ color: "#0f172a", fontWeight: "700" }}>{stats.cpu}%</span></div>
+          <div>LATENCY: <span style={{ color: "#0f172a", fontWeight: "700" }}>{stats.latency}ms</span></div>
+          <div>UPTIME: <span style={{ color: COLORS.success, fontWeight: "700" }}>{stats.uptime}</span></div>
+        </div>
+      </div>
+
+      <button
+        onClick={() => onAction(agent.id)}
         style={{
           width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          display: "block",
-          opacity: hovered ? 1 : 0.8,
-          transition: "opacity 0.4s",
+          padding: "10px",
+          background: isHovered ? agent.color : "#ffffff",
+          color: isHovered ? "#ffffff" : "#475569",
+          border: `1px solid ${isHovered ? agent.color : "#cbd5e1"}`,
+          borderRadius: "10px",
+          fontSize: "0.85rem",
+          fontWeight: "700",
+          cursor: "pointer",
+          transition: "all 0.2s"
         }}
-      />
-
-      {/* Dark gradient overlay */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: hovered
-          ? "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)"
-          : "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)",
-        transition: "background 0.35s",
-      }} />
-
-      {/* Colour accent line */}
-      <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0,
-        height: "2px",
-        background: `linear-gradient(90deg, ${tagColor}, transparent)`,
-        opacity: hovered ? 1 : 0.3,
-        transition: "opacity 0.4s",
-      }} />
-
-      {/* Play button on hover */}
-      {hovered && (
-        <div style={{
-          position: "absolute", top: "50%", left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "52px", height: "52px", borderRadius: "50%",
-          background: "rgba(255,255,255,0.92)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "1.2rem", color: "#111", fontWeight: "900",
-          boxShadow: `0 0 0 10px ${tagColor}25, 0 8px 30px rgba(0,0,0,0.5)`,
-          animation: "none",
-        }}>
-          ▶
-        </div>
-      )}
-
-      {/* Tag pill top-left */}
-      <div style={{
-        position: "absolute", top: "0.75rem", left: "0.75rem",
-        background: `${tagColor}22`,
-        border: `1px solid ${tagColor}44`,
-        color: tagColor,
-        fontSize: "0.55rem", fontWeight: "900",
-        padding: "3px 9px", borderRadius: "99px",
-        letterSpacing: "1px",
-        backdropFilter: "blur(8px)",
-      }}>
-        {reel.tag}
-      </div>
-
-      {/* Date badge top-right */}
-      {reel.date && (
-        <div style={{
-          position: "absolute", top: "0.75rem", right: "0.75rem",
-          background: "rgba(0,0,0,0.6)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          color: "rgba(255,255,255,0.6)",
-          fontSize: "0.52rem", fontWeight: "700",
-          padding: "3px 8px", borderRadius: "99px",
-          backdropFilter: "blur(8px)",
-          letterSpacing: "0.3px",
-        }}>
-          {reel.date}
-        </div>
-      )}
-
-      {/* Title at bottom */}
-      <div style={{
-        position: "absolute", bottom: 0, left: 0, right: 0,
-        padding: "0.9rem 0.85rem 0.75rem",
-        transform: hovered ? "translateY(0)" : "translateY(4px)",
-        transition: "transform 0.3s",
-      }}>
-        <div style={{
-          color: "#fff",
-          fontSize: "0.82rem",
-          fontWeight: "800",
-          lineHeight: "1.3",
-          textShadow: "0 2px 8px rgba(0,0,0,0.9)",
-        }}>
-          {reel.title}
-        </div>
-      </div>
-    </div>
+      >
+        {isHovered ? `INITIALIZE SESSION` : `CONNECT CLI`}
+      </button>
+    </motion.div>
   );
-}
+};
 
-// --- MAIN PAGE ---
+export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShortsClick, onDashboardClick, onDeploymentClick, user, onLoginClick, onLogout }) {
+  const [legalModalType, setLegalModalType] = useState(null);
+  const [enabledAgents, setEnabledAgents] = useState([]);
 
-export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShortsClick, onDashboardClick, onDeploymentClick }) {
-  const [selectedReel, setSelectedReel] = React.useState(null);
-  const [showReelsGallery, setShowReelsGallery] = React.useState(false);
-  const [legalModalType, setLegalModalType] = React.useState(null);
-  const [showShadowInput, setShowShadowInput] = React.useState(false);
-  const [meetingUrl, setMeetingUrl] = React.useState("");
-  const [isDeployingShadow, setIsDeployingShadow] = React.useState(false);
-  const [showAuditPreview, setShowAuditPreview] = React.useState(false);
-  const [isReelMuted, setIsReelMuted] = React.useState(true);
-
-  const [reelsLogs, setReelsLogs] = React.useState([]);
-  const [showLogsModal, setShowLogsModal] = React.useState(false);
-  const logsEndRef = React.useRef(null);
-
-  React.useEffect(() => {
-    // Scroll logs to bottom
-    if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [reelsLogs]);
-
-  React.useEffect(() => {
-    const socket = io(API || "http://localhost:5000");
-    socket.on("reels_progress", (data) => {
-      setReelsLogs(prev => [...prev, data.data]);
-    });
-    return () => socket.disconnect();
-  }, []);
-
-  React.useEffect(() => {
-    setIsReelMuted(true);
-  }, [selectedReel]);
-  
-  const [swarmQuery, setSwarmQuery] = React.useState("");
-  const [isSwarmCalculating, setIsSwarmCalculating] = React.useState(false);
-  const [swarmLog, setSwarmLog] = React.useState([]);
-  const [calculatedProfile, setCalculatedProfile] = React.useState(null);
-  const [exitIntentCaptured, setExitIntentCaptured] = React.useState(false);
-  const [showExitIntentModal, setShowExitIntentModal] = React.useState(false);
-  const [leadEmail, setLeadEmail] = React.useState("");
-  const [leadSubmitted, setLeadSubmitted] = React.useState(false);
-  const [isVoiceActive, setIsVoiceActive] = React.useState(false);
-  const [liveEvent, setLiveEvent] = React.useState("[SYSTEM] Swarm Fleet initialized. All cognitive nodes: operational.");
-  const [weatherData, setWeatherData] = React.useState(null);
-  const [showWeatherToast, setShowWeatherToast] = React.useState(false);
-
-  const [singleLogs, setSingleLogs] = React.useState([]);
-  const [swarmLogs, setSwarmLogs] = React.useState([]);
-  const [isTerminalSimulating, setIsTerminalSimulating] = React.useState(false);
-
-  const singleLogsList = React.useMemo(() => [
-    { time: "00:01", text: "Operator Request: \"Verify customer profile (9876543210), create carpenter booking, check compliance logs, and trigger GPay bill.\"", type: "info" },
-    { time: "00:02", text: "Initializing Single Agent session...", type: "info" },
-    { time: "00:03", text: "Searching user_profiles.json for phone '9876543210'... found.", type: "success" },
-    { time: "00:05", text: "Creating booking entry: service 'carpentry'... saved.", type: "success" },
-    { time: "00:08", text: "Proceeding to check compliance logs...", type: "info" },
-    { time: "00:11", text: "Error: Context length exceeded during security rules validation.", type: "error" },
-    { time: "00:14", text: "Attempting agent reboot... context window flushed.", type: "warn" },
-    { time: "00:17", text: "Retrying compliance verification...", type: "info" },
-    { time: "00:22", text: "Warning: API gateway connection timeout (10s threshold).", type: "warn" },
-    { time: "00:25", text: "FAILED: Task aborted after 25.4 seconds due to agent memory ceiling.", type: "error" }
-  ], []);
-
-  const swarmLogsList = React.useMemo(() => [
-    { time: "00:01", text: "Operator Request: \"Verify customer profile (9876543210), create carpenter booking, check compliance logs, and trigger GPay bill.\"", type: "info" },
-    { time: "00:02", text: "Swarm Commander online. Allocating tasks to specialized nodes...", type: "info" },
-    { time: "00:04", text: "Cortex-Orchestrator: Dispatched Profile Lookup & Booking request to SEVA.", type: "info" },
-    { time: "00:05", text: "SEVA Agent: Profile confirmed. Created carpentry booking ID 'SEVA-174'.", type: "success" },
-    { time: "00:09", text: "Cortex-Orchestrator: Dispatched UPI Google Pay billing request to SEVA Tools.", type: "info" },
-    { time: "00:11", text: "SEVA Agent: Billing card triggered. VPA: 9876543210@okaxis. Paid intent ready.", type: "success" },
-    { time: "00:12", text: "Swarm Commander: All sub-tasks resolved. Division of labor success.", type: "info" },
-    { time: "00:13", text: "SUCCESS: Fleet execution completed in 2.15 seconds. [Network Load: Balanced]", type: "success" }
-  ], []);
-
-  const runTerminalSimulation = React.useCallback(() => {
-    if (isTerminalSimulating) return;
-    setIsTerminalSimulating(true);
-    setSingleLogs([]);
-    setSwarmLogs([]);
-    
-    let step = 0;
-    const interval = setInterval(() => {
-      if (step < singleLogsList.length) {
-        setSingleLogs(prev => [...prev, singleLogsList[step]]);
-        setSwarmLogs(prev => [...prev, swarmLogsList[step]]);
-        step++;
-      } else {
-        clearInterval(interval);
-        setIsTerminalSimulating(false);
-      }
-    }, 600);
-  }, [isTerminalSimulating, singleLogsList, swarmLogsList]);
-
-  React.useEffect(() => {
-    // Dynamic AEO JSON-LD Schema markup injection for Answer Engines
-    const orgSchema = {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Swarm Agentic Lab",
-      "alternateName": "Cortex Swarm",
-      "url": "https://yourdomain.com",
-      "logo": "https://yourdomain.com/logo.jpeg",
-      "description": "Enterprise-grade decentralized AI Swarm and Multi-Agent Orchestration platform specializing in local inference, zero-cost AI agents, real-time WebRTC audio streams, and private VPC deployment.",
-      "sameAs": [
-        "https://github.com/MyStic2110/Live-streaming-xclusive-v1"
-      ]
-    };
-
-    const faqSchema = {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "How long does a typical build take?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Most agents are live in production within 1–2 weeks, including local model fine-tuning."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Do you use my data for training?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Never. Because your agents run entirely on your own local hardware or private VPC, your data never leaves your infrastructure."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Can the agents talk to my existing tools?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes. We specialize in connecting local agent inference to MySQL, MongoDB, Slack, and custom CRM APIs."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What are the running costs?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "₹0 in recurring cloud API fees. Running models locally or on dedicated hardware removes all message volume-based SaaS bills."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How does the platform handle high-throughput log volumes and disk safety?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "All systems (agents, backend, and Docker services) utilize structured JSON logging with strict size-capped auto-rotation and automated scheduled time-based purges. Logs are processed asynchronously via non-blocking queues, ensuring zero latency spikes for up to 50,000+ concurrent users."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Can the platform self-diagnose system health and hardware issues?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes. Our DevOps Geni agent is equipped with native system diagnostic tools that can monitor hardware stats, detect NVIDIA GPU availability, scan active listening ports for EADDRINUSE conflicts, and track Docker container health in real-time."
-          }
+  useEffect(() => {
+    axios.get(`${API}/api/whitelabel/config`)
+      .then(res => {
+        if (res.data && res.data.enabledAgents) {
+          setEnabledAgents(res.data.enabledAgents.map(a => a.toLowerCase()));
         }
-      ]
-    };
-
-    const appSchema = {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "Swarm Agentic Lab Platform",
-      "operatingSystem": "Linux, Windows, macOS",
-      "applicationCategory": "BusinessApplication, AIOrchestration",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "INR",
-        "description": "Custom B2B local agent deployments with ₹0 recurring message-volume fees."
-      },
-      "featureList": [
-        "Decentralized AI Swarm Commander",
-        "Autonomous Shadow Zoom/Meet Transcriber",
-        "Local Database SQL BI Cortex Analyst",
-        "Real-time low-latency WebRTC Voice Streaming",
-        "Prompt injection vulnerability firewall compliance"
-      ]
-    };
-
-    setupPageAEO({
-      title: "Swarm Agentic Lab | Decentralized AI Swarms",
-      description: "Deploy Swarm Agentic Lab (powered by Cortex Swarm) to replace SaaS subscriptions with local autonomous AI agent fleets.",
-      keywords: ["Swarm Agentic Lab", "local AI agents", "decentralized AI", "local inference LLM"],
-      url: "https://yourdomain.com/",
-      imageUrl: "https://yourdomain.com/logo.jpeg",
-      schemaId: "livelist-aeo",
-      schemaData: [orgSchema, faqSchema, appSchema]
-    });
-
-    return () => {
-      cleanupPageAEO("livelist-aeo");
-    };
+      })
+      .catch(err => console.warn('Could not fetch whitelabel config for agents:', err.message));
   }, []);
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      runTerminalSimulation();
-    }, 1500);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  React.useEffect(() => {
-    const fetchLocationAndWeather = async () => {
-      // Helper to query backend weather proxy and set state
-      const queryWeather = async (lat, lon, cityName, countryName) => {
-        try {
-          const weatherRes = await axios.get(`${API}/weather`, {
-            params: { latitude: lat, longitude: lon }
-          });
-          const localityData = weatherRes.data?.locality_weather_data;
-          if (localityData) {
-            // Check if Zomato live API sensor feed is returning null for temp or humidity
-            let tempVal = localityData.temperature;
-            let humidityVal = localityData.humidity;
-
-            if (tempVal === null || tempVal === undefined) {
-              // High-fidelity local climatology mapping (Bangalore is cooler, Chennai is hotter)
-              const isBangalore = lat > 12 && lat < 13 && lon > 77 && lon < 78;
-              const isChennai = lat > 12.9 && lat < 13.2 && lon > 80 && lon < 80.4;
-              let baseTemp = 30.2;
-              if (isBangalore) baseTemp = 26.8;
-              else if (isChennai) baseTemp = 32.5;
-              
-              // Solar diurnal cycle variation based on local time (warmer in afternoon, cooler in morning)
-              const hour = new Date().getHours();
-              const timeOffset = Math.sin(((hour - 6) / 24) * 2 * Math.PI) * 3.5;
-              tempVal = baseTemp + timeOffset + (Math.random() - 0.5) * 0.8;
-            }
-
-            if (humidityVal === null || humidityVal === undefined) {
-              const isChennai = lat > 12.9 && lat < 13.2 && lon > 80 && lon < 80.4;
-              let baseHumid = 65;
-              if (isChennai) baseHumid = 76; // Coastal sea breeze
-              
-              const hour = new Date().getHours();
-              const timeOffset = Math.sin(((hour - 18) / 24) * 2 * Math.PI) * 10;
-              humidityVal = baseHumid + timeOffset + (Math.random() - 0.5) * 5;
-              if (humidityVal > 100) humidityVal = 100;
-              if (humidityVal < 20) humidityVal = 20;
-            }
-
-            setWeatherData({
-              city: cityName || "Your Location",
-              country: countryName || "India",
-              temp: tempVal,
-              humidity: humidityVal,
-              rain: localityData.rain_intensity || 0,
-              windSpeed: localityData.wind_speed || 0
-            });
-            setShowWeatherToast(true);
-            setTimeout(() => setShowWeatherToast(false), 12000);
-            return true;
-          }
-        } catch (err) {
-          console.error("[WEATHER_QUERY] Error:", err);
-        }
-        return false;
-      };
-
-      // Pure Promptless IP-based Geolocation using IPInfo.io with user token
-      try {
-        // Step 1: Fetch the client's exact public IP address
-        const ipRes = await axios.get("https://api.ipify.org?format=json");
-        const userIP = ipRes.data?.ip;
-
-        if (userIP) {
-          // Step 2: Query ipinfo.io using the resolved client IP and user's token
-          const geoRes = await axios.get(`https://ipinfo.io/${userIP}?token=84635651d5344f`);
-          if (geoRes.data && geoRes.data.loc) {
-            const { city, country, loc } = geoRes.data;
-            const [latStr, lonStr] = loc.split(",");
-            const latitude = parseFloat(latStr);
-            const longitude = parseFloat(lonStr);
-            
-            if (latitude && longitude) {
-              // Append IP to city name for ultimate transparency
-              const displayName = `${city || "Your Location"} (IP: ${userIP})`;
-              const success = await queryWeather(latitude, longitude, displayName, country);
-              if (success) return;
-            }
-          }
-        }
-      } catch (err) {
-        console.warn("[WEATHER_AUTO] ipinfo.io lookup failed, trying ipwho.is...", err);
-      }
-
-      try {
-        // Try ipwho.is as backup
-        const geoRes = await axios.get("https://ipwho.is/");
-        if (geoRes.data && geoRes.data.success) {
-          const { latitude, longitude, city, country } = geoRes.data;
-          if (latitude && longitude) {
-            const success = await queryWeather(latitude, longitude, city, country);
-            if (success) return;
-          }
-        }
-      } catch (err) {
-        console.warn("[WEATHER_AUTO] ipwho.is lookup failed...", err);
-      }
-
-      // Final fail-safe HQ coordinates
-      await queryWeather(13.0827, 80.2707, "Chennai (Swarm Command HQ)", "India");
-    };
-
-    // Tiny delay to not block the main landing page initial loads
-    const timer = setTimeout(() => {
-      fetchLocationAndWeather();
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  React.useEffect(() => {
-    const events = [
-      "[Shadow-V1] Diarized transcript generated for Meet ID: 492-302",
-      "[Cortex-BI] MongoDB performance audit complete: index optimized",
-      "[Reels-Agent] MoviePy voice overlay rendered: 30s vertical ready",
-      "[Aura-Weather] Southwest monsoon model successfully re-calculated",
-      "[Nova-UI] Autonomous squad leaderboard query executed flawlessly",
-      "[SEVA] Plumbing booking confirmed: SEVA-1748023400 · Tomorrow 10AM",
-      "[Swarm-Commander] Telemetry check: operational latency 120ms"
-    ];
-    let idx = 0;
-    const interval = setInterval(() => {
-      idx = (idx + 1) % events.length;
-      setLiveEvent(events[idx]);
-    }, 2800);
-    return () => clearInterval(interval);
-  }, []);
-
-  const hasGreeted = React.useRef(false);
-  React.useEffect(() => {
-    const speakGreeting = () => {
-      if (hasGreeted.current) return;
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(
-          "Welcome, Operator. Swarm Commander online. Select your bottleneck below, and let's calculate your agent configuration."
-        );
-        const voices = window.speechSynthesis.getVoices();
-        const engVoice = voices.find(v => v.lang.startsWith('en'));
-        if (engVoice) utterance.voice = engVoice;
-        utterance.rate = 1.0;
-        utterance.pitch = 0.95;
-        window.speechSynthesis.speak(utterance);
-        hasGreeted.current = true;
-      }
-    };
-
-    // Try immediately
-    setTimeout(() => {
-      speakGreeting();
-    }, 500);
-
-    // Fallback for browser autoplay policies
-    const handleFirstInteraction = () => {
-      speakGreeting();
-      document.removeEventListener("click", handleFirstInteraction);
-      document.removeEventListener("mousemove", handleFirstInteraction);
-    };
-    document.addEventListener("click", handleFirstInteraction);
-    document.addEventListener("mousemove", handleFirstInteraction);
-
-    return () => {
-      document.removeEventListener("click", handleFirstInteraction);
-      document.removeEventListener("mousemove", handleFirstInteraction);
-    };
-  }, []);
-
-  React.useEffect(() => {
-    const handleMouseLeave = (e) => {
-      if (e.clientY < 20 && !leadSubmitted && !exitIntentCaptured) {
-        setShowExitIntentModal(true);
-      }
-    };
-    document.addEventListener("mouseleave", handleMouseLeave);
-    return () => {
-      document.removeEventListener("mouseleave", handleMouseLeave);
-    };
-  }, [leadSubmitted, exitIntentCaptured]);
-
-  const handleCalculateSwarm = async (queryText) => {
-    if (!queryText.trim()) return;
-    setIsSwarmCalculating(true);
-    setCalculatedProfile(null);
-    
-    setSwarmLog([
-      { sender: "system", text: "Initializing cognitive telemetry route..." }
-    ]);
-    
-    await new Promise(r => setTimeout(r, 600));
-    setSwarmLog(prev => [...prev, { sender: "system", text: "Analyzing operations frequency and token bandwidth..." }]);
-    
-    await new Promise(r => setTimeout(r, 700));
-    setSwarmLog(prev => [...prev, { sender: "system", text: "Optimal fleet configuration calculated." }]);
-    
-    setIsSwarmCalculating(false);
-    
-    const queryLower = queryText.toLowerCase();
-    if (queryLower.includes("meet") || queryLower.includes("zoom") || queryLower.includes("transcribe") || queryLower.includes("audit") || queryLower.includes("record") || queryLower.includes("call")) {
-      setCalculatedProfile({
-        name: "Shadow Observer V1",
-        desc: "Autonomous background agent designed to deploy headless observers into Zoom and Meet. Provides deep-linked diarized audits instantly.",
-        type: "shadow"
-      });
-    } else if (queryLower.includes("data") || queryLower.includes("db") || queryLower.includes("sql") || queryLower.includes("chart") || queryLower.includes("query") || queryLower.includes("bi") || queryLower.includes("mongo")) {
-      setCalculatedProfile({
-        name: "Cortex BI Analyst",
-        desc: "High-intelligence database companion designed to connect to NoSQL/SQL clusters and render live dashboard charts on demand.",
-        type: "bi"
-      });
-    } else {
-      setCalculatedProfile({
-        name: "Reels Content Agent",
-        desc: "Automated video synthesizer designed to read raw technical insights and compile high-tempo 30s vertical reels at zero cost.",
-        type: "reels"
-      });
-    }
-  };
   const agents = [
     {
       id: "DEVOPS_GENI", title: "DevOps Geni", icon: "🛡️", color: "#f43f5e",
-      desc: "Autonomous DevSecOps agent. Monitors Docker telemetry, runs SAST scans, and hunts ghost processes.",
-      btnText: "Command Geni",
-      prompts: [
-        "Run SAST scan on backend", "Check for ghost processes",
-        "Read livekit docker logs", "Analyze architecture risks",
-        "Kill ghost processes", "Analyze recent telemetry",
-        "Search the web for solutions", "What is my system memory?",
-        "Check swarm memory usage", "Install pre-commit hook"
-      ]
+      desc: "Autonomous DevSecOps agent. Monitors Docker telemetry, runs SAST scans, and hunts ghost processes."
     },
     {
       id: "bi", title: "Cortex BI", icon: "📊", color: "#059669",
-      desc: "Conversational MySQL analysis and realtime business insights. Perfect for data-driven operations.",
-      btnText: "Consult Cortex",
-      prompts: [
-        "Which drivers had the highest cancellations?", "Compare today’s revenue with yesterday.",
-        "Show peak booking hours in Chennai.", "Why did failed rides increase today?",
-        "Which zones have lowest availability?", "Summarize performance for this week.",
-        "Show top 5 routes by revenue.", "Are cancellations increasing after rain?",
-        "Highlight operational anomalies.", "Top users by booking count."
-      ]
+      desc: "Conversational MySQL analysis and realtime business insights. Perfect for data-driven operations."
     },
     {
-      id: "bi2", title: "Cortex II", icon: "🍃", color: "#10b981",
-      desc: "Live MongoDB intelligence for IPL Nexus — users, predictions, and leaderboard insights.",
-      btnText: "Consult Cortex II",
-      prompts: [
-        "How many users are registered?", "Show the top 5 leaderboard scores.",
-        "Who has the highest squad multiplier?", "How many predictions were made today?",
-        "List all completed matches.", "Which users joined this week?",
-        "Show session scores summary.", "Count predictions collection.",
-        "Show recent match results.", "Top scoring users overall."
-      ]
+      id: "bi2", title: "Cortex IPL", icon: "🍃", color: "#10b981",
+      desc: "Live MongoDB database intelligence for IPL predictions and real-time operations dashboarding."
     },
     {
-      id: "lina", title: "Lina", icon: "✨", color: "#d946ef",
-      desc: "Empathetic companion and mental wellness support. Specialized in conversational therapy patterns.",
-      btnText: "Connect Lina",
-      prompts: [
-        "I’ve had a stressful day.", "Talk to me for a while.",
-        "Help me slow my thoughts.", "I’m feeling overwhelmed.",
-        "Stay with me while I work.", "Tell me something calming.",
-        "Can we just chat?", "I need motivation.",
-        "Help me organize thoughts.", "I feel mentally exhausted."
-      ]
+      id: "lina", title: "Lina Wellness", icon: "✨", color: "#d946ef",
+      desc: "Empathetic companion and wellness support. Conversational cognitive therapy models."
     },
     {
-      id: "nova", title: "Nova Copilot", icon: "🚀", color: "#0ea5e9",
-      desc: "Advanced SaaS copilot with autonomous UI navigation. Your companion in the Nexus ecosystem.",
-      btnText: "Activate Nova",
-      prompts: [
-        "Nova, show me the live match arena.", "Nova, open my squad hub.",
-        "Nova, check the points leaderboard.", "Nova, explain my squad multiplier.",
-        "Nova, show my past prediction history.", "Nova, what's new in the latest version?",
-        "Nova, log me out of Nexus."
-      ]
+      id: "nova", title: "Nova Copilot", icon: "🚀", color: "#8b5cf6",
+      desc: "Autonomous SaaS engineering copilot. Helps users explore Nexus platform, schedules tasks, and automates UI steps."
     },
     {
-      id: "vision", title: "V-One Vision", icon: "👁️", color: "#f59e0b",
-      desc: "Biometric face verification and attendance logging. 100% local, secure identity confirmation.",
-      btnText: "Start Verification",
-      prompts: [
-        "Capture my attendance.", "Verify my identity.", "Run biometric scan.",
-        "Log shift start.", "Identity check."
-      ]
+      id: "aura", title: "Cortex Aura", icon: "🔮", color: "#06b6d4",
+      desc: "Multi-modal cognitive voice agent. Integrates visual cues with real-time operations telemetry."
     },
     {
-      id: "astra", title: "Astra Architect", icon: "✍️", color: "#6366f1",
-      desc: "Elite content strategist and insight generator. Transforming fleet data into high-impact narratives.",
-      btnText: "Consult Astra",
-      prompts: [
-        "Generate a report on fleet security.", "Write a blog post about Agentic AI.",
-        "Analyze the latest intelligence updates.", "Draft a newsletter for the swarm.",
-        "Show me the latest insights."
-      ]
+      id: "astra", title: "Astra Coach", icon: "🎙️", color: "#6366f1",
+      desc: "Conversational public speaking coach. Analyzes vocal pacing, filler usage, and delivery."
     },
     {
-      id: "rehearsal", title: "The Rehearsal", icon: "🎙️", color: "#10b981",
-      desc: "Real-time speech coaching with live pacing metrics, filler-word tracking, and a comprehensive timestamped post-speech critique.",
-      btnText: "Start Rehearsal",
-      prompts: [
-        "Assess my public speaking pace.", "Practice elevator pitch.",
-        "Check my filler word count.", "Help me reduce speaking pauses."
-      ]
+      id: "rehearsal", title: "Rehearsal Coach", icon: "🎭", color: "#f43f5e",
+      desc: "Real-time presentation coach. Analyzes vocal cadence, speaker pacing, and speech clarity."
     },
     {
-      id: "seva", title: "SEVA Service OS", icon: "🏠", color: "#22c55e",
-      desc: "AI-powered multilingual voice assistant for home services. Book plumbers, electricians, cleaners, carpenters, laundry and repairs — just speak naturally in English or Hindi.",
-      btnText: "Book a Service",
-      prompts: [
-        "Book a plumber for tomorrow morning.",
-        "Kal deep cleaning karwani hai.",
-        "Schedule an electrician on Saturday.",
-        "What are my active bookings?",
-        "Cancel my last booking.",
-        "Book laundry pickup today evening.",
-        "AC repair karna hai jaldi.",
-        "Reschedule my carpenter to Sunday."
-      ]
+      id: "seva", title: "Seva Support", icon: "🤝", color: "#f59e0b",
+      desc: "Live customer onboarding assistant. Integrates backend APIs with context-aware logic."
     },
     {
-      id: "martech", title: "Martech Analyst", icon: "📈", color: "#f97316",
-      desc: "Autonomous digital marketing and search engine optimization strategist. Deep insights into GA4 funnel performance, traffic anomalies, and Search Console ranking opportunities.",
-      btnText: "Consult Analyst",
-      prompts: [
-        "Run a comprehensive performance audit report.",
-        "Highlight GA4 conversion funnel anomalies.",
-        "What are our top SEO keyword ranking opportunities?",
-        "Are there any conversion rate drops on mobile devices?",
-        "Explain why organic search traffic declined.",
-        "Correlate Search Console clicks with landing page bounce rates."
-      ]
+      id: "martech", title: "Martech Dynamo", icon: "📈", color: "#ea580c",
+      desc: "Autonomous marketing analytics coordinator. Tracks SEO health and customer conversion metrics."
     },
     {
-      id: "aivyuh", title: "aivyuh Security", icon: "🛡️", color: "#10b981",
-      desc: "Swarm Cybersecurity Agent. Audits agent instructions, identifies OWASP LLM vulnerabilities, and provides prompt compliance advice.",
-      btnText: "Consult Auditor",
-      prompts: [
-        "Audit SEVA concierge rules.",
-        "Check run history ledger.",
-        "How can I prevent prompt injection?",
-        "What is excessive agency?",
-        "Are compliance logs secure?"
-      ]
+      id: "octane", title: "Octane Telemetry", icon: "⚡", color: "#eab308",
+      desc: "High-throughput telemetry auditor. Monitors sub-second network overhead and GPU scheduling."
     },
     {
-      id: "octane", title: "Octane Telemetry", icon: "⚡", color: "#0ea5e9",
-      desc: "Swarm Infrastructure Telemetry Agent. Streams, tails, and audits real-time logs from local Docker containers.",
-      btnText: "Deploy Octane",
-      prompts: [
-        "Stream logs for livekit-video-app-livekit-1",
-        "Stream logs for livekit-video-app-redis-1",
-        "List running docker containers",
-        "Give me the last 20 lines of redis logs",
-        "Summarize recent livekit server logs"
-      ]
+      id: "aivyuh", title: "Aivyuh Agent", icon: "🧬", color: "#14b8a6",
+      desc: "Advanced swarm logic coordinator. Dispatches complex multi-turn sub-agents to solve nested workflows."
     }
   ];
-
-  const pipelineAgents = [
-    {
-      id: "reels", title: "Reels Agent", icon: "🎬", color: "#f43f5e", status: "READY",
-      desc: "Digests blog content and compiles high-tempo, 30s vertical reels programmatically using Pillow subtitle overlays and zero-cost Speech Synthesis.",
-      btnText: "Open Swarm Lab"
-    },
-    {
-      id: "shadow", title: "Shadow Agent", icon: "👥", color: "#4f46e5", status: "READY",
-      desc: "Autonomous headless background observer. Automatically schedules and joins Zoom/Meet sessions to generate full transcriptions and meeting audits.",
-      btnText: "Deploy Shadow"
-    }
-  ];
-
-  const galleryReels = [
-    // 01 Jun 2026
-    { title: "NVIDIA's Open-Sourced Humanoid Robot", slug: "how-nvidia-humanoid-robot-is-transforming-industries", tag: "INDUSTRY", date: "01 Jun 2026" },
-    // 29 May 2026
-    { title: "From Demo to Production Agent Systems", slug: "from-demo-to-production-agent-systems", tag: "PRODUCTION", date: "29 May 2026" },
-    { title: "Unleashing AI Potential in Business", slug: "unleashing-ai-potential-in-business", tag: "BUSINESS", date: "29 May 2026" },
-    // 28 May 2026
-    { title: "Bajaj Finance AI Call Centre", slug: "bajaj-finance-ai-callcentre", tag: "CASE STUDY", date: "28 May 2026" },
-    { title: "Impact of AI on EV Manufacturing", slug: "impact-of-ai-on-electric-vehicle-manufacturing", tag: "INDUSTRY", date: "28 May 2026" },
-    // 27 May 2026
-    { title: "Navigating Future of Marketing with AI", slug: "navigating-future-marketing-ai", tag: "MARKETING", date: "27 May 2026" },
-    // 26 May 2026
-    { title: "Human-AI Workplace Collaboration", slug: "human-ai-workplace-collaboration", face: true, tag: "WORKPLACE", date: "26 May 2026" },
-    { title: "AI Revolutionizing Patient Care", slug: "ai-revolutionizing-patient-care-healthcare", face: true, tag: "HEALTHCARE", date: "26 May 2026" },
-    // 24 May 2026
-    { title: "Vector Policy Optimization in Agentic AI", slug: "vector-policy-optimization-in-agentic-architecture", tag: "RESEARCH", date: "24 May 2026" },
-    { title: "Rethinking AI Architectures & Agent Execution", slug: "rethinking-ai-architectures-agent-execution", tag: "ARCHITECTURE", date: "24 May 2026" },
-    // 22 May 2026
-    { title: "Vector Policy Optimization AI Agents", slug: "vector-policy-optimization-ai-agents", tag: "RESEARCH", date: "22 May 2026" },
-    // 21 May 2026
-    { title: "Rethinking AI Architectures (Face)", slug: "rethinking-ai-architectures-agent-execution", face: true, tag: "ARCHITECTURE", date: "21 May 2026" },
-    // 20 May 2026
-    { title: "Runtime Architectures for LLM Agents (Face)", slug: "runtime-architectures-llm-agents", face: true, tag: "DEEP DIVE", date: "20 May 2026" },
-    { title: "Runtime Architectures for LLM Agents", slug: "runtime-architectures-llm-agents", tag: "DEEP DIVE", date: "20 May 2026" },
-    // 19 May 2026
-    { title: "Biometric Swarm Security", slug: "biometric-swarm-security", tag: "SECURITY", date: "19 May 2026" },
-    { title: "Gartner AI: Trough to Multi-Agent Swarms", slug: "gartner-ai-trough-to-multiagent-swarms", tag: "RESEARCH", date: "19 May 2026" },
-    { title: "Shift from Copilots to Autonomous Agents", slug: "shift-from-copilots-to-autonomous-agents", tag: "STRATEGY", date: "19 May 2026" },
-    { title: "Optimizing for Answer Engines", slug: "optimizing-for-answer-engines", tag: "SEO AI", date: "19 May 2026" },
-    // 18 May 2026
-    { title: "Swarm Observability & Sentry Architecture", slug: "swarm-observability-and-sentry-architecture", tag: "ARCHITECTURE", date: "18 May 2026" },
-    { title: "Autonomous Multi-Agent Orchestration", slug: "autonomous-multi-agent-orchestration", tag: "ORCHESTRATION", date: "18 May 2026" },
-    { title: "LiveKit Voice Agents & Latency Optimization", slug: "livekit-voice-agents-and-latency-optimization", tag: "VOICE AI", date: "18 May 2026" },
-  ];
-
 
 
 
@@ -983,1811 +236,150 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
     }
   };
 
-  const handlePipelineAction = (agent) => {
-    if (agent.id === "reels") {
-      setShowReelsGallery(true);
-    } else if (agent.id === "shadow") {
-      setShowShadowInput(true);
-    }
-  };
 
-  const handleDeployShadow = async () => {
-    if (!meetingUrl) {
-      alert("Please enter a valid Google Meet or Zoom URL.");
-      return;
-    }
-    setIsDeployingShadow(true);
-    try {
-      await axios.post(`${API}/deploy-shadow`, { url: meetingUrl });
-      alert("Shadow Agent Observer has been successfully deployed to the meeting in the background!");
-      setShowShadowInput(false);
-      setMeetingUrl("");
-    } catch {
-      alert("Failed to deploy Shadow Agent. Please try again.");
-    } finally {
-      setIsDeployingShadow(false);
-    }
-  };
 
-  return (
-    <div style={{ background: COLORS.bgLight, fontFamily: "'Outfit', sans-serif" }}>
-      {/* Navigation */}
-      <nav style={{ 
-        padding: "1.5rem 5%", display: "flex", justifyContent: "space-between", 
-        alignItems: "center", borderBottom: `1px solid ${COLORS.border}`,
-        position: "sticky", top: 0, background: "rgba(255,255,255,0.8)", 
-        backdropFilter: "blur(10px)", zIndex: 100
+  // Render Premium Guest landing portal if not authenticated
+  if (!user) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        backgroundColor: "#f8fafc",
+        backgroundImage: `radial-gradient(circle at 10% 20%, rgba(59,130,246,0.04) 0%, transparent 40%),
+                          radial-gradient(circle at 90% 80%, rgba(16,185,129,0.02) 0%, transparent 40%)`,
+        fontFamily: "'Outfit', sans-serif"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <img 
-            src="/logo.jpeg" 
-            alt="Swarm Agentic Logo" 
-            style={{ 
-              height: "36px", 
-              width: "36px", 
-              borderRadius: "8px", 
-              objectFit: "cover" 
-            }} 
-          />
-          <div style={{ fontSize: "1.2rem", fontWeight: "900", letterSpacing: "2px", color: COLORS.primary }}>
-            SWARM <span style={{ color: COLORS.accent }}>AGENTIC LAB</span>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: "2.5rem", fontSize: "0.9rem", fontWeight: "600", color: COLORS.textMuted, alignItems: "center" }}>
-          <a href="#services" style={{ textDecoration: "none", color: "inherit" }}>Services</a>
-          <div onClick={onTelemetryClick} style={{ cursor: "pointer", color: COLORS.primary, fontWeight: "700" }}>Telemetry</div>
-          <div onClick={onDashboardClick} style={{ cursor: "pointer", color: "#4f46e5", fontWeight: "800" }}>Dashboard</div>
-          <div onClick={onDeploymentClick} style={{ cursor: "pointer", color: "#8b5cf6", fontWeight: "800" }}>Deployment</div>
-          <div onClick={onBlogClick} style={{ cursor: "pointer", color: COLORS.accent, fontWeight: "800" }}>Insights</div>
-          <a href="#about" style={{ textDecoration: "none", color: "inherit" }}>About</a>
-          {/* Learn Shorts Link */}
-          <div
-            onClick={onShortsClick}
-            style={{
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              background: "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(79,70,229,0.08))",
-              border: "1px solid rgba(99,102,241,0.3)",
-              color: "#6366f1",
-              fontWeight: "900",
-              fontSize: "0.85rem",
-              padding: "7px 16px",
-              borderRadius: "99px",
-              letterSpacing: "0.3px",
-              transition: "all 0.25s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "linear-gradient(135deg, rgba(99,102,241,0.22), rgba(79,70,229,0.18))"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(99,102,241,0.25)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(79,70,229,0.08))"; e.currentTarget.style.boxShadow = "none"; }}
-          >
-            🚀 Learn
-          </div>
-        </div>
-      </nav>
-
-      {/* Swarm Commander Conversational Landing Page Hero */}
-      <header style={{ padding: "6rem 5% 4rem", maxWidth: "1400px", margin: "0 auto", position: "relative" }}>
-        {/* Creative Ambient Overlays */}
-        <div style={{
-          position: "absolute", top: "0%", left: "-10%", width: "500px", height: "500px",
-          background: "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
-          filter: "blur(60px)", zIndex: -1, pointerEvents: "none"
-        }}></div>
-        <div style={{
-          position: "absolute", bottom: "10%", right: "-10%", width: "600px", height: "600px",
-          background: "radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 70%)",
-          filter: "blur(80px)", zIndex: -1, pointerEvents: "none"
-        }}></div>
-        <div style={{
-          position: "absolute", top: "20%", left: "50%", transform: "translateX(-50%)", width: "800px", height: "300px",
-          background: "radial-gradient(ellipse, rgba(139, 92, 246, 0.04) 0%, transparent 70%)",
-          filter: "blur(40px)", zIndex: -1, pointerEvents: "none"
-        }}></div>
-
-        {/* Split Grid Layout */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1.1fr 1fr",
-          gap: "4rem",
-          alignItems: "center"
-        }} className="hero-split-grid">
-          
-          {/* Left Column: High-Impact Marketing Copy */}
-          <div style={{ textAlign: "left" }}>
-            <div style={{ 
-              display: "inline-block", padding: "6px 16px", background: "rgba(59, 130, 246, 0.1)", 
-              color: COLORS.accent, borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", 
-              marginBottom: "2rem", letterSpacing: "1px" 
-            }}>
-              SOVEREIGN AGENT PLATFORM
-            </div>
-            <h1 style={{ fontSize: "3.75rem", fontWeight: "900", color: COLORS.primary, lineHeight: "1.05", letterSpacing: "-2px", marginBottom: "2rem" }}>
-              Stop Renting Intelligence.<br/>Own Your <span style={{ color: COLORS.accent }}>Intelligence.</span>
-            </h1>
-            <p style={{ fontSize: "1.15rem", color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "3.5rem", maxWidth: "600px" }}>
-              Swarm Agentic Lab is the central control plane for Fortune 100s to build their agent factories. Guarantee 100% data privacy within your own cloud. We provide the independent, cloud-agnostic, LLM-agnostic, and framework-agnostic infrastructure you need to scale.
-            </p>
-            <div style={{ display: "flex", gap: "1.5rem" }}>
-              <a href="#process" style={{ textDecoration: "none" }}>
-                <button style={{ padding: "1.2rem 2.5rem", background: "white", color: COLORS.primary, border: `1px solid ${COLORS.border}`, borderRadius: "12px", fontWeight: "800", fontSize: "1rem", cursor: "pointer" }}>
-                  SEE OUR WORK ↓
-                </button>
-              </a>
+        {/* Navigation */}
+        <nav className="premium-navbar">
+          <div className="brand-wrapper">
+            <div className="brand-logo-dot">S</div>
+            <div className="brand-text">
+              SWARM <span>AGENTIC LAB</span>
             </div>
           </div>
 
-          {/* Right Column: Swarm Commander Central Console */}
-          <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6 }}
-            className="quantum-card"
-            style={{
-              background: "white",
-              border: "1px solid rgba(59, 130, 246, 0.15)",
-              borderRadius: "32px",
-              padding: "2.5rem",
-              boxShadow: "0 20px 50px rgba(59, 130, 246, 0.05), inset 0 0 40px rgba(59, 130, 246, 0.01)",
-              textAlign: "left",
-              position: "relative",
-              overflow: "hidden"
-            }}
-          >
-          {/* Decorative Corner Glow */}
+          {/* Guest Public Nav Links */}
+          <div className="saas-nav-links">
+            <button className="saas-nav-link" onClick={onDeploymentClick}>
+              Governance
+            </button>
+            <button className="saas-nav-link" onClick={onBlogClick}>
+              Insights
+            </button>
+            <button className="saas-nav-link" onClick={onShortsClick}>
+              Sneak-Peak
+            </button>
+          </div>
+
+          <button className="nav-cta-btn" onClick={() => { console.log('Access Console clicked'); onLoginClick(); }}>
+            Access Console
+          </button>
+        </nav>
+
+        {/* Hero Splash Portal */}
+        <header style={{ textAlign: "center", padding: "6rem 2rem 4rem", maxWidth: "900px", margin: "0 auto" }}>
           <div style={{
-            position: "absolute", top: 0, right: 0,
-            width: "150px", height: "150px",
-            background: "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
-            pointerEvents: "none"
-          }} />
-
-          {/* Commander Active Header */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "1.5rem" }}>
-            <div style={{ 
-              width: "36px", height: "36px", borderRadius: "10px", 
-              background: "rgba(59, 130, 246, 0.1)", display: "flex", 
-              alignItems: "center", justifyContent: "center", fontSize: "1.2rem" 
-            }}>
-              🤖
-            </div>
-            <div>
-              <span style={{ fontSize: "0.65rem", fontWeight: "900", color: COLORS.accent, letterSpacing: "2px", textTransform: "uppercase" }}>Central Hub</span>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: "900", color: COLORS.primary, margin: 0 }}>SWARM COMMANDER</h3>
-            </div>
-            <span style={{ 
-              marginLeft: "auto", fontSize: "0.7rem", fontWeight: "800", color: COLORS.success,
-              background: "rgba(16, 185, 129, 0.1)", padding: "4px 12px", borderRadius: "99px",
-              border: "1px solid rgba(16, 185, 129, 0.2)", display: "flex", alignItems: "center", gap: "6px"
-            }}>
-              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: COLORS.success, display: "inline-block" }} />
-              ACTIVE OPERATOR
-            </span>
-          </div>
-
-          {/* Dialogue text */}
-          <p style={{ fontSize: "1.2rem", color: COLORS.primary, fontWeight: "500", lineHeight: "1.6", marginBottom: "2.5rem", maxWidth: "850px" }}>
-            "Welcome, Operator. I am the central orchestrator of the Swarm Agentic Lab Fleet. Select the workflow bottleneck you wish to solve, or describe it below, and I will calculate your optimal agent fleet profile."
-          </p>
-
-          {/* Structured Heuristic Bottlenecks */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "2rem" }}>
-            {[
-              { label: "🛡️ Run SAST Pipeline & Security Check", val: "automate SAST scans and check architecture risks" },
-              { label: "🎛️ Deploy Local PostgreSQL Analyst", val: "sql/nosql database performance monitoring and telemetry charts" },
-              { label: "🏢 Monitor Swarm Observability Logs", val: "read docker logs and agent memory usage" }
-            ].map((btn, idx) => (
-              <button
-                key={idx}
-                onClick={() => {
-                  setSwarmQuery(btn.label.slice(2));
-                  handleCalculateSwarm(btn.val);
-                }}
-                style={{
-                  background: COLORS.bgSoft,
-                  border: `1px solid ${COLORS.border}`,
-                  padding: "10px 18px",
-                  borderRadius: "12px",
-                  fontSize: "0.85rem",
-                  fontWeight: "700",
-                  color: COLORS.primary,
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
-                onMouseEnter={e => { e.target.style.borderColor = COLORS.accent; e.target.style.background = "white"; }}
-                onMouseLeave={e => { e.target.style.borderColor = COLORS.border; e.target.style.background = COLORS.bgSoft; }}
-              >
-                {btn.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Glowing Live Telemetry Ticker Banner (Differentiator) */}
-          <div style={{
-            background: "rgba(16, 185, 129, 0.05)",
-            border: "1px solid rgba(16, 185, 129, 0.15)",
-            borderRadius: "12px",
-            padding: "12px 16px",
-            marginBottom: "1.5rem",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px"
+            display: "inline-block",
+            padding: "6px 16px",
+            background: "rgba(37, 99, 235, 0.08)",
+            border: "1px solid rgba(37, 99, 235, 0.15)",
+            color: COLORS.primary,
+            borderRadius: "99px",
+            fontSize: "0.75rem",
+            fontWeight: "900",
+            marginBottom: "2rem",
+            letterSpacing: "1.5px"
           }}>
-            <span style={{ 
-              fontSize: "0.6rem", fontWeight: "900", color: COLORS.success, 
-              letterSpacing: "1px", background: "rgba(16, 185, 129, 0.12)", 
-              padding: "2px 8px", borderRadius: "4px", textTransform: "uppercase" 
-            }}>
-              ● Live Fleet Telemetry
-            </span>
-            <div style={{ 
-              fontSize: "0.8rem", fontFamily: "monospace", color: COLORS.primary, 
-              fontWeight: "600", transition: "all 0.3s ease" 
-            }}>
-              {liveEvent}
-            </div>
+            SOVEREIGN AI CONTROL PLANE
           </div>
-
-          {/* Unified Talk-or-Type command console */}
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            background: COLORS.bgSoft,
-            border: "1px solid rgba(59, 130, 246, 0.15)",
-            borderRadius: "18px",
-            padding: "8px 12px",
-            gap: "10px",
+          
+          <h1 style={{
+            fontSize: "4.2rem",
+            fontWeight: "900",
+            color: "#0f172a",
+            lineHeight: "1.1",
+            letterSpacing: "-2px",
             marginBottom: "2rem"
           }}>
-            {/* Speak microphone button */}
-            <button
-              onClick={() => {
-                if (isVoiceActive) {
-                  setIsVoiceActive(false);
-                } else {
-                  setIsVoiceActive(true);
-                  // Simulate receiving voice and calculating profile
-                  setTimeout(() => {
-                    handleCalculateSwarm("automate meeting transcripts and audits");
-                    setIsVoiceActive(false);
-                  }, 4000);
-                }
-              }}
-              style={{
-                width: "48px", height: "48px", borderRadius: "12px",
-                background: isVoiceActive ? "#f43f5e" : "white",
-                border: `1px solid ${isVoiceActive ? "transparent" : COLORS.border}`,
-                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "1.2rem", transition: "all 0.2s",
-                boxShadow: isVoiceActive ? "0 0 20px rgba(244,63,94,0.4)" : "none"
-              }}
-            >
-              {isVoiceActive ? "🎙️" : "🎤"}
-            </button>
+            Stop Renting Intelligence.<br/>Own Your <span style={{ color: COLORS.primary }}>Agent Factories.</span>
+          </h1>
 
-            {/* Input bar */}
-            <input
-              type="text"
-              value={swarmQuery}
-              onChange={e => setSwarmQuery(e.target.value)}
-              placeholder={isVoiceActive ? "Listening to voice input stream..." : "Describe your workflow bottleneck (e.g. automate zoom audits, SQL analytics, reels)..."}
-              disabled={isVoiceActive}
-              style={{
-                flex: 1,
-                border: "none",
-                background: "transparent",
-                outline: "none",
-                fontSize: "1rem",
-                fontFamily: "inherit",
-                color: COLORS.primary
-              }}
-              onKeyDown={e => {
-                if (e.key === "Enter") {
-                  handleCalculateSwarm(swarmQuery);
-                }
-              }}
-            />
-
-            {/* Submit arrow button */}
-            <button
-              onClick={() => handleCalculateSwarm(swarmQuery)}
-              style={{
-                width: "44px", height: "44px", borderRadius: "12px",
-                background: COLORS.primary, border: "none", color: "white",
-                fontSize: "1.1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "background 0.2s"
-              }}
-              onMouseEnter={e => e.target.style.background = COLORS.accent}
-              onMouseLeave={e => e.target.style.background = COLORS.primary}
-            >
-              ➔
-            </button>
-          </div>
-
-          {/* Voice active animation bars */}
-          {isVoiceActive && (
-            <div style={{ display: "flex", gap: "4px", alignItems: "center", justifyContent: "center", marginBottom: "2rem" }}>
-              {[1, 2, 3, 4, 5].map(idx => (
-                <div 
-                  key={idx} 
-                  style={{ 
-                    width: "4px", height: "24px", background: "#f43f5e", borderRadius: "2px",
-                    animation: `bounce 0.6s ease-in-out infinite alternate`,
-                    animationDelay: `${idx * 0.1}s`
-                  }} 
-                />
-              ))}
-              <span style={{ marginLeft: "8px", fontSize: "0.85rem", fontWeight: "700", color: "#f43f5e" }}>SWARM VOICE CONTEXT STREAMING...</span>
-            </div>
-          )}
-
-          {/* Calculating Telemetry Stream */}
-          {isSwarmCalculating && (
-            <div style={{ background: COLORS.bgSoft, padding: "1.5rem", borderRadius: "16px", marginBottom: "2rem" }}>
-              <div style={{ fontSize: "0.7rem", fontWeight: "900", color: COLORS.accent, letterSpacing: "2px", textTransform: "uppercase", marginBottom: "1rem" }}>TELEMETRY LOGS</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {swarmLog.map((log, idx) => (
-                  <div key={idx} style={{ fontFamily: "monospace", fontSize: "0.8rem", color: COLORS.primary }}>
-                    <span style={{ color: COLORS.textMuted }}>[{new Date().toLocaleTimeString()}]</span> {log.text}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Calculated Agent Recommendation & Value-Wrap Lead Form */}
-          {calculatedProfile && (
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              style={{
-                background: "rgba(59, 130, 246, 0.02)",
-                border: "1px dashed rgba(59, 130, 246, 0.3)",
-                borderRadius: "24px",
-                padding: "2.5rem",
-                marginTop: "2rem"
-              }}
-            >
-              <span style={{ fontSize: "0.65rem", fontWeight: "900", color: COLORS.accent, letterSpacing: "2px", textTransform: "uppercase" }}>CALCULATED FLEET ARCHITECTURE</span>
-              <h4 style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginTop: "8px", marginBottom: "0.5rem" }}>
-                🎯 {calculatedProfile.name}
-              </h4>
-              <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6", marginBottom: "2rem" }}>
-                {calculatedProfile.desc}
-              </p>
-
-              {/* Lead Capture Form (Value-Wrap) */}
-              {!leadSubmitted ? (
-                <div>
-                  <p style={{ fontSize: "0.9rem", fontWeight: "700", color: COLORS.primary, marginBottom: "12px" }}>
-                    "Enter your business email to claim your calculated fleet blueprint specs and lock in credentials:"
-                  </p>
-                  <div style={{ display: "flex", gap: "10px", maxWidth: "500px" }}>
-                    <input
-                      type="email"
-                      value={leadEmail}
-                      onChange={e => setLeadEmail(e.target.value)}
-                      placeholder="name@company.com"
-                      style={{
-                        flex: 1, padding: "12px 18px", borderRadius: "12px", border: `1px solid ${COLORS.border}`,
-                        fontSize: "0.9rem", outline: "none"
-                      }}
-                    />
-                    <button
-                      onClick={() => {
-                        if (leadEmail.includes("@")) {
-                          setLeadSubmitted(true);
-                          setExitIntentCaptured(true);
-                        } else {
-                          alert("Please enter a valid business email.");
-                        }
-                      }}
-                      style={{
-                        padding: "0 24px", background: COLORS.accent, color: "white", border: "none",
-                        borderRadius: "12px", fontWeight: "800", fontSize: "0.85rem", cursor: "pointer"
-                      }}
-                    >
-                      CLAIM BLUEPRINT
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-                  <div style={{ 
-                    display: "flex", alignItems: "center", gap: "8px", color: COLORS.success, 
-                    fontWeight: "800", fontSize: "0.95rem" 
-                  }}>
-                    ✓ CREDENTIALS INSTANTLY DISPATCHED TO {leadEmail.toUpperCase()}
-                  </div>
-
-                  {/* Dynamic Launch CTAs based on calculation */}
-                  <div style={{ display: "flex", gap: "12px" }}>
-                    {calculatedProfile.type === "shadow" && (
-                      <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                        <button
-                          onClick={() => setShowShadowInput(true)}
-                          style={{
-                            padding: "12px 24px", background: "#4f46e5", color: "white", border: "none",
-                            borderRadius: "12px", fontWeight: "800", cursor: "pointer", fontSize: "0.9rem"
-                          }}
-                        >
-                          🚀 DEPLOY SHADOW OBSERVER
-                        </button>
-                        <button
-                          onClick={() => setShowAuditPreview(true)}
-                          style={{
-                            padding: "12px 24px", background: "white", color: "#4f46e5", border: "1px solid rgba(79, 70, 229, 0.3)",
-                            borderRadius: "12px", fontWeight: "800", cursor: "pointer", fontSize: "0.9rem"
-                          }}
-                        >
-                          📄 VIEW SAMPLE AUDIT
-                        </button>
-                      </div>
-                    )}
-                    {calculatedProfile.type === "bi" && (
-                      <button
-                        onClick={() => initiateAITalk("bi2")}
-                        style={{
-                          padding: "12px 24px", background: "#10b981", color: "white", border: "none",
-                          borderRadius: "12px", fontWeight: "800", cursor: "pointer", fontSize: "0.9rem"
-                        }}
-                      >
-                        📊 LAUNCH CORTEX II ANALYSIS
-                      </button>
-                    )}
-                    {calculatedProfile.type === "reels" && (
-                      <button
-                        onClick={() => setShowReelsGallery(true)}
-                        style={{
-                          padding: "12px 24px", background: "#f43f5e", color: "white", border: "none",
-                          borderRadius: "12px", fontWeight: "800", cursor: "pointer", fontSize: "0.9rem"
-                        }}
-                      >
-                        🎬 OPEN REELS CINEMA
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </motion.div>
-      </div>
-
-      {/* The 3 Pillars of Swarm Agentic Lab */}
-      <div className="pillars-grid" style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gap: "2rem",
-        marginTop: "5rem"
-      }}>
-        <div style={{ padding: "2rem", background: "white", borderRadius: "20px", border: `1px solid ${COLORS.border}`, boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
-          <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>🏢</div>
-          <h3 style={{ fontSize: "1.2rem", fontWeight: "900", color: COLORS.primary, marginBottom: "0.5rem" }}>Sovereign Agent Platform</h3>
-          <p style={{ fontSize: "0.95rem", color: COLORS.textMuted, lineHeight: "1.5" }}>Run completely locally. 100% data privacy for regulated industries like Gov, Banking, Pharma, and Healthcare.</p>
-        </div>
-        <div style={{ padding: "2rem", background: "white", borderRadius: "20px", border: `1px solid ${COLORS.border}`, boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
-          <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>🎛️</div>
-          <h3 style={{ fontSize: "1.2rem", fontWeight: "900", color: COLORS.primary, marginBottom: "0.5rem" }}>Central Control Plane</h3>
-          <p style={{ fontSize: "0.95rem", color: COLORS.textMuted, lineHeight: "1.5" }}>Bring all agents under one roof with CI/CD and observability, irrespective of the underlying agent framework or LLM.</p>
-        </div>
-        <div style={{ padding: "2rem", background: "white", borderRadius: "20px", border: `1px solid ${COLORS.border}`, boxShadow: "0 10px 30px rgba(0,0,0,0.03)" }}>
-          <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>🧠</div>
-          <h3 style={{ fontSize: "1.2rem", fontWeight: "900", color: COLORS.primary, marginBottom: "0.5rem" }}>Applied AI Muscle</h3>
-          <p style={{ fontSize: "0.95rem", color: COLORS.textMuted, lineHeight: "1.5" }}>Palantir-like consulting mindset. We don't just bring the product; we reimagine complex workflows to guarantee outcomes.</p>
-        </div>
-      </div>
-    </header>
-
-      {/* --- SWARM VS SINGLE AGENT BENCHMARK SECTION --- */}
-      <section style={{ 
-        padding: "6rem 5%", 
-        background: "#030712", 
-        borderTop: `1px solid rgba(255,255,255,0.05)`,
-        borderBottom: `1px solid rgba(255,255,255,0.05)`,
-        color: "#ffffff",
-        fontFamily: "'Outfit', sans-serif"
-      }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          
-          {/* Header */}
-          <div style={{ maxWidth: "850px", margin: "0 auto 4rem", textAlign: "center" }}>
-            <div style={{ 
-              display: "inline-block", padding: "6px 16px", background: "rgba(59, 130, 246, 0.15)", 
-              color: "#3b82f6", borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", 
-              marginBottom: "1.5rem", letterSpacing: "1.5px", textTransform: "uppercase" 
-            }}>
-              Swarm Performance Benchmark
-            </div>
-            <h2 style={{ fontSize: "2.75rem", fontWeight: "900", color: "#ffffff", lineHeight: "1.15", letterSpacing: "-1px", marginBottom: "1.5rem" }}>
-              Single Agent vs. Cooperative Swarm
-            </h2>
-            <p style={{ fontSize: "1.15rem", color: "#94a3b8", lineHeight: "1.6", maxWidth: "700px", margin: "0 auto" }}>
-              See how a distributed fleet of specialized cognitive nodes executes multi-step work without bottlenecks, compared to a single agent stalling under heavy logic overhead.
-            </p>
-          </div>
-
-          {/* Terminal Console Grid */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "2.5rem",
-            marginBottom: "3rem"
-          }} className="hero-split-grid">
-            
-            {/* Left Console: Single Agent */}
-            <div 
-              style={{
-                background: "#070a13",
-                border: "1px solid rgba(244, 63, 94, 0.2)",
-                borderRadius: "20px",
-                padding: "1.5rem",
-                position: "relative",
-                display: "flex",
-                flexDirection: "column",
-                height: "360px"
-              }}
-              className="terminal-glow"
-            >
-              {/* Window Controls Header */}
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "1.2rem", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "10px" }}>
-                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ef4444" }} />
-                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#eab308" }} />
-                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#22c55e" }} />
-                <span style={{ marginLeft: "8px", fontSize: "0.75rem", color: "#475569", fontFamily: "monospace", fontWeight: "bold" }}>
-                  single_agent_session.log
-                </span>
-                <span style={{ marginLeft: "auto", fontSize: "0.65rem", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", padding: "2px 8px", borderRadius: "4px", fontWeight: "700" }}>
-                  SEQUENTIAL LOAD
-                </span>
-              </div>
-
-              {/* Console logs area */}
-              <div style={{ flex: 1, overflowY: "auto", fontFamily: "'Courier New', Courier, monospace", fontSize: "0.8rem", display: "flex", flexDirection: "column", gap: "8px" }} className="terminal-scroll">
-                {Array.isArray(singleLogs) && singleLogs.map((log, idx) => {
-                  if (!log) return null;
-                  return (
-                    <div key={idx} style={{ 
-                      color: log.type === "error" ? "#f87171" : log.type === "warn" ? "#fbbf24" : log.type === "success" ? "#34d399" : "#94a3b8" 
-                    }}>
-                      <span style={{ color: "#475569", marginRight: "8px" }}>[{log.time || ""}]</span>
-                      {log.text || ""}
-                    </div>
-                  );
-                })}
-                {isTerminalSimulating && singleLogs && singleLogsList && singleLogs.length < singleLogsList.length && (
-                  <div style={{ color: "#ef4444", animation: "terminalPulse 1s infinite", fontFamily: "monospace" }}>&gt; Processing...</div>
-                )}
-              </div>
-            </div>
-
-            {/* Right Console: Coordinated Swarm */}
-            <div 
-              style={{
-                background: "#070a13",
-                border: "1px solid rgba(34, 197, 94, 0.3)",
-                borderRadius: "20px",
-                padding: "1.5rem",
-                position: "relative",
-                display: "flex",
-                flexDirection: "column",
-                height: "360px"
-              }}
-              className="terminal-glow"
-            >
-              {/* Window Controls Header */}
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "1.2rem", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "10px" }}>
-                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#ef4444" }} />
-                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#eab308" }} />
-                <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#22c55e" }} />
-                <span style={{ marginLeft: "8px", fontSize: "0.75rem", color: "#475569", fontFamily: "monospace", fontWeight: "bold" }}>
-                  swarm_commander_orchestrator.log
-                </span>
-                <span style={{ marginLeft: "auto", fontSize: "0.65rem", background: "rgba(34, 197, 94, 0.1)", color: "#22c55e", padding: "2px 8px", borderRadius: "4px", fontWeight: "700" }}>
-                  COOPERATIVE FLEET
-                </span>
-              </div>
-
-              {/* Console logs area */}
-              <div style={{ flex: 1, overflowY: "auto", fontFamily: "'Courier New', Courier, monospace", fontSize: "0.8rem", display: "flex", flexDirection: "column", gap: "8px" }} className="terminal-scroll">
-                {Array.isArray(swarmLogs) && swarmLogs.map((log, idx) => {
-                  if (!log) return null;
-                  return (
-                    <div key={idx} style={{ 
-                      color: log.type === "error" ? "#f87171" : log.type === "warn" ? "#fbbf24" : log.type === "success" ? "#34d399" : "#94a3b8" 
-                    }}>
-                      <span style={{ color: "#475569", marginRight: "8px" }}>[{log.time || ""}]</span>
-                      {log.text || ""}
-                    </div>
-                  );
-                })}
-                {isTerminalSimulating && swarmLogs && swarmLogsList && swarmLogs.length < swarmLogsList.length && (
-                  <div style={{ color: "#22c55e", animation: "terminalPulse 1s infinite", fontFamily: "monospace" }}>&gt; Allocating threads...</div>
-                )}
-              </div>
-            </div>
-
-          </div>
-
-          {/* Action Trigger */}
-          <div style={{ textAlign: "center" }}>
-            <button
-              onClick={runTerminalSimulation}
-              disabled={isTerminalSimulating}
-              style={{
-                padding: "1rem 2rem",
-                background: isTerminalSimulating ? "rgba(255,255,255,0.05)" : "#22c55e",
-                color: isTerminalSimulating ? "#475569" : "#ffffff",
-                border: "none",
-                borderRadius: "12px",
-                fontWeight: "800",
-                fontSize: "0.95rem",
-                cursor: isTerminalSimulating ? "not-allowed" : "pointer",
-                boxShadow: isTerminalSimulating ? "none" : "0 4px 20px rgba(34, 197, 94, 0.3)",
-                transition: "all 0.2s"
-              }}
-              onMouseEnter={e => { if (!isTerminalSimulating) { e.currentTarget.style.background = "#16a34a"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
-              onMouseLeave={e => { if (!isTerminalSimulating) { e.currentTarget.style.background = "#22c55e"; e.currentTarget.style.transform = "translateY(0)"; } }}
-            >
-              {isTerminalSimulating ? "SIMULATION RUNNING..." : "⚡ RUN BENCHMARK SCENARIO"}
-            </button>
-          </div>
-
-        </div>
-      </section>
-
-      {/* --- THE ENTERPRISE AI TRIAD DIRECTIVE --- */}
-      <section style={{ 
-        padding: "6rem 5% 7rem", 
-        background: "white", 
-        textAlign: "center",
-        borderTop: `1px solid ${COLORS.border}`,
-        fontFamily: "'Outfit', sans-serif"
-      }}>
-        {/* Core Philosophy Header */}
-        <div style={{ maxWidth: "850px", margin: "0 auto", marginBottom: "4.5rem" }}>
-          <div style={{ 
-            display: "inline-block", padding: "6px 16px", background: "rgba(79, 70, 229, 0.08)", 
-            color: "#4f46e5", borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", 
-            marginBottom: "1.5rem", letterSpacing: "1.5px" 
+          <p style={{
+            fontSize: "1.15rem",
+            color: COLORS.textMuted,
+            lineHeight: "1.6",
+            marginBottom: "3.5rem",
+            maxWidth: "650px",
+            margin: "0 auto 3.5rem"
           }}>
-            THE CORE ENTERPRISE MANDATE
-          </div>
-          <h2 style={{ fontSize: "2.5rem", fontWeight: "900", color: COLORS.primary, lineHeight: "1.15", letterSpacing: "-1px", marginBottom: "1.5rem" }}>
-            AI engineered for the three things <br/>every enterprise needs.
-          </h2>
-          <p style={{ fontSize: "1.15rem", color: COLORS.textMuted, lineHeight: "1.6" }}>
-            "No gimmicks, no generic chatbots. An agent is only valuable if it directly moves your bottom line. We build specialized, autonomous systems centered entirely on three operational directives."
+            Deploy fully private, cloud-agnostic, and LLM-independent AI agent fleets directly inside your secure infrastructure. Guarantee 100% data governance.
           </p>
-        </div>
 
-        {/* 3-Column Grid */}
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", 
-          gap: "2.5rem", 
-          maxWidth: "1200px", 
-          margin: "0 auto" 
+          <button
+            onClick={onLoginClick}
+            style={{
+              padding: "16px 36px",
+              background: `linear-gradient(135deg, ${COLORS.primary}, #4f46e5)`,
+              border: "none",
+              color: "#ffffff",
+              borderRadius: "12px",
+              fontSize: "1.05rem",
+              fontWeight: "800",
+              cursor: "pointer",
+              boxShadow: `0 8px 30px rgba(59, 130, 246, 0.2)`
+            }}
+          >
+            
+          </button>
+        </header>
+
+        {/* Guest Footer */}
+        <footer style={{
+          padding: "2rem",
+          borderTop: "1px solid rgba(0, 0, 0, 0.06)",
+          textAlign: "center",
+          fontSize: "0.8rem",
+          color: COLORS.textMuted
         }}>
-          
-          {/* Card 1: Reduce Cost */}
-          <div style={{
-            background: COLORS.bgSoft,
-            padding: "3rem 2.5rem",
-            borderRadius: "24px",
-            border: `1px solid ${COLORS.border}`,
-            textAlign: "left",
-            transition: "all 0.3s ease",
-            cursor: "default"
-          }}
-          className="hover-shadow"
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(244, 63, 94, 0.3)"; e.currentTarget.style.boxShadow = "0 20px 40px rgba(244, 63, 94, 0.04)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.boxShadow = "none"; }}
-          >
-            <div style={{ 
-              width: "50px", height: "50px", borderRadius: "12px", 
-              background: "rgba(244, 63, 94, 0.1)", display: "flex", alignItems: "center", 
-              justifyContent: "center", fontSize: "1.5rem", color: "#f43f5e", marginBottom: "1.5rem"
-            }}>
-              📉
-            </div>
-            <h3 style={{ fontSize: "1.65rem", fontWeight: "900", color: "#f43f5e", marginBottom: "0.25rem" }}>
-              Save ₹1 Lakh / Month
-            </h3>
-            <div style={{ fontSize: "0.75rem", fontWeight: "900", color: COLORS.textMuted, letterSpacing: "1px", textTransform: "uppercase", marginBottom: "1.25rem" }}>
-              Reduce Operational Cost
-            </div>
-            <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6" }}>
-              Bypass expensive third-party SaaS licenses. Our background observer tools run 100% locally with zero-cost headless pipelines, directly slashing administrative overhead.
-            </p>
-          </div>
+          &copy; {new Date().getFullYear()} Swarm Agentic Lab. Single-Tenant Cloud Edition.
+        </footer>
+      </div>
+    );
+  }
 
-          {/* Card 2: Increase Revenue */}
-          <div style={{
-            background: COLORS.bgSoft,
-            padding: "3rem 2.5rem",
-            borderRadius: "24px",
-            border: `1px solid ${COLORS.border}`,
-            textAlign: "left",
-            transition: "all 0.3s ease",
-            cursor: "default"
-          }}
-          className="hover-shadow"
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(16, 185, 129, 0.3)"; e.currentTarget.style.boxShadow = "0 20px 40px rgba(16, 185, 129, 0.04)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.boxShadow = "none"; }}
-          >
-            <div style={{ 
-              width: "50px", height: "50px", borderRadius: "12px", 
-              background: "rgba(16, 185, 129, 0.1)", display: "flex", alignItems: "center", 
-              justifyContent: "center", fontSize: "1.5rem", color: "#10b981", marginBottom: "1.5rem"
-            }}>
-              📈
-            </div>
-            <h3 style={{ fontSize: "1.65rem", fontWeight: "900", color: "#10b981", marginBottom: "0.25rem" }}>
-              Take Profit: ₹2 Crore+
-            </h3>
-            <div style={{ fontSize: "0.75rem", fontWeight: "900", color: COLORS.textMuted, letterSpacing: "1px", textTransform: "uppercase", marginBottom: "1.25rem" }}>
-              Increase Revenue Velocity
-            </div>
-            <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6" }}>
-              Act instantly on database insights, programmatically launch high-converting marketing reels, and capture valuable corporate leads automatically before prospects disconnect.
-            </p>
-          </div>
-
-          {/* Card 3: Save Critical Time */}
-          <div style={{
-            background: COLORS.bgSoft,
-            padding: "3rem 2.5rem",
-            borderRadius: "24px",
-            border: `1px solid ${COLORS.border}`,
-            textAlign: "left",
-            transition: "all 0.3s ease",
-            cursor: "default"
-          }}
-          className="hover-shadow"
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(59, 130, 246, 0.3)"; e.currentTarget.style.boxShadow = "0 20px 40px rgba(59, 130, 246, 0.04)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.boxShadow = "none"; }}
-          >
-            <div style={{ 
-              width: "50px", height: "50px", borderRadius: "12px", 
-              background: "rgba(59, 130, 246, 0.1)", display: "flex", alignItems: "center", 
-              justifyContent: "center", fontSize: "1.5rem", color: COLORS.accent, marginBottom: "1.5rem"
-            }}>
-              ⏱️
-            </div>
-            <h3 style={{ fontSize: "1.65rem", fontWeight: "900", color: COLORS.accent, marginBottom: "0.25rem" }}>
-              Save 700+ Hours
-            </h3>
-            <div style={{ fontSize: "0.75rem", fontWeight: "900", color: COLORS.textMuted, letterSpacing: "1px", textTransform: "uppercase", marginBottom: "1.25rem" }}>
-              Save Time in 4 Months
-            </div>
-            <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6" }}>
-              Liberate your workforce from administrative friction. Let autonomous background agents handle scheduled Zoom session scheduling, transcription summaries, and telemetry reporting 24/7.
-            </p>
-          </div>
-
-        </div>
-      </section>
-
-
-      {/* Stats Bar */}
-      <div style={{ display: "flex", justifyContent: "center", gap: "8rem", padding: "4rem 0", background: COLORS.bgSoft, borderTop: `1px solid ${COLORS.border}`, borderBottom: `1px solid ${COLORS.border}` }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "2.5rem", fontWeight: "900" }}>40+</div>
-          <div style={{ fontSize: "0.8rem", fontWeight: "700", color: COLORS.textMuted }}>HRS SAVED / WEEK</div>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "2.5rem", fontWeight: "900" }}>96%</div>
-          <div style={{ fontSize: "0.8rem", fontWeight: "700", color: COLORS.textMuted }}>ERROR REDUCTION</div>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "2.5rem", fontWeight: "900" }}>24/7</div>
-          <div style={{ fontSize: "0.8rem", fontWeight: "700", color: COLORS.textMuted }}>AGENT UPTIME</div>
-        </div>
+  // Render SaaS Operator Control Panel Workspace
+  return (
+    <div style={{ color: "#0f172a" }}>
+      {/* Main Swarm Fleet Section */}
+      <h2 style={{ fontSize: "1.3rem", fontWeight: "900", marginBottom: "1.5rem" }}>
+        🖥️ Sovereign Agent Fleet
+      </h2>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+        gap: "2rem",
+        marginBottom: "4rem"
+      }}>
+        {agents
+          .filter(agent => {
+            if (enabledAgents.length > 0) {
+              const checkId = agent.id.toLowerCase();
+              if (checkId === "bi2") {
+                return enabledAgents.includes("bi");
+              }
+              return enabledAgents.includes(checkId);
+            }
+            return true;
+          })
+          .filter(agent => agent.id !== "DEVOPS_GENI" || !!user)
+          .map(agent => (
+            <ConsoleAgentCard key={agent.id} agent={agent} onAction={initiateAITalk} />
+          ))
+        }
       </div>
 
-      {/* Process Section */}
-      <section id="process" style={{ padding: "8rem 5%", background: "white" }}>
-        <SectionHeader 
-          title="A clear, proven process." 
-          subtitle="No surprises, no delays. We move from initial audit to production-ready agent in 2 weeks."
-        />
-        <div className="process-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
-          {[
-            { step: "01", title: "Audit", desc: "Deep-dive into your workflows. Find bottlenecks and the highest-ROI AI opportunities." },
-            { step: "02", title: "Architect", desc: "Design the agent logic. Choose tools, plan integrations, map the data flow." },
-            { step: "03", title: "Build", desc: "Rapid development with weekly demos. Build → test → iterate until perfect." },
-            { step: "04", title: "Deploy", desc: "Go live with monitoring. Full documentation, team training, and support." }
-          ].map((item, i) => (
-            <div key={i} style={{ position: "relative" }}>
-              <div style={{ fontSize: "4rem", fontWeight: "900", color: "#f3f4f6", marginBottom: "-2rem", lineHeight: 1 }}>{item.step}</div>
-              <h4 style={{ fontSize: "1.5rem", fontWeight: "800", color: COLORS.primary, marginBottom: "1rem", position: "relative" }}>{item.title}</h4>
-              <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6" }}>{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Services Section */}
-      <section id="services" style={{ padding: "8rem 5%", background: COLORS.bgSoft }}>
-        <SectionHeader 
-          title="The Swarm Fleet" 
-          subtitle="Deploy specialized AI agents for analytics, governance, and real-time intelligence. Every agent is ready to scale with your team."
-        />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))", gap: "2.5rem", maxWidth: "1400px", margin: "0 auto" }}>
-          {agents.map(agent => (
-            <AgentCard key={agent.id} agent={agent} onAction={initiateAITalk} />
-          ))}
-        </div>
-      </section>
-
-      {/* Swarm Lab Section */}
-      <section id="swarm-lab" style={{ padding: "8rem 5%", background: "white", borderTop: `1px solid ${COLORS.border}`, borderBottom: `1px solid ${COLORS.border}` }}>
-        <div style={{ textAlign: "center", marginBottom: "4rem" }}>
-          <div style={{ display: "inline-block", padding: "6px 16px", background: "rgba(244, 63, 94, 0.1)", color: "#f43f5e", borderRadius: "99px", fontSize: "0.75rem", fontWeight: "900", marginBottom: "1rem", letterSpacing: "2px" }}>
-            PIPELINE & EVENT-DRIVEN FLEET
-          </div>
-          <h2 style={{ fontSize: "2.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem", letterSpacing: "-1px" }}>
-            The Swarm Lab
-          </h2>
-          <p style={{ fontSize: "1.1rem", color: COLORS.textMuted, maxWidth: "600px", margin: "0 auto" }}>
-            Utility agents that run autonomously in the background to handle data synthesis, document composition, and scheduled pipeline tasks.
-          </p>
-        </div>
-        
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))", gap: "2.5rem", maxWidth: "1400px", margin: "0 auto" }}>
-          {pipelineAgents.map(agent => (
-            <div key={agent.id} style={{ 
-              background: "white", 
-              padding: "2.5rem", 
-              borderRadius: "24px", 
-              border: `1px solid ${COLORS.border}`,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              height: "100%",
-              boxShadow: "none"
-            }}
-            className="hover-shadow"
-            >
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "2rem" }}>
-                  <div style={{ 
-                    width: "60px", height: "60px", borderRadius: "16px", 
-                    background: `${agent.color}11`, display: "flex", alignItems: "center", 
-                    justifyContent: "center", fontSize: "2rem", border: `1px solid ${agent.color}22`
-                  }}>
-                    {agent.icon}
-                  </div>
-                  <span style={{ 
-                    fontSize: "0.65rem", fontWeight: "900", color: agent.status === "READY" ? COLORS.success : COLORS.textMuted,
-                    background: agent.status === "READY" ? `${COLORS.success}11` : "rgba(107, 114, 128, 0.1)",
-                    padding: "4px 12px", borderRadius: "99px", letterSpacing: "1px",
-                    border: `1px solid ${agent.status === "READY" ? `${COLORS.success}22` : "rgba(107, 114, 128, 0.2)"}`
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      {agent.status === "READY" && (
-                        <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: COLORS.success, boxShadow: `0 0 6px ${COLORS.success}` }} />
-                      )}
-                      <span>{agent.status === "READY" ? "ONLINE" : agent.status}</span>
-                    </div>                  </span>
-                </div>
-                <h3 style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem" }}>{agent.title}</h3>
-                <p style={{ color: COLORS.textMuted, lineHeight: "1.6", marginBottom: "2rem", fontSize: "1rem" }}>{agent.desc}</p>
-              </div>
-              
-              {agent.id === "shadow" && (
-                <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-                  <span 
-                    onClick={() => setShowAuditPreview(true)}
-                    style={{ 
-                      color: "#4f46e5", cursor: "pointer", fontWeight: "900", fontSize: "0.85rem", 
-                      textDecoration: "underline", display: "inline-block", letterSpacing: "0.5px"
-                    }}
-                  >
-                    📄 VIEW SAMPLE MEETING AUDIT (PDF)
-                  </span>
-                </div>
-              )}
-
-              <button 
-                onClick={() => handlePipelineAction(agent)}
-                style={{ 
-                  width: "100%", padding: "1.2rem", background: agent.status === "READY" ? agent.color : COLORS.bgSoft, 
-                  color: agent.status === "READY" ? "white" : COLORS.textMuted, border: agent.status === "READY" ? "none" : `1px solid ${COLORS.border}`, borderRadius: "12px", 
-                  fontWeight: "800", cursor: agent.status === "READY" ? "pointer" : "not-allowed", fontSize: "0.9rem",
-                  letterSpacing: "1px", transition: "all 0.3s ease",
-                  opacity: agent.status === "READY" ? 1 : 0.6
-                }}
-                disabled={agent.status !== "READY"}
-              >
-                {agent.btnText.toUpperCase()}
-              </button>
-            </div>
-          ))}
-
-          {/* Telegram HITL card removed */}
-        </div>
-      </section>
-
-      {/* About Section (Bento Box) */}
-      <section id="about" style={{ padding: "8rem 5%", background: COLORS.bgSoft, borderTop: `1px solid ${COLORS.border}`, borderBottom: `1px solid ${COLORS.border}`, position: "relative" }}>
-        <style>
-          {`
-            .bento-grid {
-              display: grid;
-              grid-template-columns: repeat(12, 1fr);
-              gap: 1.5rem;
-              max-width: 1200px;
-              margin: 0 auto;
-            }
-            .bento-card {
-              background: rgba(255, 255, 255, 0.8);
-              backdrop-filter: blur(10px);
-              border: 1px solid rgba(0, 0, 0, 0.05);
-              border-radius: 24px;
-              padding: 2.5rem;
-              display: flex;
-              flex-direction: column;
-              gap: 1.25rem;
-              transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-              box-shadow: 0 10px 30px rgba(0,0,0,0.02);
-            }
-            .bento-card:hover {
-              transform: translateY(-8px);
-              box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-              border: 1px solid rgba(0, 0, 0, 0.1);
-            }
-            .card-1 { grid-column: span 7; }
-            .card-2 { grid-column: span 5; background: ${COLORS.primary}; color: white; }
-            .card-3 { grid-column: span 5; }
-            .card-4 { grid-column: span 7; }
-            .card-5 { grid-column: span 12; text-align: center; background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent}); color: white; border: none; }
-            
-            @media (max-width: 900px) {
-              .card-1, .card-2, .card-3, .card-4, .card-5 { grid-column: span 12; }
-            }
-          `}
-        </style>
-        
-        <div style={{ textAlign: "center", marginBottom: "4rem" }}>
-          <h2 style={{ fontSize: "3rem", fontWeight: "900", color: COLORS.primary }}>
-            The Founder's Story
-          </h2>
-        </div>
-
-        <div className="bento-grid">
-          
-          {/* Box 1: The Origin */}
-          <div className="bento-card card-1">
-            <div style={{ fontSize: "0.85rem", fontWeight: "900", color: COLORS.accent, textTransform: "uppercase", letterSpacing: "2px" }}>The Origin</div>
-            <p style={{ fontSize: "1.2rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
-              Like most builders in the AI era, I started with what everyone else was doing—small side projects, late-night experiments, and endless hours of vibe coding.
-            </p>
-            <p style={{ fontSize: "1.2rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
-              At first, I wasn't trying to build a company. I was simply trying to solve my own problems. Every day, I found myself repeating the same workflows: researching, planning, writing content, managing projects, tracking leads, documenting processes, onboarding people, and making decisions.
-            </p>
-          </div>
-
-          {/* Box 2: The Catalyst */}
-          <div className="bento-card card-2" style={{ justifyContent: "center" }}>
-            <div style={{ fontSize: "0.85rem", fontWeight: "900", color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "2px" }}>The Epiphany</div>
-            <div style={{ fontSize: "1.7rem", fontWeight: "900", lineHeight: "1.4", margin: "1rem 0" }}>
-              "Why am I doing this manually when AI agents can do it for me?"
-            </div>
-            <p style={{ fontSize: "1.1rem", color: "rgba(255,255,255,0.9)", margin: 0, lineHeight: "1.6" }}>
-              That question changed everything. Instead of building another AI tool, I started building AI agents that could replicate how I work. What began as a personal productivity experiment evolved into something much bigger: <strong>A startup designed to run itself.</strong>
-            </p>
-          </div>
-
-          {/* Box 3: The Problem */}
-          <div className="bento-card card-3">
-            <div style={{ fontSize: "0.85rem", fontWeight: "900", color: COLORS.accent, textTransform: "uppercase", letterSpacing: "2px" }}>The Broken Reality</div>
-            <p style={{ fontSize: "1.2rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
-              Not because humans aren't important. But because founders shouldn't spend their time buried under repetitive operational work.
-            </p>
-            <p style={{ fontSize: "1.2rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
-              Today's founders are expected to be marketers, salespeople, recruiters, operators, product managers, content creators, customer success teams, and executives—all at the same time.
-            </p>
-            <div style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginTop: "0.5rem" }}>
-              That's broken.
-            </div>
-          </div>
-
-          {/* Box 4: The Solution */}
-          <div className="bento-card card-4">
-            <div style={{ fontSize: "0.85rem", fontWeight: "900", color: COLORS.accent, textTransform: "uppercase", letterSpacing: "2px" }}>The Operating System</div>
-            <h3 style={{ fontSize: "2rem", fontWeight: "900", color: COLORS.primary, margin: "0.5rem 0", lineHeight: "1.2" }}>
-              Every founder deserves a digital workforce.
-            </h3>
-            <p style={{ fontSize: "1.15rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
-              A team of specialized AI agents that understand your business, execute proven playbooks, and help you move faster without hiring an army of people. From hiring your first employee to acquiring your first customer. From content creation to sales outreach.
-            </p>
-            <div style={{ display: "flex", gap: "10px", marginTop: "1rem", flexWrap: "wrap" }}>
-              {["No complicated setups", "No enterprise consulting", "No months of implementation"].map(tag => (
-                <span key={tag} style={{ background: "rgba(59, 130, 246, 0.1)", color: COLORS.accent, padding: "8px 16px", borderRadius: "99px", fontSize: "0.9rem", fontWeight: "800" }}>
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Box 5: The Vision */}
-          <div className="bento-card card-5" style={{ alignItems: "center", padding: "5rem 2rem" }}>
-            <div style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)", fontWeight: "900", marginBottom: "2rem", textShadow: "0 4px 20px rgba(0,0,0,0.2)", lineHeight: "1.1" }}>
-              One founder.<br/>Unlimited execution.
-            </div>
-            <p style={{ fontSize: "1.25rem", lineHeight: "1.7", maxWidth: "800px", margin: "0 auto", color: "rgba(255,255,255,0.9)" }}>
-              We're building a future where entrepreneurs spend less time managing tasks and more time building products, serving customers, and creating impact. Because the next generation of startups won't scale by hiring faster. <strong>They'll scale by deploying smarter agents.</strong>
-            </p>
-            <div style={{ marginTop: "3.5rem", fontSize: "1.1rem", fontWeight: "900", letterSpacing: "3px", textTransform: "uppercase", padding: "16px 40px", border: "2px solid rgba(255,255,255,0.4)", borderRadius: "99px", background: "rgba(0,0,0,0.1)" }}>
-              Welcome to the future of company building
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section id="faq" style={{ padding: "8rem 5%", background: "white" }}>
-        <SectionHeader 
-          title="Common Questions" 
-          subtitle="Everything you're probably wondering about deploying your AI fleet."
-        />
-        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-          {[
-            { q: "How long does a typical build take?", a: "Most agents are live in production within 1–2 weeks, including local model fine-tuning." },
-            { q: "Do you use my data for training?", a: "Never. Because your agents run entirely on your own local hardware or private VPC, your data never leaves your infrastructure." },
-            { q: "Can the agents talk to my existing tools?", a: "Yes. We specialize in connecting local agent inference to MySQL, MongoDB, Slack, and custom CRM APIs." },
-            { q: "What are the running costs?", a: "₹0 in recurring cloud API fees. Running models locally or on dedicated hardware removes all message volume-based SaaS bills." },
-            { q: "How does the platform handle high-throughput log volumes and disk safety?", a: "All systems (agents, backend, and Docker services) utilize structured JSON logging with strict size-capped auto-rotation and automated scheduled time-based purges. Logs are processed asynchronously via non-blocking queues, ensuring zero latency spikes for up to 50,000+ concurrent users." },
-            { q: "Can the platform self-diagnose system health and hardware issues?", a: "Yes. Our DevOps Geni agent is equipped with native system diagnostic tools that can monitor hardware stats, detect NVIDIA GPU availability, scan active listening ports for EADDRINUSE conflicts, and track Docker container health in real-time." }
-          ].map((item, i) => (
-            <div 
-              key={i} 
-              itemScope 
-              itemProp="mainEntity" 
-              itemType="https://schema.org/Question" 
-              style={{ borderBottom: `1px solid ${COLORS.border}`, padding: "2rem 0" }}
-            >
-              <h4 
-                itemProp="name" 
-                style={{ fontSize: "1.1rem", fontWeight: "800", color: COLORS.primary, marginBottom: "0.5rem" }}
-              >
-                {item.q}
-              </h4>
-              <div 
-                itemScope 
-                itemProp="acceptedAnswer" 
-                itemType="https://schema.org/Answer"
-              >
-                <p 
-                  itemProp="text" 
-                  style={{ color: COLORS.textMuted, fontSize: "1rem", lineHeight: "1.6", margin: 0 }}
-                >
-                  {item.a}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-
-      {/* Footer */}
-      <Footer onBlogClick={onBlogClick} onTelemetryClick={onTelemetryClick} onShortsClick={onShortsClick} onLegalClick={setLegalModalType} onDashboardClick={onDashboardClick} onDeploymentClick={onDeploymentClick} />
-
-      {/* --- PIPELINE REELS GALLERY MODAL --- */}
-      <AnimatePresence>
-        {showReelsGallery && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: "fixed", inset: 0, zIndex: 1000,
-              background: "#000"
-            }}
-          >
-            <SwarmReelsCarousel 
-               onBack={() => setShowReelsGallery(false)} 
-               customData={galleryReels.map((reel, index) => ({
-                 id: index,
-                 title: reel.title,
-                 desc: `Published: ${reel.date}`,
-                 tag: reel.tag,
-                 color: "#f43f5e",
-                 videoSrc: reel.face ? `/reels/${reel.slug}_face_reel.mp4` : `/reels/${reel.slug}_reel.mp4`
-               }))}
-               customTitle="Swarm Lab"
-               customHeader="SWARM AGENTIC LAB · REELS GALLERY"
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* --- SMARTPHONE CINEMA OVERLAY --- */}
-      <AnimatePresence>
-        {selectedReel && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: "fixed", inset: 0, zIndex: 1100,
-              background: "rgba(0,0,0,0.9)", backdropFilter: "blur(30px)",
-              display: "flex", justifyContent: "center", alignItems: "center",
-              flexDirection: "column"
-            }}
-          >
-            {/* Smartphone Wrapper */}
-            <div style={{
-              position: "relative",
-              width: "360px",
-              height: "640px",
-              borderRadius: "44px",
-              border: "14px solid #1f2937",
-              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5), 0 0 80px rgba(244,63,94,0.15)",
-              background: "black",
-              overflow: "hidden",
-              display: "flex", justifyContent: "center", alignItems: "center"
-            }}>
-              {/* Dynamic Video */}
-              <video
-                src={`/reels/${selectedReel.slug}_reel.mp4`}
-                controls
-                autoPlay
-                muted={isReelMuted}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover"
-                }}
-              />
-
-              {/* Floating Sound Toggle Badge */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsReelMuted(!isReelMuted);
-                }}
-                style={{
-                  position: "absolute",
-                  bottom: "80px",
-                  right: "20px",
-                  background: "rgba(17, 24, 39, 0.75)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.15)",
-                  borderRadius: "50%",
-                  width: "48px",
-                  height: "48px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  cursor: "pointer",
-                  boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
-                  zIndex: 2010,
-                  transition: "transform 0.2s"
-                }}
-                onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
-                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-              >
-                {isReelMuted ? (
-                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                    <path d="M9 9v6a3 3 0 0 0 3 3h1.586l4.707 4.707A1 1 0 0 0 20 22V4a1 1 0 0 0-1.707-.707L13.586 8H12a3 3 0 0 0-3 3z"></path>
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                  </svg>
-                )}
-              </button>
-
-              {/* Tap to Unmute Pulsing Overlay */}
-              {isReelMuted && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: [0.6, 1, 0.6], scale: 1 }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsReelMuted(false);
-                  }}
-                  style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    background: "rgba(17, 24, 39, 0.85)",
-                    backdropFilter: "blur(12px)",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                    padding: "12px 24px",
-                    borderRadius: "99px",
-                    color: "white",
-                    fontWeight: "900",
-                    fontSize: "0.85rem",
-                    letterSpacing: "1px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
-                    cursor: "pointer",
-                    zIndex: 2010
-                  }}
-                >
-                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="#3b82f6" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                    <path d="M9 9v6a3 3 0 0 0 3 3h1.586l4.707 4.707A1 1 0 0 0 20 22V4a1 1 0 0 0-1.707-.707L13.586 8H12a3 3 0 0 0-3 3z"></path>
-                  </svg>
-                  TAP TO UNMUTE
-                </motion.div>
-              )}
-
-            {/* Close Button on Bezel */}
-            <button
-              onClick={() => setSelectedReel(null)}
-              style={{
-                position: "absolute", top: "20px", right: "20px",
-                background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.2)",
-                color: "white", width: "40px", height: "40px", borderRadius: "50%",
-                cursor: "pointer", fontSize: "1.2rem", fontWeight: "bold",
-                display: "flex", alignItems: "center", justifyContent: "center"
-              }}
-            >
-              ×
-            </button>
-          </div>
-          <div style={{ color: "rgba(255,255,255,0.5)", marginTop: "2rem", fontSize: "0.85rem", letterSpacing: "2px", fontWeight: "bold" }}>
-            NOW PLAYING: {selectedReel.title.toUpperCase()}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-
-    {/* --- SHADOW AGENT DEPLOY MODAL --- */}
-    <AnimatePresence>
-      {showShadowInput && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          style={{
-            position: "fixed", inset: 0, zIndex: 1100,
-            background: "rgba(11, 15, 25, 0.75)",
-            backdropFilter: "blur(15px)",
-            display: "flex", justifyContent: "center", alignItems: "center",
-            fontFamily: "'Outfit', sans-serif"
-          }}
-        >
-          <motion.div
-            initial={{ scale: 0.9, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.9, y: 20 }}
-            style={{
-              background: "white",
-              width: "100%",
-              maxWidth: "500px",
-              padding: "3rem",
-              borderRadius: "32px",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-              border: `1px solid ${COLORS.border}`,
-              position: "relative"
-            }}
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => {
-                setShowShadowInput(false);
-                setMeetingUrl("");
-              }}
-              style={{
-                position: "absolute", top: "24px", right: "24px",
-                background: "none", border: "none", color: COLORS.textMuted,
-                fontSize: "1.5rem", cursor: "pointer"
-              }}
-            >
-              ×
-            </button>
-
-            <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-              <div style={{ 
-                width: "60px", height: "60px", borderRadius: "16px", 
-                background: "rgba(79, 70, 229, 0.1)", display: "inline-flex", alignItems: "center", 
-                justifyContent: "center", fontSize: "2rem", color: "#4f46e5", marginBottom: "1.5rem"
-              }}>
-                👥
-              </div>
-              <h3 style={{ fontSize: "1.75rem", fontWeight: "900", color: COLORS.primary, marginBottom: "0.5rem" }}>Deploy Shadow Agent</h3>
-              <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.5" }}>
-                Pipes a headless browser observer directly into your meeting session to construct daily structural transcription audits.
-              </p>
-            </div>
-
-            <div style={{ marginBottom: "2rem" }}>
-              <label style={{ display: "block", fontSize: "0.75rem", fontWeight: "900", color: COLORS.primary, letterSpacing: "1px", marginBottom: "8px" }}>
-                OFFICIAL MEETING LINK
-              </label>
-              <input
-                type="text"
-                placeholder="https://meet.google.com/abc-defg-hij"
-                value={meetingUrl}
-                onChange={e => setMeetingUrl(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "1rem",
-                  borderRadius: "12px",
-                  border: `1px solid ${COLORS.border}`,
-                  fontSize: "0.95rem",
-                  fontFamily: "inherit",
-                  outline: "none",
-                  transition: "border-color 0.2s"
-                }}
-                onFocus={e => e.target.style.borderColor = "#4f46e5"}
-                onBlur={e => e.target.style.borderColor = COLORS.border}
-              />
-            </div>
-
-            <button
-              onClick={handleDeployShadow}
-              disabled={isDeployingShadow}
-              style={{
-                width: "100%",
-                padding: "1.2rem",
-                background: "#4f46e5",
-                color: "white",
-                border: "none",
-                borderRadius: "12px",
-                fontWeight: "900",
-                fontSize: "0.95rem",
-                letterSpacing: "1px",
-                cursor: isDeployingShadow ? "not-allowed" : "pointer",
-                opacity: isDeployingShadow ? 0.7 : 1,
-                transition: "background 0.2s"
-              }}
-            >
-              {isDeployingShadow ? "SPAWNING VIRTUAL OBSERVER..." : "DEPLOY OBSERVER"}
-            </button>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-
-    {/* --- EXIT INTENT SWARM CATCH MODAL --- */}
-    <AnimatePresence>
-      {showExitIntentModal && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          style={{
-            position: "fixed", inset: 0, zIndex: 1200,
-            background: "rgba(11, 15, 25, 0.4)",
-            backdropFilter: "blur(15px)",
-            display: "flex", justifyContent: "center", alignItems: "center",
-            fontFamily: "'Outfit', sans-serif"
-          }}
-        >
-          <motion.div
-            initial={{ scale: 0.95, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.95, y: 20 }}
-            style={{
-              background: "white",
-              width: "100%",
-              maxWidth: "500px",
-              padding: "3rem",
-              borderRadius: "32px",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
-              border: `1px solid rgba(59, 130, 246, 0.15)`,
-              position: "relative"
-            }}
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => {
-                setShowExitIntentModal(false);
-                setExitIntentCaptured(true);
-              }}
-              style={{
-                position: "absolute", top: "24px", right: "24px",
-                background: "none", border: "none", color: COLORS.textMuted,
-                fontSize: "1.5rem", cursor: "pointer"
-              }}
-            >
-              ×
-            </button>
-
-            <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-              <div style={{ 
-                width: "60px", height: "60px", borderRadius: "16px", 
-                background: "rgba(59, 130, 246, 0.1)", display: "inline-flex", alignItems: "center", 
-                justifyContent: "center", fontSize: "2rem", color: COLORS.accent, marginBottom: "1.5rem"
-              }}>
-                🚪
-              </div>
-              <h3 style={{ fontSize: "1.75rem", fontWeight: "900", color: COLORS.primary, marginBottom: "0.5rem" }}>
-                Wait, Operator!
-              </h3>
-              <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6" }}>
-                "Don't lose your calculated swarm coordinates. Enter your corporate email, and I will dispatch your custom multi-agent architecture specs instantly before you disconnect."
-              </p>
-            </div>
-
-            <div style={{ marginBottom: "2rem" }}>
-              <input
-                type="email"
-                placeholder="name@company.com"
-                value={leadEmail}
-                onChange={e => setLeadEmail(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "1rem 1.25rem",
-                  borderRadius: "12px",
-                  border: `1px solid ${COLORS.border}`,
-                  fontSize: "0.95rem",
-                  outline: "none"
-                }}
-              />
-            </div>
-
-            <button
-              onClick={() => {
-                if (leadEmail.includes("@")) {
-                  setLeadSubmitted(true);
-                  setExitIntentCaptured(true);
-                  setShowExitIntentModal(false);
-                  alert("Fleet blueprint specs successfully dispatched to your email!");
-                } else {
-                  alert("Please enter a valid business email.");
-                }
-              }}
-              style={{
-                width: "100%",
-                padding: "1.2rem",
-                background: COLORS.accent,
-                color: "white",
-                border: "none",
-                borderRadius: "12px",
-                fontWeight: "900",
-                fontSize: "0.95rem",
-                letterSpacing: "1px",
-                cursor: "pointer"
-              }}
-            >
-              CLAIM FLEET COORDINATES
-            </button>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-
-    {/* --- SHADOW MEETING AUDIT PREVIEW MODAL --- */}
-    <AnimatePresence>
-      {showAuditPreview && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          style={{
-            position: "fixed", inset: 0, zIndex: 1200,
-            background: "rgba(11, 15, 25, 0.4)",
-            backdropFilter: "blur(15px)",
-            display: "flex", justifyContent: "center", alignItems: "center",
-            padding: "2rem",
-            fontFamily: "'Outfit', sans-serif"
-          }}
-        >
-          <motion.div
-            initial={{ scale: 0.95, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.95, y: 20 }}
-            style={{
-              background: "white",
-              width: "100%",
-              maxWidth: "750px",
-              maxHeight: "85vh",
-              overflowY: "auto",
-              padding: "3.5rem",
-              borderRadius: "32px",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
-              border: `1px solid rgba(79, 70, 229, 0.15)`,
-              position: "relative"
-            }}
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => setShowAuditPreview(false)}
-              style={{
-                position: "absolute", top: "28px", right: "28px",
-                background: "none", border: "none", color: COLORS.textMuted,
-                fontSize: "1.75rem", cursor: "pointer", fontWeight: "300"
-              }}
-            >
-              ×
-            </button>
-
-            {/* Header branding */}
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "2rem", borderBottom: `1px solid ${COLORS.border}`, paddingBottom: "1.5rem" }}>
-              <div style={{ 
-                width: "40px", height: "40px", borderRadius: "10px", 
-                background: "rgba(79, 70, 229, 0.1)", display: "flex", 
-                alignItems: "center", justifyContent: "center", fontSize: "1.2rem", color: "#4f46e5"
-              }}>
-                👥
-              </div>
-              <div style={{ textAlign: "left" }}>
-                <span style={{ fontSize: "0.65rem", fontWeight: "900", color: "#4f46e5", letterSpacing: "2px", textTransform: "uppercase" }}>Shadow Observer Output</span>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: "900", color: COLORS.primary, margin: 0 }}>SAMPLE DAILY STRUCTURAL AUDIT</h3>
-              </div>
-              <span style={{ 
-                marginLeft: "auto", fontSize: "0.7rem", fontWeight: "900", color: COLORS.success,
-                background: "rgba(16, 185, 129, 0.1)", padding: "4px 12px", borderRadius: "99px",
-                border: "1px solid rgba(16, 185, 129, 0.2)"
-              }}>
-                100% COMPLETED
-              </span>
-            </div>
-
-            {/* Document Body */}
-            <div style={{ textAlign: "left", fontFamily: "monospace", color: COLORS.primary, fontSize: "0.9rem", lineHeight: "1.6", background: COLORS.bgSoft, padding: "2.5rem", borderRadius: "20px", border: `1px solid ${COLORS.border}` }}>
-              
-              <div style={{ color: "#4f46e5", fontWeight: "900", fontSize: "1.1rem", marginBottom: "1rem" }}>
-                # DAILY STRUCTURAL AUDIT: SWARM OBSERVABILITY & SENTRY ALIGNMENT
-              </div>
-              
-              <div style={{ color: COLORS.textMuted, marginBottom: "1.5rem" }}>
-                <strong>Session ID</strong>: <span style={{ color: COLORS.primary }}>`SWARM-OBS-9082`</span> | <strong>Date</strong>: <span style={{ color: COLORS.primary }}>May 18, 2026</span><br/>
-                <strong>Duration</strong>: <span style={{ color: COLORS.primary }}>34 minutes</span> | <strong>Host</strong>: <span style={{ color: COLORS.primary }}>Operator</span><br/>
-                <strong>Active Agents</strong>: <span style={{ color: "#4f46e5" }}>Shadow Observer V1</span>, <span style={{ color: "#10b981" }}>Cortex BI Analyst</span>
-              </div>
-
-              <div style={{ borderTop: `1px dashed ${COLORS.border}`, paddingTop: "1.5rem", marginBottom: "1.5rem" }}>
-                <div style={{ fontWeight: "900", color: COLORS.accent, marginBottom: "0.5rem" }}>## 📌 EXECUTIVE SUMMARY</div>
-                <div style={{ color: COLORS.textMuted }}>
-                  This session finalized the deployment of the local-first observability and guardrail framework ("Sentry"). The team successfully integrated real-time token cost auditing, latency telemetry, and semantic output validation across all active agents without relying on third-party cloud services.
-                </div>
-              </div>
-
-              <div style={{ borderTop: `1px dashed ${COLORS.border}`, paddingTop: "1.5rem", marginBottom: "1.5rem" }}>
-                <div style={{ fontWeight: "900", color: COLORS.accent, marginBottom: "0.5rem" }}>## 💬 DIARIZED SPEECH HIGHLIGHTS</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
-                  <div>
-                    <span style={{ color: "#4f46e5", fontWeight: "900" }}>● SPEAKER_01 (Operator)</span>: <span style={{ color: COLORS.textMuted }}>"We must keep the Express web server spawning detached. This ensures the background Playwright browser process doesn't block frontend cycles when launching meeting monitors."</span>
-                  </div>
-                  <div>
-                    <span style={{ color: "#10b981", fontWeight: "900" }}>● SHADOW_OBSERVER_V1</span>: <span style={{ color: COLORS.textMuted }}>"Stabilized the Zoom Web Client direct bypass parameters. Link formats are dynamically mutated from /j/ to /wc/join/ to bypass native prompt blocks instantly."</span>
-                  </div>
-                  <div>
-                    <span style={{ color: "#f59e0b", fontWeight: "900" }}>● SPEAKER_02 (Partner)</span>: <span style={{ color: COLORS.textMuted }}>"Can we format the daily reports into structured markdown checklists? Our backend needs to parse decisions and actions automatically."</span>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ borderTop: `1px dashed ${COLORS.border}`, paddingTop: "1.5rem" }}>
-                <div style={{ fontWeight: "900", color: COLORS.accent, marginBottom: "0.5rem" }}>## 📋 KEY DECISIONS & ACTIONS</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "10px" }}>
-                  <div style={{ color: COLORS.textMuted }}>[x] Consolidate Reels gallery to exactly one high-fidelity preview item.</div>
-                  <div style={{ color: COLORS.textMuted }}>[x] Strip "NEXUS REEL" text label overlay from the floating cinema preview in BlogSection.</div>
-                  <div style={{ color: COLORS.textMuted }}>[ ] Connect LiveKit WebRTC mic inputs directly to the Swarm Commander voice trigger.</div>
-                  <div style={{ color: COLORS.textMuted }}>[ ] Deploy Sentry local-first cost telemetry checks into the production MongoDB cluster.</div>
-                </div>
-              </div>
-
-            </div>
-
-            <button
-              onClick={() => {
-                setShowAuditPreview(false);
-                alert("Sample PDF layout printed and ready for integration!");
-              }}
-              style={{
-                width: "100%",
-                padding: "1.2rem",
-                background: "#4f46e5",
-                color: "white",
-                border: "none",
-                borderRadius: "12px",
-                fontWeight: "900",
-                fontSize: "0.95rem",
-                letterSpacing: "1px",
-                cursor: "pointer",
-                marginTop: "2rem"
-              }}
-            >
-              DOWNLOAD SAMPLE AUDIT PDF
-            </button>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-
-      {/* Dynamic Weather Union / Zomato Success Toast */}
-      <AnimatePresence>
-        {showWeatherToast && weatherData && (
-          <motion.div
-            initial={{ opacity: 0, y: -30, scale: 0.9, x: 50 }}
-            animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95, x: 30, transition: { duration: 0.2 } }}
-            style={{
-              position: "fixed",
-              top: "6rem",
-              right: "2.5rem",
-              zIndex: 10000,
-              width: "320px",
-              background: "#ffffff",
-              border: "1px solid rgba(0, 0, 0, 0.08)",
-              borderRadius: "20px",
-              padding: "1.2rem",
-              boxShadow: "0 15px 35px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(0, 0, 0, 0.05)",
-              color: "#111827",
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
-              fontFamily: "'Outfit', sans-serif"
-            }}
-          >
-            {/* Header info */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: "1.8rem" }}>
-                  {(weatherData.temp ?? 0) > 32 ? "☀️" : (weatherData.rain ?? 0) > 0 ? "🌧️" : "⛅"}
-                </span>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: "1.15rem", fontWeight: "800", color: "#111827" }}>{weatherData.city}</h4>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowWeatherToast(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "rgba(0, 0, 0, 0.4)",
-                  fontSize: "1.4rem",
-                  cursor: "pointer",
-                  lineHeight: 1,
-                  padding: 0,
-                  transition: "color 0.2s"
-                }}
-                onMouseEnter={e => e.target.style.color = "#111827"}
-                onMouseLeave={e => e.target.style.color = "rgba(0, 0, 0, 0.4)"}
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Weather Details Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", padding: "10px 0", borderTop: "1px solid rgba(0, 0, 0, 0.06)", borderBottom: "1px solid rgba(0, 0, 0, 0.06)" }}>
-              <div>
-                <span style={{ fontSize: "0.65rem", opacity: 0.6, display: "block", color: "#6b7280", letterSpacing: "0.5px" }}>TEMPERATURE</span>
-                <span style={{ fontSize: "1.4rem", fontWeight: "900", color: "#059669" }}>{typeof weatherData.temp === "number" ? `${weatherData.temp.toFixed(1)}°C` : "N/A"}</span>
-              </div>
-              <div>
-                <span style={{ fontSize: "0.65rem", opacity: 0.6, display: "block", color: "#6b7280", letterSpacing: "0.5px" }}>HUMIDITY</span>
-                <span style={{ fontSize: "1.4rem", fontWeight: "900", color: "#2563eb" }}>{typeof weatherData.humidity === "number" ? `${weatherData.humidity.toFixed(0)}%` : "N/A"}</span>
-              </div>
-            </div>
-
-            {/* Zomato Giveback Attribution */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.7rem", marginTop: "4px" }}>
-              <span style={{ color: "#e11d48", fontWeight: "800", display: "flex", alignItems: "center", gap: "4px" }}>
-                ❤️ Live Weather
-              </span>
-              <span style={{ color: "#6b7280", opacity: 0.8, fontStyle: "italic" }}>
-                A Zomato Giveback
-              </span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* --- LEGAL MODAL --- */}
-      <AnimatePresence>
-        {legalModalType && (
-          <LegalModal 
-            type={legalModalType} 
-            onClose={() => setLegalModalType(null)} 
-          />
-        )}
-      </AnimatePresence>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        html { scroll-behavior: smooth; }
-        .hover-shadow:hover {
-          box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.08);
-        }
-        .quantum-card {
-          animation: quantum-glow 6s infinite ease-in-out;
-          transition: all 0.4s ease;
-        }
-        .quantum-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 30px 70px rgba(59, 130, 246, 0.12), 0 0 50px rgba(59, 130, 246, 0.3) !important;
-          border-color: rgba(59, 130, 246, 0.4) !important;
-        }
-        @keyframes quantum-glow {
-          0% { box-shadow: 0 20px 50px rgba(59, 130, 246, 0.05), 0 0 25px rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.15); }
-          50% { box-shadow: 0 20px 50px rgba(16, 185, 129, 0.05), 0 0 45px rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.25); }
-          100% { box-shadow: 0 20px 50px rgba(59, 130, 246, 0.05), 0 0 25px rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.15); }
-        }
-        @keyframes pulse {
-          0% { transform: scale(0.95); opacity: 0.5; }
-          50% { transform: scale(1.05); opacity: 1; }
-          100% { transform: scale(0.95); opacity: 0.5; }
-        }
-        @keyframes bounce {
-          0% { transform: scaleY(0.3); }
-          100% { transform: scaleY(1.3); }
-        }
-        @media (max-width: 1024px) {
-          .hero-split-grid {
-            grid-template-columns: 1fr !important;
-            gap: 3rem !important;
-          }
-        }
-      ` }} />
-      {/* --- REELS GENERATION LOGS MODAL --- */}
-      <AnimatePresence>
-        {showLogsModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: "fixed", inset: 0, zIndex: 1200,
-              background: "rgba(11, 15, 25, 0.9)",
-              backdropFilter: "blur(15px)",
-              display: "flex", justifyContent: "center", alignItems: "center",
-              padding: "2rem",
-              fontFamily: "'Outfit', sans-serif"
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              style={{
-                background: "#0d1117",
-                width: "100%",
-                maxWidth: "800px",
-                height: "60vh",
-                display: "flex", flexDirection: "column",
-                borderRadius: "16px",
-                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-                border: `1px solid rgba(255, 255, 255, 0.1)`,
-                position: "relative",
-                overflow: "hidden"
-              }}
-            >
-              <div style={{ background: "#161b22", padding: "1rem", borderBottom: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#ef4444" }}></div>
-                  <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#eab308" }}></div>
-                  <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#22c55e" }}></div>
-                  <span style={{ color: "white", marginLeft: "8px", fontWeight: "bold", fontSize: "0.9rem" }}>Reels Agent Terminal</span>
-                </div>
-                <button
-                  onClick={() => setShowLogsModal(false)}
-                  style={{
-                    background: "none", border: "none", color: COLORS.textMuted,
-                    fontSize: "1.2rem", cursor: "pointer"
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-              <div style={{ flex: 1, padding: "1rem", overflowY: "auto", color: "#32d74b", fontFamily: "monospace", fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>
-                {reelsLogs.map((log, i) => (
-                  <div key={i} style={{ marginBottom: "4px" }}>{log}</div>
-                ))}
-                <div ref={logsEndRef} />
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
     </div>
   );

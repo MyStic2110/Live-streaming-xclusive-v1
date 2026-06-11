@@ -24,6 +24,23 @@ export const NovaProvider = ({ children }) => {
         }
     }, [agentState]);
 
+    // Sync capability schema updates to agent over WebRTC data channel
+    useEffect(() => {
+        if (!localParticipant) return;
+        const unsubscribe = novaClient.eventBus.subscribe('schema_updated', (schema) => {
+            try {
+                const payload = new TextEncoder().encode(JSON.stringify({
+                    type: 'schema_sync',
+                    schema: schema
+                }));
+                localParticipant.publishData(payload, { topic: 'ui_context', reliable: true });
+            } catch (err) {
+                console.error("[NovaProvider] Failed to publish schema update", err);
+            }
+        });
+        return () => unsubscribe();
+    }, [localParticipant]);
+
     // Listen to WebRTC Data Channels (The Event Bus)
     useDataChannel("ui_control", (msg) => {
         try {
