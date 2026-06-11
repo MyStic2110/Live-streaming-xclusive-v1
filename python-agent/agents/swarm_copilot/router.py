@@ -83,6 +83,15 @@ class ContextRouter:
                 "weatheragent",     # Weather Agent
                 "cortex",           # BI / Cortex / Cortex II
                 "bi",
+            ],
+            "crawled_knowledge": [
+                "crawled", "kapa", "documentation", "docs", "kb", "knowledgebase",
+                "ingested", "overview", "sources", "crawling", "scrape", "scraping",
+                "webcrawl", "crawler"
+            ],
+            "github_knowledge": [
+                "github", "git", "repo", "repository", "codebase", "source code", "implementation",
+                "functions", "code", "file", "directories", "branch", "pull", "clone"
             ]
         }
 
@@ -141,6 +150,28 @@ class ContextRouter:
                     matched_verticals.append(vertical)
                     break
 
+        # Dynamic matching for crawled knowledge based on terms inside pages
+        if "crawled_knowledge" in self.kb_cache and "pages" in self.kb_cache["crawled_knowledge"]:
+            query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3]
+            if query_words:
+                has_match = any(
+                    any(word in page.get("title", "").lower() or word in page.get("content", "").lower() for word in query_words)
+                    for page in self.kb_cache["crawled_knowledge"]["pages"]
+                )
+                if has_match and "crawled_knowledge" not in matched_verticals:
+                    matched_verticals.append("crawled_knowledge")
+
+        # Dynamic matching for GitHub knowledge based on terms inside pages/files
+        if "github_knowledge" in self.kb_cache and "pages" in self.kb_cache["github_knowledge"]:
+            query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3]
+            if query_words:
+                has_match = any(
+                    any(word in page.get("title", "").lower() or word in page.get("content", "").lower() for word in query_words)
+                    for page in self.kb_cache["github_knowledge"]["pages"]
+                )
+                if has_match and "github_knowledge" not in matched_verticals:
+                    matched_verticals.append("github_knowledge")
+
         # 2. State-based Fallback:
         # If no keywords matched, check if we can fall back to the last active vertical.
         # Otherwise, fall back to general FAQ.
@@ -176,6 +207,27 @@ class ContextRouter:
                                 vertical_data["live_audit_history"] = json.load(f)
                         except Exception:
                             pass
+                elif vertical in ["crawled_knowledge", "github_knowledge"] and "pages" in vertical_data:
+                    query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3]
+                    relevant_pages = []
+                    for page in vertical_data["pages"]:
+                        title_lower = page.get("title", "").lower()
+                        content_lower = page.get("content", "").lower()
+                        matches = 0
+                        for word in query_words:
+                            if word in title_lower:
+                                matches += 3
+                            if word in content_lower:
+                                matches += 1
+                        if matches > 0:
+                            page_copy = dict(page)
+                            page_copy["relevanceScore"] = matches
+                            relevant_pages.append(page_copy)
+                    relevant_pages.sort(key=lambda x: x["relevanceScore"], reverse=True)
+                    vertical_data["pages"] = [
+                        {k: v for k, v in p.items() if k != "relevanceScore"}
+                        for p in relevant_pages[:3]
+                    ]
                 merged_context[vertical] = vertical_data
                 
                 # Strip 'methods' from agent_details before sending to the LLM.

@@ -56,7 +56,9 @@ class SwarmCopilot:
             "pricing_agent.txt",
             "dev_agent.txt",
             "security_agent.txt",
-            "master_agent.txt"
+            "master_agent.txt",
+            "crawler_agent.txt",
+            "github_agent.txt"
         ]
         
         for name in required_prompts:
@@ -191,6 +193,10 @@ class SwarmCopilot:
                 agent_prompt = self.prompt_cache.get("dev_agent.txt", "")
             elif vertical == "security":
                 agent_prompt = self.prompt_cache.get("security_agent.txt", "")
+            elif vertical == "crawled_knowledge":
+                agent_prompt = self.prompt_cache.get("crawler_agent.txt", "")
+            elif vertical == "github_knowledge":
+                agent_prompt = self.prompt_cache.get("github_agent.txt", "")
             else:
                 agent_prompt = self.prompt_cache.get("master_agent.txt", "")
         else:
