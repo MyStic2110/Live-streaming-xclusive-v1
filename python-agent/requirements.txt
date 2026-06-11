@@ -8,3 +8,4 @@ redis
 openai
 numpy
 mcp
+bandit>=1.7.5
