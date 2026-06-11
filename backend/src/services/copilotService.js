@@ -349,7 +349,10 @@ const routeContext = (query, lastVertical) => {
 const promptCache = {};
 const loadPrompts = () => {
   if (Object.keys(promptCache).length > 0) return;
-  const files = ["base_rules.txt", "pricing_agent.txt", "dev_agent.txt", "security_agent.txt", "master_agent.txt"];
+  const files = [
+    "base_rules.txt", "pricing_agent.txt", "dev_agent.txt", 
+    "security_agent.txt", "master_agent.txt", "crawler_agent.txt", "github_agent.txt"
+  ];
   for (const file of files) {
     const filePath = path.join(PROMPTS_DIR, file);
     if (fs.existsSync(filePath)) {
@@ -378,6 +381,10 @@ const compilePrompt = (matchedVerticals, contextJson, session) => {
       agentPrompt = promptCache["dev_agent.txt"] || "";
     } else if (vertical === "security") {
       agentPrompt = promptCache["security_agent.txt"] || "";
+    } else if (vertical === "crawled_knowledge") {
+      agentPrompt = promptCache["crawler_agent.txt"] || "";
+    } else if (vertical === "github_knowledge") {
+      agentPrompt = promptCache["github_agent.txt"] || "";
     } else {
       agentPrompt = promptCache["master_agent.txt"] || "";
     }
