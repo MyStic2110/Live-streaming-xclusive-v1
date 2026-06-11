@@ -148,7 +148,7 @@ function App() {
   const isBI        = roomData?.creatorId === "BI";
   const isBI2       = roomData?.creatorId === "BI2";
   const isNova      = roomData?.creatorId === "NOVA";
-  const isAura      = roomData?.creatorId === "AURA";
+
   const isVision    = roomData?.creatorId === "VONE";
   const isAstra     = roomData?.creatorId === "ASTRA";
   const isRehearsal = roomData?.creatorId === "REHEARSAL";
@@ -209,8 +209,7 @@ function App() {
       <BIRoom roomData={roomData} onLeave={handleLeave} />
     ) : isNova ? (
       <NovaRoom roomData={roomData} onLeave={handleLeave} />
-    ) : isAura ? (
-      <VideoRoom roomData={roomData} onLeave={handleLeave} />
+
     ) : isAivyuh ? (
       <AivyuhRoom roomData={roomData} onLeave={handleLeave} />
     ) : isVision ? (

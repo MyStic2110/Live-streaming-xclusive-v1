@@ -194,10 +194,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
       id: "nova", title: "Nova Copilot", IconComponent: Rocket, color: "#8b5cf6",
       desc: "Autonomous SaaS engineering copilot. Helps users explore Nexus platform, schedules tasks, and automates UI steps."
     },
-    {
-      id: "aura", title: "Cortex Aura", IconComponent: Aperture, color: "#06b6d4",
-      desc: "Multi-modal cognitive voice agent. Integrates visual cues with real-time operations telemetry."
-    },
+
     {
       id: "astra", title: "Astra Coach", IconComponent: Mic2, color: "#6366f1",
       desc: "Conversational public speaking coach. Analyzes vocal pacing, filler usage, and delivery."

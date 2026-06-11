@@ -45,7 +45,6 @@ const getPythonPath = () => {
 };
 
 const ROOM_NAME  = "ai_room_MURALI";
-const AGENT_NAME = "AURA";
 const USER_ID    = "MURALI";
 
 export const talkToAI = async (req, res) => {
@@ -54,8 +53,8 @@ export const talkToAI = async (req, res) => {
   // Dynamic Identity: Use provided name or generate a Guest ID
   const userId = userName || `Guest_${Math.floor(Math.random() * 9000) + 1000}`;
   
-  let roomName = "ai_room_MURALI";
-  let agentName = "AURA";
+  let roomName = `lina_session_${userId}`;
+  let agentName = "LINA";
 
   if (agentType === "lina") {
     roomName = `lina_session_${userId}`;
@@ -72,9 +71,7 @@ export const talkToAI = async (req, res) => {
   } else if (agentType === "vision") {
     roomName = `vision_session_${userId}`;
     agentName = "VONE";
-  } else if (agentType === "aura") {
-    roomName = `aura_session_${userId}`;
-    agentName = "AURA";
+
   } else if (agentType === "astra") {
     roomName = `growth_session_${userId}`;
     agentName = "ASTRA";
