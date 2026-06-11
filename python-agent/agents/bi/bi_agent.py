@@ -153,57 +153,16 @@ async def detokenize_stream(text_stream: AsyncIterable[str]) -> AsyncIterable[st
     from integrations.securelytix import SecurelytixClient
     vault = SecurelytixClient()
     buffer = ""
-    
-    async def process_tokens(text: str) -> str:
-        tokens = list(set(re.findall(r'([a-zA-Z0-9_\-\.\@]+_stx)', text)))
-        if not tokens:
-            return text
-            
-        payload = []
-        for token in tokens:
-            payload.append({
-                "original_token": token,
-                "email": token,
-                "full_name": token,
-                "phoneNo": token,
-                "name": token,
-                "first_name": token,
-                "last_name": token,
-                "value": token
-            })
-            
-        res_list = await vault.detokenize(payload, suppress_partial_warning=True)
-        if isinstance(res_list, list):
-            for item in res_list:
-                token = item.get("original_token")
-                if token:
-                    for k, v in item.items():
-                        if v and v != token and k != "original_token":
-                            text = text.replace(token, str(v))
-                            break
-        return text
 
+    # Accumulate the full stream, then detokenize in one SDK call
     async for chunk in text_stream:
         buffer += chunk
-        while True:
-            match = re.search(r'([\s]+)', buffer)
-            if not match:
-                break
-            
-            idx = match.start()
-            word = buffer[:idx]
-            delimiter = match.group(1)
-            
-            if "_stx" in word:
-                word = await process_tokens(word)
-                
-            yield word + delimiter
-            buffer = buffer[idx + len(delimiter):]
 
     if buffer:
-        if "_stx" in buffer:
-            buffer = await process_tokens(buffer)
-        yield buffer
+        result = await vault.detokenize({"text": buffer}, suppress_partial_warning=True)
+        buffer = result.get("text", buffer) if isinstance(result, dict) else buffer
+
+    yield buffer
 
 # --- AGENT SETUP ---
 VAD_PLUGIN = silero.VAD.load(min_silence_duration=0.8)

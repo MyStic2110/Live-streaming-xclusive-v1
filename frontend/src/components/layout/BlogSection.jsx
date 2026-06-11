@@ -40,7 +40,7 @@ const parseInlineMarkdown = (text) => {
 const INITIAL_POSTS = [];
 
 
-const BlogSection = ({ onBack, externalPosts = [] }) => {
+const BlogSection = ({ onBack, externalPosts = [], currentPath = "", setCurrentPath }) => {
   const [posts, setPosts] = useState([...externalPosts, ...INITIAL_POSTS]);
   const [selectedPost, setSelectedPost] = useState(null);
   const [legalModalType, setLegalModalType] = useState(null);
@@ -51,6 +51,39 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
   const [videoError, setVideoError] = useState(false);
   const [videoSrc, setVideoSrc] = useState("");
   const [isReelMuted, setIsReelMuted] = useState(true);
+
+  // Helper functions for proper URL syncing in SPA
+  const handleSelectPost = (post) => {
+    setSelectedPost(post);
+    window.history.pushState({}, "", `/blog/${post.slug}`);
+    if (setCurrentPath) {
+      setCurrentPath(`/blog/${post.slug}`);
+    }
+  };
+
+  const handleDeselectPost = () => {
+    setSelectedPost(null);
+    window.history.pushState({}, "", "/insights");
+    if (setCurrentPath) {
+      setCurrentPath("/insights");
+    }
+  };
+
+  // Sync selectedPost with URL changes
+  React.useEffect(() => {
+    const cleanPath = (currentPath || window.location.pathname).replace(/\/$/, "");
+    if (cleanPath.startsWith("/blog/")) {
+      const slug = cleanPath.split("/blog/")[1];
+      const matched = posts.find(p => p.slug === slug);
+      if (matched) {
+        setSelectedPost(matched);
+      } else {
+        setSelectedPost(null);
+      }
+    } else {
+      setSelectedPost(null);
+    }
+  }, [currentPath, posts]);
   
   // --- PAGINATION STATES ---
   const [currentPage, setCurrentPage] = useState(1);
@@ -196,7 +229,7 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
           position: "sticky", top: 0, zIndex: 100, display: "flex", justifyContent: "space-between", alignItems: "center"
         }}>
           <button 
-            onClick={() => setSelectedPost(null)}
+            onClick={handleDeselectPost}
             style={{ 
               background: "none", border: "none", color: COLORS.primary, 
               fontWeight: "800", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px",
@@ -779,7 +812,7 @@ const BlogSection = ({ onBack, externalPosts = [] }) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.15, type: "spring", damping: 25 }}
                 style={{ cursor: "pointer" }}
-                onClick={() => setSelectedPost(post)}
+                onClick={() => handleSelectPost(post)}
               >
                 <div style={{ 
                   width: "100%", height: "480px", borderRadius: "40px", 

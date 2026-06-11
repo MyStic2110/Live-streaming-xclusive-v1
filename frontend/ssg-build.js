@@ -38,8 +38,10 @@ async function runSSG() {
   const sitemapUrls = [
     `<url><loc>${DOMAIN}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
     `<url><loc>${DOMAIN}/learn</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>`,
-    `<url><loc>${DOMAIN}/agents-value-technicals-business</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
-    `<url><loc>${DOMAIN}/governed-deployment</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`
+    `<url><loc>${DOMAIN}/observability-agents-oswap-llm</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
+    `<url><loc>${DOMAIN}/governed-deployment</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
+    `<url><loc>${DOMAIN}/sneak-peak</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
+    `<url><loc>${DOMAIN}/insights</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`
   ];
 
   console.log(`[SSG] Found ${blogFiles.length} blog posts to pre-render.`);
@@ -112,6 +114,60 @@ async function runSSG() {
     console.log('[SSG] Rendered: /governed-deployment');
   } catch (err) {
     console.error('[SSG] Error pre-rendering governed deployment page:', err);
+  }
+
+  // Pre-render Sneak-Peak page
+  try {
+    const title = "Sneak-Peak | Swarm Operator Reels";
+    const desc = "Watch short clips and interactive sessions detailing our agents at work. Explore SRE telemetry, voice assistants with sub-200ms latency, and automated Docker container scanning.";
+    const url = `${DOMAIN}/sneak-peak`;
+    const img = `${DOMAIN}/logo.jpeg`;
+
+    const updatedHtml = originalHtml
+      .replace(/<title>.*?<\/title>/g, `<title>${title}</title>`)
+      .replace(/<meta name="description" content=".*?"\s*\/>/g, `<meta name="description" content="${desc}" />`)
+      .replace(/<meta property="og:url" content=".*?"\s*\/>/g, `<meta property="og:url" content="${url}" />`)
+      .replace(/<meta property="og:title" content=".*?"\s*\/>/g, `<meta property="og:title" content="${title}" />`)
+      .replace(/<meta property="og:description" content=".*?"\s*\/>/g, `<meta property="og:description" content="${desc}" />`)
+      .replace(/<meta property="og:image" content=".*?"\s*\/>/g, `<meta property="og:image" content="${img}" />`)
+      .replace(/<meta property="twitter:url" content=".*?"\s*\/>/g, `<meta property="twitter:url" content="${url}" />`)
+      .replace(/<meta property="twitter:title" content=".*?"\s*\/>/g, `<meta property="twitter:title" content="${title}" />`)
+      .replace(/<meta property="twitter:description" content=".*?"\s*\/>/g, `<meta property="twitter:description" content="${desc}" />`)
+      .replace(/<meta property="twitter:image" content=".*?"\s*\/>/g, `<meta property="twitter:image" content="${img}" />`);
+
+    const pageDir = path.join(DIST_DIR, 'sneak-peak');
+    fs.mkdirSync(pageDir, { recursive: true });
+    fs.writeFileSync(path.join(pageDir, 'index.html'), updatedHtml);
+    console.log('[SSG] Rendered: /sneak-peak');
+  } catch (err) {
+    console.error('[SSG] Error pre-rendering sneak-peak page:', err);
+  }
+
+  // Pre-render Insights page
+  try {
+    const title = "Insights | Swarm AI Agentic Lab";
+    const desc = "Explore the latest breakthroughs in multiagent orchestration, vector policy optimization, and secure local model execution. Read technical guides from our research division.";
+    const url = `${DOMAIN}/insights`;
+    const img = `${DOMAIN}/logo.jpeg`;
+
+    const updatedHtml = originalHtml
+      .replace(/<title>.*?<\/title>/g, `<title>${title}</title>`)
+      .replace(/<meta name="description" content=".*?"\s*\/>/g, `<meta name="description" content="${desc}" />`)
+      .replace(/<meta property="og:url" content=".*?"\s*\/>/g, `<meta property="og:url" content="${url}" />`)
+      .replace(/<meta property="og:title" content=".*?"\s*\/>/g, `<meta property="og:title" content="${title}" />`)
+      .replace(/<meta property="og:description" content=".*?"\s*\/>/g, `<meta property="og:description" content="${desc}" />`)
+      .replace(/<meta property="og:image" content=".*?"\s*\/>/g, `<meta property="og:image" content="${img}" />`)
+      .replace(/<meta property="twitter:url" content=".*?"\s*\/>/g, `<meta property="twitter:url" content="${url}" />`)
+      .replace(/<meta property="twitter:title" content=".*?"\s*\/>/g, `<meta property="twitter:title" content="${title}" />`)
+      .replace(/<meta property="twitter:description" content=".*?"\s*\/>/g, `<meta property="twitter:description" content="${desc}" />`)
+      .replace(/<meta property="twitter:image" content=".*?"\s*\/>/g, `<meta property="twitter:image" content="${img}" />`);
+
+    const pageDir = path.join(DIST_DIR, 'insights');
+    fs.mkdirSync(pageDir, { recursive: true });
+    fs.writeFileSync(path.join(pageDir, 'index.html'), updatedHtml);
+    console.log('[SSG] Rendered: /insights');
+  } catch (err) {
+    console.error('[SSG] Error pre-rendering insights page:', err);
   }
 
   // Generate dynamic sitemap

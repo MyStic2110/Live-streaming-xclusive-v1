@@ -1,10 +1,21 @@
 import os
+import asyncio
 import logging
 import aiohttp
 import json
 from typing import Any, Dict
 
 logger = logging.getLogger("securelytix-client")
+
+# Retry config for transient errors (429, 500)
+_MAX_RETRIES = 3
+_BACKOFF_BASE = 1.5  # seconds
+
+
+class SecurelytixError(Exception):
+    """Raised for non-retryable Securelytix SDK errors."""
+    pass
+
 
 class SecurelytixClient:
     def __init__(self, base_url: str = None, api_key: str = None):
@@ -15,66 +26,126 @@ class SecurelytixClient:
         self.base_url = base_url or os.getenv("SECURELYTIX_URL", "http://localhost:8080")
         self.base_url = self.base_url.rstrip("/")
         self.api_key = api_key or os.getenv("SECURELYTIX_API_KEY", "sk_dev_mock_key_for_local_testing")
-        
-    async def _detokenize_single(self, data: Dict[str, Any], suppress_partial_warning: bool = False) -> Dict[str, Any]:
-        url = f"{self.base_url}/api/v1/detokenize"
-        headers = {
+
+    def _headers(self) -> Dict[str, str]:
+        return {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_key}"
         }
-        payload = {"data": data}
-        json_payload = json.dumps(payload, default=str)
 
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, data=json_payload, headers=headers) as response:
-                    if response.status >= 300:
+    async def _post_with_retry(self, endpoint: str, payload: Any) -> Dict:
+        """
+        POST to a Securelytix endpoint with retry/backoff for 429 and 500.
+        Returns the parsed JSON response dict on success.
+        Raises SecurelytixError on non-retryable failures.
+        """
+        url = f"{self.base_url}{endpoint}"
+        json_payload = json.dumps({"data": payload}, default=str)
+
+        for attempt in range(1, _MAX_RETRIES + 1):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(url, data=json_payload, headers=self._headers()) as response:
+                        status = response.status
+
+                        if status == 200:
+                            return await response.json()
+
                         error_text = await response.text()
-                        logger.error(f"[Securelytix] Detokenize failed with status {response.status}: {error_text}")
-                        return data # Return original data on failure to prevent total crash
 
-                    result = await response.json()
-                    status = result.get("Status") or result.get("status")
-                    if status == "partial_success" and not suppress_partial_warning:
-                        failed = result.get("failed_fields", [])
-                        logger.warning(f"[Securelytix] Partial detokenization. Failed fields: {failed}")
+                        if status == 400:
+                            # Bad request shape — not retryable
+                            logger.error(
+                                f"[Securelytix] Bad request to {endpoint} (400). "
+                                f"Check payload shape. Detail: {error_text}"
+                            )
+                            raise SecurelytixError(f"400 Bad Request: {error_text}")
 
-                    return result.get("data", data)
-        except Exception as e:
-            logger.error(f"[Securelytix] Detokenize error: {e}")
-            return data
+                        if status == 413:
+                            # Payload too large — not retryable, caller must split
+                            logger.warning(
+                                f"[Securelytix] Payload exceeds 25 MB limit (413) on {endpoint}. "
+                                "Split or truncate input before sending."
+                            )
+                            raise SecurelytixError("413 Payload Too Large: split input and retry")
 
-    async def detokenize(self, data: Any, suppress_partial_warning: bool = False) -> Any:
-        if isinstance(data, list):
-            import asyncio
-            return await asyncio.gather(*(self._detokenize_single(item, suppress_partial_warning) for item in data))
-        return await self._detokenize_single(data, suppress_partial_warning)
+                        if status == 429:
+                            wait = _BACKOFF_BASE ** attempt
+                            logger.warning(
+                                f"[Securelytix] Rate limit hit (429) on {endpoint}. "
+                                f"Attempt {attempt}/{_MAX_RETRIES}. Backing off {wait:.1f}s. "
+                                "Check license usage in dashboard."
+                            )
+                            if attempt < _MAX_RETRIES:
+                                await asyncio.sleep(wait)
+                                continue
+                            raise SecurelytixError("429 Rate Limit: exhausted retries")
 
-    async def _tokenize_single(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        url = f"{self.base_url}/api/v1/tokenize"
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}"
-        }
-        payload = {"data": data}
-        json_payload = json.dumps(payload, default=str)
+                        if status == 500:
+                            # Distinguish ML detection failure vs storage failure from body
+                            is_ml = any(k in error_text.lower() for k in ("ml", "detection", "timeout", "model"))
+                            kind = "ML detection" if is_ml else "database/storage"
+                            wait = _BACKOFF_BASE ** attempt
+                            logger.error(
+                                f"[Securelytix] 500 {kind} failure on {endpoint}. "
+                                f"Attempt {attempt}/{_MAX_RETRIES}. Backing off {wait:.1f}s. "
+                                f"Detail: {error_text}"
+                            )
+                            if attempt < _MAX_RETRIES:
+                                await asyncio.sleep(wait)
+                                continue
+                            raise SecurelytixError(f"500 {kind} failure: exhausted retries")
 
+                        # Any other unexpected status
+                        logger.error(f"[Securelytix] Unexpected status {status} on {endpoint}: {error_text}")
+                        raise SecurelytixError(f"Unexpected status {status}")
+
+            except SecurelytixError:
+                raise
+            except Exception as e:
+                logger.error(f"[Securelytix] Network/parse error on {endpoint} (attempt {attempt}): {e}")
+                if attempt < _MAX_RETRIES:
+                    await asyncio.sleep(_BACKOFF_BASE ** attempt)
+                    continue
+                raise
+
+        raise SecurelytixError(f"Failed after {_MAX_RETRIES} attempts on {endpoint}")
+
+    # ── Tokenize ──────────────────────────────────────────────────────────────
+
+    async def _tokenize_single(self, data: Any) -> Any:
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, data=json_payload, headers=headers) as response:
-                    if response.status >= 300:
-                        error_text = await response.text()
-                        logger.error(f"[Securelytix] Tokenize failed with status {response.status}: {error_text}")
-                        return data
-
-                    result = await response.json()
-                    return result.get("data", data)
-        except Exception as e:
-            logger.error(f"[Securelytix] Tokenize error: {e}")
+            result = await self._post_with_retry("/api/v1/tokenize", data)
+            return result.get("data", data)
+        except SecurelytixError:
+            # Fail open: return original data so agents are not blocked
             return data
 
     async def tokenize(self, data: Any) -> Any:
         if isinstance(data, list):
-            import asyncio
-            return await asyncio.gather(*(self._tokenize_single(item) for item in data))
+            return list(await asyncio.gather(*(self._tokenize_single(item) for item in data)))
         return await self._tokenize_single(data)
+
+    # ── Detokenize ────────────────────────────────────────────────────────────
+
+    async def _detokenize_single(self, data: Any, suppress_partial_warning: bool = False) -> Any:
+        try:
+            result = await self._post_with_retry("/api/v1/detokenize", data)
+
+            # 200: check for partial_success as per SDK spec
+            sdk_status = result.get("Status") or result.get("status")
+            if sdk_status == "partial_success" and not suppress_partial_warning:
+                failed = result.get("failed_fields", [])
+                logger.warning(f"[Securelytix] Partial detokenization — failed fields: {failed}")
+
+            return result.get("data", data)
+        except SecurelytixError:
+            # Fail open: return data with tokens intact rather than crashing
+            return data
+
+    async def detokenize(self, data: Any, suppress_partial_warning: bool = False) -> Any:
+        if isinstance(data, list):
+            return list(await asyncio.gather(*(
+                self._detokenize_single(item, suppress_partial_warning) for item in data
+            )))
+        return await self._detokenize_single(data, suppress_partial_warning)

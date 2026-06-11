@@ -46,7 +46,7 @@ services:
         max-size: "10m"
         max-file: "3"
   securelytix-sdk:
-    image: securelytix2026/dev-sdk:1.0.4
+    image: securelytix2026/dev-sdk:ml-integration-pipeline
     env_file:
       - ./python-agent/.env
     environment:

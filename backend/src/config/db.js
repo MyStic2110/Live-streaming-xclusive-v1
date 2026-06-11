@@ -117,6 +117,47 @@ const initializeTables = async (client) => {
       );
     `);
 
+    // 6. Create Crawling Configs table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS crawling_configs (
+        id VARCHAR(50) PRIMARY KEY,
+        start_url VARCHAR(1024) NOT NULL,
+        include_pattern VARCHAR(255),
+        exclude_pattern VARCHAR(255),
+        sitemap_enabled BOOLEAN DEFAULT TRUE,
+        custom_sitemap VARCHAR(1024),
+        js_rendering BOOLEAN DEFAULT FALSE,
+        proxy_enabled BOOLEAN DEFAULT FALSE,
+        extract_pdfs BOOLEAN DEFAULT FALSE,
+        main_css VARCHAR(559),
+        exclude_css VARCHAR(559),
+        template VARCHAR(50),
+        last_crawled_at TIMESTAMP WITH TIME ZONE,
+        status VARCHAR(50) DEFAULT 'idle',
+        last_error TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 7. Create GitHub Configs table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS github_configs (
+        id VARCHAR(50) PRIMARY KEY,
+        owner VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        token VARCHAR(255),
+        branch_or_tag VARCHAR(255),
+        file_types TEXT[],
+        directories TEXT[],
+        file_include_regex VARCHAR(1024),
+        file_exclude_regex VARCHAR(1024),
+        last_ingested_at TIMESTAMP WITH TIME ZONE,
+        status VARCHAR(50) DEFAULT 'idle',
+        last_error TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     logger.info(`[DATABASE] ✅ PostgreSQL Tables Initialized.`);
   } catch (error) {
     logger.error(`[DATABASE] ❌ Table initialization failed: ${error.message}`);

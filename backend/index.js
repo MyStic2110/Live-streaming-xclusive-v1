@@ -1,5 +1,5 @@
 import express from 'express';
-// Trigger DB Reconnect 2
+// Trigger DB Reconnect 3
 import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -18,6 +18,8 @@ import authRoutes from './src/routes/authRoutes.js';
 import configRoutes from './src/routes/configRoutes.js';
 import roomRoutes from './src/routes/roomRoutes.js';
 import telemetryRoutes from './src/routes/telemetryRoutes.js';
+import crawlerRoutes from './src/routes/crawlerRoutes.js';
+import githubRoutes from './src/routes/githubRoutes.js';
 
 // Global console redirection to Pino structured JSON logger for high-throughput enterprise performance
 console.log = (...args) => logger.info(args.join(' '));
@@ -127,6 +129,8 @@ await connectDB();
 
 // --- ROUTE MOUNTINGS ---
 app.use('/api/auth', authRoutes);
+app.use('/api/crawler', crawlerRoutes);
+app.use('/api/github', githubRoutes);
 app.use('/api', configRoutes);
 app.use('/api', telemetryRoutes); // Mounts /api/llm-trace, /api/llm-traces, /api/evaluate-hallucination, etc.
 app.use('/', telemetryRoutes);   // Mounts root-level routes: /security/status, /security/scan, /security/remediate, /detokenize

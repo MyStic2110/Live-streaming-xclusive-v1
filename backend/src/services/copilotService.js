@@ -134,6 +134,15 @@ const routerMapping = {
     "astra", "devopsgeni", "aivyuh", "nova", "seva", "octane", "reels",
     "rehearsal", "silentrehearsal", "shadowagent", "lina", "martech",
     "vision", "weatheragent", "cortex", "bi"
+  ],
+  crawled_knowledge: [
+    "crawled", "kapa", "documentation", "docs", "kb", "knowledgebase",
+    "ingested", "overview", "sources", "crawling", "scrape", "scraping",
+    "webcrawl", "crawler"
+  ],
+  github_knowledge: [
+    "github", "git", "repo", "repository", "codebase", "source code", "implementation",
+    "functions", "code", "file", "directories", "branch", "pull", "clone"
   ]
 };
 
@@ -177,6 +186,36 @@ const routeContext = (query, lastVertical) => {
     }
   }
 
+  // Dynamic matching for crawled knowledge based on terms inside pages
+  if (kbCache['crawled_knowledge'] && kbCache['crawled_knowledge'].pages) {
+    const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3);
+    if (queryWords.length > 0) {
+      const hasMatch = kbCache['crawled_knowledge'].pages.some(page => {
+        const titleLower = page.title.toLowerCase();
+        const contentLower = page.content.toLowerCase();
+        return queryWords.some(word => titleLower.includes(word) || contentLower.includes(word));
+      });
+      if (hasMatch && !matchedVerticals.includes("crawled_knowledge")) {
+        matchedVerticals.push("crawled_knowledge");
+      }
+    }
+  }
+
+  // Dynamic matching for GitHub knowledge based on terms inside pages/files
+  if (kbCache['github_knowledge'] && kbCache['github_knowledge'].pages) {
+    const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3);
+    if (queryWords.length > 0) {
+      const hasMatch = kbCache['github_knowledge'].pages.some(page => {
+        const titleLower = page.title.toLowerCase();
+        const contentLower = page.content.toLowerCase();
+        return queryWords.some(word => titleLower.includes(word) || contentLower.includes(word));
+      });
+      if (hasMatch && !matchedVerticals.includes("github_knowledge")) {
+        matchedVerticals.push("github_knowledge");
+      }
+    }
+  }
+
   if (matchedVerticals.length === 0) {
     if (kbCache[lastVertical] && !isGreeting) {
       matchedVerticals = [lastVertical];
@@ -191,6 +230,48 @@ const routeContext = (query, lastVertical) => {
   for (const vertical of matchedVerticals) {
     if (kbCache[vertical]) {
       const verticalData = JSON.parse(JSON.stringify(kbCache[vertical]));
+      
+      if (vertical === "crawled_knowledge" && verticalData.pages) {
+        // Simple relevance matching over crawled pages
+        const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3);
+        const relevantPages = verticalData.pages.filter(page => {
+          const titleLower = page.title.toLowerCase();
+          const contentLower = page.content.toLowerCase();
+          
+          let matches = 0;
+          for (const word of queryWords) {
+            if (titleLower.includes(word)) matches += 3;
+            if (contentLower.includes(word)) matches += 1;
+          }
+          page.relevanceScore = matches;
+          return matches > 0;
+        });
+        
+        // Sort by relevance and take top 3 pages to avoid bloating context
+        relevantPages.sort((a, b) => b.relevanceScore - a.relevanceScore);
+        verticalData.pages = relevantPages.slice(0, 3).map(({ relevanceScore, ...rest }) => rest);
+      }
+
+      if (vertical === "github_knowledge" && verticalData.pages) {
+        // Simple relevance matching over files
+        const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3);
+        const relevantPages = verticalData.pages.filter(page => {
+          const titleLower = page.title.toLowerCase();
+          const contentLower = page.content.toLowerCase();
+          
+          let matches = 0;
+          for (const word of queryWords) {
+            if (titleLower.includes(word)) matches += 3;
+            if (contentLower.includes(word)) matches += 1;
+          }
+          page.relevanceScore = matches;
+          return matches > 0;
+        });
+        
+        // Sort by relevance and take top 3 files to avoid bloating context
+        relevantPages.sort((a, b) => b.relevanceScore - a.relevanceScore);
+        verticalData.pages = relevantPages.slice(0, 3).map(({ relevanceScore, ...rest }) => rest);
+      }
       
       if (vertical === "security") {
         const runsPath = path.join(AIVYUH_DIR, "audit_runs.json");

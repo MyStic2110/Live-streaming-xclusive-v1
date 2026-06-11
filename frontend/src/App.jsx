@@ -52,6 +52,7 @@ function App() {
     else if (isDashboardPath) setActiveTab("analytics");
     else if (isDeploymentPath) setActiveTab("governance");
     else if (isShortsPath) setActiveTab("sneak-peak");
+    else if (isInsightsPath) setActiveTab("insights");
     else setActiveTab("fleet");
   }, [currentPath]);
 
@@ -60,8 +61,8 @@ function App() {
     setShowBlog(false);
     setShowShorts(false);
     if (tabId === "telemetry") {
-      window.history.pushState({}, "", "/agents-value-technicals-business");
-      setCurrentPath("/agents-value-technicals-business");
+      window.history.pushState({}, "", "/observability-agents-oswap-llm");
+      setCurrentPath("/observability-agents-oswap-llm");
     } else if (tabId === "analytics") {
       window.history.pushState({}, "", "/dashboard");
       setCurrentPath("/dashboard");
@@ -72,6 +73,8 @@ function App() {
       window.history.pushState({}, "", "/sneak-peak");
       setCurrentPath("/sneak-peak");
     } else if (tabId === "insights") {
+      window.history.pushState({}, "", "/insights");
+      setCurrentPath("/insights");
       setShowBlog(true);
     } else {
       window.history.pushState({}, "", "/");
@@ -159,9 +162,18 @@ function App() {
   const isAivyuh    = roomData?.creatorId === "AIVYUH" || roomData?.creatorId === "aivyuh";
 
   const isTelemetryPath = 
-    currentPath.replace(/\/$/, "") === "/agents-value-technicals-business" || 
-    window.location.hash.replace(/\/$/, "") === "#/agents-value-technicals-business" ||
-    window.location.hash === "#agents-value-technicals-business";
+    currentPath.replace(/\/$/, "") === "/observability-agents-oswap-llm" || 
+    currentPath.replace(/\/$/, "") === "/security" || 
+    window.location.hash.replace(/\/$/, "") === "#/observability-agents-oswap-llm" ||
+    window.location.hash.replace(/\/$/, "") === "#/security" ||
+    window.location.hash === "#observability-agents-oswap-llm" ||
+    window.location.hash === "#security";
+
+  const isFleetPath =
+    currentPath.replace(/\/$/, "") === "/fleet" ||
+    window.location.hash.replace(/\/$/, "") === "#/fleet" ||
+    window.location.hash === "#fleet" ||
+    window.location.hash === "#/fleet/";
 
   const isShortsPath =
     currentPath.replace(/\/$/, "") === "/sneak-peak" ||
@@ -178,6 +190,18 @@ function App() {
     window.location.hash === "#governed-deployment" ||
     window.location.hash === "#/governed-deployment/";
 
+  const isInsightsPath =
+    currentPath.replace(/\/$/, "") === "/insights" ||
+    window.location.hash.replace(/\/$/, "") === "#/insights" ||
+    window.location.hash === "#insights" ||
+    window.location.hash === "#/insights/";
+
+  const isBlogPath =
+    currentPath.replace(/\/$/, "") === "/blog" ||
+    currentPath.startsWith("/blog/") ||
+    window.location.hash.replace(/\/$/, "") === "#/blog" ||
+    window.location.hash.startsWith("#/blog/");
+
   const isLoginPath =
     currentPath.replace(/\/$/, "") === "/login" ||
     window.location.hash.replace(/\/$/, "") === "#/login" ||
@@ -188,8 +212,8 @@ function App() {
     window.location.hash.replace(/\/$/, "") === "#/reset-password";
 
   let content;
-  if (showBlog || activeTab === "insights") {
-    content = <BlogSection onBack={() => handleTabChange("fleet")} />;
+  if (showBlog || isInsightsPath || isBlogPath || activeTab === "insights") {
+    content = <BlogSection onBack={() => handleTabChange("fleet")} currentPath={currentPath} setCurrentPath={setCurrentPath} />;
   } else if (showShorts || isShortsPath || activeTab === "sneak-peak") {
     content = <SwarmShortsPage onBack={() => handleTabChange("fleet")} />;
   } else if (isTelemetryPath || activeTab === "telemetry") {
@@ -230,9 +254,8 @@ function App() {
   } else if (
     currentPath === "/" ||
     currentPath === "" ||
+    isFleetPath ||
     (currentPath.startsWith("#") && !currentPath.startsWith("#/login") && !currentPath.startsWith("#/reset-password")) ||
-    currentPath === "/blog" ||
-    currentPath.startsWith("/blog/") ||
     activeTab === "fleet"
   ) {
     content = (
@@ -287,10 +310,9 @@ function App() {
   const isLandingPage =
     !isAuthenticated &&
     !isTelemetryPath && !isDashboardPath && !isDeploymentPath &&
-    !showBlog && !isShortsPath && !isLoginPath && !isResetPasswordPath &&
-    (currentPath === "/" || currentPath === "" || 
+    !showBlog && !isShortsPath && !isLoginPath && !isResetPasswordPath && !isInsightsPath && !isBlogPath &&
+    (currentPath === "/" || currentPath === "" || isFleetPath ||
      (currentPath.startsWith("#") && !currentPath.startsWith("#/login") && !currentPath.startsWith("#/reset-password")) ||
-     currentPath === "/blog" || currentPath.startsWith("/blog/") ||
      activeTab === "fleet");
 
   if (isLandingPage) {

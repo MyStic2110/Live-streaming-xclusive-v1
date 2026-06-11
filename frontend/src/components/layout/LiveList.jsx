@@ -4,9 +4,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import LegalModal from "./LegalModal";
 import SwarmReelsCarousel from "./SwarmReelsCarousel";
 import Footer from "./Footer";
+import SwarmCopilotPanel from "./SwarmCopilotPanel";
 import {
   ShieldCheck, BarChart2, Leaf, Sparkles, Rocket, Aperture,
-  Mic2, Theater, Handshake, TrendingUp, Zap, Dna, Monitor
+  Mic2, Theater, Handshake, TrendingUp, Zap, Dna, Monitor,
+  Bot
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "";
@@ -98,17 +100,17 @@ const ConsoleAgentCard = ({ agent, onAction }) => {
             display: "flex",
             alignItems: "center",
             gap: "6px",
-            background: "rgba(22, 163, 74, 0.08)",
-            border: "1px solid rgba(22, 163, 74, 0.15)",
+            background: agent.id === "swarm-copilot" ? "rgba(139, 92, 246, 0.08)" : "rgba(22, 163, 74, 0.08)",
+            border: agent.id === "swarm-copilot" ? "1px solid rgba(139, 92, 246, 0.15)" : "1px solid rgba(22, 163, 74, 0.15)",
             padding: "4px 10px",
             borderRadius: "99px",
             fontSize: "0.65rem",
             fontWeight: "800",
-            color: COLORS.success,
+            color: agent.id === "swarm-copilot" ? "#8b5cf6" : COLORS.success,
             letterSpacing: "0.5px"
           }}>
-            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: COLORS.success, boxShadow: `0 0 6px ${COLORS.success}` }} />
-            <span>RUNNING</span>
+            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: agent.id === "swarm-copilot" ? "#8b5cf6" : COLORS.success, boxShadow: `0 0 6px ${agent.id === "swarm-copilot" ? "#8b5cf6" : COLORS.success}` }} />
+            <span>{agent.id === "swarm-copilot" ? "KNOWLEDGE OPS" : "RUNNING"}</span>
           </div>
         </div>
 
@@ -120,22 +122,41 @@ const ConsoleAgentCard = ({ agent, onAction }) => {
         </p>
 
         {/* Process Telemetry Panel */}
-        <div style={{
-          background: "#f8fafc",
-          border: `1px solid #cbd5e1`,
-          borderRadius: "12px",
-          padding: "12px 16px",
-          fontSize: "0.75rem",
-          fontFamily: "monospace",
-          color: COLORS.textMuted,
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: "1.5rem"
-        }}>
-          <div>CPU: <span style={{ color: "#0f172a", fontWeight: "700" }}>{stats.cpu}%</span></div>
-          <div>LATENCY: <span style={{ color: "#0f172a", fontWeight: "700" }}>{stats.latency}ms</span></div>
-          <div>UPTIME: <span style={{ color: COLORS.success, fontWeight: "700" }}>{stats.uptime}</span></div>
-        </div>
+        {agent.id === "swarm-copilot" ? (
+          <div style={{
+            background: "#f8fafc",
+            border: `1px solid #cbd5e1`,
+            borderRadius: "12px",
+            padding: "12px 16px",
+            fontSize: "0.75rem",
+            fontFamily: "monospace",
+            color: COLORS.textMuted,
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "1.5rem"
+          }}>
+            <div>SOURCES: <span style={{ color: "#0f172a", fontWeight: "700" }}>22</span></div>
+            <div>SYNC: <span style={{ color: "#0f172a", fontWeight: "700" }}>DAILY</span></div>
+            <div>STATUS: <span style={{ color: "#8b5cf6", fontWeight: "700" }}>READY</span></div>
+          </div>
+        ) : (
+          <div style={{
+            background: "#f8fafc",
+            border: `1px solid #cbd5e1`,
+            borderRadius: "12px",
+            padding: "12px 16px",
+            fontSize: "0.75rem",
+            fontFamily: "monospace",
+            color: COLORS.textMuted,
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "1.5rem"
+          }}>
+            <div>CPU: <span style={{ color: "#0f172a", fontWeight: "700" }}>{stats.cpu}%</span></div>
+            <div>LATENCY: <span style={{ color: "#0f172a", fontWeight: "700" }}>{stats.latency}ms</span></div>
+            <div>UPTIME: <span style={{ color: COLORS.success, fontWeight: "700" }}>{stats.uptime}</span></div>
+          </div>
+        )}
       </div>
 
       <button
@@ -153,7 +174,9 @@ const ConsoleAgentCard = ({ agent, onAction }) => {
           transition: "all 0.2s"
         }}
       >
-        {isHovered ? `INITIALIZE SESSION` : `CONNECT CLI`}
+        {agent.id === "swarm-copilot"
+          ? (isHovered ? "OPEN SETUP WIZARD" : "CONFIGURE SETUP")
+          : (isHovered ? "INITIALIZE SESSION" : "CONNECT CLI")}
       </button>
     </motion.div>
   );
@@ -162,6 +185,7 @@ const ConsoleAgentCard = ({ agent, onAction }) => {
 export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShortsClick, onDashboardClick, onDeploymentClick, user, onLoginClick, onLogout }) {
   const [legalModalType, setLegalModalType] = useState(null);
   const [enabledAgents, setEnabledAgents] = useState([]);
+  const [copilotOpen, setCopilotOpen] = useState(false);
 
   useEffect(() => {
     axios.get(`${API}/api/whitelabel/config`)
@@ -174,6 +198,10 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
   }, []);
 
   const agents = [
+    {
+      id: "swarm-copilot", title: "Swarm Copilot", IconComponent: Bot, color: "#8b5cf6",
+      desc: "Web Crawling Configuration Expert. Ingest public websites, documentation, and blogs dynamically into your organizational knowledge base."
+    },
     {
       id: "DEVOPS_GENI", title: "DevOps Geni", IconComponent: ShieldCheck, color: "#f43f5e",
       desc: "Autonomous DevSecOps agent. Monitors Docker telemetry, runs SAST scans, and hunts ghost processes."
@@ -224,6 +252,10 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
 
 
   const initiateAITalk = async (agentId) => {
+    if (agentId === "swarm-copilot") {
+      setCopilotOpen(true);
+      return;
+    }
     try {
       const res = await axios.post(`${API}/talk-to-ai`, { agentType: agentId });
       onJoin({ 
@@ -536,6 +568,7 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
       }}>
         {agents
           .filter(agent => {
+            if (agent.id === "swarm-copilot") return true;
             if (enabledAgents.length > 0) {
               const checkId = agent.id.toLowerCase();
               if (checkId === "bi2") {
@@ -552,6 +585,8 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
         }
       </div>
 
+      {/* Swarm Copilot Setup Drawer */}
+      <SwarmCopilotPanel isOpen={copilotOpen} onClose={() => setCopilotOpen(false)} />
 
     </div>
   );
