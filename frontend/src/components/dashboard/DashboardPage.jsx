@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { io } from "socket.io-client";
-import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
+import { setupPageAEO, cleanupPageAEO } from "../../utils/aeo";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {

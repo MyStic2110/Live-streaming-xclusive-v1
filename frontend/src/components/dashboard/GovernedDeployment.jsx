@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Server, Cloud, Layers, Network, ArrowLeft, Check, ChevronRight, Shield, Zap, Cpu, DollarSign, TrendingUp } from "lucide-react";
-import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
+import { setupPageAEO, cleanupPageAEO } from "../../utils/aeo";
 
 const COLORS = {
   bg: "#080c14",

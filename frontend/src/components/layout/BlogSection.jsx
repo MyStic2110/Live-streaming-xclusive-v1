@@ -6,7 +6,7 @@ import {
   Volume2, VolumeX
 } from "lucide-react";
 import LegalModal from "./LegalModal";
-import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
+import { setupPageAEO, cleanupPageAEO } from "../../utils/aeo";
 import Footer from "./Footer";
 
 const COLORS = {

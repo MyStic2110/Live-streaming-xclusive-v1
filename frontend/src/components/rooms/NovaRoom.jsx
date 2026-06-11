@@ -1,7 +1,7 @@
 import React, { memo, useState } from "react";
 import CostGuardAlert from "./CostGuardAlert";
 import { LiveKitRoom, RoomAudioRenderer, useRoomContext, useParticipants } from "@livekit/components-react";
-import { NovaProvider, useNova } from "../nova-sdk/index.js";
+import { NovaProvider, useNova } from "../../nova-sdk/index.js";
 
 const DashboardContent = ({ roomData, onLeave }) => {
     const iframeRef = React.useRef(null);

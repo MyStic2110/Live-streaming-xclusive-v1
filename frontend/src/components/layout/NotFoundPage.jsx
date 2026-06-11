@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
-import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
+import { setupPageAEO, cleanupPageAEO } from "../../utils/aeo";
 
 const COLORS = {
   primary: "#111827",

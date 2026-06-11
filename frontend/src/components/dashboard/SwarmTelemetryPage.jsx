@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
+import { setupPageAEO, cleanupPageAEO } from "../../utils/aeo";
 import { ShieldCheck, AlertCircle, AlertTriangle, Cpu, Activity, ArrowLeft } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "";

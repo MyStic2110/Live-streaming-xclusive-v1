@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
+import { setupPageAEO, cleanupPageAEO } from "../../utils/aeo";
 import { Heart, MessageCircle, Share2, Volume2, VolumeX, ArrowLeft } from "lucide-react";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────

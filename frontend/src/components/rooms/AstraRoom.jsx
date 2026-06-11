@@ -8,7 +8,7 @@ import {
 } from "@livekit/components-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Sparkles, Activity, Shield, RefreshCw, User, Mic, MicOff } from "lucide-react";
-import BlogSection from "./BlogSection";
+import BlogSection from "../layout/BlogSection";
 
 const COLORS = {
   primary: "#111827",
