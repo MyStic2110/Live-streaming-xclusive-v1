@@ -3,6 +3,7 @@ import json
 import logging
 import asyncio
 import uuid
+import hashlib
 import aiohttp
 import time
 import re
@@ -89,7 +90,7 @@ def classify_exception(e: Exception) -> tuple[str, str]:
 
 async def post_trace_async(event_type: str, data: dict, run_id: str):
     port = os.getenv("BACKEND_PORT", "3002")
-    url = f"http://localhost:{port}/api/llm-trace"
+    url = f"http://127.0.0.1:{port}/api/llm-trace"
     payload = {
         "event": event_type,
         "run_id": run_id,
@@ -109,7 +110,7 @@ def post_trace(event_type: str, data: dict, run_id: str):
 
 async def post_tool_call_async(run_id: str, tool_name: str, duration: float):
     port = os.getenv("BACKEND_PORT", "3002")
-    url = f"http://localhost:{port}/api/llm-trace/tool-call"
+    url = f"http://127.0.0.1:{port}/api/llm-trace/tool-call"
     payload = {
         "run_id": run_id,
         "name": tool_name,
@@ -149,6 +150,17 @@ class TracedLLMStream(llm.LLMStream):
 
         # Calculate exact STT duration for this turn
         global _cumulative_stt_seconds, _last_turn_stt_seconds
+
+        # Generate input_id: stable SHA-256 hash of prompt content
+        # → same prompt sent twice gets the same input_id (cache/dedup detection)
+        prompt_fingerprint = json.dumps(
+            [{"role": m.get("role"), "content": str(m.get("content", ""))[:512]}
+             for m in self.input_messages],
+            sort_keys=True
+        )
+        self.input_id  = "inp_" + hashlib.sha256(prompt_fingerprint.encode()).hexdigest()[:16]
+        self.output_id = None  # assigned at llm_end (stochastic → always UUID)
+
         stt_duration = max(0.0, _cumulative_stt_seconds - _last_turn_stt_seconds)
 
         # Fallback to word-count-based estimate if metric is not yet updated
@@ -181,6 +193,7 @@ class TracedLLMStream(llm.LLMStream):
                 "inputs": self.input_messages,
                 "model": self.inner_stream._llm.model,
                 "agent": self.agent_name,
+                "input_id": self.input_id,
                 "stt_cost": round(stt_cost, 6),
                 "tts_cost": 0.0,
                 "total_cost": round(stt_cost, 6),
@@ -271,6 +284,9 @@ class TracedLLMStream(llm.LLMStream):
                 cum_tts_c = self.parent_tracer.cum_tts_cost
                 cum_tot_c = self.parent_tracer.cum_total_cost
 
+            # Assign output_id now that we have the completion
+            self.output_id = "out_" + uuid.uuid4().hex[:16]
+
             post_trace(
                 "llm_end",
                 {
@@ -282,6 +298,8 @@ class TracedLLMStream(llm.LLMStream):
                     "stt_cost": stt_cost,
                     "tts_cost": tts_cost,
                     "total_cost": total_cost,
+                    "input_id": self.input_id,
+                    "output_id": self.output_id,
                     
                     "cum_prompt_tokens": cum_p_tokens,
                     "cum_completion_tokens": cum_c_tokens,
@@ -484,6 +502,16 @@ async def trace_raw_call(
             rates = PRICING[key]
             break
 
+    # input_id: stable hash of prompt content (same prompt → same id → cache detection)
+    clean_msgs = _to_dict(messages)
+    prompt_fingerprint = json.dumps(
+        [{"role": m.get("role"), "content": str(m.get("content", ""))[:512]}
+         for m in clean_msgs],
+        sort_keys=True
+    )
+    input_id  = "inp_" + hashlib.sha256(prompt_fingerprint.encode()).hexdigest()[:16]
+    output_id = "out_" + uuid.uuid4().hex[:16]  # stochastic → always unique
+
     input_cost  = round((prompt_tokens    / 1_000_000) * rates["input"], 6)
     output_cost = round((completion_tokens / 1_000_000) * rates["output"], 6)
     total_cost  = round(input_cost + output_cost, 6)
@@ -507,6 +535,7 @@ async def trace_raw_call(
                 "inputs": clean_messages,
                 "model": model,
                 "agent": agent_name,
+                "input_id": input_id,
                 "stt_cost": 0.0,
                 "tts_cost": 0.0,
                 "total_cost": 0.0,
@@ -532,6 +561,8 @@ async def trace_raw_call(
                 "stt_cost": 0.0,
                 "tts_cost": 0.0,
                 "total_cost": total_cost,
+                "input_id": input_id,
+                "output_id": output_id,
                 "cum_prompt_tokens": cum_prompt_tokens,
                 "cum_completion_tokens": cum_completion_tokens,
                 "cum_input_cost": cum_input_cost,
@@ -579,6 +610,14 @@ async def trace_raw_error(
     clean_messages = _to_dict(messages)
     err_code, err_msg = classify_exception(exception)
 
+    # input_id: same hash logic for error path
+    prompt_fingerprint = json.dumps(
+        [{"role": m.get("role"), "content": str(m.get("content", ""))[:512]}
+         for m in clean_messages],
+        sort_keys=True
+    )
+    input_id = "inp_" + hashlib.sha256(prompt_fingerprint.encode()).hexdigest()[:16]
+
     async def _post_all():
         # start event
         await post_trace_async(
@@ -587,6 +626,7 @@ async def trace_raw_error(
                 "inputs": clean_messages,
                 "model": model,
                 "agent": agent_name,
+                "input_id": input_id,
                 "stt_cost": 0.0,
                 "tts_cost": 0.0,
                 "total_cost": 0.0,

@@ -4,6 +4,11 @@ import { io } from "socket.io-client";
 import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  Terminal, ChevronDown, ChevronUp,
+  Eye, Cpu, Zap, DollarSign, BarChart2, TrendingUp, Timer, Gauge,
+  Satellite, Trash2, ArrowLeft
+} from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -71,10 +76,11 @@ const CollapsiblePre = ({ children, ...props }) => {
         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#f1f5f9"}
       >
         <span style={{ fontSize: "0.85rem", color: "#2563eb", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
-          🖥️ Diagnostics Log Output ({lineCount} lines)
+          <Terminal size={14} strokeWidth={2} />
+          Diagnostics Log Output ({lineCount} lines)
         </span>
         <span style={{ fontSize: "0.75rem", color: "#64748b", display: "flex", alignItems: "center", gap: "4px" }}>
-          {isExpanded ? "Click to collapse ▲" : "Click to expand ▼"}
+          {isExpanded ? <><ChevronUp size={14}/> Collapse</> : <><ChevronDown size={14}/> Expand</>}
         </span>
       </div>
       {isExpanded && (
@@ -425,10 +431,12 @@ function DashboardPage({ onBack }) {
           />
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "0.65rem", background: "rgba(139, 92, 246, 0.1)", color: "#7c3aed", padding: "2px 8px", borderRadius: "4px", fontWeight: "900", letterSpacing: "1.5px" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.65rem", background: "rgba(139, 92, 246, 0.1)", color: "#7c3aed", padding: "2px 8px", borderRadius: "4px", fontWeight: "900", letterSpacing: "1.5px" }}>
+                <Eye size={10} strokeWidth={2.5} />
                 SWARM OBSERVABILITY
               </span>
-              <span style={{ fontSize: "0.65rem", background: "rgba(59, 130, 246, 0.1)", color: "#2563eb", padding: "2px 8px", borderRadius: "4px", fontWeight: "900", letterSpacing: "1px" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.65rem", background: "rgba(59, 130, 246, 0.1)", color: "#2563eb", padding: "2px 8px", borderRadius: "4px", fontWeight: "900", letterSpacing: "1px" }}>
+                <Cpu size={10} strokeWidth={2.5} />
                 LLM TELEMETRY
               </span>
             </div>
@@ -441,6 +449,7 @@ function DashboardPage({ onBack }) {
         <button
           onClick={onBack}
           style={{
+            display: "flex", alignItems: "center", gap: "6px",
             padding: "0.75rem 1.5rem",
             background: "#ffffff",
             border: "1px solid #cbd5e1",
@@ -454,14 +463,16 @@ function DashboardPage({ onBack }) {
           onMouseEnter={e => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.borderColor = "#94a3b8"; }}
           onMouseLeave={e => { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.borderColor = "#cbd5e1"; }}
         >
-          ← Back to HQ
+          <ArrowLeft size={15} strokeWidth={2} /> Back to HQ
         </button>
       </header>
 
       {/* Grid of Global Stats */}
       <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.5rem" }}>
         <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02)" }}>
-          <div style={{ background: "rgba(59, 130, 246, 0.08)", color: "#2563eb", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>⚡</div>
+          <div style={{ background: "rgba(59, 130, 246, 0.08)", color: "#2563eb", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <Zap size={22} strokeWidth={2} />
+          </div>
           <div>
             <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Total Requests</div>
             <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#0f172a", lineHeight: "1.2" }}>{stats.totalRequests}</div>
@@ -469,7 +480,9 @@ function DashboardPage({ onBack }) {
         </div>
 
         <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02)" }}>
-          <div style={{ background: "rgba(16, 185, 129, 0.08)", color: "#059669", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>💵</div>
+          <div style={{ background: "rgba(16, 185, 129, 0.08)", color: "#059669", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <DollarSign size={22} strokeWidth={2} />
+          </div>
           <div>
             <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Combined Spend</div>
             <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#10b981", lineHeight: "1.2", fontFamily: "monospace" }}>${stats.totalSpend}</div>
@@ -477,7 +490,9 @@ function DashboardPage({ onBack }) {
         </div>
 
         <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02)" }}>
-          <div style={{ background: "rgba(139, 92, 246, 0.08)", color: "#7c3aed", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>📊</div>
+          <div style={{ background: "rgba(139, 92, 246, 0.08)", color: "#7c3aed", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <BarChart2 size={22} strokeWidth={2} />
+          </div>
           <div>
             <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Total Tokens</div>
             <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#0f172a", lineHeight: "1.2", fontFamily: "monospace" }}>{stats.totalTokens}</div>
@@ -485,7 +500,9 @@ function DashboardPage({ onBack }) {
         </div>
 
         <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02)" }}>
-          <div style={{ background: "rgba(245, 158, 11, 0.08)", color: "#d97706", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>📈</div>
+          <div style={{ background: "rgba(245, 158, 11, 0.08)", color: "#d97706", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <TrendingUp size={22} strokeWidth={2} />
+          </div>
           <div>
             <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Avg Cost / Run</div>
             <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#fbbf24", lineHeight: "1.2", fontFamily: "monospace" }}>${stats.avgCost}</div>
@@ -493,7 +510,9 @@ function DashboardPage({ onBack }) {
         </div>
 
         <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02)" }}>
-          <div style={{ background: "rgba(239, 68, 68, 0.08)", color: "#dc2626", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>⏱️</div>
+          <div style={{ background: "rgba(239, 68, 68, 0.08)", color: "#dc2626", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <Timer size={22} strokeWidth={2} />
+          </div>
           <div>
             <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Avg Latency</div>
             <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#ef4444", lineHeight: "1.2", fontFamily: "monospace" }}>{stats.avgLatency}ms</div>
@@ -501,7 +520,9 @@ function DashboardPage({ onBack }) {
         </div>
 
         <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "18px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.2rem", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02)" }}>
-          <div style={{ background: "rgba(6, 182, 212, 0.08)", color: "#0891b2", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem" }}>🚀</div>
+          <div style={{ background: "rgba(6, 182, 212, 0.08)", color: "#0891b2", height: "52px", width: "52px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <Gauge size={22} strokeWidth={2} />
+          </div>
           <div>
             <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase" }}>Avg Speed</div>
             <div style={{ fontSize: "1.8rem", fontWeight: "900", color: "#0891b2", lineHeight: "1.2", fontFamily: "monospace" }}>{stats.avgSpeed} t/s</div>
@@ -555,7 +576,8 @@ function DashboardPage({ onBack }) {
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.12)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.05)"; }}
             >
-              🗑 Clear Telemetry Logs
+              <Trash2 size={13} strokeWidth={2} style={{ display: "inline", marginRight: "4px" }} />
+              Clear Telemetry Logs
             </button>
           )}
         </div>
@@ -565,7 +587,7 @@ function DashboardPage({ onBack }) {
       <section style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
         {filteredTraces.length === 0 ? (
           <div style={{ textAlign: "center", padding: "6rem", background: "#ffffff", border: "1.5px dashed #cbd5e1", borderRadius: "20px", color: "#64748b" }}>
-            <span style={{ fontSize: "2rem", display: "block", marginBottom: "8px" }}>📡</span>
+            <span style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}><Satellite size={36} color="#cbd5e1" strokeWidth={1.5} /></span>
             No traces recorded. Engage an agent to stream live telemetry.
           </div>
         ) : (
@@ -621,8 +643,49 @@ function DashboardPage({ onBack }) {
                         </div>
                       )}
                     </div>
-                    <div style={{ fontSize: "0.65rem", color: "#64748b", fontFamily: "monospace" }}>
-                      Run ID: {trace.run_id}
+                    {/* ID Ledger: run_id / input_id / output_id */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "2px" }}>
+                      {[
+                        { label: "RUN",  value: trace.run_id,    color: "#64748b", bg: "rgba(100,116,139,0.07)" },
+                        { label: "INP",  value: trace.input_id,  color: "#7c3aed", bg: "rgba(124,58,237,0.07)"  },
+                        { label: "OUT",  value: trace.output_id, color: "#0891b2", bg: "rgba(8,145,178,0.07)"   }
+                      ].map(({ label, value, color, bg }) => (
+                        <div
+                          key={label}
+                          title={value ? `Click to copy ${label} ID` : `${label} ID not yet available`}
+                          onClick={() => {
+                            if (!value) return;
+                            navigator.clipboard.writeText(value).then(() => {
+                              const el = document.getElementById(`copy-badge-${trace.run_id}-${label}`);
+                              if (el) { el.textContent = "Copied!"; setTimeout(() => { el.textContent = value; }, 1200); }
+                            });
+                          }}
+                          style={{
+                            display: "flex", alignItems: "center", gap: "5px",
+                            cursor: value ? "pointer" : "default",
+                            userSelect: "none"
+                          }}
+                        >
+                          <span style={{
+                            fontSize: "0.55rem", fontWeight: "900", color,
+                            background: bg, padding: "1px 5px",
+                            borderRadius: "3px", letterSpacing: "0.5px", flexShrink: 0
+                          }}>
+                            {label}
+                          </span>
+                          <span
+                            id={`copy-badge-${trace.run_id}-${label}`}
+                            style={{
+                              fontSize: "0.62rem", fontFamily: "monospace",
+                              color: value ? "#475569" : "#cbd5e1",
+                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                              maxWidth: "220px"
+                            }}
+                          >
+                            {value || "—"}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
 

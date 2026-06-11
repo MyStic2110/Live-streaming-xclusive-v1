@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Monitor, Activity, BarChart2, Cpu, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -32,9 +33,9 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
   }, []);
 
   const menuItems = [
-    { id: 'fleet', label: 'Fleet Control', icon: '🖥️' },
-    { id: 'telemetry', label: 'Observability', icon: '🔍' },
-    { id: 'analytics', label: 'Analytics & Costs', icon: '📊' },
+    { id: 'fleet',     label: 'Fleet Control',   Icon: Monitor   },
+    { id: 'telemetry', label: 'Observability',    Icon: Activity  },
+    { id: 'analytics', label: 'Analytics & Costs', Icon: BarChart2 },
   ];
 
   const getBreadcrumb = () => {
@@ -69,12 +70,18 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
               boxShadow: '0 2px 10px rgba(0,0,0,0.06)'
             }}
           >
-            {isCollapsed ? '→' : '←'}
+            {isCollapsed ? <ChevronRight size={13} strokeWidth={2.5} /> : <ChevronLeft size={13} strokeWidth={2.5} />}
           </button>
 
           {/* Sidebar Brand header */}
           <div className="sidebar-brand">
-            <span className="brand-icon" style={{ fontSize: '1.6rem' }}>🤖</span>
+            <span className="brand-icon" style={{
+              width: '34px', height: '34px', borderRadius: '10px',
+              background: `linear-gradient(135deg, ${whitelabel.theme.primary}, ${whitelabel.theme.accent || '#10b981'})`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+            }}>
+              <Cpu size={18} color="#ffffff" strokeWidth={2} />
+            </span>
             <span className="brand-full sidebar-text" style={{ fontSize: '1.05rem', fontWeight: '900', letterSpacing: '1px' }}>
               {whitelabel.clientName.split(' ')[0].toUpperCase()}{' '}
               <span style={{ color: whitelabel.theme.primary }}>CONSOLE</span>
@@ -83,17 +90,21 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
 
           {/* Nav List */}
           <nav className="sidebar-list">
-            {menuItems.map(item => (
+            {menuItems.map(({ id, label, Icon }) => (
               <div
-                key={item.id}
-                onClick={() => onTabChange(item.id)}
-                className={`sidebar-item ${activeTab === item.id ? 'active' : ''}`}
+                key={id}
+                onClick={() => onTabChange(id)}
+                className={`sidebar-item ${activeTab === id ? 'active' : ''}`}
                 style={{
-                  color: activeTab === item.id ? whitelabel.theme.primary : 'var(--text-muted)'
+                  color: activeTab === id ? whitelabel.theme.primary : 'var(--text-muted)'
                 }}
               >
-                <span style={{ fontSize: '1.2rem' }}>{item.icon}</span>
-                <span className="sidebar-text">{item.label}</span>
+                <Icon
+                  size={18}
+                  strokeWidth={activeTab === id ? 2.2 : 1.8}
+                  color={activeTab === id ? whitelabel.theme.primary : 'var(--text-muted)'}
+                />
+                <span className="sidebar-text">{label}</span>
               </div>
             ))}
           </nav>
@@ -147,7 +158,7 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.2)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.1)'}
             >
-              🚪
+              <LogOut size={15} strokeWidth={2} />
             </button>
           </div>
         )}

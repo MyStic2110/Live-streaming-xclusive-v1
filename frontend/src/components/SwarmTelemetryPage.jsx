@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { setupPageAEO, cleanupPageAEO } from "../utils/aeo";
+import { ShieldCheck, AlertCircle, AlertTriangle, Cpu, Activity, ArrowLeft } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -82,10 +83,12 @@ function SwarmTelemetryPage({ onBack }) {
           />
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "0.7rem", background: "rgba(59, 130, 246, 0.1)", color: "#2563eb", padding: "2px 8px", borderRadius: "4px", fontWeight: "900", letterSpacing: "1px" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.7rem", background: "rgba(59, 130, 246, 0.1)", color: "#2563eb", padding: "2px 8px", borderRadius: "4px", fontWeight: "900", letterSpacing: "1px" }}>
+                <Cpu size={10} strokeWidth={2.5} />
                 AIVYUH SEC-OPS
               </span>
-              <span style={{ fontSize: "0.7rem", background: "rgba(16, 185, 129, 0.1)", color: "#059669", padding: "2px 8px", borderRadius: "4px", fontWeight: "900" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.7rem", background: "rgba(16, 185, 129, 0.1)", color: "#059669", padding: "2px 8px", borderRadius: "4px", fontWeight: "900" }}>
+                <Activity size={10} strokeWidth={2.5} />
                 LIVE TELEMETRY
               </span>
             </div>
@@ -98,6 +101,7 @@ function SwarmTelemetryPage({ onBack }) {
         <button
           onClick={onBack}
           style={{
+            display: "flex", alignItems: "center", gap: "6px",
             padding: "0.8rem 1.5rem",
             background: "#ffffff",
             border: "1px solid #cbd5e1",
@@ -112,14 +116,16 @@ function SwarmTelemetryPage({ onBack }) {
           onMouseEnter={e => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.transform = "translateY(-2px)"; }}
           onMouseLeave={e => { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.transform = "translateY(0)"; }}
         >
-          ← Back to Swarm HQ
+          <ArrowLeft size={15} strokeWidth={2} /> Back to Swarm HQ
         </button>
       </header>
 
       {/* Global Metrics */}
       <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem" }}>
         <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "16px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.5rem", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.02)" }}>
-          <div style={{ background: "rgba(59, 130, 246, 0.08)", color: "#2563eb", height: "60px", width: "60px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "2rem" }}>🛡️</div>
+          <div style={{ background: "rgba(59, 130, 246, 0.08)", color: "#2563eb", height: "60px", width: "60px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <ShieldCheck size={26} strokeWidth={1.75} />
+          </div>
           <div>
             <div style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px" }}>ACTIVE AGENTS</div>
             <div style={{ fontSize: "2.5rem", fontWeight: "900", color: "#0f172a", lineHeight: "1" }}>{agentEntries.length}</div>
@@ -127,7 +133,9 @@ function SwarmTelemetryPage({ onBack }) {
         </div>
 
         <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "16px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.5rem", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.02)" }}>
-          <div style={{ background: totalCriticals > 0 ? "rgba(239, 68, 68, 0.08)" : "rgba(16, 185, 129, 0.08)", color: totalCriticals > 0 ? "#dc2626" : "#059669", height: "60px", width: "60px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "2rem" }}>🚨</div>
+          <div style={{ background: totalCriticals > 0 ? "rgba(239, 68, 68, 0.08)" : "rgba(16, 185, 129, 0.08)", color: totalCriticals > 0 ? "#dc2626" : "#059669", height: "60px", width: "60px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <AlertCircle size={26} strokeWidth={1.75} />
+          </div>
           <div>
             <div style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px" }}>FLEET CRITICALS</div>
             <div style={{ fontSize: "2.5rem", fontWeight: "900", color: totalCriticals > 0 ? "#ef4444" : "#10b981", lineHeight: "1" }}>{totalCriticals}</div>
@@ -135,7 +143,9 @@ function SwarmTelemetryPage({ onBack }) {
         </div>
 
         <div style={{ background: "#ffffff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "16px", padding: "1.5rem", display: "flex", alignItems: "center", gap: "1.5rem", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.02)" }}>
-          <div style={{ background: totalWarnings > 0 ? "rgba(245, 158, 11, 0.08)" : "rgba(16, 185, 129, 0.08)", color: totalWarnings > 0 ? "#d97706" : "#059669", height: "60px", width: "60px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "2rem" }}>⚠️</div>
+          <div style={{ background: totalWarnings > 0 ? "rgba(245, 158, 11, 0.08)" : "rgba(16, 185, 129, 0.08)", color: totalWarnings > 0 ? "#d97706" : "#059669", height: "60px", width: "60px", borderRadius: "12px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <AlertTriangle size={26} strokeWidth={1.75} />
+          </div>
           <div>
             <div style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: "700", letterSpacing: "1px" }}>FLEET WARNINGS</div>
             <div style={{ fontSize: "2.5rem", fontWeight: "900", color: totalWarnings > 0 ? "#f59e0b" : "#10b981", lineHeight: "1" }}>{totalWarnings}</div>

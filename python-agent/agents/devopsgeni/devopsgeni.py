@@ -246,9 +246,27 @@ def run_sast_scan(directory_path: str = "."):
         output = f"Running SAST Scan on {target_dir}...\n\n"
         
         if has_bandit:
-            result = subprocess.run(["bandit", "-r", target_dir, "-f", "custom"], capture_output=True, text=True)
-            output += "Bandit Python SAST Results:\n"
-            output += result.stdout if result.stdout else "No Python vulnerabilities found by Bandit.\n"
+            import sys
+            import shutil
+            bandit_bin = "bandit"
+            
+            venv_bin_dir = "Scripts" if os.name == "nt" else "bin"
+            venv_bandit_path = os.path.join(sys.prefix, venv_bin_dir, "bandit.exe" if os.name == "nt" else "bandit")
+            
+            if os.path.exists(venv_bandit_path):
+                bandit_bin = venv_bandit_path
+            elif not shutil.which("bandit"):
+                has_bandit = False
+
+            if has_bandit:
+                try:
+                    result = subprocess.run([bandit_bin, "-r", target_dir, "-f", "custom"], capture_output=True, text=True)
+                    output += "Bandit Python SAST Results:\n"
+                    output += result.stdout if result.stdout else "No Python vulnerabilities found by Bandit.\n"
+                except Exception as ex:
+                    output += f"Bandit execution failed ({str(ex)}). Falling back to regex-based SAST scanning...\n"
+            else:
+                output += "Bandit executable not found in active environment or PATH. Falling back to regex-based SAST scanning...\n"
         else:
             output += "Bandit is not installed natively. Falling back to regex-based SAST scanning...\n"
         

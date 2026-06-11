@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { io } from "socket.io-client";
 import { LiveKitRoom, useRoomContext, useLocalParticipant, useRemoteParticipants } from "@livekit/components-react";
-import { Send, AlertTriangle, X, Server, User, Activity } from "lucide-react";
+import { Send, AlertTriangle, X, Server, User, Activity, ShieldCheck, HardHat, Lock, Ghost, Monitor, BarChart2, Terminal, ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -302,21 +302,22 @@ function DevopsGeniPanelChat({ initialError }) {
                     {msg.id === "init" && messages.length <= 1 && !initialError && (
                       <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "16px" }}>
                         {[
-                          { text: "Run SAST scan on backend directory", icon: "🛡️" },
-                          { text: "Analyze architecture risks of docker setup", icon: "🏗️" },
-                          { text: "Install pre-commit security gate", icon: "🔒" },
-                          { text: "Check for ghost Python processes", icon: "👻" },
-                          { text: "Analyze Node.js backend crash logs", icon: "🖥️" },
-                          { text: "What is the current Swarm memory usage?", icon: "📊" }
+                          { text: "Run SAST scan on backend directory",       Icon: ShieldCheck },
+                          { text: "Analyze architecture risks of docker setup", Icon: HardHat },
+                          { text: "Install pre-commit security gate",          Icon: Lock },
+                          { text: "Check for ghost Python processes",          Icon: Ghost },
+                          { text: "Analyze Node.js backend crash logs",        Icon: Monitor },
+                          { text: "What is the current Swarm memory usage?",  Icon: BarChart2 }
                         ].map(action => (
                           <button 
                             key={action.text}
                             onClick={() => handleQuickAction(action.text)}
-                            style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #d1d5db", background: "#ffffff", fontSize: "0.8rem", color: "#374151", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}
-                            onMouseOver={(e) => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.borderColor = "#9ca3af"; }}
+                            style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #d1d5db", background: "#ffffff", fontSize: "0.8rem", color: "#374151", cursor: "pointer", textAlign: "left", transition: "all 0.2s", display: "flex", alignItems: "center", gap: "8px" }}
+                            onMouseOver={(e) => { e.currentTarget.style.background = "#f0f9ff"; e.currentTarget.style.borderColor = "#7dd3fc"; }}
                             onMouseOut={(e) => { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.borderColor = "#d1d5db"; }}
                           >
-                            {action.icon} {action.text}
+                            <action.Icon size={14} strokeWidth={2} color="#0284c7" />
+                            {action.text}
                           </button>
                         ))}
                       </div>

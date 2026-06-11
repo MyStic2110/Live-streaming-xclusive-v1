@@ -69,7 +69,8 @@ YOUR ACTIVE INFRASTRUCTURE:
 - livekit-video-app-livekit-1 (LiveKit SFU Server)
 - livekit-video-app-redis-1 (Redis In-Memory Database)
 - livekit-video-app-securelytix-sdk-1 (Securelytix SDK)
-- livekit-video-app-securelytix-postgres-1 (PostgreSQL DB)
+- livekit-video-app-securelytix-postgres-1 (Securelytix PostgreSQL DB)
+- livekit-video-app-swarm-postgres-1 (Swarm PostgreSQL DB)
 - livekit-video-app-searxng-1 (SearXNG Search Engine)
 - octane-agent (This Telemetry Agent's own system process logs)
 - node-backend (The global Node.js backend server crash logs)
@@ -644,6 +645,7 @@ async def entrypoint(ctx: JobContext):
         "livekit-video-app-redis-1",
         "livekit-video-app-securelytix-sdk-1",
         "livekit-video-app-securelytix-postgres-1",
+        "livekit-video-app-swarm-postgres-1",
         "livekit-video-app-searxng-1"
     ]
     for c in containers_to_monitor:

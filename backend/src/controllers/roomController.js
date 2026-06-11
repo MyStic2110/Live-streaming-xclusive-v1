@@ -1,5 +1,28 @@
 import { tokenService } from '../services/tokenService.js';
 import { processCopilotMessage } from '../services/copilotService.js';
+import crypto from 'crypto';
+
+/**
+ * Generate a stable input_id from the prompt messages.
+ * SHA-256 of sorted role+content fingerprint — same logic as Python tracer.
+ * Identical prompts → identical input_id (cache/dedup detection).
+ */
+const computeInputId = (messages) => {
+  try {
+    const fingerprint = JSON.stringify(
+      (messages || []).map(m => ({
+        role: m?.role || '',
+        content: String(m?.content || '').slice(0, 512)
+      }))
+    );
+    return 'inp_' + crypto.createHash('sha256').update(fingerprint).digest('hex').slice(0, 16);
+  } catch {
+    return null;
+  }
+};
+
+/** output_id: always unique (stochastic completion) */
+const generateOutputId = () => 'out_' + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
 
 let ioInstance = null;
 export const setSocketIO = (io) => {
@@ -350,6 +373,9 @@ export const copilotChat = async (req, res) => {
 
         try {
           if (messages && model) {
+            const inputId  = computeInputId(messages);
+            const outputId = generateOutputId();
+
             await fetch(traceUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -360,6 +386,7 @@ export const copilotChat = async (req, res) => {
                   inputs: messages,
                   model: model,
                   agent: "SWARM_COPILOT",
+                  input_id: inputId,
                   stt_cost: 0, tts_cost: 0, total_cost: 0,
                   cum_prompt_tokens: 0, cum_completion_tokens: 0, cum_input_cost: 0, cum_output_cost: 0, cum_stt_cost: 0, cum_tts_cost: 0, cum_total_cost: 0
                 }
@@ -378,6 +405,7 @@ export const copilotChat = async (req, res) => {
                     error_message: exception.message || "Network request failed",
                     total_latency: Math.round(duration * 1000),
                     agent: "SWARM_COPILOT",
+                    input_id: inputId,
                     stt_cost: 0, tts_cost: 0, total_cost: 0,
                     cum_prompt_tokens: 0, cum_completion_tokens: 0, cum_input_cost: 0, cum_output_cost: 0, cum_stt_cost: 0, cum_tts_cost: 0, cum_total_cost: 0
                   }
@@ -405,6 +433,8 @@ export const copilotChat = async (req, res) => {
                     total_cost: totalCost,
                     cum_prompt_tokens: 0, cum_completion_tokens: 0, cum_input_cost: 0, cum_output_cost: 0, cum_stt_cost: 0, cum_tts_cost: 0, cum_total_cost: 0,
                     agent: "SWARM_COPILOT",
+                    input_id: inputId,
+                    output_id: outputId,
                     total_latency: Math.round(duration * 1000),
                     ttft: Math.round(duration * 1000),
                     tool_latency: 0,

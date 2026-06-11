@@ -13,6 +13,10 @@ export const connectDB = async () => {
       connectionTimeoutMillis: 5000,
     });
 
+    pool.on('error', (err) => {
+      logger.error(`[DATABASE] Unexpected error on idle client: ${err.message}`);
+    });
+
     // Test connection
     const client = await pool.connect();
     logger.info(`[DATABASE] ✅ PostgreSQL Connected Successfully.`);
@@ -61,6 +65,8 @@ const initializeTables = async (client) => {
       CREATE TABLE IF NOT EXISTS traces (
         id SERIAL PRIMARY KEY,
         run_id VARCHAR(255) UNIQUE NOT NULL,
+        input_id VARCHAR(32) NULL,
+        output_id VARCHAR(24) NULL,
         agent VARCHAR(255) NULL,
         model VARCHAR(255) DEFAULT 'unknown',
         inputs JSONB DEFAULT '[]'::jsonb,
@@ -81,6 +87,13 @@ const initializeTables = async (client) => {
         tool_calls JSONB DEFAULT '[]'::jsonb,
         error_details JSONB DEFAULT '{}'::jsonb
       );
+    `);
+
+    // Safe migration: add input_id / output_id to existing tables (no-op if already present)
+    await client.query(`
+      ALTER TABLE traces
+        ADD COLUMN IF NOT EXISTS input_id  VARCHAR(32) NULL,
+        ADD COLUMN IF NOT EXISTS output_id VARCHAR(24) NULL;
     `);
     
     // 4. Create Password Reset Tokens table

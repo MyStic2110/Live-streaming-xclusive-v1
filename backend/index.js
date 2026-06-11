@@ -58,8 +58,8 @@ const redisClient = createClient({
   url: process.env.REDIS_URL || 'redis://localhost:6379',
   socket: {
     reconnectStrategy: (retries) => {
-      if (retries > 3) return false; // stop retrying after 3 attempts
-      return Math.min(retries * 100, 500);
+      // Reconnect indefinitely with backoff, max 3 seconds delay
+      return Math.min(retries * 100, 3000);
     }
   }
 });

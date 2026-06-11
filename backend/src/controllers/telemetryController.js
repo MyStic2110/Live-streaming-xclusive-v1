@@ -45,6 +45,8 @@ const parseJson = (val) => {
 
 export const handleLlmTrace = async (req, res) => {
   const { event, run_id, data } = req.body;
+  const input_id  = data?.input_id  || null;
+  const output_id = data?.output_id || null;
 
   try {
     if (event === "llm_start") {
@@ -55,11 +57,12 @@ export const handleLlmTrace = async (req, res) => {
 
       await query(
         `INSERT INTO traces (
-          run_id, agent, model, inputs, outputs, 
+          run_id, input_id, agent, model, inputs, outputs, 
           prompt_tokens, completion_tokens, input_cost, output_cost, 
           stt_cost, tts_cost, total_cost, status, timestamp
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         ON CONFLICT (run_id) DO UPDATE SET
+          input_id = COALESCE(EXCLUDED.input_id, traces.input_id),
           agent = EXCLUDED.agent,
           model = EXCLUDED.model,
           inputs = EXCLUDED.inputs,
@@ -74,7 +77,7 @@ export const handleLlmTrace = async (req, res) => {
           status = EXCLUDED.status,
           timestamp = EXCLUDED.timestamp`,
         [
-          run_id, data.agent || null, data.model || 'unknown', inputsJson, "",
+          run_id, input_id, data.agent || null, data.model || 'unknown', inputsJson, "",
           0, 0, 0, 0,
           sttCost, ttsCost, totalCost, "streaming", new Date()
         ]
@@ -124,13 +127,15 @@ export const handleLlmTrace = async (req, res) => {
           total_latency = $11,
           ttft = $12,
           tool_latency = $13,
-          otps = $14
-        WHERE run_id = $15`,
+          otps = $14,
+          output_id = $15
+        WHERE run_id = $16`,
         [
           data.outputs, data.prompt_tokens || 0, data.completion_tokens || 0,
           inputCost, outputCost, sttCost, ttsCost, totalCost,
           data.agent || null, "completed", data.total_latency || 0,
           data.ttft || 0, data.tool_latency || 0, data.otps || 0,
+          output_id,
           run_id
         ]
       );
@@ -223,6 +228,8 @@ export const getTraces = async (req, res) => {
     const tracesRes = await query('SELECT * FROM traces ORDER BY timestamp DESC LIMIT 100');
     const formatted = tracesRes.rows.map(t => ({
       run_id: t.run_id,
+      input_id: t.input_id || null,
+      output_id: t.output_id || null,
       agent: t.agent,
       model: t.model,
       inputs: parseJson(t.inputs),

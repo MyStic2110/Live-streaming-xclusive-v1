@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, memo } from "react";
 import CostGuardAlert from "./CostGuardAlert";
 import { LiveKitRoom, useRoomContext, useLocalParticipant, useRemoteParticipants } from "@livekit/components-react";
-import { Send, ArrowLeft, Bot, User, Server } from "lucide-react";
+import { Send, ArrowLeft, Bot, User, Server, ShieldCheck, HardHat, Lock, Ghost, Monitor, BarChart2, Terminal, ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -70,10 +70,11 @@ const CollapsiblePre = ({ children, ...props }) => {
         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#f1f5f9"}
       >
         <span style={{ fontSize: "0.85rem", color: "#0284c7", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
-          🖥️ Diagnostics Log Output ({lineCount} lines)
+          <Terminal size={14} strokeWidth={2} />
+          Diagnostics Log Output ({lineCount} lines)
         </span>
         <span style={{ fontSize: "0.75rem", color: "#64748b", display: "flex", alignItems: "center", gap: "4px" }}>
-          {isExpanded ? "Click to collapse ▲" : "Click to expand ▼"}
+          {isExpanded ? <><ChevronUp size={14}/> Collapse</> : <><ChevronDown size={14}/> Expand</>}
         </span>
       </div>
       {isExpanded && (
@@ -510,11 +511,13 @@ function DevopsGeniChat({ roomData, onLeave }) {
           {/* Quick Actions */}
           <div style={{ display: "flex", gap: "8px", overflowX: "auto", marginBottom: "16px", paddingBottom: "4px", scrollbarWidth: "none" }}>
             {[
-              "Run Security Compliance Audit",
-              "Analyze Infrastructure Risks",
-              "Monitor CI/CD Telemetry",
-              "Audit Agent Factory Logs"
-            ].map((action) => (
+              { label: "Run SAST scan on backend",   Icon: ShieldCheck,  action: "🛡️ Run SAST scan on backend directory" },
+              { label: "Analyze docker architecture", Icon: HardHat,      action: "🏗️ Analyze architecture risks of docker setup" },
+              { label: "Pre-commit security gate",   Icon: Lock,         action: "🔒 Install pre-commit security gate" },
+              { label: "Ghost Python processes",     Icon: Ghost,        action: "👻 Check for ghost Python processes" },
+              { label: "Node.js crash logs",         Icon: Monitor,      action: "🖥️ Analyze Node.js backend crash logs" },
+              { label: "Swarm memory usage",         Icon: BarChart2,    action: "📊 What is the current Swarm memory usage?" }
+            ].map(({ label, Icon, action }) => (
               <button
                 key={action}
                 onClick={(e) => {
@@ -522,14 +525,16 @@ function DevopsGeniChat({ roomData, onLeave }) {
                   handleQuickAction(action);
                 }}
                 style={{
-                  whiteSpace: "nowrap", padding: "8px 16px", borderRadius: "20px", border: "1px solid #e5e7eb",
-                  backgroundColor: "#ffffff", fontSize: "0.85rem", color: "#374151", cursor: "pointer",
-                  boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", transition: "all 0.2s"
+                  whiteSpace: "nowrap", padding: "8px 14px", borderRadius: "20px", border: "1px solid #e5e7eb",
+                  backgroundColor: "#ffffff", fontSize: "0.82rem", color: "#374151", cursor: "pointer",
+                  boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", transition: "all 0.2s",
+                  display: "flex", alignItems: "center", gap: "6px"
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f9fafb"; e.currentTarget.style.borderColor = "#d1d5db"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f0f9ff"; e.currentTarget.style.borderColor = "#7dd3fc"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#ffffff"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
               >
-                {action}
+                <Icon size={13} strokeWidth={2.2} color="#0284c7" />
+                {label}
               </button>
             ))}
           </div>

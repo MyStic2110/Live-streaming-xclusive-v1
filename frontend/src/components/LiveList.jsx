@@ -3,7 +3,11 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import LegalModal from "./LegalModal";
 import SwarmReelsCarousel from "./SwarmReelsCarousel";
-
+import Footer from "./Footer";
+import {
+  ShieldCheck, BarChart2, Leaf, Sparkles, Rocket, Aperture,
+  Mic2, Theater, Handshake, TrendingUp, Zap, Dna, Monitor
+} from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -11,6 +15,7 @@ const COLORS = {
   primary: "#3b82f6",
   accent: "#16a34a",
   bgSlate: "#ffffff",
+  bgSoft: "#f8fafc",
   border: "#e2e8f0",
   textMuted: "#64748b",
   success: "#16a34a"
@@ -40,6 +45,7 @@ const useLiveStats = (isActive) => {
 };
 
 const ConsoleAgentCard = ({ agent, onAction }) => {
+  const AgentIcon = agent.IconComponent;
   const [isHovered, setIsHovered] = useState(false);
   const stats = useLiveStats(true);
 
@@ -79,14 +85,13 @@ const ConsoleAgentCard = ({ agent, onAction }) => {
             width: "48px",
             height: "48px",
             borderRadius: "12px",
-            background: `${agent.color}12`,
-            border: `1.5px solid ${agent.color}25`,
+            background: `${agent.color}18`,
+            border: `1.5px solid ${agent.color}35`,
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            fontSize: "1.6rem"
+            justifyContent: "center"
           }}>
-            {agent.icon}
+            <AgentIcon size={22} color={agent.color} strokeWidth={1.75} />
           </div>
 
           <div style={{
@@ -170,51 +175,51 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
 
   const agents = [
     {
-      id: "DEVOPS_GENI", title: "DevOps Geni", icon: "🛡️", color: "#f43f5e",
+      id: "DEVOPS_GENI", title: "DevOps Geni", IconComponent: ShieldCheck, color: "#f43f5e",
       desc: "Autonomous DevSecOps agent. Monitors Docker telemetry, runs SAST scans, and hunts ghost processes."
     },
     {
-      id: "bi", title: "Cortex BI", icon: "📊", color: "#059669",
+      id: "bi", title: "Cortex BI", IconComponent: BarChart2, color: "#059669",
       desc: "Conversational MySQL analysis and realtime business insights. Perfect for data-driven operations."
     },
     {
-      id: "bi2", title: "Cortex IPL", icon: "🍃", color: "#10b981",
+      id: "bi2", title: "Cortex IPL", IconComponent: Leaf, color: "#10b981",
       desc: "Live MongoDB database intelligence for IPL predictions and real-time operations dashboarding."
     },
     {
-      id: "lina", title: "Lina Wellness", icon: "✨", color: "#d946ef",
+      id: "lina", title: "Lina Wellness", IconComponent: Sparkles, color: "#d946ef",
       desc: "Empathetic companion and wellness support. Conversational cognitive therapy models."
     },
     {
-      id: "nova", title: "Nova Copilot", icon: "🚀", color: "#8b5cf6",
+      id: "nova", title: "Nova Copilot", IconComponent: Rocket, color: "#8b5cf6",
       desc: "Autonomous SaaS engineering copilot. Helps users explore Nexus platform, schedules tasks, and automates UI steps."
     },
     {
-      id: "aura", title: "Cortex Aura", icon: "🔮", color: "#06b6d4",
+      id: "aura", title: "Cortex Aura", IconComponent: Aperture, color: "#06b6d4",
       desc: "Multi-modal cognitive voice agent. Integrates visual cues with real-time operations telemetry."
     },
     {
-      id: "astra", title: "Astra Coach", icon: "🎙️", color: "#6366f1",
+      id: "astra", title: "Astra Coach", IconComponent: Mic2, color: "#6366f1",
       desc: "Conversational public speaking coach. Analyzes vocal pacing, filler usage, and delivery."
     },
     {
-      id: "rehearsal", title: "Rehearsal Coach", icon: "🎭", color: "#f43f5e",
+      id: "rehearsal", title: "Rehearsal Coach", IconComponent: Theater, color: "#f43f5e",
       desc: "Real-time presentation coach. Analyzes vocal cadence, speaker pacing, and speech clarity."
     },
     {
-      id: "seva", title: "Seva Support", icon: "🤝", color: "#f59e0b",
+      id: "seva", title: "Seva Support", IconComponent: Handshake, color: "#f59e0b",
       desc: "Live customer onboarding assistant. Integrates backend APIs with context-aware logic."
     },
     {
-      id: "martech", title: "Martech Dynamo", icon: "📈", color: "#ea580c",
+      id: "martech", title: "Martech Dynamo", IconComponent: TrendingUp, color: "#ea580c",
       desc: "Autonomous marketing analytics coordinator. Tracks SEO health and customer conversion metrics."
     },
     {
-      id: "octane", title: "Octane Telemetry", icon: "⚡", color: "#eab308",
+      id: "octane", title: "Octane Telemetry", IconComponent: Zap, color: "#eab308",
       desc: "High-throughput telemetry auditor. Monitors sub-second network overhead and GPU scheduling."
     },
     {
-      id: "aivyuh", title: "Aivyuh Agent", icon: "🧬", color: "#14b8a6",
+      id: "aivyuh", title: "Aivyuh Agent", IconComponent: Dna, color: "#14b8a6",
       desc: "Advanced swarm logic coordinator. Dispatches complex multi-turn sub-agents to solve nested workflows."
     }
   ];
@@ -331,20 +336,189 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
               boxShadow: `0 8px 30px rgba(59, 130, 246, 0.2)`
             }}
           >
-            
+            ACCESS OPERATOR CONSOLE →
           </button>
         </header>
 
-        {/* Guest Footer */}
-        <footer style={{
-          padding: "2rem",
-          borderTop: "1px solid rgba(0, 0, 0, 0.06)",
-          textAlign: "center",
-          fontSize: "0.8rem",
-          color: COLORS.textMuted
-        }}>
-          &copy; {new Date().getFullYear()} Swarm Agentic Lab. Single-Tenant Cloud Edition.
-        </footer>
+        {/* About Section (Bento Box) */}
+        <section id="about" style={{ padding: "8rem 5%", background: COLORS.bgSoft, borderTop: `1px solid ${COLORS.border}`, borderBottom: `1px solid ${COLORS.border}`, position: "relative" }}>
+          <style dangerouslySetInnerHTML={{ __html: `
+            .bento-grid {
+              display: grid;
+              grid-template-columns: repeat(12, 1fr);
+              gap: 1.5rem;
+              max-width: 1200px;
+              margin: 0 auto;
+            }
+            .bento-card {
+              background: rgba(255, 255, 255, 0.8);
+              backdrop-filter: blur(10px);
+              border: 1px solid rgba(0, 0, 0, 0.05);
+              border-radius: 24px;
+              padding: 2.5rem;
+              display: flex;
+              flex-direction: column;
+              gap: 1.25rem;
+              transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+              box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+            }
+            .bento-card:hover {
+              transform: translateY(-8px);
+              box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+              border: 1px solid rgba(0, 0, 0, 0.1);
+            }
+            .card-1 { grid-column: span 7; }
+            .card-2 { grid-column: span 5; background: ${COLORS.primary}; color: white; }
+            .card-3 { grid-column: span 5; }
+            .card-4 { grid-column: span 7; }
+            .card-5 { grid-column: span 12; text-align: center; background: linear-gradient(135deg, ${COLORS.primary}, ${COLORS.accent}); color: white; border: none; }
+            
+            @media (max-width: 900px) {
+              .card-1, .card-2, .card-3, .card-4, .card-5 { grid-column: span 12; }
+            }
+          ` }} />
+          
+          <div style={{ textAlign: "center", marginBottom: "4rem" }}>
+            <h2 style={{ fontSize: "3rem", fontWeight: "900", color: COLORS.primary }}>
+              The Founder's Story
+            </h2>
+          </div>
+
+          <div className="bento-grid">
+            {/* Box 1: The Origin */}
+            <div className="bento-card card-1">
+              <div style={{ fontSize: "0.85rem", fontWeight: "900", color: COLORS.accent, textTransform: "uppercase", letterSpacing: "2px" }}>The Origin</div>
+              <p style={{ fontSize: "1.2rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
+                Like most builders in the AI era, I started with what everyone else was doing—small side projects, late-night experiments, and endless hours of vibe coding.
+              </p>
+              <p style={{ fontSize: "1.2rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
+                At first, I wasn't trying to build a company. I was simply trying to solve my own problems. Every day, I found myself repeating the same workflows: researching, planning, writing content, managing projects, tracking leads, documenting processes, onboarding people, and making decisions.
+              </p>
+            </div>
+
+            {/* Box 2: The Catalyst */}
+            <div className="bento-card card-2" style={{ justifyContent: "center" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: "900", color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "2px" }}>The Epiphany</div>
+              <div style={{ fontSize: "1.7rem", fontWeight: "900", lineHeight: "1.4", margin: "1rem 0" }}>
+                "Why am I doing this manually when AI agents can do it for me?"
+              </div>
+              <p style={{ fontSize: "1.1rem", color: "rgba(255,255,255,0.9)", margin: 0, lineHeight: "1.6" }}>
+                That question changed everything. Instead of building another AI tool, I started building AI agents that could replicate how I work. What began as a personal productivity experiment evolved into something much bigger: <strong>A startup designed to run itself.</strong>
+              </p>
+            </div>
+
+            {/* Box 3: The Problem */}
+            <div className="bento-card card-3">
+              <div style={{ fontSize: "0.85rem", fontWeight: "900", color: COLORS.accent, textTransform: "uppercase", letterSpacing: "2px" }}>The Broken Reality</div>
+              <p style={{ fontSize: "1.2rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
+                Not because humans aren't important. But because founders shouldn't spend their time buried under repetitive operational work.
+              </p>
+              <p style={{ fontSize: "1.2rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
+                Today's founders are expected to be marketers, salespeople, recruiters, operators, product managers, content creators, customer success teams, and executives—all at the same time.
+              </p>
+              <div style={{ fontSize: "1.5rem", fontWeight: "900", color: COLORS.primary, marginTop: "0.5rem" }}>
+                That's broken.
+              </div>
+            </div>
+
+            {/* Box 4: The Solution */}
+            <div className="bento-card card-4">
+              <div style={{ fontSize: "0.85rem", fontWeight: "900", color: COLORS.accent, textTransform: "uppercase", letterSpacing: "2px" }}>The Operating System</div>
+              <h3 style={{ fontSize: "2rem", fontWeight: "900", color: COLORS.primary, margin: "0.5rem 0", lineHeight: "1.2" }}>
+                Every founder deserves a digital workforce.
+              </h3>
+              <p style={{ fontSize: "1.15rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
+                A team of specialized AI agents that understand your business, execute proven playbooks, and help you move faster without hiring an army of people. From hiring your first employee to acquiring your first customer. From content creation to sales outreach.
+              </p>
+              <div style={{ display: "flex", gap: "10px", marginTop: "1rem", flexWrap: "wrap" }}>
+                {["No complicated setups", "No enterprise consulting", "No months of implementation"].map(tag => (
+                  <span key={tag} style={{ background: "rgba(59, 130, 246, 0.1)", color: COLORS.accent, padding: "8px 16px", borderRadius: "99px", fontSize: "0.9rem", fontWeight: "800" }}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Box 5: The Vision */}
+            <div className="bento-card card-5" style={{ alignItems: "center", padding: "5rem 2rem" }}>
+              <div style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)", fontWeight: "900", marginBottom: "2rem", textShadow: "0 4px 20px rgba(0,0,0,0.2)", lineHeight: "1.1" }}>
+                One founder.<br/>Unlimited execution.
+              </div>
+              <p style={{ fontSize: "1.25rem", lineHeight: "1.7", maxWidth: "800px", margin: "0 auto", color: "rgba(255,255,255,0.9)" }}>
+                We're building a future where entrepreneurs spend less time managing tasks and more time building products, serving customers, and creating impact. Because the next generation of startups won't scale by hiring faster. <strong>They'll scale by deploying smarter agents.</strong>
+              </p>
+              <div style={{ marginTop: "3.5rem", fontSize: "1.1rem", fontWeight: "900", letterSpacing: "3px", textTransform: "uppercase", padding: "16px 40px", border: "2px solid rgba(255,255,255,0.4)", borderRadius: "99px", background: "rgba(0,0,0,0.1)" }}>
+                Welcome to the future of company building
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ Section */}
+        <section id="faq" style={{ padding: "8rem 5%", background: "white" }}>
+          <div style={{ textAlign: "center", marginBottom: "4rem" }}>
+            <h2 style={{ fontSize: "2.5rem", fontWeight: "900", color: COLORS.primary, marginBottom: "1rem", letterSpacing: "-1px" }}>
+              Common Questions
+            </h2>
+            <p style={{ fontSize: "1.1rem", color: COLORS.textMuted, maxWidth: "600px", margin: "0 auto" }}>
+              Everything you're probably wondering about deploying your AI fleet.
+            </p>
+          </div>
+          <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+            {[
+              { q: "How long does a typical build take?", a: "Most agents are live in production within 1–2 weeks, including local model fine-tuning." },
+              { q: "Do you use my data for training?", a: "Never. Because your agents run entirely on your own local hardware or private VPC, your data never leaves your infrastructure." },
+              { q: "Can the agents talk to my existing tools?", a: "Yes. We specialize in connecting local agent inference to MySQL, MongoDB, Slack, and custom CRM APIs." },
+              { q: "What are the running costs?", a: "₹0 in recurring cloud API fees. Running models locally or on dedicated hardware removes all message volume-based SaaS bills." },
+              { q: "How does the platform handle high-throughput log volumes and disk safety?", a: "All systems (agents, backend, and Docker services) utilize structured JSON logging with strict size-capped auto-rotation and automated scheduled time-based purges. Logs are processed asynchronously via non-blocking queues, ensuring zero latency spikes for up to 50,000+ concurrent users." },
+              { q: "Can the platform self-diagnose system health and hardware issues?", a: "Yes. Our DevOps Geni agent is equipped with native system diagnostic tools that can monitor hardware stats, detect NVIDIA GPU availability, scan active listening ports for EADDRINUSE conflicts, and track Docker container health in real-time." }
+            ].map((item, i) => (
+              <div 
+                key={i} 
+                itemScope 
+                itemProp="mainEntity" 
+                itemType="https://schema.org/Question" 
+                style={{ borderBottom: `1px solid ${COLORS.border}`, padding: "2rem 0" }}
+              >
+                <h4 
+                  itemProp="name" 
+                  style={{ fontSize: "1.1rem", fontWeight: "800", color: COLORS.primary, marginBottom: "0.5rem" }}
+                >
+                  {item.q}
+                </h4>
+                <div 
+                  itemScope 
+                  itemProp="acceptedAnswer" 
+                  itemType="https://schema.org/Answer"
+                >
+                  <p 
+                    itemProp="text" 
+                    style={{ color: COLORS.textMuted, fontSize: "1rem", lineHeight: "1.6", margin: 0 }}
+                  >
+                    {item.a}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Footer */}
+        <Footer 
+          onBlogClick={onBlogClick} 
+          onTelemetryClick={onTelemetryClick} 
+          onShortsClick={onShortsClick} 
+          onLegalClick={setLegalModalType} 
+          onDashboardClick={onDashboardClick} 
+          onDeploymentClick={onDeploymentClick} 
+        />
+
+        {legalModalType && (
+          <LegalModal 
+            type={legalModalType} 
+            onClose={() => setLegalModalType(null)} 
+          />
+        )}
       </div>
     );
   }
@@ -353,8 +527,9 @@ export default function LiveList({ onJoin, onBlogClick, onTelemetryClick, onShor
   return (
     <div style={{ color: "#0f172a" }}>
       {/* Main Swarm Fleet Section */}
-      <h2 style={{ fontSize: "1.3rem", fontWeight: "900", marginBottom: "1.5rem" }}>
-        🖥️ Sovereign Agent Fleet
+      <h2 style={{ fontSize: "1.3rem", fontWeight: "900", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "10px" }}>
+        <Monitor size={22} color="#3b82f6" strokeWidth={2} />
+        Sovereign Agent Fleet
       </h2>
       <div style={{
         display: "grid",
