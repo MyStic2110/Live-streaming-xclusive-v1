@@ -3,6 +3,7 @@ import json
 import re
 import logging
 from typing import Dict, Any, List, Set, Tuple
+from fastembed import TextEmbedding
 
 logger = logging.getLogger("swarm_copilot.router")
 
@@ -14,6 +15,23 @@ def _normalize(text: str) -> str:
     all collapse to the same token for comparison.
     """
     return re.sub(r"[^a-z0-9]", "", text.lower())
+def is_follow_up_query(query: str) -> bool:
+    """Detects if the query is a follow-up to a previous topic."""
+    query_lower = query.lower()
+    words = set(re.split(r"[^a-z0-9]+", query_lower))
+    follow_up_tokens = {
+        "it", "that", "this", "they", "them", "these", "those",
+        "more", "detail", "details", "explain", "elaborate", "why", "how",
+        "yes", "no", "ok", "okay", "sure", "tell", "show", "get", "describe",
+        "previous", "above", "below", "following", "latter", "former"
+    }
+    if words.intersection(follow_up_tokens):
+        return True
+    
+    if any(query_lower.startswith(prefix) for prefix in ["is ", "are ", "can ", "could ", "would ", "does ", "do ", "should ", "will ", "what "]):
+        return True
+        
+    return False
 
 
 class ContextRouter:
@@ -36,6 +54,26 @@ class ContextRouter:
         
         # Initialize and preload all vertical JSON files into memory on startup
         self.preload_knowledge_base()
+
+        # Initialize fastembed semantic router
+        try:
+            self.embedder = TextEmbedding()
+            self.vertical_descriptions = {
+                "pricing": "Pricing tiers, enterprise subscriptions, custom contracts, plans, billing cycles, discounts, licensing fees, costs, free trial details.",
+                "integrations": "Integrations with external services, connecting tools, webhooks, Slack alerts, GitHub status syncs, APIs, and automated triggers.",
+                "security": "Security audits, compliance standards, SOC2, GDPR, data residency policies, encryption keys, SSO/SAML authorization, zero-trust deployment options, private cloud VPC installation requirements.",
+                "features": "Core platform capabilities, workflow designers, run limits, human-in-the-loop validation, sandbox execution, visual builders, and platform limits.",
+                "agents": "Custom built-in AI agents, including Astra, DevOps Geni, Aivyuh, Nova, Seva, Octane, and Silent Rehearsal. List and capabilities of different specialized agents in the fleet.",
+                "crawled_knowledge": "Web crawled information from our public blogs, social media posts, reels, articles, stories, podcasts, research insights, and video scripts.",
+                "github_knowledge": "GitHub repository files, directory paths, source code implementation files, Git branches, pulls, commits, clones, and function definitions."
+            }
+            self.vertical_embeddings = {}
+            for vertical, desc in self.vertical_descriptions.items():
+                self.vertical_embeddings[vertical] = list(self.embedder.embed([desc]))[0].tolist()
+            logger.info("Initialized local fastembed intent router successfully.")
+        except Exception as e:
+            self.embedder = None
+            logger.error(f"Failed to initialize local fastembed intent router: {e}")
 
         # Define keyword matrices for each vertical.
         # NOTE: Do NOT manually list casing/spacing variants — the matching engine
@@ -85,9 +123,9 @@ class ContextRouter:
                 "bi",
             ],
             "crawled_knowledge": [
-                "crawled", "kapa", "documentation", "docs", "kb", "knowledgebase",
-                "ingested", "overview", "sources", "crawling", "scrape", "scraping",
-                "webcrawl", "crawler"
+                "blog", "blogs", "post", "posts", "reel", "reels", "script", "scripts",
+                "article", "articles", "idea", "ideas", "freeform", "insight", "insights",
+                "writeup", "writeups", "socialmedia", "rehearsal", "podcast"
             ],
             "github_knowledge": [
                 "github", "git", "repo", "repository", "codebase", "source code", "implementation",
@@ -117,7 +155,7 @@ class ContextRouter:
         except Exception as e:
             logger.error(f"Error preloading knowledge base: {e}")
 
-    def route(self, query: str, last_vertical: str = "faq") -> Tuple[str, List[str], Set[str]]:
+    def route(self, query: str, last_vertical: str = "faq") -> Tuple[str, List[str], Set[str], bool]:
         """
         Determines the matching verticals for a query, extracts matching JSON,
         and aggregates allowed URLs.
@@ -150,11 +188,39 @@ class ContextRouter:
                     matched_verticals.append(vertical)
                     break
 
+        # 1.5. Tier 2: Slow Path (Semantic Embeddings)
+        if not matched_verticals and not is_greeting and len(query.strip()) > 3 and self.embedder:
+            try:
+                query_vector = list(self.embedder.embed([query]))[0].tolist()
+                best_vertical = None
+                best_score = -1.0
+                
+                for vertical, vec in self.vertical_embeddings.items():
+                    score = sum(q * v for q, v in zip(query_vector, vec))
+                    if score > best_score:
+                        best_score = score
+                        best_vertical = vertical
+                
+                if best_score > 0.50 and best_vertical:
+                    logger.info(f"[SEMANTIC ROUTER] Matched vertical '{best_vertical}' with score: {best_score:.4f}")
+                    matched_verticals.append(best_vertical)
+            except Exception as e:
+                logger.error(f"Semantic embedding routing failed: {e}")
+
         ignored_words = {
-            "swarm", "copilot", "platform", "agent", "agents", "cortex", "system", "systems",
+            "swarm", "copilot", "platform", "platforms", "agent", "agents", "cortex", "system", "systems",
             "what", "where", "when", "which", "who", "whom", "how", "why", "please", "would",
             "could", "should", "does", "do", "doing", "done", "will", "shall", "their", "there",
-            "about", "information", "question", "query", "details", "explain", "describe", "support"
+            "about", "information", "question", "query", "details", "explain", "describe", "support",
+            "data", "stored", "sources", "source", "file", "files", "code", "database", "db", "json",
+            "many", "much", "find", "search", "show", "list", "get", "using", "use", "user", "users",
+            "create", "deploy", "setup", "onboarding", "success", "customer", "build", "integration",
+            "integrations", "feature", "features", "pricing", "security", "audit", "scanner", "scan",
+            "runs", "history", "analytics",
+            "call", "calls", "phone", "number", "numbers", "email", "emails", "send", "sending", "sent",
+            "write", "writing", "written", "news", "today", "yesterday", "tomorrow", "again", "stx",
+            "token", "tokens", "tokenization", "key", "keys", "secret", "secrets", "password", "passwords",
+            "credential", "credentials", "id", "ids", "uuid", "uuids"
         }
 
         # Dynamic matching for crawled knowledge based on terms inside pages
@@ -162,7 +228,11 @@ class ContextRouter:
             query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3 and w not in ignored_words]
             if query_words:
                 has_match = any(
-                    any(word in page.get("title", "").lower() or word in page.get("content", "").lower() for word in query_words)
+                    any(
+                        re.search(rf"\b{re.escape(word)}\b", page.get("title", ""), re.IGNORECASE) or
+                        re.search(rf"\b{re.escape(word)}\b", page.get("content", ""), re.IGNORECASE)
+                        for word in query_words
+                    )
                     for page in self.kb_cache["crawled_knowledge"]["pages"]
                 )
                 if has_match and "crawled_knowledge" not in matched_verticals:
@@ -173,7 +243,11 @@ class ContextRouter:
             query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3 and w not in ignored_words]
             if query_words:
                 has_match = any(
-                    any(word in page.get("title", "").lower() or word in page.get("content", "").lower() for word in query_words)
+                    any(
+                        re.search(rf"\b{re.escape(word)}\b", page.get("title", ""), re.IGNORECASE) or
+                        re.search(rf"\b{re.escape(word)}\b", page.get("content", ""), re.IGNORECASE)
+                        for word in query_words
+                    )
                     for page in self.kb_cache["github_knowledge"]["pages"]
                 )
                 if has_match and "github_knowledge" not in matched_verticals:
@@ -182,12 +256,17 @@ class ContextRouter:
         # 2. State-based Fallback:
         # If no keywords matched, check if we can fall back to the last active vertical.
         # Otherwise, fall back to general FAQ.
+        is_explicit = len(matched_verticals) > 0
+
+        # 2. State-based Fallback:
+        # If no keywords matched, check if we can fall back to the last active vertical.
+        # Otherwise, fall back to general FAQ.
         if not matched_verticals:
-            if last_vertical in self.kb_cache and not is_greeting:
-                logger.info(f"No direct keywords matched. Falling back to session vertical: {last_vertical}")
+            if last_vertical in self.kb_cache and not is_greeting and is_follow_up_query(query):
+                logger.info(f"No direct keywords matched. Query is follow-up. Falling back to session vertical: {last_vertical}")
                 matched_verticals = [last_vertical]
             else:
-                logger.info("No keywords or session fallback matched. Routing to default: faq")
+                logger.info("No keywords or session fallback matched (or not a follow-up). Routing to default: faq")
                 matched_verticals = ["faq"]
 
         # 3. Retrieve and merge vertical JSON contexts
@@ -261,4 +340,4 @@ class ContextRouter:
         allowed_urls.add("https://swarm.ai")
         allowed_urls.add("https://docs.swarm.ai")
 
-        return json.dumps(merged_context, indent=2), matched_verticals, allowed_urls
+        return json.dumps(merged_context, indent=2), matched_verticals, allowed_urls, is_explicit

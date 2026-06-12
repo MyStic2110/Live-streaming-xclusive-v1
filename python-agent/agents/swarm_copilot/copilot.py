@@ -142,7 +142,7 @@ class SwarmCopilot:
 
         # 3. Tier 3: Stateful Option B Context Retrieval
         # Fall back to session's last active vertical if no keywords match in current query
-        context_json, matched_verticals, allowed_urls = self.router.route(
+        context_json, matched_verticals, allowed_urls, is_explicit = self.router.route(
             query=user_query,
             last_vertical=session.last_vertical
         )
@@ -175,15 +175,13 @@ class SwarmCopilot:
 
         # 7. Session Intelligence Memory Updates
         session.turn_count += 1
-        if matched_verticals:
+        if is_explicit and matched_verticals:
             # Update the last matched vertical (exclude 'faq' if other topics are present)
             valid_verticals = [v for v in matched_verticals if v != "faq"]
             if valid_verticals:
                 session.last_vertical = valid_verticals[0]
                 if session.last_vertical not in session.primary_interests:
                     session.primary_interests.append(session.last_vertical)
-            else:
-                session.last_vertical = matched_verticals[0]
 
         # Update lightweight memory summary
         self._update_session_memory(session, user_query, safe_response)

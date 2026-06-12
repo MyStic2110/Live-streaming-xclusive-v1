@@ -3,7 +3,8 @@ import asyncio
 import logging
 import aiohttp
 import json
-from typing import Any, Dict
+import re
+from typing import Any, Dict, List
 
 logger = logging.getLogger("securelytix-client")
 
@@ -115,8 +116,11 @@ class SecurelytixClient:
 
     async def _tokenize_single(self, data: Any) -> Any:
         try:
-            result = await self._post_with_retry("/api/v1/tokenize", data)
-            return result.get("data", data)
+            is_str = isinstance(data, str)
+            payload = {"text": data} if is_str else data
+            result = await self._post_with_retry("/api/v1/tokenize", payload)
+            res_data = result.get("data", payload)
+            return res_data.get("text", data) if is_str else res_data
         except SecurelytixError:
             # Fail open: return original data so agents are not blocked
             return data
@@ -130,7 +134,9 @@ class SecurelytixClient:
 
     async def _detokenize_single(self, data: Any, suppress_partial_warning: bool = False) -> Any:
         try:
-            result = await self._post_with_retry("/api/v1/detokenize", data)
+            is_str = isinstance(data, str)
+            payload = {"text": data} if is_str else data
+            result = await self._post_with_retry("/api/v1/detokenize", payload)
 
             # 200: check for partial_success as per SDK spec
             sdk_status = result.get("Status") or result.get("status")
@@ -138,7 +144,8 @@ class SecurelytixClient:
                 failed = result.get("failed_fields", [])
                 logger.warning(f"[Securelytix] Partial detokenization — failed fields: {failed}")
 
-            return result.get("data", data)
+            res_data = result.get("data", payload)
+            return res_data.get("text", data) if is_str else res_data
         except SecurelytixError:
             # Fail open: return data with tokens intact rather than crashing
             return data

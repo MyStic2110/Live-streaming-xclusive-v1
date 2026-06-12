@@ -3,6 +3,7 @@ import path from "path";
 import { query } from "../config/db.js";
 import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
+import { pipeline } from "@huggingface/transformers";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -136,9 +137,9 @@ const routerMapping = {
     "vision", "weatheragent", "cortex", "bi"
   ],
   crawled_knowledge: [
-    "crawled", "kapa", "documentation", "docs", "kb", "knowledgebase",
-    "ingested", "overview", "sources", "crawling", "scrape", "scraping",
-    "webcrawl", "crawler"
+    "blog", "blogs", "post", "posts", "reel", "reels", "script", "scripts",
+    "article", "articles", "idea", "ideas", "freeform", "insight", "insights",
+    "writeup", "writeups", "socialmedia", "rehearsal", "podcast"
   ],
   github_knowledge: [
     "github", "git", "repo", "repository", "codebase", "source code", "implementation",
@@ -165,7 +166,61 @@ const loadKnowledgeFiles = () => {
   }
 };
 
-const routeContext = (query, lastVertical) => {
+const isFollowUpQuery = (query) => {
+  const queryLower = query.toLowerCase();
+  const words = new Set(queryLower.split(/[^a-z0-9]+/));
+  const followUpTokens = new Set([
+    "it", "that", "this", "they", "them", "these", "those",
+    "more", "detail", "details", "explain", "elaborate", "why", "how",
+    "yes", "no", "ok", "okay", "sure", "tell", "show", "get", "describe",
+    "previous", "above", "below", "following", "latter", "former"
+  ]);
+
+  for (const word of words) {
+    if (followUpTokens.has(word)) return true;
+  }
+
+  const prefixes = ["is ", "are ", "can ", "could ", "would ", "does ", "do ", "should ", "will ", "what "];
+  if (prefixes.some(prefix => queryLower.startsWith(prefix))) return true;
+
+  return false;
+};
+
+const verticalDescriptions = {
+  pricing: "Pricing tiers, enterprise subscriptions, custom contracts, plans, billing cycles, discounts, licensing fees, costs, free trial details.",
+  integrations: "Integrations with external services, connecting tools, webhooks, Slack alerts, GitHub status syncs, APIs, and automated triggers.",
+  security: "Security audits, compliance standards, SOC2, GDPR, data residency policies, encryption keys, SSO/SAML authorization, zero-trust deployment options, private cloud VPC installation requirements.",
+  features: "Core platform capabilities, workflow designers, run limits, human-in-the-loop validation, sandbox execution, visual builders, and platform limits.",
+  agents: "Custom built-in AI agents, including Astra, DevOps Geni, Aivyuh, Nova, Seva, Octane, and Silent Rehearsal. List and capabilities of different specialized agents in the fleet.",
+  crawled_knowledge: "Web crawled information from our public blogs, social media posts, reels, articles, stories, podcasts, research insights, and video scripts.",
+  github_knowledge: "GitHub repository files, directory paths, source code implementation files, Git branches, pulls, commits, clones, and function definitions."
+};
+
+let embedderPromise = null;
+let embedder = null;
+const verticalEmbeddings = {};
+
+export const initEmbedder = async () => {
+  if (embedderPromise) return embedderPromise;
+  embedderPromise = (async () => {
+    try {
+      embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+      for (const [vertical, desc] of Object.entries(verticalDescriptions)) {
+        const output = await embedder(desc, { pooling: 'mean', normalize: true });
+        verticalEmbeddings[vertical] = Array.from(output.data);
+      }
+      console.info("[EMBEDDER] Local ONNX intent embedder initialized successfully.");
+    } catch (err) {
+      console.error("[EMBEDDER] Failed to initialize local intent embedder:", err);
+    }
+  })();
+  return embedderPromise;
+};
+
+// Start initialization immediately in background
+initEmbedder().catch(() => {});
+
+export const routeContext = async (query, lastVertical) => {
   loadKnowledgeFiles();
 
   const queryLower = query.toLowerCase();
@@ -176,6 +231,7 @@ const routeContext = (query, lastVertical) => {
 
   let matchedVerticals = [];
 
+  // Tier 1: Fast Path (Keywords)
   for (const [vertical, keywords] of Object.entries(routerMapping)) {
     for (const keyword of keywords) {
       const kwNorm = normalize(keyword);
@@ -186,45 +242,97 @@ const routeContext = (query, lastVertical) => {
     }
   }
 
+  // Tier 2: Slow Path (Semantic Embeddings)
+  if (matchedVerticals.length === 0 && !isGreeting && query.trim().length > 3) {
+    if (embedder) {
+      try {
+        const output = await embedder(query, { pooling: 'mean', normalize: true });
+        const queryVector = Array.from(output.data);
+
+        let bestVertical = null;
+        let bestScore = -1;
+
+        for (const [vertical, vec] of Object.entries(verticalEmbeddings)) {
+          let score = 0;
+          for (let i = 0; i < vec.length; i++) {
+            score += vec[i] * queryVector[i];
+          }
+          if (score > bestScore) {
+            bestScore = score;
+            bestVertical = vertical;
+          }
+        }
+
+        if (bestScore > 0.45 && bestVertical) {
+          console.info(`[SEMANTIC ROUTER] Match vertical '${bestVertical}' with score: ${bestScore.toFixed(4)}`);
+          matchedVerticals.push(bestVertical);
+        }
+      } catch (err) {
+        console.error("[SEMANTIC ROUTER] Semantic routing failed:", err);
+      }
+    }
+  }
+
   const ignoredWords = new Set([
-    "swarm", "copilot", "platform", "agent", "agents", "cortex", "system", "systems",
+    "swarm", "copilot", "platform", "platforms", "agent", "agents", "cortex", "system", "systems",
     "what", "where", "when", "which", "who", "whom", "how", "why", "please", "would",
     "could", "should", "does", "do", "doing", "done", "will", "shall", "their", "there",
-    "about", "information", "question", "query", "details", "explain", "describe", "support"
+    "about", "information", "question", "query", "details", "explain", "describe", "support",
+    "data", "stored", "sources", "source", "file", "files", "code", "database", "db", "json",
+    "many", "much", "find", "search", "show", "list", "get", "using", "use", "user", "users",
+    "create", "deploy", "setup", "onboarding", "success", "customer", "build", "integration",
+    "integrations", "feature", "features", "pricing", "security", "audit", "scanner", "scan",
+    "runs", "history", "analytics",
+    "call", "calls", "phone", "number", "numbers", "email", "emails", "send", "sending", "sent",
+    "write", "writing", "written", "news", "today", "yesterday", "tomorrow", "again", "stx",
+    "token", "tokens", "tokenization", "key", "keys", "secret", "secrets", "password", "passwords",
+    "credential", "credentials", "id", "ids", "uuid", "uuids"
   ]);
 
-  // Dynamic matching for crawled knowledge based on terms inside pages
-  if (kbCache['crawled_knowledge'] && kbCache['crawled_knowledge'].pages) {
-    const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3 && !ignoredWords.has(w));
-    if (queryWords.length > 0) {
-      const hasMatch = kbCache['crawled_knowledge'].pages.some(page => {
-        const titleLower = page.title.toLowerCase();
-        const contentLower = page.content.toLowerCase();
-        return queryWords.some(word => titleLower.includes(word) || contentLower.includes(word));
-      });
-      if (hasMatch && !matchedVerticals.includes("crawled_knowledge")) {
-        matchedVerticals.push("crawled_knowledge");
+  // Fallback dynamic crawled knowledge matching (with whole word checks)
+  if (matchedVerticals.length === 0) {
+    if (kbCache['crawled_knowledge'] && kbCache['crawled_knowledge'].pages) {
+      const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3 && !ignoredWords.has(w));
+      if (queryWords.length > 0) {
+        const hasMatch = kbCache['crawled_knowledge'].pages.some(page => {
+          const titleLower = page.title.toLowerCase();
+          const contentLower = page.content.toLowerCase();
+          return queryWords.some(word => {
+            const wordRegex = new RegExp(`\\b${word}\\b`, 'i');
+            return wordRegex.test(titleLower) || wordRegex.test(contentLower);
+          });
+        });
+        if (hasMatch && !matchedVerticals.includes("crawled_knowledge")) {
+          matchedVerticals.push("crawled_knowledge");
+        }
       }
     }
   }
 
-  // Dynamic matching for GitHub knowledge based on terms inside pages/files
-  if (kbCache['github_knowledge'] && kbCache['github_knowledge'].pages) {
-    const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3 && !ignoredWords.has(w));
-    if (queryWords.length > 0) {
-      const hasMatch = kbCache['github_knowledge'].pages.some(page => {
-        const titleLower = page.title.toLowerCase();
-        const contentLower = page.content.toLowerCase();
-        return queryWords.some(word => titleLower.includes(word) || contentLower.includes(word));
-      });
-      if (hasMatch && !matchedVerticals.includes("github_knowledge")) {
-        matchedVerticals.push("github_knowledge");
+  // Fallback dynamic github knowledge matching (with whole word checks)
+  if (matchedVerticals.length === 0) {
+    if (kbCache['github_knowledge'] && kbCache['github_knowledge'].pages) {
+      const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3 && !ignoredWords.has(w));
+      if (queryWords.length > 0) {
+        const hasMatch = kbCache['github_knowledge'].pages.some(page => {
+          const titleLower = page.title.toLowerCase();
+          const contentLower = page.content.toLowerCase();
+          return queryWords.some(word => {
+            const wordRegex = new RegExp(`\\b${word}\\b`, 'i');
+            return wordRegex.test(titleLower) || wordRegex.test(contentLower);
+          });
+        });
+        if (hasMatch && !matchedVerticals.includes("github_knowledge")) {
+          matchedVerticals.push("github_knowledge");
+        }
       }
     }
   }
+
+  const isExplicit = matchedVerticals.length > 0;
 
   if (matchedVerticals.length === 0) {
-    if (kbCache[lastVertical] && !isGreeting) {
+    if (kbCache[lastVertical] && !isGreeting && isFollowUpQuery(query)) {
       matchedVerticals = [lastVertical];
     } else {
       matchedVerticals = ["faq"];
@@ -348,7 +456,8 @@ const routeContext = (query, lastVertical) => {
   return {
     contextJson: JSON.stringify(mergedContext, null, 2),
     matchedVerticals,
-    allowedUrls
+    allowedUrls,
+    isExplicit
   };
 };
 
@@ -414,6 +523,37 @@ const compilePrompt = (matchedVerticals, contextJson, session) => {
     contextJson,
     "</approved_knowledge>"
   ].join("\n");
+};
+
+// --- SECURELYTIX TOKENIZATION ---
+const securelytixTokenize = async (data) => {
+  const url = `${process.env.SECURELYTIX_URL || "http://localhost:8080"}/api/v1/tokenize`;
+  const apiKey = process.env.SECURELYTIX_API_KEY || "sk_dev_mock_key_for_local_testing";
+
+  try {
+    const isStr = typeof data === "string";
+    const payload = isStr ? { text: data } : data;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({ data: payload })
+    });
+
+    if (response.status === 200) {
+      const result = await response.json();
+      const resData = result.data || payload;
+      return isStr ? (resData.text || data) : resData;
+    } else {
+      console.warn(`[Securelytix] Tokenization failed with status ${response.status}. Failing open.`);
+    }
+  } catch (err) {
+    console.error("[Securelytix] Tokenization failed. Failing open:", err);
+  }
+  return data;
 };
 
 // --- SESSION DATABASE / MEMORY FALLBACK ---
@@ -556,7 +696,7 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
   }
 
   // 3. Router logic
-  const { contextJson, matchedVerticals, allowedUrls } = routeContext(query, session.last_vertical);
+  const { contextJson, matchedVerticals, allowedUrls, isExplicit } = await routeContext(query, session.last_vertical);
 
   // 4. Compile dynamic prompt
   const compiledSystemPrompt = compilePrompt(matchedVerticals, contextJson, session);
@@ -573,9 +713,19 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
     return;
   }
 
+  let tokenizedSystemPrompt = compiledSystemPrompt;
+  let tokenizedUserQuery = query;
+
+  try {
+    tokenizedSystemPrompt = await securelytixTokenize(compiledSystemPrompt);
+    tokenizedUserQuery = await securelytixTokenize(query);
+  } catch (tokenizeErr) {
+    console.error("[Securelytix] Tokenization failed, failing open:", tokenizeErr);
+  }
+
   const messages = [
-    { role: "system", content: compiledSystemPrompt },
-    { role: "user", content: query }
+    { role: "system", content: tokenizedSystemPrompt },
+    { role: "user", content: tokenizedUserQuery }
   ];
 
   let responseText = "";
@@ -643,15 +793,13 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
 
     // 7. Update session data
     session.turn_count += 1;
-    if (matchedVerticals.length > 0) {
+    if (isExplicit && matchedVerticals.length > 0) {
       const valid = matchedVerticals.filter(v => v !== "faq");
       if (valid.length > 0) {
         session.last_vertical = valid[0];
         if (!session.primary_interests.includes(session.last_vertical)) {
           session.primary_interests.push(session.last_vertical);
         }
-      } else {
-        session.last_vertical = matchedVerticals[0];
       }
     }
 
