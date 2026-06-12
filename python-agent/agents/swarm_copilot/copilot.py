@@ -5,6 +5,10 @@ from typing import Tuple, List, Set, Dict, Any, Callable, Awaitable
 from .guardrails import InputGuardrail, OutputGuardrail
 from .session_manager import SessionManager, SessionIntelligence
 from .router import ContextRouter
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+from integrations.securelytix import SecurelytixClient
 
 logger = logging.getLogger("swarm_copilot.copilot")
 
@@ -40,6 +44,7 @@ class SwarmCopilot:
         self.output_guardrail = OutputGuardrail()
         self.router = ContextRouter(knowledge_dir)
         self.session_manager = SessionManager(sessions_dir)
+        self.securelytix = SecurelytixClient()
         
         self.llm_caller = llm_caller
         
@@ -149,7 +154,15 @@ class SwarmCopilot:
         raw_response = ""
         if self.llm_caller:
             try:
-                raw_response = await self.llm_caller(compiled_system_prompt, user_query)
+                try:
+                    tokenized_system_prompt = await self.securelytix.tokenize(compiled_system_prompt)
+                    tokenized_user_query = await self.securelytix.tokenize(user_query)
+                except Exception as tokenize_err:
+                    logger.error(f"Securelytix tokenization failed: {tokenize_err}. Failing open.")
+                    tokenized_system_prompt = compiled_system_prompt
+                    tokenized_user_query = user_query
+                
+                raw_response = await self.llm_caller(tokenized_system_prompt, tokenized_user_query)
             except Exception as e:
                 logger.error(f"LLM call failed: {e}")
                 raw_response = "I cannot find verified information about that in the Swarm knowledge base."
