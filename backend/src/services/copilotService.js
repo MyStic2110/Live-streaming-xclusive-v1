@@ -289,10 +289,35 @@ export const routeContext = async (query, lastVertical) => {
     "credential", "credentials", "id", "ids", "uuid", "uuids"
   ]);
 
+  const getQueryWords = (query) => {
+    if (!query) return [];
+    let processed = query.toLowerCase();
+    const months = {
+      january: "01", jan: "01",
+      february: "02", feb: "02",
+      march: "03", mar: "03",
+      april: "04", apr: "04",
+      may: "05",
+      june: "06", jun: "06",
+      july: "07", jul: "07",
+      august: "08", aug: "08",
+      september: "09", sep: "09",
+      october: "10", oct: "10",
+      november: "11", nov: "11",
+      december: "12", dec: "12"
+    };
+    for (const [month, num] of Object.entries(months)) {
+      processed = processed.replace(new RegExp(`\\b${month}\\b`, "g"), `${month} ${num}`);
+    }
+    return processed
+      .split(/[^a-z0-9]+/)
+      .filter(w => (w.length > 3 || /^\d{2}$/.test(w)) && !ignoredWords.has(w));
+  };
+
   // Fallback dynamic crawled knowledge matching (with whole word checks)
   if (matchedVerticals.length === 0) {
     if (kbCache['crawled_knowledge'] && kbCache['crawled_knowledge'].pages) {
-      const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3 && !ignoredWords.has(w));
+      const queryWords = getQueryWords(query);
       if (queryWords.length > 0) {
         const hasMatch = kbCache['crawled_knowledge'].pages.some(page => {
           const titleLower = page.title.toLowerCase();
@@ -312,7 +337,7 @@ export const routeContext = async (query, lastVertical) => {
   // Fallback dynamic github knowledge matching (with whole word checks)
   if (matchedVerticals.length === 0) {
     if (kbCache['github_knowledge'] && kbCache['github_knowledge'].pages) {
-      const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3 && !ignoredWords.has(w));
+      const queryWords = getQueryWords(query);
       if (queryWords.length > 0) {
         const hasMatch = kbCache['github_knowledge'].pages.some(page => {
           const titleLower = page.title.toLowerCase();
@@ -348,7 +373,7 @@ export const routeContext = async (query, lastVertical) => {
       
       if (vertical === "crawled_knowledge" && verticalData.pages) {
         // Simple relevance matching over crawled pages
-        const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3 && !ignoredWords.has(w));
+        const queryWords = getQueryWords(query);
         const relevantPages = verticalData.pages.filter(page => {
           const titleLower = page.title.toLowerCase();
           const contentLower = page.content.toLowerCase();
@@ -369,7 +394,7 @@ export const routeContext = async (query, lastVertical) => {
 
       if (vertical === "github_knowledge" && verticalData.pages) {
         // Simple relevance matching over files
-        const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3 && !ignoredWords.has(w));
+        const queryWords = getQueryWords(query);
         const relevantPages = verticalData.pages.filter(page => {
           const titleLower = page.title.toLowerCase();
           const contentLower = page.content.toLowerCase();

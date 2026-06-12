@@ -15,6 +15,37 @@ def _normalize(text: str) -> str:
     all collapse to the same token for comparison.
     """
     return re.sub(r"[^a-z0-9]", "", text.lower())
+
+def _get_query_words(query: str, ignored_words: set) -> list:
+    if not query:
+        return []
+    processed = query.lower()
+    months = {
+        "january": "01", "jan": "01",
+        "february": "02", "feb": "02",
+        "march": "03", "mar": "03",
+        "april": "04", "apr": "04",
+        "may": "05",
+        "june": "06", "jun": "06",
+        "july": "07", "jul": "07",
+        "august": "08", "aug": "08",
+        "september": "09", "sep": "09",
+        "october": "10", "oct": "10",
+        "november": "11", "nov": "11",
+        "december": "12", "dec": "12"
+    }
+    for month, num in months.items():
+        processed = re.sub(rf"\b{month}\b", f"{month} {num}", processed)
+        
+    words = re.split(r"[^a-z0-9]+", processed)
+    query_words = []
+    for w in words:
+        if not w:
+            continue
+        if (len(w) > 3 or (w.isdigit() and len(w) == 2)) and w not in ignored_words:
+            query_words.append(w)
+    return query_words
+
 def is_follow_up_query(query: str) -> bool:
     """Detects if the query is a follow-up to a previous topic."""
     query_lower = query.lower()
@@ -225,7 +256,7 @@ class ContextRouter:
 
         # Dynamic matching for crawled knowledge based on terms inside pages
         if "crawled_knowledge" in self.kb_cache and "pages" in self.kb_cache["crawled_knowledge"]:
-            query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3 and w not in ignored_words]
+            query_words = _get_query_words(query, ignored_words)
             if query_words:
                 has_match = any(
                     any(
@@ -240,7 +271,7 @@ class ContextRouter:
 
         # Dynamic matching for GitHub knowledge based on terms inside pages/files
         if "github_knowledge" in self.kb_cache and "pages" in self.kb_cache["github_knowledge"]:
-            query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3 and w not in ignored_words]
+            query_words = _get_query_words(query, ignored_words)
             if query_words:
                 has_match = any(
                     any(
@@ -294,7 +325,7 @@ class ContextRouter:
                         except Exception:
                             pass
                 elif vertical in ["crawled_knowledge", "github_knowledge"] and "pages" in vertical_data:
-                    query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3 and w not in ignored_words]
+                    query_words = _get_query_words(query, ignored_words)
                     relevant_pages = []
                     for page in vertical_data["pages"]:
                         title_lower = page.get("title", "").lower()
