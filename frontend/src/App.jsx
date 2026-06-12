@@ -5,7 +5,6 @@ import VideoRoom from "./components/rooms/VideoRoom";
 import LinaRoom from "./components/rooms/LinaRoom";
 import BIRoom from "./components/rooms/BIRoom";
 import NovaRoom from "./components/rooms/NovaRoom";
-import VisionRoom from "./components/rooms/VisionRoom";
 import BlogSection from "./components/layout/BlogSection";
 import AstraRoom from "./components/rooms/AstraRoom";
 import RehearsalRoom from "./components/rooms/RehearsalRoom";
@@ -18,6 +17,7 @@ import AivyuhRoom from "./components/rooms/AivyuhRoom";
 import DevopsOrb from "./components/layout/DevopsOrb";
 import SwarmShortsPage from "./components/dashboard/SwarmShortsPage";
 import DashboardPage from "./components/dashboard/DashboardPage";
+import ComplianceDashboard from "./components/dashboard/ComplianceDashboard";
 import GovernedDeployment from "./components/dashboard/GovernedDeployment";
 import NotFoundPage from "./components/layout/NotFoundPage";
 import CopilotWidget from "./components/layout/CopilotWidget";
@@ -53,6 +53,7 @@ function App() {
     else if (isDeploymentPath) setActiveTab("governance");
     else if (isShortsPath) setActiveTab("sneak-peak");
     else if (isInsightsPath) setActiveTab("insights");
+    else if (isCompliancePath) setActiveTab("compliance");
     else setActiveTab("fleet");
   }, [currentPath]);
 
@@ -66,6 +67,9 @@ function App() {
     } else if (tabId === "analytics") {
       window.history.pushState({}, "", "/dashboard");
       setCurrentPath("/dashboard");
+    } else if (tabId === "compliance") {
+      window.history.pushState({}, "", "/compliance");
+      setCurrentPath("/compliance");
     } else if (tabId === "governance") {
       window.history.pushState({}, "", "/governed-deployment");
       setCurrentPath("/governed-deployment");
@@ -133,6 +137,33 @@ function App() {
     setCurrentPath("/");
   };
 
+  React.useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+          const errorData = error.response.data;
+          const errorMsg = errorData && (errorData.error || errorData.message || "");
+          if (
+            typeof errorMsg === "string" && (
+              errorMsg.toLowerCase().includes("session expired") ||
+              errorMsg.toLowerCase().includes("invalid token") ||
+              errorMsg.toLowerCase().includes("please re-authenticate") ||
+              errorMsg.toLowerCase().includes("access token required") ||
+              errorMsg.toLowerCase().includes("please login")
+            )
+          ) {
+            handleLogout();
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, []);
+
   const handleJoin = (data) => {
     console.log(`[FRONTEND] Entering room: ${data.roomName} | Agent: ${data.creatorId}`);
     setRoomData(data);
@@ -152,7 +183,6 @@ function App() {
   const isBI2       = roomData?.creatorId === "BI2";
   const isNova      = roomData?.creatorId === "NOVA";
 
-  const isVision    = roomData?.creatorId === "VONE";
   const isAstra     = roomData?.creatorId === "ASTRA";
   const isRehearsal = roomData?.creatorId === "REHEARSAL";
   const isSeva      = roomData?.creatorId === "SEVA";
@@ -183,6 +213,12 @@ function App() {
     currentPath.replace(/\/$/, "") === "/dashboard" ||
     window.location.hash === "#/dashboard" ||
     window.location.hash === "#dashboard";
+
+  const isCompliancePath =
+    currentPath.replace(/\/$/, "") === "/compliance" ||
+    window.location.hash.replace(/\/$/, "") === "#/compliance" ||
+    window.location.hash === "#compliance" ||
+    window.location.hash === "#/compliance/";
 
   const isDeploymentPath =
     currentPath.replace(/\/$/, "") === "/governed-deployment" ||
@@ -220,6 +256,8 @@ function App() {
     content = <SwarmTelemetryPage onBack={() => handleTabChange("fleet")} />;
   } else if (isDashboardPath || activeTab === "analytics") {
     content = <DashboardPage onBack={() => handleTabChange("fleet")} />;
+  } else if (isCompliancePath || activeTab === "compliance") {
+    content = <ComplianceDashboard onBack={() => handleTabChange("fleet")} />;
   } else if (isDeploymentPath || activeTab === "governance") {
     content = <GovernedDeployment onBack={() => handleTabChange("fleet")} />;
   } else if (roomData) {
@@ -236,8 +274,6 @@ function App() {
 
     ) : isAivyuh ? (
       <AivyuhRoom roomData={roomData} onLeave={handleLeave} />
-    ) : isVision ? (
-      <VisionRoom roomData={roomData} onLeave={handleLeave} />
     ) : isAstra ? (
       <AstraRoom roomData={roomData} onLeave={handleLeave} />
     ) : isRehearsal ? (
@@ -309,7 +345,7 @@ function App() {
   // When authenticated, the operator Control Panel Workspace is wrapped inside ConsoleLayout
   const isLandingPage =
     !isAuthenticated &&
-    !isTelemetryPath && !isDashboardPath && !isDeploymentPath &&
+    !isTelemetryPath && !isDashboardPath && !isDeploymentPath && !isCompliancePath &&
     !showBlog && !isShortsPath && !isLoginPath && !isResetPasswordPath && !isInsightsPath && !isBlogPath &&
     (currentPath === "/" || currentPath === "" || isFleetPath ||
      (currentPath.startsWith("#") && !currentPath.startsWith("#/login") && !currentPath.startsWith("#/reset-password")) ||
@@ -328,8 +364,8 @@ function App() {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // Gate protected pages (Telemetry, Analytics/Dashboard) behind login
-  const isProtected = isTelemetryPath || isDashboardPath;
+  // Gate protected pages (Telemetry, Analytics/Dashboard, Compliance) behind login
+  const isProtected = isTelemetryPath || isDashboardPath || isCompliancePath;
   if (!isAuthenticated && isProtected) {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }

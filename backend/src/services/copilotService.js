@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { query } from "../config/db.js";
+import { query as dbQuery } from "../config/db.js";
 import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
 import { pipeline } from "@huggingface/transformers";
@@ -44,21 +44,21 @@ const jailbreakPatterns = [
 const validateInput = (query) => {
   for (const pattern of jailbreakPatterns) {
     if (pattern.test(query)) {
-      return [false, "I can only answer questions related to the Swarm Agentic Platform."];
+      return [false, "I can only answer questions related to the Swarm Agentic Platform.", "jailbreak_intercepted"];
     }
   }
 
   if (dbUrlPattern.test(query)) {
-    return [false, "This is not needed for us. Please do not input sensitive information such as database connection strings, API keys, passwords, or credit card numbers."];
+    return [false, "This is not needed for us. Please do not input sensitive information such as database connection strings, API keys, passwords, or credit card numbers.", "pii_blocked"];
   }
 
   if (creditCardPattern.test(query)) {
-    return [false, "This is not needed for us. Please do not input sensitive information such as database connection strings, API keys, passwords, or credit card numbers."];
+    return [false, "This is not needed for us. Please do not input sensitive information such as database connection strings, API keys, passwords, or credit card numbers.", "pii_blocked"];
   }
 
   if (envSnippetPattern.test(query)) {
     if (query.includes("=") || query.includes(":")) {
-      return [false, "This is not needed for us. Please do not input sensitive information such as database connection strings, API keys, passwords, or credit card numbers."];
+      return [false, "This is not needed for us. Please do not input sensitive information such as database connection strings, API keys, passwords, or credit card numbers.", "pii_blocked"];
     }
   }
 
@@ -67,10 +67,10 @@ const validateInput = (query) => {
     if (emailPattern.test(secret)) {
       continue;
     }
-    return [false, "This is not needed for us. Please do not input sensitive information such as database connection strings, API keys, passwords, or credit card numbers."];
+    return [false, "This is not needed for us. Please do not input sensitive information such as database connection strings, API keys, passwords, or credit card numbers.", "pii_blocked"];
   }
 
-  return [true, ""];
+  return [true, "", null];
 };
 
 // --- OUTPUT GUARDRAIL ---
@@ -87,25 +87,31 @@ const verifyOutput = (generatedResponse, allowedUrls) => {
   const responseLower = generatedResponse.toLowerCase();
 
   if (competitors.some(comp => responseLower.includes(comp))) {
-    return "Please evaluate platforms based on your business requirements. I can explain Swarm capabilities and features.";
+    return ["Please evaluate platforms based on your business requirements. I can explain Swarm capabilities and features.", "competitor_mention_blocked"];
   }
 
   for (const pattern of leakPatterns) {
     if (pattern.test(generatedResponse)) {
-      return "I can only answer questions related to the Swarm Agentic Platform.";
+      return ["I can only answer questions related to the Swarm Agentic Platform.", "system_prompt_leak_blocked"];
     }
   }
 
   const foundUrls = generatedResponse.match(urlPattern) || [];
   let responseCopy = generatedResponse;
+  let urlModified = false;
   for (const url of foundUrls) {
     const cleanUrl = url.replace(/[.,;!)?}]$/, "");
     if (!allowedUrls.has(cleanUrl)) {
       responseCopy = responseCopy.replace(url, "https://swarm.ai");
+      urlModified = true;
     }
   }
 
-  return responseCopy;
+  if (urlModified) {
+    return [responseCopy, "unauthorized_url_redacted"];
+  }
+
+  return [responseCopy, null];
 };
 
 // --- CONTEXT ROUTER ---
@@ -133,8 +139,8 @@ const routerMapping = {
   agents: [
     "agent", "prebuilt", "builtin", "listagents", "whatagents", "showagents",
     "astra", "devopsgeni", "aivyuh", "nova", "seva", "octane", "reels",
-    "rehearsal", "silentrehearsal", "shadowagent", "lina", "martech",
-    "vision", "weatheragent", "cortex", "bi"
+    "rehearsal", "silentrehearsal", "lina", "martech",
+    "weatheragent", "cortex", "bi"
   ],
   crawled_knowledge: [
     "blog", "blogs", "post", "posts", "reel", "reels", "script", "scripts",
@@ -673,7 +679,7 @@ const loadSession = async (sessionId) => {
   }
 
   try {
-    const res = await query('SELECT session_data FROM copilot_sessions WHERE session_id = $1', [sessionId]);
+    const res = await dbQuery('SELECT session_data FROM copilot_sessions WHERE session_id = $1', [sessionId]);
     if (res && res.rows && res.rows.length > 0) {
       return { session: res.rows[0].session_data, sessionId };
     }
@@ -706,7 +712,7 @@ const loadSession = async (sessionId) => {
 
 const saveSession = async (sessionId, session) => {
   try {
-    await query(
+    await dbQuery(
       `INSERT INTO copilot_sessions (session_id, session_data, updated_at)
        VALUES ($1, $2, CURRENT_TIMESTAMP)
        ON CONFLICT (session_id) DO UPDATE
@@ -744,8 +750,18 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
   const startTime = parseFloat(performance.now());
 
   // 1. Guardrail input validation
-  const [isSafe, refusalMessage] = validateInput(query);
+  const [isSafe, refusalMessage, eventType] = validateInput(query);
   if (!isSafe) {
+    try {
+      await dbQuery(
+        `INSERT INTO compliance_logs (event_type, severity, agent, details)
+         VALUES ($1, $2, $3, $4)`,
+        [eventType || 'unknown_violation', 'critical', 'copilot', JSON.stringify({ query })]
+      );
+    } catch (dbErr) {
+      console.error("[COMPLIANCE_LOG] Failed to log input violation to DB:", dbErr.message);
+    }
+
     const { session: s, sessionId: sid } = await loadSession(sessionId);
     onChunk(refusalMessage);
     onDone({ response: refusalMessage, sessionId: sid, runId: uuidv4().replace(/-/g, "") });
@@ -892,7 +908,20 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
 
     // 6. Detokenize response and apply output safety audit
     const detokenizedResponse = await securelytixDetokenize(responseText);
-    const safeResponse = verifyOutput(detokenizedResponse, allowedUrls);
+    const [safeResponse, violationType] = verifyOutput(detokenizedResponse, allowedUrls);
+
+    if (violationType) {
+      try {
+        const severity = violationType === 'system_prompt_leak_blocked' ? 'critical' : 'warning';
+        await dbQuery(
+          `INSERT INTO compliance_logs (event_type, severity, agent, details)
+           VALUES ($1, $2, $3, $4)`,
+          [violationType, severity, 'copilot', JSON.stringify({ response: responseText, safeResponse })]
+        );
+      } catch (dbErr) {
+        console.error("[COMPLIANCE_LOG] Failed to log output violation to DB:", dbErr.message);
+      }
+    }
 
     // 7. Update session data
     session.turn_count += 1;

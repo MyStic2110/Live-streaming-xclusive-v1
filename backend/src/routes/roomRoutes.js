@@ -6,7 +6,6 @@ const router = express.Router();
 
 // Operator/Admin actions
 router.post('/talk-to-ai', authenticateToken, requireRole(['admin', 'operator']), roomController.talkToAI);
-router.post('/deploy-shadow', authenticateToken, requireRole(['admin', 'operator']), roomController.deployShadow);
 router.post('/trigger-reels', authenticateToken, requireRole(['admin', 'operator']), roomController.triggerReels);
 router.post('/copilot/chat', authenticateToken, requireRole(['admin', 'operator']), roomController.copilotChat);
 router.post('/copilot/session/clear', authenticateToken, requireRole(['admin', 'operator']), roomController.clearCopilotSession);

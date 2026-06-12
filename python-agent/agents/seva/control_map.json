@@ -1,0 +1,345 @@
+{
+    "applicable_controls": [
+        "GV-1.4",
+        "GV-2.2",
+        "GV-4.2",
+        "GV-6.2",
+        "MAP-1.4",
+        "MAP-2.1",
+        "MAP-3.2",
+        "MEAS-1.1",
+        "MEAS-1.2",
+        "MEAS-1.3",
+        "MEAS-2.1",
+        "MEAS-2.2",
+        "MEAS-2.5",
+        "MEAS-2.6",
+        "MEAS-2.7",
+        "MEAS-3.1",
+        "MAN-1.1",
+        "MAN-1.2",
+        "MAN-1.4",
+        "MAN-2.1",
+        "MAN-2.2",
+        "MAN-2.4"
+    ],
+    "non_applicable_controls": [
+        "GV-3.1",
+        "GV-5.1",
+        "GV-6.1",
+        "MAP-1.3",
+        "MAP-1.5",
+        "MAP-5.1",
+        "MAP-5.2",
+        "MEAS-2.3",
+        "MEAS-2.4",
+        "MEAS-4.2",
+        "MEAS-4.3",
+        "MAN-1.3"
+    ],
+    "applicable_count": 22,
+    "non_applicable_count": 12,
+    "unmapped_count": 41,
+    "control_map": {
+        "GV-1.4": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PAYMENTS."
+        },
+        "GV-2.2": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "GV-3.1": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, RAG, MCP."
+        },
+        "GV-4.2": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
+        },
+        "GV-5.1": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MCP."
+        },
+        "GV-6.1": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "GV-6.2": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PAYMENTS."
+        },
+        "MAP-1.3": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, RAG."
+        },
+        "MAP-1.4": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MAP-1.5": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MCP."
+        },
+        "MAP-2.1": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
+        },
+        "MAP-3.2": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PAYMENTS."
+        },
+        "MAP-5.1": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "MAP-5.2": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: AGENT_DELEGATION."
+        },
+        "MEAS-1.1": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MEAS-1.2": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: INTERNET_ACCESS, TOOLS."
+        },
+        "MEAS-1.3": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
+        },
+        "MEAS-2.1": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: INTERNET_ACCESS."
+        },
+        "MEAS-2.2": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MEAS-2.3": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: ADMIN_ACCESS, WRITE_DB."
+        },
+        "MEAS-2.4": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MCP."
+        },
+        "MEAS-2.5": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MEAS-2.6": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PAYMENTS."
+        },
+        "MEAS-2.7": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PAYMENTS."
+        },
+        "MEAS-3.1": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
+        },
+        "MEAS-4.2": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "MEAS-4.3": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: AGENT_DELEGATION."
+        },
+        "MAN-1.1": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PAYMENTS."
+        },
+        "MAN-1.2": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PAYMENTS."
+        },
+        "MAN-1.3": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: WRITE_DB, DELETE_DB."
+        },
+        "MAN-1.4": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS, PAYMENTS."
+        },
+        "MAN-2.1": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PAYMENTS."
+        },
+        "MAN-2.2": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PAYMENTS."
+        },
+        "MAN-2.4": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PAYMENTS."
+        },
+        "GV-1.1": {
+            "status": "unmapped",
+            "rationale": "Managed at the organizational level; the company legal team monitors and documents AI compliance requirements."
+        },
+        "GV-1.2": {
+            "status": "unmapped",
+            "rationale": "Handled at the organizational level via standard corporate policies and developer training guidelines."
+        },
+        "GV-1.3": {
+            "status": "unmapped",
+            "rationale": "Determined by executive leadership and the risk management committee at the corporate level."
+        },
+        "GV-1.5": {
+            "status": "unmapped",
+            "rationale": "Conducted via periodic, organization-wide compliance audits and reviews."
+        },
+        "GV-1.6": {
+            "status": "unmapped",
+            "rationale": "Maintained centrally in the company's master software registry and CMDB."
+        },
+        "GV-1.7": {
+            "status": "unmapped",
+            "rationale": "Defined in the standard IT lifecycle and system decommissioning policies."
+        },
+        "GV-2.1": {
+            "status": "unmapped",
+            "rationale": "Defined in the organizational chart, job descriptions, and team charters."
+        },
+        "GV-2.3": {
+            "status": "unmapped",
+            "rationale": "Executive leadership maintains ultimate oversight and sign-off on AI deployments."
+        },
+        "GV-3.2": {
+            "status": "unmapped",
+            "rationale": "Administered by HR and the DEI committee through company-wide policies."
+        },
+        "GV-4.1": {
+            "status": "unmapped",
+            "rationale": "Promoted through company-wide training and leadership-led awareness initiatives."
+        },
+        "GV-4.3": {
+            "status": "unmapped",
+            "rationale": "Governed by corporate incident response and escalation protocols."
+        },
+        "GV-5.2": {
+            "status": "unmapped",
+            "rationale": "Managed via corporate feedback channels, customer support teams, and user relations."
+        },
+        "MAP-1.1": {
+            "status": "unmapped",
+            "rationale": "Documented in the product requirement documents (PRD) and agent charter."
+        },
+        "MAP-1.2": {
+            "status": "unmapped",
+            "rationale": "Evaluated during the R&D and model selection phase before agent development."
+        },
+        "MAP-1.6": {
+            "status": "unmapped",
+            "rationale": "Defined in the system design documentation and model cards."
+        },
+        "MAP-2.2": {
+            "status": "unmapped",
+            "rationale": "Specified in the QA testing suite and validation frameworks."
+        },
+        "MAP-2.3": {
+            "status": "unmapped",
+            "rationale": "Identified during the initial project threat modeling and risk assessment phases."
+        },
+        "MAP-2.4": {
+            "status": "unmapped",
+            "rationale": "Governed by corporate data lake policies and database ingestion pipelines."
+        },
+        "MAP-2.5": {
+            "status": "unmapped",
+            "rationale": "Evaluated in the project's Privacy and Algorithmic Impact Assessments."
+        },
+        "MAP-2.6": {
+            "status": "unmapped",
+            "rationale": "Documented in the infrastructure architecture diagram and Terraform files."
+        },
+        "MAP-3.1": {
+            "status": "unmapped",
+            "rationale": "Defined in the project business case and ROI analysis."
+        },
+        "MAP-3.3": {
+            "status": "unmapped",
+            "rationale": "Established in the model performance evaluation and monitoring guidelines."
+        },
+        "MAP-3.4": {
+            "status": "unmapped",
+            "rationale": "Defined in the cloud deployment guide and infrastructure limits."
+        },
+        "MAP-3.5": {
+            "status": "unmapped",
+            "rationale": "Outlined in the User Experience (UX) design and operational runbooks."
+        },
+        "MAP-4.1": {
+            "status": "unmapped",
+            "rationale": "Managed via vendor risk assessment and third-party procurement reviews."
+        },
+        "MAP-4.2": {
+            "status": "unmapped",
+            "rationale": "Documented in the system architecture diagrams and dependency trees."
+        },
+        "MEAS-2.8": {
+            "status": "unmapped",
+            "rationale": "Monitored at the cloud provider/data center level (carbon offset tracking)."
+        },
+        "MEAS-2.9": {
+            "status": "unmapped",
+            "rationale": "Managed via the Jira/Linear tracking board and risk register."
+        },
+        "MEAS-2.10": {
+            "status": "unmapped",
+            "rationale": "Monitored via Datadog, Prometheus, or Grafana dashboards."
+        },
+        "MEAS-2.11": {
+            "status": "unmapped",
+            "rationale": "Evaluated via user experience feedback and interaction analytics."
+        },
+        "MEAS-2.12": {
+            "status": "unmapped",
+            "rationale": "Defined in Key Performance Indicators (KPIs) and Service Level Objectives (SLOs)."
+        },
+        "MEAS-2.13": {
+            "status": "unmapped",
+            "rationale": "Reviewed periodically by the data science and engineering leadership teams."
+        },
+        "MEAS-3.2": {
+            "status": "unmapped",
+            "rationale": "Managed under data governance and quality assurance guidelines."
+        },
+        "MEAS-3.3": {
+            "status": "unmapped",
+            "rationale": "Shared via regular executive status reports and stakeholder updates."
+        },
+        "MEAS-4.1": {
+            "status": "unmapped",
+            "rationale": "Assessed during quarterly business and technology reviews."
+        },
+        "MAN-2.3": {
+            "status": "unmapped",
+            "rationale": "Covered by the general incident management and disaster recovery plans."
+        },
+        "MAN-3.1": {
+            "status": "unmapped",
+            "rationale": "Governed by vendor service level agreements (SLAs) and contract terms."
+        },
+        "MAN-3.2": {
+            "status": "unmapped",
+            "rationale": "Conducted via SOC2 Type II audits and vendor security questionnaires."
+        },
+        "MAN-4.1": {
+            "status": "unmapped",
+            "rationale": "Handled via automated application performance monitoring (APM) tools."
+        },
+        "MAN-4.2": {
+            "status": "unmapped",
+            "rationale": "Governed by the corporate cybersecurity and operational incident response plans."
+        },
+        "MAN-4.3": {
+            "status": "unmapped",
+            "rationale": "Managed by the corporate communications and public relations teams."
+        }
+    }
+}

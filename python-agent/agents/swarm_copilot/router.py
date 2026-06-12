@@ -145,10 +145,8 @@ class ContextRouter:
                 "reels",
                 "rehearsal",        # Silent Rehearsal
                 "silentrehearsal",
-                "shadowagent",      # Shadow Agent
                 "lina",
                 "martech",
-                "vision",
                 "weatheragent",     # Weather Agent
                 "cortex",           # BI / Cortex / Cortex II
                 "bi",

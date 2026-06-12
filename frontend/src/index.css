@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
 :root {
   --bg-main: #ffffff;
@@ -444,4 +444,394 @@ body {
 .resource-card:hover .resource-card-link {
   gap: 8px;
 }
+
+/* ==========================================================================
+   SecOps Dedicated Subpage Styles
+   ========================================================================== */
+
+.secops-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: secopsFadeIn 0.25s ease-out;
+}
+
+@keyframes secopsFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.secops-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 1.5rem;
+  height: calc(100vh - 200px);
+  min-height: 600px;
+}
+
+.secops-panel {
+  background: rgba(14, 22, 40, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+.secops-panel-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.secops-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.secops-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  margin-left: 10px;
+  vertical-align: middle;
+  text-transform: uppercase;
+}
+
+.secops-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: secopsPulse 2s infinite;
+}
+
+@keyframes secopsPulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+.secops-input {
+  padding: 10px 14px 10px 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(17, 24, 39, 0.5);
+  color: #f8fafc;
+  font-size: 0.85rem;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.secops-input:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
+  background: rgba(17, 24, 39, 0.75);
+}
+
+.secops-select {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(17, 24, 39, 0.5);
+  color: #f8fafc;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secops-select:focus {
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
+  background: rgba(17, 24, 39, 0.75);
+}
+
+.secops-select option {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.secops-control-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.secops-control-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.secops-control-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+}
+
+.secops-control-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.secops-control-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+.secops-control-card {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(30, 41, 59, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.secops-control-card:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(30, 41, 59, 0.25);
+  transform: translateY(-1px);
+}
+
+.secops-control-card.selected {
+  border-color: rgba(59, 130, 246, 0.65);
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1), inset 0 0 10px rgba(59, 130, 246, 0.05);
+}
+
+.badge-pass {
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  min-width: 50px;
+  text-align: center;
+  display: inline-block;
+  text-transform: uppercase;
+}
+
+.badge-partial {
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: rgba(245, 158, 11, 0.08);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  min-width: 50px;
+  text-align: center;
+  display: inline-block;
+  text-transform: uppercase;
+}
+
+.badge-fail {
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  min-width: 50px;
+  text-align: center;
+  display: inline-block;
+  text-transform: uppercase;
+}
+
+.secops-inspector-workspace {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.secops-inspector-scroll {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.secops-inspector-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.secops-inspector-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+}
+
+.secops-inspector-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.secops-inspector-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+.secops-details-panel {
+  padding: 20px;
+  background: #06090f;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  margin-top: 14px;
+}
+
+.secops-evidence-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-left: 4px solid #38bdf8;
+  border-radius: 8px;
+  padding: 14px;
+  margin-top: 10px;
+}
+
+.secops-evidence-item-partial {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  padding: 14px;
+  margin-top: 10px;
+}
+
+.secops-code-pre {
+  margin-top: 8px;
+  font-family: 'Fira Code', 'Courier New', Courier, monospace;
+  font-size: 0.75rem;
+  color: #34d399;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.secops-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 40px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.01);
+  margin-top: 14px;
+}
+
+.secops-empty-state-icon {
+  color: rgba(59, 130, 246, 0.3);
+  margin-bottom: 16px;
+  animation: floatIcon 3s ease-in-out infinite;
+}
+
+@keyframes floatIcon {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0px); }
+}
+
+.secops-breadcrumb-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+  font-family: 'Outfit', sans-serif;
+  transition: color 0.2s;
+  outline: none;
+}
+
+.secops-breadcrumb-btn:hover {
+  color: var(--primary);
+}
+
+/* ==========================================================================
+   Compliance Dashboard Cyber-Ops Theme & Branding Override
+   ========================================================================== */
+
+.compliance-container {
+  min-height: 100vh;
+  background-color: #070913;
+  background-image: 
+    linear-gradient(rgba(7, 9, 19, 0.95), rgba(7, 9, 19, 0.95)),
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.12), transparent 70%),
+    linear-gradient(rgba(59, 130, 246, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 45px 45px, 45px 45px;
+  color: #f3f4f6;
+  font-family: 'Outfit', sans-serif;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.hud-card {
+  position: relative;
+  background: rgba(10, 15, 30, 0.6);
+  backdrop-filter: blur(25px) saturate(130%);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: 20px;
+  padding: 1.75rem;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 
+    0 15px 35px rgba(0, 0, 0, 0.5), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.02),
+    inset 0 0 15px rgba(59, 130, 246, 0.03);
+  color: #f3f4f6;
+}
+
+.hud-card:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 
+    0 25px 45px -10px rgba(59, 130, 246, 0.22), 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 20px rgba(59, 130, 246, 0.07);
+}
+
+.orbitron-title {
+  font-family: 'Orbitron', 'Outfit', sans-serif;
+  letter-spacing: 1.2px;
+}
+
+.orbitron-stat {
+  font-family: 'Orbitron', 'Outfit', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+
+
 

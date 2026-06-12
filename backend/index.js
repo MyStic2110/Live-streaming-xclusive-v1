@@ -134,7 +134,7 @@ app.use('/api/github', githubRoutes);
 app.use('/api', configRoutes);
 app.use('/api', telemetryRoutes); // Mounts /api/llm-trace, /api/llm-traces, /api/evaluate-hallucination, etc.
 app.use('/', telemetryRoutes);   // Mounts root-level routes: /security/status, /security/scan, /security/remediate, /detokenize
-app.use('/', roomRoutes);        // Mounts root-level routes: /talk-to-ai, /deploy-shadow, /trigger-reels, /copilot/chat, /copilot/session/clear
+app.use('/', roomRoutes);        // Mounts root-level routes: /talk-to-ai, /trigger-reels, /copilot/chat, /copilot/session/clear
 
 httpServer.listen(config.port, "0.0.0.0", () => {
   console.log(`[ENTERPRISE] Business Layers Active on ${config.port}`);

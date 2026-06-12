@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Monitor, Activity, BarChart2, Cpu, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Monitor, Activity, BarChart2, Cpu, LogOut, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -16,6 +16,7 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
   });
 
   useEffect(() => {
+    // Note: using direct fetch or axios, but keep existing imports
     axios.get(`${API}/api/whitelabel/config`)
       .then(res => {
         if (res.data) {
@@ -33,9 +34,10 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
   }, []);
 
   const menuItems = [
-    { id: 'fleet',     label: 'Fleet Control',   Icon: Monitor   },
-    { id: 'telemetry', label: 'Observability',    Icon: Activity  },
-    { id: 'analytics', label: 'Analytics & Costs', Icon: BarChart2 },
+    { id: 'fleet',      label: 'Fleet Control',   Icon: Monitor   },
+    { id: 'telemetry',  label: 'Observability',    Icon: Activity  },
+    { id: 'analytics',  label: 'Analytics & Costs', Icon: BarChart2 },
+    { id: 'compliance', label: 'Compliance Hub',  Icon: Shield    },
   ];
 
   const getBreadcrumb = () => {
@@ -43,10 +45,27 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
     return activeItem ? activeItem.label : 'Dashboard';
   };
 
+  const isDarkTab = activeTab === 'telemetry' || activeTab === 'compliance';
+
   return (
-    <div className="console-container">
+    <div className="console-container" style={isDarkTab ? { backgroundColor: '#070913', minHeight: '100vh' } : {}}>
       {/* Sidebar navigation */}
-      <aside className={`console-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+      <aside 
+        className={`console-sidebar ${isCollapsed ? 'collapsed' : ''}`}
+        style={{
+          width: isCollapsed ? '80px' : '260px',
+          background: isDarkTab ? 'rgba(7, 10, 20, 0.85)' : 'rgba(248, 250, 252, 0.9)',
+          backdropFilter: 'blur(20px)',
+          borderRight: isDarkTab ? '1px solid rgba(59, 130, 246, 0.15)' : '1px solid var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '2rem 1.2rem',
+          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          zIndex: 1000,
+          position: 'relative'
+        }}
+      >
         <div style={{ position: 'relative' }}>
           {/* Collapse Toggle Button */}
           <button 
@@ -55,9 +74,9 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
               position: 'absolute',
               right: isCollapsed ? '-8px' : '-4px',
               top: '8px',
-              background: '#ffffff',
-              border: '1px solid rgba(0, 0, 0, 0.08)',
-              color: '#0f172a',
+              background: isDarkTab ? '#0d1326' : '#ffffff',
+              border: isDarkTab ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid rgba(0, 0, 0, 0.08)',
+              color: isDarkTab ? '#38bdf8' : '#0f172a',
               borderRadius: '50%',
               width: '24px',
               height: '24px',
@@ -82,7 +101,7 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
             }}>
               <Cpu size={18} color="#ffffff" strokeWidth={2} />
             </span>
-            <span className="brand-full sidebar-text" style={{ fontSize: '1.05rem', fontWeight: '900', letterSpacing: '1px' }}>
+            <span className="brand-full sidebar-text" style={{ fontSize: '1.05rem', fontWeight: '900', letterSpacing: '1px', color: isDarkTab ? '#ffffff' : 'var(--text-main)' }}>
               {whitelabel.clientName.split(' ')[0].toUpperCase()}{' '}
               <span style={{ color: whitelabel.theme.primary }}>CONSOLE</span>
             </span>
@@ -96,13 +115,15 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
                 onClick={() => onTabChange(id)}
                 className={`sidebar-item ${activeTab === id ? 'active' : ''}`}
                 style={{
-                  color: activeTab === id ? whitelabel.theme.primary : 'var(--text-muted)'
+                  color: activeTab === id ? whitelabel.theme.primary : (isDarkTab ? '#94a3b8' : 'var(--text-muted)'),
+                  background: activeTab === id ? (isDarkTab ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.08)') : 'transparent',
+                  borderColor: activeTab === id ? (isDarkTab ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.1)') : 'transparent',
                 }}
               >
                 <Icon
                   size={18}
                   strokeWidth={activeTab === id ? 2.2 : 1.8}
-                  color={activeTab === id ? whitelabel.theme.primary : 'var(--text-muted)'}
+                  color={activeTab === id ? whitelabel.theme.primary : (isDarkTab ? '#94a3b8' : 'var(--text-muted)')}
                 />
                 <span className="sidebar-text">{label}</span>
               </div>
@@ -112,7 +133,7 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
 
         {/* User Card footer */}
         {user && (
-          <div className="user-section">
+          <div className="user-section" style={{ borderTop: isDarkTab ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid var(--border)' }}>
             <div style={{ 
               width: '36px', 
               height: '36px', 
@@ -130,7 +151,7 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
             </div>
             
             <div className="user-text" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flexGrow: 1 }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: '700', color: isDarkTab ? '#f3f4f6' : 'var(--text-main)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                 {user.username}
               </span>
               <span style={{ fontSize: '0.65rem', fontWeight: '800', color: whitelabel.theme.primary, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -165,13 +186,23 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
       </aside>
 
       {/* Main Workspace Frame */}
-      <main className="console-main">
+      <main className="console-main" style={isDarkTab ? { backgroundColor: '#070913', color: '#f3f4f6' } : {}}>
         {/* Workspace header */}
-        <header className="console-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+        <header 
+          className="console-header"
+          style={{
+            background: isDarkTab ? 'rgba(7, 10, 20, 0.6)' : 'rgba(255, 255, 255, 0.6)',
+            borderBottom: isDarkTab ? '1px solid rgba(59, 130, 246, 0.15)' : '1px solid var(--border)',
+            padding: '1.5rem 3rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: isDarkTab ? '#94a3b8' : 'var(--text-muted)', fontWeight: '600' }}>
             <span>Console</span>
             <span>/</span>
-            <span style={{ color: 'var(--text-main)', fontWeight: '700' }}>{getBreadcrumb()}</span>
+            <span style={{ color: isDarkTab ? '#ffffff' : 'var(--text-main)', fontWeight: '700' }}>{getBreadcrumb()}</span>
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -181,14 +212,21 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
               <span>FLEET SYSTEM RUNNING</span>
             </div>
             
-            <div style={{ fontSize: '0.75rem', background: 'rgba(15, 23, 42, 0.03)', border: '1px solid var(--border)', padding: '4px 10px', borderRadius: '8px', color: 'var(--text-muted)' }}>
+            <div style={{ 
+              fontSize: '0.75rem', 
+              background: isDarkTab ? 'rgba(255, 255, 255, 0.03)' : 'rgba(15, 23, 42, 0.03)', 
+              border: isDarkTab ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid var(--border)', 
+              padding: '4px 10px', 
+              borderRadius: '8px', 
+              color: isDarkTab ? '#94a3b8' : 'var(--text-muted)' 
+            }}>
               Client: <strong>{user?.companyName || 'Nexus Swarm'}</strong>
             </div>
           </div>
         </header>
 
         {/* Workspace body */}
-        <div className="console-workspace">
+        <div className="console-workspace" style={{ padding: '0', flexGrow: 1, overflowY: 'auto' }}>
           {children}
         </div>
       </main>

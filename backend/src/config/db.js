@@ -1,7 +1,16 @@
 import pg from 'pg';
 import logger from './logger.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
+import util from 'util';
 
 const { Pool } = pg;
+const execPromise = util.promisify(exec);
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let pool = null;
 
@@ -157,6 +166,173 @@ const initializeTables = async (client) => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // 8. Create Compliance Logs table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS compliance_logs (
+        id SERIAL PRIMARY KEY,
+        event_type VARCHAR(100) NOT NULL,
+        severity VARCHAR(50) NOT NULL,
+        agent VARCHAR(255) NULL,
+        details JSONB DEFAULT '{}'::jsonb,
+        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 9. Create Indexes for traces
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_traces_timestamp ON traces(timestamp DESC);
+      CREATE INDEX IF NOT EXISTS idx_traces_agent ON traces(agent);
+      CREATE INDEX IF NOT EXISTS idx_traces_run_id ON traces(run_id);
+    `);
+
+    // 10. Create NIST AI RMF Core Master table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS nist_rmf_core (
+        id SERIAL PRIMARY KEY,
+        function VARCHAR(100) NOT NULL,
+        category TEXT NOT NULL,
+        subcategory_id VARCHAR(50) UNIQUE NOT NULL,
+        description TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 11. Create Agent Analysis table
+    await client.query(`
+      DROP TABLE IF EXISTS agent_analysis CASCADE;
+      CREATE TABLE IF NOT EXISTS agent_analysis (
+        id SERIAL PRIMARY KEY,
+        agent_name VARCHAR(255) UNIQUE NOT NULL,
+        agent_type VARCHAR(100) NOT NULL,
+        business_function VARCHAR(100) NOT NULL,
+        autonomy VARCHAR(50) NOT NULL,
+        risk_tier VARCHAR(50) NOT NULL,
+        capabilities TEXT[] NOT NULL,
+        data_classes TEXT[] NOT NULL,
+        external_reach TEXT[] NOT NULL,
+        applicable_controls TEXT[] NOT NULL,
+        non_applicable_controls TEXT[] NOT NULL,
+        applicable_count INTEGER NOT NULL,
+        non_applicable_count INTEGER NOT NULL,
+        control_map JSONB NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Check if nist_rmf_core is empty, and seed it
+    const nistCountRes = await client.query('SELECT COUNT(*) FROM nist_rmf_core');
+    if (parseInt(nistCountRes.rows[0].count, 10) === 0) {
+      logger.info('[DATABASE] ⏳ Seeding NIST AI RMF Core subcategories...');
+      const nistJsonPath = path.join(__dirname, 'nist-rmf-core.json');
+      if (fs.existsSync(nistJsonPath)) {
+        const rawNist = fs.readFileSync(nistJsonPath, 'utf8');
+        const nistItems = JSON.parse(rawNist);
+        for (const item of nistItems) {
+          const { function: func, category, subcategory_id, description } = item;
+          await client.query(
+            `INSERT INTO nist_rmf_core (function, category, subcategory_id, description)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (subcategory_id) DO NOTHING;`,
+            [func, category, subcategory_id, description]
+          );
+        }
+        logger.info(`[DATABASE] ✅ Seeded ${nistItems.length} subcategories into nist_rmf_core.`);
+      } else {
+        logger.warn(`[DATABASE] ⚠️ Seed file not found at ${nistJsonPath}. NIST table was not seeded.`);
+      }
+    }
+
+    // Dynamic agent analysis execution
+    try {
+      logger.info('[DATABASE] ⏳ Running dynamic Agent Scope Compliance analysis...');
+      const isWindows = process.platform === 'win32';
+      const pythonPath = isWindows
+        ? path.join(__dirname, '..', '..', '..', 'python-agent', 'venv', 'Scripts', 'python.exe')
+        : path.join(__dirname, '..', '..', '..', 'python-agent', 'venv', 'bin', 'python');
+      
+      const scriptPath = path.join(__dirname, '..', '..', '..', 'python-agent', 'run_scope_analyzer.py');
+
+      if (fs.existsSync(pythonPath) && fs.existsSync(scriptPath)) {
+        const { stdout, stderr } = await execPromise(`"${pythonPath}" "${scriptPath}"`);
+        if (stderr) {
+          logger.info(`[DATABASE] Agent analyzer logs: ${stderr.trim()}`);
+        }
+        if (stdout) {
+          const items = JSON.parse(stdout.trim());
+          logger.info(`[DATABASE] Ingesting/updating ${items.length} agent profiles dynamically...`);
+          for (const item of items) {
+            const {
+              agent_name,
+              agent_type,
+              business_function,
+              autonomy,
+              risk_tier,
+              capabilities,
+              data_classes,
+              external_reach,
+              applicable_controls,
+              non_applicable_controls,
+              applicable_count,
+              non_applicable_count,
+              control_map
+            } = item;
+
+            await client.query(
+              `INSERT INTO agent_analysis (
+                agent_name,
+                agent_type,
+                business_function,
+                autonomy,
+                risk_tier,
+                capabilities,
+                data_classes,
+                external_reach,
+                applicable_controls,
+                non_applicable_controls,
+                applicable_count,
+                non_applicable_count,
+                control_map
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+              ON CONFLICT (agent_name)
+              DO UPDATE SET
+                agent_type = EXCLUDED.agent_type,
+                business_function = EXCLUDED.business_function,
+                autonomy = EXCLUDED.autonomy,
+                risk_tier = EXCLUDED.risk_tier,
+                capabilities = EXCLUDED.capabilities,
+                data_classes = EXCLUDED.data_classes,
+                external_reach = EXCLUDED.external_reach,
+                applicable_controls = EXCLUDED.applicable_controls,
+                non_applicable_controls = EXCLUDED.non_applicable_controls,
+                applicable_count = EXCLUDED.applicable_count,
+                non_applicable_count = EXCLUDED.non_applicable_count,
+                control_map = EXCLUDED.control_map;`,
+              [
+                agent_name,
+                agent_type,
+                business_function,
+                autonomy,
+                risk_tier,
+                capabilities,
+                data_classes,
+                external_reach,
+                applicable_controls,
+                non_applicable_controls,
+                applicable_count,
+                non_applicable_count,
+                JSON.stringify(control_map)
+              ]
+            );
+          }
+          logger.info(`[DATABASE] ✅ Dynamic Agent analysis database sync complete.`);
+        }
+      } else {
+        logger.warn(`[DATABASE] ⚠️ Python executable or analyzer script not found at ${pythonPath} or ${scriptPath}. Dynamic agent analysis skipped.`);
+      }
+    } catch (analysisError) {
+      logger.error(`[DATABASE] ❌ Dynamic Agent analysis failed: ${analysisError.message}`);
+    }
 
     logger.info(`[DATABASE] ✅ PostgreSQL Tables Initialized.`);
   } catch (error) {

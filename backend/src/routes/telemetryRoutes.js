@@ -1,6 +1,7 @@
 import express from 'express';
 import * as telemetryController from '../controllers/telemetryController.js';
 import * as roomController from '../controllers/roomController.js';
+import * as complianceController from '../controllers/complianceController.js';
 import { authenticateToken, requireRole } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
@@ -21,8 +22,16 @@ router.get('/hallucination-results', authenticateToken, requireRole(['admin', 'o
 // Security audits (Operator / Admin / Viewer RBAC)
 router.get('/security/status', authenticateToken, requireRole(['admin', 'operator', 'viewer']), roomController.getSecurityStatus);
 router.post('/security/scan', authenticateToken, requireRole(['admin', 'operator']), roomController.runSecurityScan);
+router.post('/security/aivyuh-scan', authenticateToken, requireRole(['admin', 'operator']), roomController.runAivyuhScan);
+router.post('/security/nist-scan', authenticateToken, requireRole(['admin', 'operator']), roomController.runNistScan);
 router.post('/security/remediate', authenticateToken, requireRole(['admin']), roomController.updateSecurityConstraint);
 router.post('/detokenize', authenticateToken, telemetryController.detokenize);
 
+// Compliance audits (Operator / Admin / Viewer RBAC)
+router.get('/compliance/summary', authenticateToken, requireRole(['admin', 'operator', 'viewer']), complianceController.getComplianceSummary);
+router.get('/compliance/logs', authenticateToken, requireRole(['admin', 'operator', 'viewer']), complianceController.getComplianceLogs);
+router.post('/compliance/log', authenticateToken, requireRole(['admin', 'operator']), complianceController.addComplianceLog);
+
 export default router;
+
 

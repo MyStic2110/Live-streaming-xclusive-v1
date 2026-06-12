@@ -34,6 +34,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
+import { query as dbQuery } from '../config/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,10 +69,6 @@ export const talkToAI = async (req, res) => {
   } else if (agentType === "nova") {
     roomName = `nova_session_${userId}`;
     agentName = "NOVA";
-  } else if (agentType === "vision") {
-    roomName = `vision_session_${userId}`;
-    agentName = "VONE";
-
   } else if (agentType === "astra") {
     roomName = `growth_session_${userId}`;
     agentName = "ASTRA";
@@ -151,36 +148,6 @@ export const getAstraInsights = async (req, res) => {
   }
 };
 
-export const deployShadow = async (req, res) => {
-  const { url } = req.body;
-  if (!url) {
-    return res.status(400).json({ error: "Meeting URL is required" });
-  }
-  console.log(`[HTTP_CONTROLLER] --> POST /deploy-shadow | URL: ${url}`);
-  
-  try {
-    const pythonPath = getPythonPath();
-    const scriptPath = path.resolve(__dirname, "../../../python-agent/agents/shadow_agent/shadow_bot.py");
-    
-    console.log(`[HTTP_CONTROLLER] Spawning Shadow Bot background process...`);
-    console.log(`Interpreter: ${pythonPath}`);
-    console.log(`Script: ${scriptPath}`);
-    
-    // Spawn Playwright process detached
-    const shadowProcess = spawn(pythonPath, [scriptPath, url], {
-      detached: true,
-      stdio: 'ignore'
-    });
-    
-    shadowProcess.unref(); // Prevent parent waiting for exit
-    
-    res.json({ success: true, message: "Shadow Agent deployed successfully in the background." });
-  } catch (err) {
-    console.error("[HTTP_CONTROLLER] ❌ Failed to spawn Shadow Bot:", err.message);
-    res.status(500).json({ error: err.message });
-  }
-};
-
 export const getWeather = async (req, res) => {
   const { latitude, longitude } = req.query;
   if (!latitude || !longitude) {
@@ -235,14 +202,209 @@ const runScanner = (args) => {
   });
 };
 
+const runNistAnalyzer = () => {
+  return new Promise((resolve, reject) => {
+    const pythonPath = getPythonPath();
+    const scriptPath = path.resolve(__dirname, "../../../python-agent/run_scope_analyzer.py");
+    
+    console.log(`[NIST] Running analyzer: ${pythonPath} ${scriptPath}`);
+    const proc = spawn(pythonPath, [scriptPath]);
+    let stdout = "";
+    let stderr = "";
+    
+    proc.stdout.on("data", (data) => { stdout += data.toString(); });
+    proc.stderr.on("data", (data) => { stderr += data.toString(); });
+    
+    proc.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`NIST analyzer exited with code ${code}. Error: ${stderr}`));
+      } else {
+        try {
+          resolve(JSON.parse(stdout));
+        } catch (e) {
+          resolve({ raw: stdout });
+        }
+      }
+    });
+  });
+};
+
+const runNistScanner = () => {
+  return new Promise((resolve, reject) => {
+    const pythonPath = getPythonPath();
+    const nistScannerPath = path.resolve(__dirname, "../../../python-agent/agents/nist/scanner.py");
+    
+    console.log(`[NIST] Running compliance scanner: ${pythonPath} ${nistScannerPath}`);
+    const proc = spawn(pythonPath, [nistScannerPath]);
+    let stdout = "";
+    let stderr = "";
+    
+    proc.stdout.on("data", (data) => { stdout += data.toString(); });
+    proc.stderr.on("data", (data) => { stderr += data.toString(); });
+    
+    proc.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`NIST scanner exited with code ${code}. Error: ${stderr}`));
+      } else {
+        try {
+          resolve(JSON.parse(stdout));
+        } catch (e) {
+          resolve({ raw: stdout });
+        }
+      }
+    });
+  });
+};
+
+export const runNistScan = async (req, res) => {
+  try {
+    const items = await runNistAnalyzer();
+    
+    if (items && Array.isArray(items)) {
+      for (const item of items) {
+        const {
+          agent_name,
+          agent_type,
+          business_function,
+          autonomy,
+          risk_tier,
+          capabilities,
+          data_classes,
+          external_reach,
+          applicable_controls,
+          non_applicable_controls,
+          applicable_count,
+          non_applicable_count,
+          control_map
+        } = item;
+
+        await dbQuery(
+          `INSERT INTO agent_analysis (
+            agent_name,
+            agent_type,
+            business_function,
+            autonomy,
+            risk_tier,
+            capabilities,
+            data_classes,
+            external_reach,
+            applicable_controls,
+            non_applicable_controls,
+            applicable_count,
+            non_applicable_count,
+            control_map
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          ON CONFLICT (agent_name)
+          DO UPDATE SET
+            agent_type = EXCLUDED.agent_type,
+            business_function = EXCLUDED.business_function,
+            autonomy = EXCLUDED.autonomy,
+            risk_tier = EXCLUDED.risk_tier,
+            capabilities = EXCLUDED.capabilities,
+            data_classes = EXCLUDED.data_classes,
+            external_reach = EXCLUDED.external_reach,
+            applicable_controls = EXCLUDED.applicable_controls,
+            non_applicable_controls = EXCLUDED.non_applicable_controls,
+            applicable_count = EXCLUDED.applicable_count,
+            non_applicable_count = EXCLUDED.non_applicable_count,
+            control_map = EXCLUDED.control_map;`,
+          [
+            agent_name,
+            agent_type,
+            business_function,
+            autonomy,
+            risk_tier,
+            capabilities,
+            data_classes,
+            external_reach,
+            applicable_controls,
+            non_applicable_controls,
+            applicable_count,
+            non_applicable_count,
+            JSON.stringify(control_map)
+          ]
+        );
+      }
+
+      try {
+        await dbQuery(
+          `INSERT INTO compliance_logs (event_type, severity, agent, details)
+           VALUES ($1, $2, $3, $4)`,
+          [
+            'nist_compliance_audit_completed',
+            'info',
+            'nist',
+            JSON.stringify({
+              totalAgentsAudited: items.length,
+              raw_scan_result: items
+            })
+          ]
+        );
+      } catch (dbErr) {
+        console.error("[COMPLIANCE_LOG] Failed to log nist audit to DB:", dbErr.message);
+      }
+    }
+    
+    // Also trigger the new NIST scanner to update audit_history.json
+    try {
+      await runNistScanner();
+    } catch (scannerErr) {
+      console.error("[SECURITY_CONTROLLER] ❌ NIST compliance scanner script failed:", scannerErr.message);
+    }
+    
+    res.json(items);
+  } catch (err) {
+    console.error("[SECURITY_CONTROLLER] ❌ NIST Scan error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const getSecurityStatus = async (req, res) => {
   try {
-    const auditPath = path.resolve(__dirname, "../../../python-agent/agents/aivyuh/audit_history.json");
-    if (!fs.existsSync(auditPath)) {
-      return res.json({});
+    const aivyuhPath = path.resolve(__dirname, "../../../python-agent/agents/aivyuh/audit_history.json");
+    const nistPath = path.resolve(__dirname, "../../../python-agent/agents/nist/audit_history.json");
+    
+    let aivyuhData = {};
+    let nistData = {};
+
+    if (fs.existsSync(aivyuhPath)) {
+      try {
+        aivyuhData = JSON.parse(fs.readFileSync(aivyuhPath, "utf-8"));
+      } catch (err) {
+        console.error("[SECURITY_CONTROLLER] Error reading Aivyuh status:", err.message);
+      }
     }
-    const content = fs.readFileSync(auditPath, "utf-8");
-    res.json(JSON.parse(content));
+
+    if (fs.existsSync(nistPath)) {
+      try {
+        nistData = JSON.parse(fs.readFileSync(nistPath, "utf-8"));
+      } catch (err) {
+        console.error("[SECURITY_CONTROLLER] Error reading NIST status:", err.message);
+      }
+    }
+
+    // Merge logic
+    const merged = {};
+    const allKeys = new Set([...Object.keys(aivyuhData), ...Object.keys(nistData)]);
+
+    for (const key of allKeys) {
+      const aivyuhObj = aivyuhData[key] || {};
+      const nistObj = nistData[key] || {};
+
+      merged[key] = {
+        timestamp: nistObj.timestamp || aivyuhObj.timestamp || new Date().toISOString(),
+        critical_count: aivyuhObj.critical_count !== undefined ? aivyuhObj.critical_count : 0,
+        warning_count: aivyuhObj.warning_count !== undefined ? aivyuhObj.warning_count : 0,
+        report_summary: aivyuhObj.report_summary || [],
+        nist_audit: nistObj.nist_audit || {
+          score: 100,
+          risk: "LOW",
+          controls: []
+        }
+      };
+    }
+
+    res.json(merged);
   } catch (err) {
     console.error("[SECURITY_CONTROLLER] ❌ Status error:", err.message);
     res.status(500).json({ error: err.message });
@@ -251,10 +413,72 @@ export const getSecurityStatus = async (req, res) => {
 
 export const runSecurityScan = async (req, res) => {
   try {
-    const result = await runScanner(["scan"]);
+    const result = await runScanner(["aivyuh-scan"]);
+    
+    // Log compliance audit event to database
+    if (result && result.success) {
+      const { total_agents, critical_issues, warning_issues, compliance_score } = result;
+      try {
+        await dbQuery(
+          `INSERT INTO compliance_logs (event_type, severity, agent, details)
+           VALUES ($1, $2, $3, $4)`,
+          [
+            'aivyuh_swarm_audit_completed',
+            critical_issues > 0 ? 'critical' : (warning_issues > 0 ? 'warning' : 'info'),
+            'aivyuh',
+            JSON.stringify({
+              totalAgentsAudited: total_agents,
+              criticalIssuesFound: critical_issues,
+              warningIssuesFound: warning_issues,
+              complianceScore: compliance_score,
+              raw_scan_result: result
+            })
+          ]
+        );
+      } catch (dbErr) {
+        console.error("[COMPLIANCE_LOG] Failed to log aivyuh audit to DB:", dbErr.message);
+      }
+    }
+    
     res.json(result);
   } catch (err) {
     console.error("[SECURITY_CONTROLLER] ❌ Scan error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const runAivyuhScan = async (req, res) => {
+  try {
+    const result = await runScanner(["aivyuh-scan"]);
+    
+    // Log compliance audit event to database
+    if (result && result.success) {
+      const { total_agents, critical_issues, warning_issues, compliance_score } = result;
+      try {
+        await dbQuery(
+          `INSERT INTO compliance_logs (event_type, severity, agent, details)
+           VALUES ($1, $2, $3, $4)`,
+          [
+            'aivyuh_swarm_audit_completed',
+            critical_issues > 0 ? 'critical' : (warning_issues > 0 ? 'warning' : 'info'),
+            'aivyuh',
+            JSON.stringify({
+              totalAgentsAudited: total_agents,
+              criticalIssuesFound: critical_issues,
+              warningIssuesFound: warning_issues,
+              complianceScore: compliance_score,
+              raw_scan_result: result
+            })
+          ]
+        );
+      } catch (dbErr) {
+        console.error("[COMPLIANCE_LOG] Failed to log aivyuh audit to DB:", dbErr.message);
+      }
+    }
+    
+    res.json(result);
+  } catch (err) {
+    console.error("[SECURITY_CONTROLLER] ❌ Aivyuh Scan error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };
@@ -271,6 +495,30 @@ export const updateSecurityConstraint = async (req, res) => {
       await runScanner(["update", vulnId, status]);
     }
     const result = await runScanner(["scan"]);
+    
+    // Log compliance remediation event to database
+    if (result && result.new_run) {
+      try {
+        await dbQuery(
+          `INSERT INTO compliance_logs (event_type, severity, agent, details)
+           VALUES ($1, $2, $3, $4)`,
+          [
+            'security_constraint_updated',
+            'info',
+            'devops_geni',
+            JSON.stringify({
+              vulnId,
+              status,
+              cvssScore: result.new_run.cvss,
+              openVulnerabilities: result.new_run.open
+            })
+          ]
+        );
+      } catch (dbErr) {
+        console.error("[COMPLIANCE_LOG] Failed to log constraint update to DB:", dbErr.message);
+      }
+    }
+    
     res.json(result);
   } catch (err) {
     console.error("[SECURITY_CONTROLLER] ❌ Update error:", err.message);

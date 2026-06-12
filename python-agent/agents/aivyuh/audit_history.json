@@ -1,18 +1,18 @@
 {
   "bi2": {
-    "timestamp": "2026-06-03T19:05:24.239013",
+    "timestamp": "2026-06-12T19:02:38.634127",
     "critical_count": 0,
     "warning_count": 0,
     "report_summary": []
   },
   "lina": {
-    "timestamp": "2026-06-03T19:05:24.239013",
+    "timestamp": "2026-06-12T19:02:38.634761",
     "critical_count": 0,
     "warning_count": 0,
     "report_summary": []
   },
   "astra": {
-    "timestamp": "2026-06-03T19:05:24.239013",
+    "timestamp": "2026-06-12T19:02:38.628894",
     "critical_count": 0,
     "warning_count": 1,
     "report_summary": [
@@ -20,13 +20,15 @@
     ]
   },
   "devopsgeni": {
-    "timestamp": "2026-06-03T19:05:24.239013",
+    "timestamp": "2026-06-12T19:02:38.634761",
     "critical_count": 0,
-    "warning_count": 0,
-    "report_summary": []
+    "warning_count": 1,
+    "report_summary": [
+      "LLM05: Warning. Agent makes raw network requests outside of standard LiveKit plugins."
+    ]
   },
   "martech": {
-    "timestamp": "2026-06-03T19:05:24.239013",
+    "timestamp": "2026-06-12T19:02:38.634761",
     "critical_count": 0,
     "warning_count": 1,
     "report_summary": [
@@ -34,19 +36,19 @@
     ]
   },
   "nova": {
-    "timestamp": "2026-06-03T19:05:24.239013",
+    "timestamp": "2026-06-12T19:02:38.634761",
     "critical_count": 0,
     "warning_count": 0,
     "report_summary": []
   },
   "octane": {
-    "timestamp": "2026-06-03T19:05:24.239013",
+    "timestamp": "2026-06-12T19:02:38.634761",
     "critical_count": 0,
     "warning_count": 0,
     "report_summary": []
   },
   "reels": {
-    "timestamp": "2026-06-03T19:05:24.239013",
+    "timestamp": "2026-06-12T19:02:38.634761",
     "critical_count": 0,
     "warning_count": 1,
     "report_summary": [
@@ -54,33 +56,38 @@
     ]
   },
   "rehearsal": {
-    "timestamp": "2026-06-03T19:05:24.239013",
+    "timestamp": "2026-06-12T19:02:38.634761",
     "critical_count": 0,
     "warning_count": 0,
     "report_summary": []
   },
   "seva": {
-    "timestamp": "2026-06-03T19:05:24.239013",
-    "critical_count": 0,
-    "warning_count": 0,
-    "report_summary": []
-  },
-  "vision": {
-    "timestamp": "2026-06-03T19:05:24.239013",
-    "critical_count": 0,
-    "warning_count": 0,
-    "report_summary": []
-  },
-  "weather_agent": {
-    "timestamp": "2026-06-03T19:05:24.239013",
+    "timestamp": "2026-06-12T19:02:38.634761",
     "critical_count": 0,
     "warning_count": 0,
     "report_summary": []
   },
   "bi": {
-    "timestamp": "2026-06-03T19:05:24.239013",
+    "timestamp": "2026-06-12T19:02:38.634127",
     "critical_count": 0,
     "warning_count": 0,
     "report_summary": []
+  },
+  "swarm_copilot": {
+    "timestamp": "2026-06-12T19:02:38.642729",
+    "critical_count": 1,
+    "warning_count": 1,
+    "report_summary": [
+      "LLM04: Critical! Agent lacks CostGuard. Vulnerable to API bankruptcy via DoS.",
+      "LLM05: Warning. Agent makes raw network requests outside of standard LiveKit plugins."
+    ]
+  },
+  "nist": {
+    "timestamp": "2026-06-12T19:02:38.634761",
+    "critical_count": 0,
+    "warning_count": 1,
+    "report_summary": [
+      "LLM01: Warning. Lacks strict XML delimiters to sandbox user input."
+    ]
   }
 }

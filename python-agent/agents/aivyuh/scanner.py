@@ -325,11 +325,155 @@ def update_constraint(vuln_id, new_status):
     else:
         print(json.dumps({"success": False, "error": f"Vulnerability {vuln_id} not found."}))
 
+def run_aivyuh_swarm_audit():
+    import glob
+    agents_root = AGENTS_DIR
+    audit_file = os.path.join(AIVYUH_DIR, "audit_history.json")
+    
+    try:
+        if os.path.exists(audit_file):
+            with open(audit_file, "r", encoding="utf-8") as f:
+                history = json.load(f)
+        else:
+            history = {}
+    except Exception:
+        history = {}
+        
+    agents_list = []
+    if os.path.exists(agents_root):
+        for item in os.listdir(agents_root):
+            full_path = os.path.join(agents_root, item)
+            if os.path.isdir(full_path) and not item.startswith("__") and not item.startswith(".") and item != "aivyuh":
+                agents_list.append(item)
+
+    # Purge any stale/deleted agent entries from history
+    history = {k: v for k, v in history.items() if k in agents_list}
+                
+    total_criticals = 0
+    total_warnings = 0
+    
+    for agent_name in agents_list:
+        target_name = agent_name.lower().strip()
+        primary_paths = [
+            os.path.join(agents_root, target_name, f"{target_name}_agent.py"),
+            os.path.join(agents_root, target_name, f"{target_name}.py")
+        ]
+        content = ""
+        scanned_file_path = None
+        for p_opt in primary_paths:
+            if os.path.exists(p_opt):
+                try:
+                    with open(p_opt, "r", encoding="utf-8", errors="ignore") as f:
+                        content = f.read()
+                        scanned_file_path = p_opt
+                        break
+                except Exception:
+                    pass
+                    
+        if not content:
+            search_path = os.path.join(agents_root, target_name, "*.py")
+            files = glob.glob(search_path)
+            for f_path in files:
+                bn = os.path.basename(f_path)
+                if "trigger" not in bn and "create" not in bn:
+                    try:
+                        with open(f_path, "r", encoding="utf-8", errors="ignore") as f:
+                            content = f.read()
+                            scanned_file_path = f_path
+                            break
+                    except Exception:
+                        pass
+                        
+        if not content:
+            continue
+            
+        fail_count = 0
+        warn_count = 0
+        report_summary = []
+        
+        has_delimiters = "<" in content and ">" in content and ("user" in content.lower() or "input" in content.lower())
+        if not has_delimiters:
+            warn_count += 1
+            report_summary.append("LLM01: Warning. Lacks strict XML delimiters to sandbox user input.")
+            
+        has_insecure_exec = "exec(" in content or "eval(" in content or "os.system(" in content
+        if has_insecure_exec:
+            fail_count += 1
+            report_summary.append("LLM02: Critical! Detected raw OS or eval execution which can lead to RCE.")
+            
+        has_raw_append = "open(" in content and "'a'" in content and "transcript" in content.lower()
+        if has_raw_append:
+            warn_count += 1
+            report_summary.append("LLM03: Warning. Writing raw user data to disk could poison future training datasets.")
+            
+        has_cost_guard = "CostGuard" in content
+        if not has_cost_guard:
+            fail_count += 1
+            report_summary.append("LLM04: Critical! Agent lacks CostGuard. Vulnerable to API bankruptcy via DoS.")
+            
+        has_suspicious_imports = "urllib" in content or "requests" in content
+        if has_suspicious_imports:
+            warn_count += 1
+            report_summary.append("LLM05: Warning. Agent makes raw network requests outside of standard LiveKit plugins.")
+            
+        has_transcript_logging = "logger.info(f\"--- [INPUT]" in content or "print(" in content
+        has_securelytix = "Securelytix" in content or "vault" in content.lower()
+        if has_transcript_logging and not has_securelytix:
+            fail_count += 1
+            report_summary.append("LLM06: Critical! Raw transcript logging without Securelytix vault integration.")
+            
+        has_pydantic = "pydantic" in content.lower() or "BaseModel" in content
+        tool_count = content.count("@llm.function_tool")
+        if tool_count > 0 and not has_pydantic:
+            warn_count += 1
+            report_summary.append("LLM07: Warning. Tools are present but lack Pydantic strict typing validation.")
+            
+        has_write = "UPDATE " in content or "INSERT " in content or "DELETE " in content
+        if tool_count > 0 and has_write:
+            warn_count += 1
+            report_summary.append("LLM08: Warning. Write capabilities detected. Enforce HITL (Human-in-the-Loop).")
+            
+        has_fallback = "confidence" in content.lower() or "fallback" in content.lower()
+        if not has_fallback:
+            warn_count += 1
+            report_summary.append("LLM09: Warning. Agent trusts outputs blindly. Implement a confidence scoring mechanism.")
+            
+        has_hardcoded_keys = "sk-" in content or "api_key=\"" in content or "api_key='" in content
+        if has_hardcoded_keys:
+            fail_count += 1
+            report_summary.append("LLM10: Critical! Hardcoded API keys found. Use os.getenv() immediately.")
+            
+        total_criticals += fail_count
+        total_warnings += warn_count
+        
+        history[agent_name] = {
+            "timestamp": datetime.now().isoformat(),
+            "critical_count": fail_count,
+            "warning_count": warn_count,
+            "report_summary": report_summary
+        }
+        
+    try:
+        with open(audit_file, "w", encoding="utf-8") as f:
+            json.dump(history, f, indent=2)
+    except Exception as e:
+        print(f"Error saving audit_history.json: {e}", file=sys.stderr)
+        
+    result = {
+        "success": True,
+        "total_agents": len(history),
+        "critical_issues": total_criticals,
+        "warning_issues": total_warnings,
+        "compliance_score": "100%" if total_criticals == 0 else f"{max(0, 100 - total_criticals * 10)}%",
+        "history": history
+    }
+    print(json.dumps(result, indent=2))
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         cmd = sys.argv[1]
-        if cmd == "scan":
-            run_scan()
+        if cmd == "scan" or cmd == "aivyuh-scan":
+            run_aivyuh_swarm_audit()
         elif cmd == "update" and len(sys.argv) > 3:
             vuln_id = sys.argv[2]
             status = sys.argv[3]
