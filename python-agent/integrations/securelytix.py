@@ -130,6 +130,39 @@ class SecurelytixClient:
             return list(await asyncio.gather(*(self._tokenize_single(item) for item in data)))
         return await self._tokenize_single(data)
 
+    async def detokenize_dates(self, text: str) -> str:
+        if not isinstance(text, str):
+            return text
+        
+        token_regex = re.compile(r'\b([a-zA-Z0-9_\-\.\@]+_stx)\b')
+        matches = token_regex.findall(text)
+        if not matches:
+            return text
+            
+        payload = {}
+        for idx, token in enumerate(matches):
+            payload[f"token_{idx}"] = token
+            
+        try:
+            result = await self._post_with_retry("/api/v1/detokenize", payload)
+            raw_map = result.get("data", {})
+            
+            processed_text = text
+            date_regex = re.compile(
+                r'\b\d{4}[-/]\d{2}[-/]\d{2}\b|\b\d{2}[-/]\d{2}[-/]\d{4}\b|\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}(?:st|nd|rd|th)?(?:,\s+\d{4})?\b',
+                re.IGNORECASE
+            )
+            
+            for key, token in payload.items():
+                raw_value = raw_map.get(key)
+                if raw_value and date_regex.search(raw_value):
+                    processed_text = processed_text.replace(token, raw_value)
+            return processed_text
+        except Exception as e:
+            logger.error(f"[Securelytix] detokenize_dates failed: {e}")
+            return text
+
+
     # ── Detokenize ────────────────────────────────────────────────────────────
 
     async def _detokenize_single(self, data: Any, suppress_partial_warning: bool = False) -> Any:

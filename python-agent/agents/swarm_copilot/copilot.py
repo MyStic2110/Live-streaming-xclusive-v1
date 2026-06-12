@@ -157,6 +157,8 @@ class SwarmCopilot:
                 try:
                     tokenized_system_prompt = await self.securelytix.tokenize(compiled_system_prompt)
                     tokenized_user_query = await self.securelytix.tokenize(user_query)
+                    tokenized_user_query = await self.securelytix.detokenize_dates(tokenized_user_query)
+                    tokenized_system_prompt = await self.securelytix.detokenize_dates(tokenized_system_prompt)
                 except Exception as tokenize_err:
                     logger.error(f"Securelytix tokenization failed: {tokenize_err}. Failing open.")
                     tokenized_system_prompt = compiled_system_prompt
@@ -171,7 +173,12 @@ class SwarmCopilot:
             raw_response = self._mock_llm_generation(matched_verticals, context_json, user_query)
 
         # 6. Tier 5: Output Safety Auditing
-        safe_response = self.output_guardrail.verify(raw_response, allowed_urls)
+        try:
+            detokenized_response = await self.securelytix.detokenize(raw_response)
+        except Exception as e:
+            logger.error(f"Response detokenization failed: {e}")
+            detokenized_response = raw_response
+        safe_response = self.output_guardrail.verify(detokenized_response, allowed_urls)
 
         # 7. Session Intelligence Memory Updates
         session.turn_count += 1

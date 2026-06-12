@@ -581,6 +581,81 @@ const securelytixTokenize = async (data) => {
   return data;
 };
 
+const securelytixDetokenize = async (data) => {
+  const url = `${process.env.SECURELYTIX_URL || "http://localhost:8080"}/api/v1/detokenize`;
+  const apiKey = process.env.SECURELYTIX_API_KEY || "sk_dev_mock_key_for_local_testing";
+
+  try {
+    const isStr = typeof data === "string";
+    const payload = isStr ? { text: data } : data;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({ data: payload })
+    });
+
+    if (response.status === 200) {
+      const result = await response.json();
+      const resData = result.data || payload;
+      return isStr ? (resData.text || data) : resData;
+    } else {
+      console.warn(`[Securelytix] Detokenization failed with status ${response.status}. Failing open.`);
+    }
+  } catch (err) {
+    console.error("[Securelytix] Detokenization failed. Failing open:", err);
+  }
+  return data;
+};
+
+const detokenizeDates = async (text) => {
+  if (typeof text !== "string") return text;
+  const tokenRegex = /\b([a-zA-Z0-9_\-\.\@]+_stx)\b/g;
+  const matches = text.match(tokenRegex);
+  if (!matches || matches.length === 0) return text;
+
+  const url = `${process.env.SECURELYTIX_URL || "http://localhost:8080"}/api/v1/detokenize`;
+  const apiKey = process.env.SECURELYTIX_API_KEY || "sk_dev_mock_key_for_local_testing";
+
+  try {
+    const payload = {};
+    matches.forEach((token, idx) => {
+      payload[`token_${idx}`] = token;
+    });
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({ data: payload })
+    });
+
+    if (response.status === 200) {
+      const result = await response.json();
+      const rawMap = result.data || {};
+      
+      let processedText = text;
+      const dateRegex = /\b\d{4}[-/]\d{2}[-/]\d{2}\b|\b\d{2}[-/]\d{2}[-/]\d{4}\b|\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}(?:st|nd|rd|th)?(?:,\s+\d{4})?\b/i;
+      
+      for (const [key, token] of Object.entries(payload)) {
+        const rawValue = rawMap[key];
+        if (rawValue && dateRegex.test(rawValue)) {
+          processedText = processedText.replace(new RegExp(token, 'g'), rawValue);
+        }
+      }
+      return processedText;
+    }
+  } catch (err) {
+    console.error("[Securelytix] detokenizeDates failed:", err);
+  }
+  return text;
+};
+
 // --- SESSION DATABASE / MEMORY FALLBACK ---
 const localSessionMemory = new Map();
 
@@ -744,8 +819,10 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
   try {
     tokenizedSystemPrompt = await securelytixTokenize(compiledSystemPrompt);
     tokenizedUserQuery = await securelytixTokenize(query);
+    tokenizedUserQuery = await detokenizeDates(tokenizedUserQuery);
+    tokenizedSystemPrompt = await detokenizeDates(tokenizedSystemPrompt);
   } catch (tokenizeErr) {
-    console.error("[Securelytix] Tokenization failed, failing open:", tokenizeErr);
+    console.error("[Securelytix] Tokenization or date detokenization failed, failing open:", tokenizeErr);
   }
 
   const messages = [
@@ -813,8 +890,9 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
       }
     }
 
-    // 6. Output safety audit
-    const safeResponse = verifyOutput(responseText, allowedUrls);
+    // 6. Detokenize response and apply output safety audit
+    const detokenizedResponse = await securelytixDetokenize(responseText);
+    const safeResponse = verifyOutput(detokenizedResponse, allowedUrls);
 
     // 7. Update session data
     session.turn_count += 1;
