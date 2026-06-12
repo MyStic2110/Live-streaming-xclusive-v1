@@ -150,9 +150,16 @@ class ContextRouter:
                     matched_verticals.append(vertical)
                     break
 
+        ignored_words = {
+            "swarm", "copilot", "platform", "agent", "agents", "cortex", "system", "systems",
+            "what", "where", "when", "which", "who", "whom", "how", "why", "please", "would",
+            "could", "should", "does", "do", "doing", "done", "will", "shall", "their", "there",
+            "about", "information", "question", "query", "details", "explain", "describe", "support"
+        }
+
         # Dynamic matching for crawled knowledge based on terms inside pages
         if "crawled_knowledge" in self.kb_cache and "pages" in self.kb_cache["crawled_knowledge"]:
-            query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3]
+            query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3 and w not in ignored_words]
             if query_words:
                 has_match = any(
                     any(word in page.get("title", "").lower() or word in page.get("content", "").lower() for word in query_words)
@@ -163,7 +170,7 @@ class ContextRouter:
 
         # Dynamic matching for GitHub knowledge based on terms inside pages/files
         if "github_knowledge" in self.kb_cache and "pages" in self.kb_cache["github_knowledge"]:
-            query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3]
+            query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3 and w not in ignored_words]
             if query_words:
                 has_match = any(
                     any(word in page.get("title", "").lower() or word in page.get("content", "").lower() for word in query_words)
@@ -208,7 +215,7 @@ class ContextRouter:
                         except Exception:
                             pass
                 elif vertical in ["crawled_knowledge", "github_knowledge"] and "pages" in vertical_data:
-                    query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3]
+                    query_words = [w for w in re.split(r"[^a-z0-9]+", query_lower) if len(w) > 3 and w not in ignored_words]
                     relevant_pages = []
                     for page in vertical_data["pages"]:
                         title_lower = page.get("title", "").lower()

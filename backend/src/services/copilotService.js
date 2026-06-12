@@ -186,9 +186,16 @@ const routeContext = (query, lastVertical) => {
     }
   }
 
+  const ignoredWords = new Set([
+    "swarm", "copilot", "platform", "agent", "agents", "cortex", "system", "systems",
+    "what", "where", "when", "which", "who", "whom", "how", "why", "please", "would",
+    "could", "should", "does", "do", "doing", "done", "will", "shall", "their", "there",
+    "about", "information", "question", "query", "details", "explain", "describe", "support"
+  ]);
+
   // Dynamic matching for crawled knowledge based on terms inside pages
   if (kbCache['crawled_knowledge'] && kbCache['crawled_knowledge'].pages) {
-    const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3);
+    const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3 && !ignoredWords.has(w));
     if (queryWords.length > 0) {
       const hasMatch = kbCache['crawled_knowledge'].pages.some(page => {
         const titleLower = page.title.toLowerCase();
@@ -203,7 +210,7 @@ const routeContext = (query, lastVertical) => {
 
   // Dynamic matching for GitHub knowledge based on terms inside pages/files
   if (kbCache['github_knowledge'] && kbCache['github_knowledge'].pages) {
-    const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3);
+    const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3 && !ignoredWords.has(w));
     if (queryWords.length > 0) {
       const hasMatch = kbCache['github_knowledge'].pages.some(page => {
         const titleLower = page.title.toLowerCase();
@@ -233,7 +240,7 @@ const routeContext = (query, lastVertical) => {
       
       if (vertical === "crawled_knowledge" && verticalData.pages) {
         // Simple relevance matching over crawled pages
-        const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3);
+        const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3 && !ignoredWords.has(w));
         const relevantPages = verticalData.pages.filter(page => {
           const titleLower = page.title.toLowerCase();
           const contentLower = page.content.toLowerCase();
@@ -254,7 +261,7 @@ const routeContext = (query, lastVertical) => {
 
       if (vertical === "github_knowledge" && verticalData.pages) {
         // Simple relevance matching over files
-        const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3);
+        const queryWords = queryLower.split(/[^a-z0-9]+/).filter(w => w.length > 3 && !ignoredWords.has(w));
         const relevantPages = verticalData.pages.filter(page => {
           const titleLower = page.title.toLowerCase();
           const contentLower = page.content.toLowerCase();
