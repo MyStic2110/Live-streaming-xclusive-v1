@@ -1,93 +1,228 @@
 {
-  "bi2": {
-    "timestamp": "2026-06-12T19:02:38.634127",
-    "critical_count": 0,
-    "warning_count": 0,
-    "report_summary": []
-  },
-  "lina": {
-    "timestamp": "2026-06-12T19:02:38.634761",
-    "critical_count": 0,
-    "warning_count": 0,
-    "report_summary": []
-  },
   "astra": {
-    "timestamp": "2026-06-12T19:02:38.628894",
-    "critical_count": 0,
-    "warning_count": 1,
+    "timestamp": "2026-06-16T06:52:13.555091",
+    "critical_count": 3,
+    "warning_count": 4,
     "report_summary": [
-      "LLM05: Warning. Agent makes raw network requests outside of standard LiveKit plugins."
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+      "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
+    ]
+  },
+  "bi": {
+    "timestamp": "2026-06-16T06:52:13.574118",
+    "critical_count": 4,
+    "warning_count": 6,
+    "report_summary": [
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM04: Critical! Model Denial of Service: Lacks rate limiting, resource throttling, or context window constraints.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+      "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+      "LLM08: Warning. Excessive Agency: Lacks Human-in-the-Loop (HITL) approval gates or authorization restrictions.",
+      "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
+    ]
+  },
+  "bi2": {
+    "timestamp": "2026-06-16T06:52:13.591033",
+    "critical_count": 3,
+    "warning_count": 6,
+    "report_summary": [
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+      "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+      "LLM08: Warning. Excessive Agency: Lacks Human-in-the-Loop (HITL) approval gates or authorization restrictions.",
+      "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
     ]
   },
   "devopsgeni": {
-    "timestamp": "2026-06-12T19:02:38.634761",
-    "critical_count": 0,
-    "warning_count": 1,
+    "timestamp": "2026-06-16T06:52:13.627586",
+    "critical_count": 3,
+    "warning_count": 6,
     "report_summary": [
-      "LLM05: Warning. Agent makes raw network requests outside of standard LiveKit plugins."
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+      "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+      "LLM08: Warning. Excessive Agency: Lacks Human-in-the-Loop (HITL) approval gates or authorization restrictions.",
+      "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
+    ]
+  },
+  "lina": {
+    "timestamp": "2026-06-16T06:52:13.640644",
+    "critical_count": 4,
+    "warning_count": 6,
+    "report_summary": [
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM04: Critical! Model Denial of Service: Lacks rate limiting, resource throttling, or context window constraints.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+      "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+      "LLM08: Warning. Excessive Agency: Lacks Human-in-the-Loop (HITL) approval gates or authorization restrictions.",
+      "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
     ]
   },
   "martech": {
-    "timestamp": "2026-06-12T19:02:38.634761",
-    "critical_count": 0,
-    "warning_count": 1,
+    "timestamp": "2026-06-16T06:52:13.697349",
+    "critical_count": 3,
+    "warning_count": 6,
     "report_summary": [
-      "LLM05: Warning. Agent makes raw network requests outside of standard LiveKit plugins."
-    ]
-  },
-  "nova": {
-    "timestamp": "2026-06-12T19:02:38.634761",
-    "critical_count": 0,
-    "warning_count": 0,
-    "report_summary": []
-  },
-  "octane": {
-    "timestamp": "2026-06-12T19:02:38.634761",
-    "critical_count": 0,
-    "warning_count": 0,
-    "report_summary": []
-  },
-  "reels": {
-    "timestamp": "2026-06-12T19:02:38.634761",
-    "critical_count": 0,
-    "warning_count": 1,
-    "report_summary": [
-      "LLM05: Warning. Agent makes raw network requests outside of standard LiveKit plugins."
-    ]
-  },
-  "rehearsal": {
-    "timestamp": "2026-06-12T19:02:38.634761",
-    "critical_count": 0,
-    "warning_count": 0,
-    "report_summary": []
-  },
-  "seva": {
-    "timestamp": "2026-06-12T19:02:38.634761",
-    "critical_count": 0,
-    "warning_count": 0,
-    "report_summary": []
-  },
-  "bi": {
-    "timestamp": "2026-06-12T19:02:38.634127",
-    "critical_count": 0,
-    "warning_count": 0,
-    "report_summary": []
-  },
-  "swarm_copilot": {
-    "timestamp": "2026-06-12T19:02:38.642729",
-    "critical_count": 1,
-    "warning_count": 1,
-    "report_summary": [
-      "LLM04: Critical! Agent lacks CostGuard. Vulnerable to API bankruptcy via DoS.",
-      "LLM05: Warning. Agent makes raw network requests outside of standard LiveKit plugins."
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+      "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+      "LLM08: Warning. Excessive Agency: Lacks Human-in-the-Loop (HITL) approval gates or authorization restrictions.",
+      "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
     ]
   },
   "nist": {
-    "timestamp": "2026-06-12T19:02:38.634761",
-    "critical_count": 0,
-    "warning_count": 1,
+    "timestamp": "2026-06-16T06:52:13.714121",
+    "critical_count": 3,
+    "warning_count": 5,
     "report_summary": [
-      "LLM01: Warning. Lacks strict XML delimiters to sandbox user input."
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM04: Critical! Model Denial of Service: Lacks rate limiting, resource throttling, or context window constraints.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+      "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
+    ]
+  },
+  "nova": {
+    "timestamp": "2026-06-16T06:52:13.764848",
+    "critical_count": 3,
+    "warning_count": 6,
+    "report_summary": [
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+      "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+      "LLM08: Warning. Excessive Agency: Lacks Human-in-the-Loop (HITL) approval gates or authorization restrictions.",
+      "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
+    ]
+  },
+  "octane": {
+    "timestamp": "2026-06-16T06:52:13.836341",
+    "critical_count": 4,
+    "warning_count": 6,
+    "report_summary": [
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM04: Critical! Model Denial of Service: Lacks rate limiting, resource throttling, or context window constraints.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+      "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+      "LLM08: Warning. Excessive Agency: Lacks Human-in-the-Loop (HITL) approval gates or authorization restrictions.",
+      "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
+    ]
+  },
+  "reels": {
+    "timestamp": "2026-06-16T06:52:13.851441",
+    "critical_count": 4,
+    "warning_count": 6,
+    "report_summary": [
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM04: Critical! Model Denial of Service: Lacks rate limiting, resource throttling, or context window constraints.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+      "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+      "LLM08: Warning. Excessive Agency: Lacks Human-in-the-Loop (HITL) approval gates or authorization restrictions.",
+      "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
+    ]
+  },
+  "rehearsal": {
+    "timestamp": "2026-06-16T06:52:13.883641",
+    "critical_count": 3,
+    "warning_count": 6,
+    "report_summary": [
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+      "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+      "LLM08: Warning. Excessive Agency: Lacks Human-in-the-Loop (HITL) approval gates or authorization restrictions.",
+      "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
+    ]
+  },
+  "seva": {
+    "timestamp": "2026-06-16T06:52:13.943097",
+    "critical_count": 4,
+    "warning_count": 6,
+    "report_summary": [
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM04: Critical! Model Denial of Service: Lacks rate limiting, resource throttling, or context window constraints.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+      "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+      "LLM08: Warning. Excessive Agency: Lacks Human-in-the-Loop (HITL) approval gates or authorization restrictions.",
+      "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
+    ]
+  },
+  "swarm_copilot": {
+    "timestamp": "2026-06-16T06:52:13.963949",
+    "critical_count": 4,
+    "warning_count": 6,
+    "report_summary": [
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM04: Critical! Model Denial of Service: Lacks rate limiting, resource throttling, or context window constraints.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+      "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+      "LLM08: Warning. Excessive Agency: Lacks Human-in-the-Loop (HITL) approval gates or authorization restrictions.",
+      "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
+    ]
+  },
+  "aivyuh": {
+    "timestamp": "2026-06-16T06:52:13.475928",
+    "critical_count": 4,
+    "warning_count": 4,
+    "report_summary": [
+      "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+      "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+      "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+      "LLM04: Critical! Model Denial of Service: Lacks rate limiting, resource throttling, or context window constraints.",
+      "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+      "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+      "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+      "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
     ]
   }
 }

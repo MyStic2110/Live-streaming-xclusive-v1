@@ -4,6 +4,20 @@ import sys
 import re
 from pathlib import Path
 
+def get_parent_id(control_id):
+    parts = control_id.split('-')
+    if len(parts) < 2:
+        return control_id
+    prefix, num = parts[0], parts[1]
+    prefix_map = {
+        "GV": "GV",
+        "MP": "MAP",
+        "MS": "MEAS",
+        "MG": "MAN"
+    }
+    std_prefix = prefix_map.get(prefix, prefix)
+    return f"{std_prefix}-{num}"
+
 class ControlApplicabilityEngine:
     def __init__(self):
         # Mapped rules (34 subcategories)
@@ -259,41 +273,66 @@ class ControlApplicabilityEngine:
     def evaluate(self, capabilities):
         applicable = []
         non_applicable = []
-        unmapped = list(self.unmapped_rationales.keys())
+        unmapped_list = []
         
         control_map = {}
 
-        # 1. Process Mapped Rules
-        for control_id, config in self.rules.items():
-            required = config["required_when"]
-            matched_caps = [cap for cap in required if cap in capabilities]
+        # Load official GAI Profile Action IDs from JSON
+        base_dir = Path(__file__).parent
+        json_path = base_dir / "../backend/src/config/nist-rmf-core.json"
+        
+        all_actions = []
+        if json_path.exists():
+            try:
+                with open(json_path, "r", encoding="utf-8") as j_f:
+                    items = json.load(j_f)
+                    all_actions = [item["subcategory_id"] for item in items]
+            except Exception as json_err:
+                print(f"Error loading nist-rmf-core.json in scope analyzer: {json_err}", file=sys.stderr)
+        
+        # Fallback to the original subcategories if JSON not loaded
+        if not all_actions:
+            all_actions = list(self.rules.keys()) + list(self.unmapped_rationales.keys())
 
-            if matched_caps:
-                applicable.append(control_id)
-                control_map[control_id] = {
-                    "status": "applicable",
-                    "rationale": f"Applicable because the agent has the following required capabilities: {', '.join(matched_caps)}."
-                }
+        for action_id in all_actions:
+            parent_id = get_parent_id(action_id)
+            
+            # Check if parent_id is mapped under self.rules
+            if parent_id in self.rules:
+                config = self.rules[parent_id]
+                required = config["required_when"]
+                matched_caps = [cap for cap in required if cap in capabilities]
+                
+                if matched_caps:
+                    applicable.append(action_id)
+                    control_map[action_id] = {
+                        "status": "applicable",
+                        "rationale": f"Applicable because the agent has the following required capabilities: {', '.join(matched_caps)}."
+                    }
+                else:
+                    non_applicable.append(action_id)
+                    control_map[action_id] = {
+                        "status": "non-applicable",
+                        "rationale": f"Not applicable because the agent lacks any of the required capabilities: {', '.join(required)}."
+                    }
             else:
-                non_applicable.append(control_id)
-                control_map[control_id] = {
-                    "status": "non-applicable",
-                    "rationale": f"Not applicable because the agent lacks any of the required capabilities: {', '.join(required)}."
+                # Get rationale from self.unmapped_rationales or use a default
+                rationale = self.unmapped_rationales.get(
+                    parent_id,
+                    "Managed at the organizational level; the company legal team monitors and documents AI compliance requirements."
+                )
+                unmapped_list.append(action_id)
+                control_map[action_id] = {
+                    "status": "unmapped",
+                    "rationale": rationale
                 }
-
-        # 2. Process Unmapped Rules
-        for control_id, rationale in self.unmapped_rationales.items():
-            control_map[control_id] = {
-                "status": "unmapped",
-                "rationale": rationale
-            }
 
         return {
             "applicable_controls": applicable,
             "non_applicable_controls": non_applicable,
             "applicable_count": len(applicable),
             "non_applicable_count": len(non_applicable),
-            "unmapped_count": len(unmapped),
+            "unmapped_count": len(unmapped_list),
             "control_map": control_map
         }
 
@@ -325,77 +364,155 @@ class AgentAnalyzer(ast.NodeVisitor):
             "external_services": set()
         }
 
-    def visit_Assign(self, node):
-
-        for target in node.targets:
-
-            if isinstance(target, ast.Name):
-
-                if target.id == "SYSTEM_PROMPT":
-                    self.data["agent_name"] = "UNKNOWN_AGENT"
-
+    def visit_Import(self, node):
+        for name in node.names:
+            alias = name.name.lower()
+            self._check_import(alias)
         self.generic_visit(node)
 
+    def visit_ImportFrom(self, node):
+        if node.module:
+            alias = node.module.lower()
+            self._check_import(alias)
+        for name in node.names:
+            alias = name.name.lower()
+            self._check_import(alias)
+        self.generic_visit(node)
+
+    def _check_import(self, module_name):
+        if any(db in module_name for db in ["aiomysql", "mysql", "psycopg2", "sqlite3", "pymongo", "motor", "sqlalchemy", "peewee", "tortoise"]):
+            self.data["database"] = True
+            self.data["external_services"].add("DATABASE")
+        if "securelytix" in module_name:
+            self.data["pii"] = True
+        if any(v in module_name for v in ["deepgram", "elevenlabs", "voice"]):
+            self.data["voice"] = True
+        if any(net in module_name for net in ["requests", "httpx", "urllib", "aiohttp"]):
+            self.data["internet"] = True
+        if "stripe" in module_name or "paypal" in module_name:
+            self.data["payments"] = True
+        if "smtplib" in module_name or "sendgrid" in module_name:
+            self.data["email"] = True
+        if "pathlib" in module_name or "shutil" in module_name:
+            self.data["filesystem"] = True
+        if "mcp" in module_name:
+            self.data["mcp"] = True
+        if any(r in module_name for r in ["pinecone", "qdrant", "chromadb", "weaviate"]):
+            self.data["rag"] = True
+
     def visit_Call(self, node):
-
         try:
-
-            code = ast.unparse(node).lower()
-
-            # database
-
-            if "aiomysql" in code:
+            func_name = ""
+            if isinstance(node.func, ast.Name):
+                func_name = node.func.id
+            elif isinstance(node.func, ast.Attribute):
+                func_name = node.func.attr
+            
+            func_name_lower = func_name.lower()
+            
+            # Filesystem functions
+            if func_name_lower in ["open", "write_text", "read_text", "makedirs", "mkdir", "remove", "unlink"]:
+                self.data["filesystem"] = True
+                
+            # Securelytix / PII
+            if "securelytix" in func_name_lower:
+                self.data["pii"] = True
+                
+            # Payments
+            if any(kw in func_name_lower for kw in ["gpay", "paypal", "stripe", "checkout", "request_gpay_payment"]):
+                self.data["payments"] = True
+                
+            # Voice / Speech
+            if any(kw in func_name_lower for kw in ["stt", "tts", "deepgram", "silero"]):
+                self.data["voice"] = True
+                
+            # Database
+            if func_name_lower in ["execute", "cursor", "execute_query", "fetchall", "fetchone", "executemany"]:
                 self.data["database"] = True
                 self.data["external_services"].add("DATABASE")
+                
+                # Inspect string arguments to detect writes/deletes in raw SQL queries
+                for arg in node.args:
+                    if isinstance(arg, (ast.Constant, ast.Str)):
+                        val = arg.value if isinstance(arg, ast.Constant) else arg.s
+                        if isinstance(val, str):
+                            val_lower = val.lower()
+                            if any(kw in val_lower for kw in ["insert into", "update ", "upsert"]):
+                                self.data["write_db"] = True
+                            if any(kw in val_lower for kw in ["delete from", "drop table", "truncate"]):
+                                self.data["delete_db"] = True
 
-            # pii
-
+            # Delegation
+            if any(kw in func_name_lower for kw in ["delegate", "subagent", "run_subagent"]):
+                self.data["agent_delegation"] = True
+                
+            # Human in the loop
+            if any(kw in func_name_lower for kw in ["agentsession", "telegram"]):
+                self.data["human_loop"] = True
+                
+            code = ast.unparse(node).lower()
             if "securelytix" in code:
                 self.data["pii"] = True
-
-            # voice
-
-            if "deepgram.stt" in code:
+            if any(kw in code for kw in ["deepgram.stt", "deepgram.tts", "livekit.plugins"]):
                 self.data["voice"] = True
-
-            if "deepgram.tts" in code:
-                self.data["voice"] = True
-
-            # llm
-
-            if "openrouter" in code:
-                self.data["internet"] = True
-                self.data["external_services"].add("OPENROUTER")
-
-            if "deepgram" in code:
-                self.data["external_services"].add("DEEPGRAM")
-
-            # filesystem
-
             if "open(" in code:
                 self.data["filesystem"] = True
-
-            # human interaction
-
             if "agentsession" in code:
                 self.data["human_loop"] = True
-
-            # telegram
-
             if "telegram" in code:
                 self.data["human_loop"] = True
                 self.data["external_services"].add("TELEGRAM")
-
-            # searxng
-
             if "searx" in code:
                 self.data["internet"] = True
                 self.data["external_services"].add("SEARXNG")
-
+            if "openrouter" in code:
+                self.data["internet"] = True
+                self.data["external_services"].add("OPENROUTER")
+            if "deepgram" in code:
+                self.data["external_services"].add("DEEPGRAM")
         except:
             pass
-
         self.generic_visit(node)
+
+    def visit_Assign(self, node):
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                if target.id == "SYSTEM_PROMPT":
+                    self.data["agent_name"] = "UNKNOWN_AGENT"
+                target_lower = target.id.lower()
+                if "stripe" in target_lower or "paypal" in target_lower:
+                    self.data["payments"] = True
+                if "pii" in target_lower:
+                    self.data["pii"] = True
+        self.generic_visit(node)
+
+    def visit_FunctionDef(self, node):
+        self._check_decorators(node.decorator_list)
+        name_lower = node.name.lower()
+        if "admin" in name_lower or "superuser" in name_lower:
+            self.data["admin_access"] = True
+        if any(kw in name_lower for kw in ["delegate", "subagent"]):
+            self.data["agent_delegation"] = True
+        if any(kw in name_lower for kw in ["payment", "stripe", "paypal"]):
+            self.data["payments"] = True
+        self.generic_visit(node)
+
+    def visit_AsyncFunctionDef(self, node):
+        self.visit_FunctionDef(node)
+
+    def visit_ClassDef(self, node):
+        self._check_decorators(node.decorator_list)
+        self.generic_visit(node)
+
+    def _check_decorators(self, decorator_list):
+        for dec in decorator_list:
+            try:
+                dec_code = ast.unparse(dec).lower()
+                if "tool" in dec_code or "function_tool" in dec_code:
+                    self.data["tools"] = True
+            except:
+                pass
+
 
 
 class ScopeEngine:
@@ -509,44 +626,6 @@ def analyze_agent(file_path):
 
     analyzer.visit(tree)
 
-    # Post-process with precise word-boundary source code checks
-    source_lower = source.lower()
-    
-    is_database = has_any_word(["aiomysql", "mysql", "postgres", "postgresql"], source_lower) or (has_word("db", source_lower) and not "dicebear" in source_lower)
-    
-    analyzer.data["database"] = is_database
-    analyzer.data["write_db"] = is_database and any(x in source_lower for x in ["insert", "update", "upsert", "write"])
-    analyzer.data["delete_db"] = is_database and any(x in source_lower for x in ["delete", "drop", "truncate"])
-    
-    analyzer.data["pii"] = "securelytix" in source_lower or has_word("pii", source_lower)
-    analyzer.data["voice"] = any(x in source_lower for x in ["deepgram.stt", "deepgram.tts"]) or has_any_word(["voice", "speech"], source_lower)
-    analyzer.data["internet"] = any(x in source_lower for x in ["openrouter", "httpx", "requests", "urllib", "searx"])
-    
-    analyzer.data["tools"] = "@llm.function_tool" in source_lower or "function_tool" in source_lower
-    analyzer.data["mcp"] = has_word("mcp", source_lower)
-    analyzer.data["rag"] = has_word("rag", source_lower) or any(x in source_lower for x in ["vector_db", "pinecone", "qdrant", "chroma"])
-    analyzer.data["memory"] = has_any_word(["memory", "chat_history"], source_lower)
-    analyzer.data["agent_delegation"] = has_any_word(["delegate", "subagent", "router"], source_lower)
-    analyzer.data["admin_access"] = has_any_word(["admin", "superuser"], source_lower)
-    
-    # Avoid matches in string descriptions or logs for payments/emails unless they import or act on them
-    analyzer.data["payments"] = has_any_word(["stripe", "paypal", "checkout"], source_lower) or (has_word("payment", source_lower) and not "pine-labs" in source_lower)
-    analyzer.data["email"] = has_any_word(["smtp", "send_mail"], source_lower) or (has_word("mail", source_lower) and not "gmail" in source_lower)
-    
-    analyzer.data["filesystem"] = "open(" in source_lower or has_word("pathlib", source_lower)
-    analyzer.data["human_loop"] = "agentsession" in source_lower or "telegram" in source_lower
-
-    if "telegram" in source_lower:
-        analyzer.data["external_services"].add("TELEGRAM")
-    if "searx" in source_lower:
-        analyzer.data["external_services"].add("SEARXNG")
-    if "openrouter" in source_lower:
-        analyzer.data["external_services"].add("OPENROUTER")
-    if "deepgram" in source_lower:
-        analyzer.data["external_services"].add("DEEPGRAM")
-    if is_database:
-        analyzer.data["external_services"].add("DATABASE")
-
     features = analyzer.data
 
     engine = ScopeEngine()
@@ -612,6 +691,9 @@ def analyze_agent(file_path):
 
         "non_applicable_count":
             control_result["non_applicable_count"],
+        
+        "unmapped_count":
+            control_result["unmapped_count"],
         
         "control_map":
             control_result["control_map"]

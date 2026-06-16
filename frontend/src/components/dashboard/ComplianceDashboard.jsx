@@ -66,6 +66,15 @@ export default function ComplianceDashboard({ onBack }) {
   const [nistScanOutput, setNistScanOutput] = useState("");
   const [showNistTerminal, setShowNistTerminal] = useState(false);
 
+  // Agent Scope Analyzer states
+  const [loadingScopeAnalyze, setLoadingScopeAnalyze] = useState(false);
+  const [showOnlyApplicable, setShowOnlyApplicable] = useState(true);
+  const [secopsFramework, setSecopsFramework] = useState("nist");
+
+  useEffect(() => {
+    setExpandedControlId(null);
+  }, [secopsFramework]);
+
   // Load metrics & security status
   useEffect(() => {
     fetchMetrics();
@@ -155,6 +164,22 @@ export default function ComplianceDashboard({ onBack }) {
     }
   };
 
+  const runAgentScopeAnalyzer = async (agentName) => {
+    setLoadingScopeAnalyze(true);
+    try {
+      const res = await axios.post(`${API}/security/nist-scan?agent=${agentName.toLowerCase()}`);
+      if (res.data) {
+        await fetchSecurityStatus();
+        await fetchMetrics();
+        await fetchLogs();
+      }
+    } catch (err) {
+      console.error("Error running agent scope analyzer:", err.message);
+    } finally {
+      setLoadingScopeAnalyze(false);
+    }
+  };
+
   const handleExportCSV = async () => {
     try {
       const res = await axios.get(`${API}/api/compliance/logs`, {
@@ -211,7 +236,11 @@ export default function ComplianceDashboard({ onBack }) {
   };
 
   if (selectedSecopsAgent) {
-    const activeControl = selectedSecopsAgent.data.nist_audit?.controls?.find(c => c.id === expandedControlId);
+    const currentSecopsAgentData = securityStatus ? securityStatus[selectedSecopsAgent.name.toLowerCase()] : null;
+    const currentSecopsAgent = { name: selectedSecopsAgent.name, data: currentSecopsAgentData || selectedSecopsAgent.data };
+    const activeControl = secopsFramework === "nist"
+      ? currentSecopsAgent.data.nist_audit?.controls?.find(c => c.id === expandedControlId)
+      : owaspControls.find(c => c.id === expandedControlId);
     
     return (
       <div className="secops-page-container">
@@ -232,7 +261,7 @@ export default function ComplianceDashboard({ onBack }) {
           </button>
           <span>/</span>
           <span style={{ color: "#3b82f6", fontWeight: "700" }}>
-            {selectedSecopsAgent.name.replace("_", " ").toUpperCase()}
+            {currentSecopsAgent.name.replace("_", " ").toUpperCase()}
           </span>
         </div>
 
@@ -269,7 +298,7 @@ export default function ComplianceDashboard({ onBack }) {
         <div className="hud-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px", background: "rgba(14, 22, 40, 0.6)", border: "1px solid rgba(59, 130, 246, 0.15)" }}>
           <div>
             <h2 className="secops-title" style={{ fontSize: "1.5rem" }}>
-              {selectedSecopsAgent.name.replace("_", " ")} SecOps Console
+              {currentSecopsAgent.name.replace("_", " ")} SecOps Console
             </h2>
             <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginTop: "4px" }}>
               NIST AI Risk Management Framework 1.0 & AST Evidence Inspector
@@ -278,7 +307,7 @@ export default function ComplianceDashboard({ onBack }) {
           <div style={{ display: "flex", gap: "2rem", alignItems: "center" }}>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: "800", textTransform: "uppercase" }}>NIST COMPLIANCE SCORE</div>
-              <div style={{ fontSize: "1.6rem", fontWeight: "900", color: "#38bdf8" }}>{selectedSecopsAgent.data.nist_audit?.score || 100}%</div>
+              <div style={{ fontSize: "1.6rem", fontWeight: "900", color: "#38bdf8" }}>{currentSecopsAgent.data.nist_audit?.score || 100}%</div>
             </div>
             <div style={{ textAlign: "right", borderLeft: "1px solid rgba(255,255,255,0.08)", paddingLeft: "2rem" }}>
               <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: "800", textTransform: "uppercase" }}>RISK TIER</div>
@@ -287,15 +316,185 @@ export default function ComplianceDashboard({ onBack }) {
                 fontWeight: "900", 
                 padding: "3px 8px", 
                 borderRadius: "12px", 
-                background: selectedSecopsAgent.data.nist_audit?.risk === "CRITICAL" || selectedSecopsAgent.data.nist_audit?.risk === "HIGH" ? "rgba(239,68,68,0.08)" : "rgba(16,185,129,0.08)",
-                color: selectedSecopsAgent.data.nist_audit?.risk === "CRITICAL" || selectedSecopsAgent.data.nist_audit?.risk === "HIGH" ? "#ef4444" : "#10b981",
+                background: currentSecopsAgent.data.nist_audit?.risk === "CRITICAL" || currentSecopsAgent.data.nist_audit?.risk === "HIGH" ? "rgba(239,68,68,0.08)" : "rgba(16,185,129,0.08)",
+                color: currentSecopsAgent.data.nist_audit?.risk === "CRITICAL" || currentSecopsAgent.data.nist_audit?.risk === "HIGH" ? "#ef4444" : "#10b981",
                 display: "inline-block",
                 marginTop: "4px"
               }}>
-                {selectedSecopsAgent.data.nist_audit?.risk || "LOW"}
+                {currentSecopsAgent.data.nist_audit?.risk || "LOW"}
               </span>
             </div>
           </div>
+        </div>
+
+        {/* AST Scope Analyzer Result Card */}
+        <div className="hud-card" style={{ 
+          padding: "24px", 
+          background: "rgba(10, 15, 30, 0.8)", 
+          border: "1px solid rgba(59, 130, 246, 0.25)",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.5), inset 0 0 15px rgba(59, 130, 246, 0.05)"
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "12px" }}>
+            <div>
+              <h3 className="orbitron-title" style={{ fontSize: "1.05rem", fontWeight: "800", color: "#38bdf8", display: "flex", alignItems: "center", gap: "8px" }}>
+                <Sliders size={16} color="#38bdf8" /> AST Scope Analyzer Results
+              </h3>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.78rem", marginTop: "2px" }}>
+                Static AST codebase analyzer identifying agent business function, autonomy level, capability footprint, and data classes.
+              </p>
+            </div>
+            
+            <button
+              onClick={() => runAgentScopeAnalyzer(currentSecopsAgent.name)}
+              disabled={loadingScopeAnalyze}
+              className="action-btn-primary"
+              style={{
+                padding: "8px 16px",
+                borderRadius: "10px",
+                fontWeight: "700",
+                fontSize: "0.8rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                cursor: "pointer",
+                background: "rgba(59, 130, 246, 0.15)",
+                color: "#38bdf8",
+                border: "1px solid rgba(59, 130, 246, 0.25)"
+              }}
+              onMouseEnter={e => { if (!loadingScopeAnalyze) { e.currentTarget.style.background = "rgba(59, 130, 246, 0.25)"; } }}
+              onMouseLeave={e => { if (!loadingScopeAnalyze) { e.currentTarget.style.background = "rgba(59, 130, 246, 0.15)"; } }}
+            >
+              {loadingScopeAnalyze ? (
+                <>
+                  <RefreshCw size={12} className="spin" /> Analyzing Scope...
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={12} /> Run Scope Analyzer
+                </>
+              )}
+            </button>
+          </div>
+
+          {currentSecopsAgent.data?.scope_analysis ? (
+            <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px" }}>
+              {/* Box 1: Business Function & Autonomy */}
+              <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", padding: "12px 16px", borderRadius: "12px" }}>
+                <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: "800", textTransform: "uppercase" }}>Function & Autonomy</div>
+                <div style={{ fontSize: "0.88rem", fontWeight: "700", color: "#f8fafc", marginTop: "6px" }}>
+                  {currentSecopsAgent.data.scope_analysis.business_function}
+                </div>
+                <div style={{ fontSize: "0.78rem", color: "#94a3b8", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                  <span>Autonomy:</span>
+                  <span style={{ fontWeight: "700", color: "#f59e0b" }}>{currentSecopsAgent.data.scope_analysis.autonomy}</span>
+                </div>
+              </div>
+
+              {/* Box 2: Detected Capabilities */}
+              <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", padding: "12px 16px", borderRadius: "12px" }}>
+                <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: "800", textTransform: "uppercase", marginBottom: "6px" }}>Capabilities Footprint</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  {currentSecopsAgent.data.scope_analysis.capabilities && currentSecopsAgent.data.scope_analysis.capabilities.length > 0 ? (
+                    currentSecopsAgent.data.scope_analysis.capabilities.map((cap, idx) => (
+                      <span key={idx} style={{
+                        fontSize: "0.65rem",
+                        fontWeight: "800",
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        background: "rgba(59, 130, 246, 0.15)",
+                        color: "#38bdf8",
+                        border: "1px solid rgba(59, 130, 246, 0.3)"
+                      }}>
+                        {cap}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ color: "var(--text-muted)", fontSize: "0.78rem", fontStyle: "italic" }}>None detected</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Box 3: Data Classes & Reach */}
+              <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", padding: "12px 16px", borderRadius: "12px" }}>
+                <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: "800", textTransform: "uppercase" }}>Data Classes & Reach</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "6px" }}>
+                  {currentSecopsAgent.data.scope_analysis.data_classes && currentSecopsAgent.data.scope_analysis.data_classes.length > 0 ? (
+                    currentSecopsAgent.data.scope_analysis.data_classes.map((cls, idx) => (
+                      <span key={idx} style={{
+                        fontSize: "0.62rem",
+                        fontWeight: "800",
+                        padding: "2px 5px",
+                        borderRadius: "4px",
+                        background: "rgba(16, 185, 129, 0.08)",
+                        color: "#10b981",
+                        border: "1px solid rgba(16, 185, 129, 0.15)"
+                      }}>
+                        {cls}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ color: "var(--text-muted)", fontSize: "0.75rem", fontStyle: "italic" }}>No sensitive data classes</span>
+                  )}
+                </div>
+                <div style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "6px" }}>
+                  Reach: {currentSecopsAgent.data.scope_analysis.external_reach && currentSecopsAgent.data.scope_analysis.external_reach.length > 0 ? (
+                    <span style={{ color: "#38bdf8", fontWeight: "700" }}>
+                      {currentSecopsAgent.data.scope_analysis.external_reach.join(", ")}
+                    </span>
+                  ) : (
+                    <span style={{ fontStyle: "italic" }}>Sandbox Isolated</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Box 4: NIST Control Scope Metrics */}
+              <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.04)", padding: "12px 16px", borderRadius: "12px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                  <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>Applicable Controls:</span>
+                  <span style={{ fontSize: "0.82rem", fontWeight: "900", color: "#10b981" }}>
+                    {currentSecopsAgent.data.scope_analysis.applicable_count}
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>Bypassed Controls:</span>
+                  <span style={{ fontSize: "0.82rem", fontWeight: "900", color: "#64748b" }}>
+                    {currentSecopsAgent.data.scope_analysis.non_applicable_count + (currentSecopsAgent.data.scope_analysis.unmapped_count || 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Framework Controls Classification Notice */}
+            <div style={{ 
+              marginTop: "20px", 
+              padding: "14px 18px", 
+              background: "rgba(59, 130, 246, 0.04)", 
+              border: "1px solid rgba(59, 130, 246, 0.15)", 
+              borderRadius: "12px",
+              display: "flex",
+              gap: "12px",
+              alignItems: "flex-start"
+            }}>
+              <Info size={16} color="#38bdf8" style={{ marginTop: "2px", flexShrink: 0 }} />
+              <div style={{ fontSize: "0.78rem", lineHeight: "1.5", color: "#94a3b8" }}>
+                <strong style={{ color: "#38bdf8", display: "block", marginBottom: "6px", fontSize: "0.82rem" }}>NIST.AI.600-1 Controls Classification:</strong>
+                <ul style={{ margin: "0 0 0 16px", padding: 0, listStyleType: "disc", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <li>
+                    <strong style={{ color: "#f1f5f9" }}>Programmatic Controls (96 suggested actions):</strong> These map to the 34 parent subcategories (like <code>GV-1.4</code>, <code>MAP-3.2</code>, etc.) defined in <code>self.rules</code>. They are evaluated against the agent's AST-detected capabilities.
+                  </li>
+                  <li>
+                    <strong style={{ color: "#f1f5f9" }}>Organizational Controls (115 suggested actions):</strong> These map to the 41 parent subcategories defined in <code>self.unmapped_rationales</code> (like board-level sign-offs, legal compliance policies, HR/DEI policies). Because they are corporate-level policies and do not depend on any codebase capability, they are marked as <span style={{ color: "#10b981", fontWeight: "700" }}>Unmapped (Bypassed)</span> by default for all agents.
+                  </li>
+                </ul>
+              </div>
+            </div>
+            </>
+          ) : (
+            <div style={{ padding: "16px", textAlign: "center", color: "var(--text-muted)", fontStyle: "italic", fontSize: "0.82rem", border: "1px dashed rgba(255,255,255,0.08)", borderRadius: "12px" }}>
+              No static scope analysis results found. Click "Run Scope Analyzer" to initialize capabilities scanning.
+            </div>
+          )}
         </div>
 
         {/* Two Column Layout Grid */}
@@ -306,6 +505,51 @@ export default function ComplianceDashboard({ onBack }) {
             <div className="secops-panel-header">
               <h4 style={{ fontSize: "0.95rem", fontWeight: "800", textTransform: "uppercase", color: "#f8fafc" }}>Security Controls</h4>
               <p style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginTop: "2px" }}>Select a control card to inspect telemetry evidence</p>
+            </div>
+
+            {/* Framework Select Toggle */}
+            <div style={{
+              display: "flex",
+              background: "rgba(255, 255, 255, 0.03)",
+              padding: "2px",
+              borderRadius: "8px",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              marginBottom: "12px"
+            }}>
+              <button
+                onClick={() => setSecopsFramework("nist")}
+                style={{
+                  flex: 1,
+                  padding: "6px",
+                  fontSize: "0.75rem",
+                  fontWeight: "700",
+                  background: secopsFramework === "nist" ? "rgba(59, 130, 246, 0.15)" : "transparent",
+                  color: secopsFramework === "nist" ? "#38bdf8" : "var(--text-muted)",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                NIST AI RMF 1.0
+              </button>
+              <button
+                onClick={() => setSecopsFramework("owasp")}
+                style={{
+                  flex: 1,
+                  padding: "6px",
+                  fontSize: "0.75rem",
+                  fontWeight: "700",
+                  background: secopsFramework === "owasp" ? "rgba(59, 130, 246, 0.15)" : "transparent",
+                  color: secopsFramework === "owasp" ? "#38bdf8" : "var(--text-muted)",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                OWASP Top 10 LLM
+              </button>
             </div>
 
             {/* Filter toolbar */}
@@ -327,30 +571,104 @@ export default function ComplianceDashboard({ onBack }) {
                 className="secops-select"
               >
                 <option value="ALL">All Controls</option>
-                <option value="PASS">Pass ({selectedSecopsAgent.data.nist_audit?.controls?.filter(c => c.status === "PASS").length || 0})</option>
-                <option value="PARTIAL">Partial ({selectedSecopsAgent.data.nist_audit?.controls?.filter(c => c.status === "PARTIAL").length || 0})</option>
-                <option value="FAIL">Fail ({selectedSecopsAgent.data.nist_audit?.controls?.filter(c => c.status === "FAIL").length || 0})</option>
-                <option value="UNMAPPED">Unmapped ({selectedSecopsAgent.data.nist_audit?.controls?.filter(c => c.status === "UNMAPPED").length || 0})</option>
-                <option value="NON-APPLICABLE">Non-Applicable ({selectedSecopsAgent.data.nist_audit?.controls?.filter(c => c.status === "NON-APPLICABLE").length || 0})</option>
+                {secopsFramework === "nist" ? (
+                  <>
+                    <option value="PASS">Pass ({currentSecopsAgent.data.nist_audit?.controls?.filter(c => c.status === "PASS").length || 0})</option>
+                    <option value="PARTIAL">Partial ({currentSecopsAgent.data.nist_audit?.controls?.filter(c => c.status === "PARTIAL").length || 0})</option>
+                    <option value="FAIL">Fail ({currentSecopsAgent.data.nist_audit?.controls?.filter(c => c.status === "FAIL").length || 0})</option>
+                    <option value="UNMAPPED">Unmapped / Bypassed ({currentSecopsAgent.data.nist_audit?.controls?.filter(c => c.status === "UNMAPPED").length || 0})</option>
+                    <option value="NON-APPLICABLE">Non-Applicable / Bypassed ({currentSecopsAgent.data.nist_audit?.controls?.filter(c => c.status === "NON-APPLICABLE").length || 0})</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="PASS">Pass ({owaspControls.filter(c => !currentSecopsAgent.data.report_summary?.some(line => line.startsWith(c.id))).length})</option>
+                    <option value="FAIL">Fail ({owaspControls.filter(c => currentSecopsAgent.data.report_summary?.some(line => line.startsWith(c.id))).length})</option>
+                  </>
+                )}
               </select>
+
+              {secopsFramework === "nist" && (
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.78rem", color: "#94a3b8", cursor: "pointer", marginTop: "4px", paddingLeft: "4px" }}>
+                  <input
+                    type="checkbox"
+                    checked={showOnlyApplicable}
+                    onChange={(e) => setShowOnlyApplicable(e.target.checked)}
+                    style={{ cursor: "pointer" }}
+                  />
+                  Show Applicable Controls Only
+                </label>
+              )}
             </div>
 
             {/* Controls List Scroll Area */}
             <div className="secops-control-list">
-              {selectedSecopsAgent.data.nist_audit?.controls ? (
-                selectedSecopsAgent.data.nist_audit.controls
+              {secopsFramework === "nist" ? (
+                currentSecopsAgent.data.nist_audit?.controls ? (
+                  currentSecopsAgent.data.nist_audit.controls
+                    .filter(c => {
+                      const matchesSearch = c.id.toLowerCase().includes(nistSearchTerm.toLowerCase()) || 
+                                            getNistControlDescription(c.id).toLowerCase().includes(nistSearchTerm.toLowerCase());
+                      const matchesStatus = nistFilterStatus === "ALL" ? true : c.status === nistFilterStatus;
+                      const matchesApplicability = showOnlyApplicable ? (c.status !== "NON-APPLICABLE" && c.status !== "UNMAPPED") : true;
+                      return matchesSearch && matchesStatus && matchesApplicability;
+                    })
+                    .map(c => {
+                      const isSelected = expandedControlId === c.id;
+                      const statusText = c.status === "UNMAPPED" || c.status === "NON-APPLICABLE" ? "BYPASSED" : c.status;
+                      const statusClass = c.status === "PASS" ? "badge-pass" : 
+                                          c.status === "PARTIAL" ? "badge-partial" : 
+                                          c.status === "UNMAPPED" ? "badge-pass" :
+                                          c.status === "NON-APPLICABLE" ? "badge-pass" : "badge-fail";
+                      return (
+                        <div 
+                          key={c.id}
+                          onClick={() => setExpandedControlId(c.id)}
+                          className={`secops-control-card ${isSelected ? "selected" : ""}`}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: "0.85rem", fontWeight: "700", fontFamily: "monospace", color: "#f8fafc" }}>{c.id}</span>
+                            <span className={statusClass} style={{
+                              fontSize: "0.65rem",
+                              fontWeight: "800",
+                              background: c.status === "UNMAPPED" || c.status === "NON-APPLICABLE" ? "rgba(16, 185, 129, 0.08)" : undefined,
+                              color: c.status === "UNMAPPED" || c.status === "NON-APPLICABLE" ? "#10b981" : undefined,
+                              borderColor: c.status === "UNMAPPED" || c.status === "NON-APPLICABLE" ? "rgba(16, 185, 129, 0.2)" : undefined
+                            }}>{statusText}</span>
+                          </div>
+                          <div style={{ fontSize: "0.78rem", color: isSelected ? "#e2e8f0" : "var(--text-muted)", lineHeight: "1.4" }}>
+                            {getNistControlDescription(c.id)}
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.72rem", color: "var(--text-muted)", borderTop: "1px solid rgba(255,255,255,0.03)", paddingTop: "6px", marginTop: "4px" }}>
+                            <span>Confidence: {c.confidence}%</span>
+                            {c.evidence?.length > 0 && <span>{c.evidence.length} signature{c.evidence.length > 1 ? "s" : ""}</span>}
+                          </div>
+                        </div>
+                      );
+                    })
+                ) : (
+                  <div style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontStyle: "italic" }}>
+                    No controls audit reports loaded.
+                  </div>
+                )
+              ) : (
+                // Render OWASP Top 10 list
+                owaspControls
                   .filter(c => {
                     const matchesSearch = c.id.toLowerCase().includes(nistSearchTerm.toLowerCase()) || 
-                                          getNistControlDescription(c.id).toLowerCase().includes(nistSearchTerm.toLowerCase());
-                    const matchesStatus = nistFilterStatus === "ALL" ? true : c.status === nistFilterStatus;
+                                          c.name.toLowerCase().includes(nistSearchTerm.toLowerCase()) ||
+                                          c.desc.toLowerCase().includes(nistSearchTerm.toLowerCase());
+                    const failedLine = currentSecopsAgent.data.report_summary?.find(line => line.startsWith(c.id));
+                    const isPass = !failedLine;
+                    const status = isPass ? "PASS" : "FAIL";
+                    const matchesStatus = nistFilterStatus === "ALL" ? true : status === nistFilterStatus;
                     return matchesSearch && matchesStatus;
                   })
                   .map(c => {
                     const isSelected = expandedControlId === c.id;
-                    const statusClass = c.status === "PASS" ? "badge-pass" : 
-                                        c.status === "PARTIAL" ? "badge-partial" : 
-                                        c.status === "UNMAPPED" ? "badge-unmapped" :
-                                        c.status === "NON-APPLICABLE" ? "badge-non-applicable" : "badge-fail";
+                    const failedLine = currentSecopsAgent.data.report_summary?.find(line => line.startsWith(c.id));
+                    const isPass = !failedLine;
+                    const statusText = isPass ? "PASS" : "FAIL";
+                    const statusClass = isPass ? "badge-pass" : "badge-fail";
                     return (
                       <div 
                         key={c.id}
@@ -359,22 +677,20 @@ export default function ComplianceDashboard({ onBack }) {
                       >
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <span style={{ fontSize: "0.85rem", fontWeight: "700", fontFamily: "monospace", color: "#f8fafc" }}>{c.id}</span>
-                          <span className={statusClass}>{c.status}</span>
+                          <span className={statusClass} style={{
+                            fontSize: "0.65rem",
+                            fontWeight: "800"
+                          }}>{statusText}</span>
                         </div>
                         <div style={{ fontSize: "0.78rem", color: isSelected ? "#e2e8f0" : "var(--text-muted)", lineHeight: "1.4" }}>
-                          {getNistControlDescription(c.id)}
+                          {c.name}
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.72rem", color: "var(--text-muted)", borderTop: "1px solid rgba(255,255,255,0.03)", paddingTop: "6px", marginTop: "4px" }}>
-                          <span>Confidence: {c.confidence}%</span>
-                          {c.evidence?.length > 0 && <span>{c.evidence.length} signature{c.evidence.length > 1 ? "s" : ""}</span>}
+                          <span>Severity: <span style={{ color: c.type === "critical" ? "#ef4444" : "#f59e0b", fontWeight: "700" }}>{c.type.toUpperCase()}</span></span>
                         </div>
                       </div>
                     );
                   })
-              ) : (
-                <div style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontStyle: "italic" }}>
-                  No controls audit reports loaded.
-                </div>
               )}
             </div>
           </div>
@@ -396,7 +712,7 @@ export default function ComplianceDashboard({ onBack }) {
                   </div>
                   <h4 style={{ color: "#e2e8f0", fontSize: "0.95rem", fontWeight: "700", marginBottom: "6px" }}>No Control Selected</h4>
                   <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", maxWidth: "280px" }}>
-                    Select a NIST security control card from the left panel to inspect its codebase signature evidence and matched AST syntax locations.
+                    Select a security control card from the left panel to inspect its codebase signature evidence and matched AST syntax locations.
                   </p>
                 </div>
               ) : (
@@ -407,28 +723,44 @@ export default function ComplianceDashboard({ onBack }) {
                       <div>
                         <strong style={{ fontSize: "1.1rem", color: "#f8fafc", fontFamily: "monospace" }}>{activeControl.id}</strong>
                         <div style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: "4px" }}>
-                          Category: <span style={{ color: "#38bdf8", fontWeight: "700" }}>{getNistCategoryName(activeControl.id)}</span>
+                          Category: <span style={{ color: "#38bdf8", fontWeight: "700" }}>
+                            {secopsFramework === "nist" ? getNistCategoryName(activeControl.id) : "OWASP Top 10 for LLM Applications"}
+                          </span>
                         </div>
                       </div>
                       <div style={{ textAlign: "right" }}>
                         <span className={
-                          activeControl.status === "PASS" ? "badge-pass" : 
-                          activeControl.status === "PARTIAL" ? "badge-partial" : 
-                          activeControl.status === "UNMAPPED" ? "badge-unmapped" :
-                          activeControl.status === "NON-APPLICABLE" ? "badge-non-applicable" : "badge-fail"
-                        } style={{ fontSize: "0.75rem", padding: "4px 10px" }}>
-                          {activeControl.status}
+                          secopsFramework === "nist"
+                            ? (activeControl.status === "PASS" ? "badge-pass" : 
+                               activeControl.status === "PARTIAL" ? "badge-partial" : 
+                               activeControl.status === "UNMAPPED" ? "badge-pass" :
+                               activeControl.status === "NON-APPLICABLE" ? "badge-pass" : "badge-fail")
+                            : (!currentSecopsAgent.data.report_summary?.some(line => line.startsWith(activeControl.id)) ? "badge-pass" : "badge-fail")
+                        } style={{ 
+                          fontSize: "0.75rem", 
+                          padding: "4px 10px",
+                          background: secopsFramework === "nist" && (activeControl.status === "UNMAPPED" || activeControl.status === "NON-APPLICABLE") ? "rgba(16, 185, 129, 0.08)" : undefined,
+                          color: secopsFramework === "nist" && (activeControl.status === "UNMAPPED" || activeControl.status === "NON-APPLICABLE") ? "#10b981" : undefined,
+                          borderColor: secopsFramework === "nist" && (activeControl.status === "UNMAPPED" || activeControl.status === "NON-APPLICABLE") ? "rgba(16, 185, 129, 0.2)" : undefined
+                        }}>
+                          {secopsFramework === "nist"
+                            ? (activeControl.status === "UNMAPPED" || activeControl.status === "NON-APPLICABLE" ? "BYPASSED" : activeControl.status)
+                            : (!currentSecopsAgent.data.report_summary?.some(line => line.startsWith(activeControl.id)) ? "PASS" : "FAIL")}
                         </span>
                         <div style={{ fontSize: "0.72rem", color: "#64748b", marginTop: "6px", fontFamily: "monospace" }}>
-                          Score: {activeControl.status === "PASS" ? "5/5" : activeControl.status === "PARTIAL" ? "3/5" : (activeControl.status === "UNMAPPED" || activeControl.status === "NON-APPLICABLE") ? "N/A" : "0/5"}
+                          {secopsFramework === "nist" ? (
+                            `Score: ${activeControl.status === "PASS" ? "5/5" : activeControl.status === "PARTIAL" ? "3/5" : (activeControl.status === "UNMAPPED" || activeControl.status === "NON-APPLICABLE") ? "N/A" : "0/5"}`
+                          ) : (
+                            `Severity: ${activeControl.type.toUpperCase()}`
+                          )}
                         </div>
                       </div>
                     </div>
                     
                     <div style={{ fontSize: "0.85rem", color: "#e2e8f0", borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: "10px", marginTop: "10px", lineHeight: "1.5" }}>
-                      <strong>Guideline:</strong> {getNistControlDescription(activeControl.id)}
+                      <strong>Guideline/Description:</strong> {secopsFramework === "nist" ? getNistControlDescription(activeControl.id) : activeControl.desc}
                     </div>
-                    {activeControl.rationale && (
+                    {secopsFramework === "nist" && activeControl.rationale && (
                       <div style={{ fontSize: "0.8rem", color: "#94a3b8", marginTop: "8px", background: "rgba(255,255,255,0.01)", padding: "8px 12px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.03)" }}>
                         <strong>Scope Rationale:</strong> {activeControl.rationale}
                       </div>
@@ -437,49 +769,101 @@ export default function ComplianceDashboard({ onBack }) {
 
                   {/* Evidence blocks */}
                   <div className="secops-details-panel">
-                    {activeControl.status === "FAIL" ? (
-                      <div style={{ textAlign: "center", padding: "20px 0" }}>
-                        <div style={{ color: "#ef4444", fontWeight: "700", marginBottom: "6px" }}>AST Telemetry Signature Mismatch</div>
-                        <div style={{ fontStyle: "italic", color: "#64748b", fontSize: "0.85rem" }}>
-                          Attestation failed: No evidence signatures or keywords matching this control criteria were discovered in the agent code files.
+                    {secopsFramework === "nist" ? (
+                      activeControl.status === "FAIL" ? (
+                        <div style={{ textAlign: "center", padding: "20px 0" }}>
+                          <div style={{ color: "#ef4444", fontWeight: "700", marginBottom: "6px" }}>AST Telemetry Signature Mismatch</div>
+                          <div style={{ fontStyle: "italic", color: "#64748b", fontSize: "0.85rem" }}>
+                            Attestation failed: No evidence signatures or keywords matching this control criteria were discovered in the agent code files.
+                          </div>
                         </div>
-                      </div>
-                    ) : activeControl.status === "UNMAPPED" ? (
-                      <div style={{ textAlign: "center", padding: "20px 0" }}>
-                        <div style={{ color: "#94a3b8", fontWeight: "700", marginBottom: "6px" }}>Organizational Control (Unmapped)</div>
-                        <div style={{ fontStyle: "italic", color: "#64748b", fontSize: "0.85rem" }}>
-                          {activeControl.rationale || "This control is monitored and managed at the organizational level rather than programmatically within individual agent files."}
+                      ) : activeControl.status === "UNMAPPED" ? (
+                        <div style={{ textAlign: "center", padding: "24px 0", background: "rgba(16, 185, 129, 0.03)", border: "1px dashed rgba(16, 185, 129, 0.2)", borderRadius: "12px" }}>
+                          <div style={{ color: "#10b981", fontWeight: "700", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                            <CheckCircle size={16} /> Organizational Control (Bypassed)
+                          </div>
+                          <div style={{ color: "#94a3b8", fontSize: "0.82rem", maxWidth: "400px", margin: "0 auto", lineHeight: "1.5" }}>
+                            {activeControl.rationale || "This control is monitored and managed at the organizational level rather than programmatically within individual agent files. No programmatic codebase evidence is required."}
+                          </div>
                         </div>
-                      </div>
-                    ) : activeControl.status === "NON-APPLICABLE" ? (
-                      <div style={{ textAlign: "center", padding: "20px 0" }}>
-                        <div style={{ color: "#64748b", fontWeight: "700", marginBottom: "6px" }}>Not Applicable to Agent Capabilities</div>
-                        <div style={{ fontStyle: "italic", color: "#64748b", fontSize: "0.85rem" }}>
-                          {activeControl.rationale || "This control does not apply based on the defined capabilities and features of this agent."}
+                      ) : activeControl.status === "NON-APPLICABLE" ? (
+                        <div style={{ textAlign: "center", padding: "24px 0", background: "rgba(16, 185, 129, 0.03)", border: "1px dashed rgba(16, 185, 129, 0.2)", borderRadius: "12px" }}>
+                          <div style={{ color: "#10b981", fontWeight: "700", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                            <CheckCircle size={16} /> Not Applicable to Agent Capabilities (Bypassed)
+                          </div>
+                          <div style={{ color: "#94a3b8", fontSize: "0.82rem", maxWidth: "400px", margin: "0 auto", lineHeight: "1.5" }}>
+                            {activeControl.rationale || "This control does not apply based on the defined capabilities and features of this agent. No codebase evidence checking is required."}
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <div style={{ marginBottom: "10px", fontWeight: "800", color: activeControl.status === "PARTIAL" ? "#f59e0b" : "#10b981", fontSize: "0.85rem" }}>
-                          Verified AST Evidence Code Findings ({activeControl.evidence?.length || 0}):
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                          {activeControl.evidence?.map((ev, idx) => (
-                            <div 
-                              key={idx}
-                              className={activeControl.status === "PARTIAL" ? "secops-evidence-item-partial" : "secops-evidence-item"}
-                            >
-                              <div style={{ display: "flex", justifyContent: "space-between", color: "#38bdf8", marginBottom: "6px", fontSize: "0.75rem", fontFamily: "monospace" }}>
-                                <span style={{ color: "#38bdf8" }}>File Line {ev.line}</span>
-                                <span style={{ color: "#e2e8f0" }}>Keyword Match: <strong style={{ color: "#f59e0b" }}>"{ev.match}"</strong></span>
+                      ) : (
+                        <div>
+                          <div style={{ marginBottom: "10px", fontWeight: "800", color: activeControl.status === "PARTIAL" ? "#f59e0b" : "#10b981", fontSize: "0.85rem" }}>
+                            Verified AST Evidence Code Findings ({activeControl.evidence?.length || 0}):
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            {activeControl.evidence?.map((ev, idx) => (
+                              <div 
+                                key={idx}
+                                className={activeControl.status === "PARTIAL" ? "secops-evidence-item-partial" : "secops-evidence-item"}
+                              >
+                                <div style={{ display: "flex", justifyContent: "space-between", color: "#38bdf8", marginBottom: "6px", fontSize: "0.75rem", fontFamily: "monospace" }}>
+                                  <span style={{ color: "#38bdf8" }}>File Line {ev.line}</span>
+                                  <span style={{ color: "#e2e8f0" }}>Keyword Match: <strong style={{ color: "#f59e0b" }}>"{ev.match}"</strong></span>
+                                </div>
+                                <pre className="secops-code-pre">
+                                  {ev.code}
+                                </pre>
                               </div>
-                              <pre className="secops-code-pre">
-                                {ev.code}
-                              </pre>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )
+                    ) : (
+                      // OWASP Top 10 Evidence Panel
+                      (() => {
+                        const failedLine = currentSecopsAgent.data.report_summary?.find(line => line.startsWith(activeControl.id));
+                        if (failedLine) {
+                          return (
+                            <div style={{ padding: "10px 0" }}>
+                              <div style={{ color: "#ef4444", fontWeight: "700", marginBottom: "10px", fontSize: "0.85rem" }}>
+                                AST Security Control Mismatch / Vulnerability Found:
+                              </div>
+                              <div style={{
+                                fontSize: "0.82rem",
+                                color: "#f8fafc",
+                                background: "rgba(239, 68, 68, 0.05)",
+                                border: "1px solid rgba(239, 68, 68, 0.15)",
+                                padding: "14px",
+                                borderRadius: "10px",
+                                fontFamily: "monospace",
+                                lineHeight: "1.5"
+                              }}>
+                                {failedLine}
+                              </div>
+                              <div style={{ color: "#94a3b8", fontSize: "0.78rem", marginTop: "12px", lineHeight: "1.5" }}>
+                                💡 To pass this check, implement the required security guardrails or method keywords in the agent's Python codebase. The scanner checks for AST definitions like:
+                                <ul style={{ listStyleType: "disc", margin: "6px 0 0 16px", padding: 0 }}>
+                                  <li>For Prompt Injection (LLM01): <code>sanitize_prompt</code>, <code>prompt_guard</code>, <code>NeMoGuardrails</code></li>
+                                  <li>For Insecure Output (LLM02): <code>sanitize_output</code>, <code>escape_html</code>, <code>DOMPurify</code></li>
+                                  <li>For Model DoS (LLM04): <code>rate_limit</code>, <code>max_tokens</code>, <code>CostGuard</code></li>
+                                  <li>For sensitive PII (LLM06): <code>tokenize_pii</code>, <code>redact</code>, <code>Securelytix</code></li>
+                                </ul>
+                              </div>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div style={{ textAlign: "center", padding: "24px 0", background: "rgba(16, 185, 129, 0.03)", border: "1px dashed rgba(16, 185, 129, 0.2)", borderRadius: "12px" }}>
+                              <div style={{ color: "#10b981", fontWeight: "700", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                                <CheckCircle size={16} /> AST Signature Verified (Secure)
+                              </div>
+                              <div style={{ color: "#94a3b8", fontSize: "0.82rem", maxWidth: "400px", margin: "0 auto", lineHeight: "1.5" }}>
+                                The codebase was analyzed using python syntax tree matching. The required protection signatures for this control category were found active and clean.
+                              </div>
+                            </div>
+                          );
+                        }
+                      })()
                     )}
                   </div>
                 </div>
@@ -725,126 +1109,6 @@ export default function ComplianceDashboard({ onBack }) {
             </div>
           </div>
 
-          {/* Swarm Agents Compliance Dashboard (NIST AI RMF 1.0) */}
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.2rem" }}>
-              <div>
-                <h3 style={{ fontSize: "1.25rem", fontWeight: "800" }}>Swarm Fleet Compliance Ratings</h3>
-                <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginTop: "4px" }}>
-                  Detailed security scoring & risk profile for all 14 active autonomous agents.
-                </p>
-              </div>
-              {securityStatus && (
-                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontStyle: "italic" }}>
-                  Last Swarm Audit: {new Date(Object.values(securityStatus)[0]?.timestamp).toLocaleString()}
-                </div>
-              )}
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1.2rem" }}>
-              {securityStatus ? (
-                Object.entries(securityStatus).map(([agentName, data]) => {
-                  const nist = data.nist_audit || { score: 100, risk: "LOW", controls: [] };
-                  const riskColor = nist.risk === "CRITICAL" ? "#b91c1c" : nist.risk === "HIGH" ? "#ef4444" : nist.risk === "MEDIUM" ? "#f59e0b" : "#10b981";
-                  const riskBg = nist.risk === "CRITICAL" ? "rgba(185,28,28,0.1)" : nist.risk === "HIGH" ? "rgba(239,68,68,0.08)" : nist.risk === "MEDIUM" ? "rgba(245,158,11,0.08)" : "rgba(16,185,129,0.08)";
-                  
-                  return (
-                    <div 
-                      key={agentName}
-                      className="hud-card" 
-                      style={{ 
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "1rem",
-                        boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
-                        transition: "all 0.2s"
-                      }}
-                    >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                        <div>
-                          <h4 style={{ fontSize: "1.05rem", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                            {agentName.replace("_", " ")}
-                          </h4>
-                          <span style={{ 
-                            fontSize: "0.65rem", 
-                            fontWeight: "900", 
-                            padding: "3px 8px", 
-                            borderRadius: "12px", 
-                            background: riskBg,
-                            color: riskColor,
-                            display: "inline-block",
-                            marginTop: "6px"
-                          }}>
-                            {nist.risk} RISK
-                          </span>
-                        </div>
-                        <div className="orbitron-stat" style={{ 
-                          width: "50px", 
-                          height: "50px", 
-                          borderRadius: "50%", 
-                          border: `3px solid ${nist.score >= 90 ? "var(--success)" : nist.score >= 75 ? "#f59e0b" : nist.score >= 60 ? "#ef4444" : "#b91c1c"}`,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: "800",
-                          fontSize: "0.95rem"
-                        }}>
-                          {nist.score}%
-                        </div>
-                      </div>
-
-                      <div style={{ borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "0.8rem", display: "flex", flexDirection: "column", gap: "8px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
-                          <span style={{ color: "#94a3b8" }}>NIST Passed Controls:</span>
-                          <span style={{ fontWeight: "700" }}>
-                            {nist.controls?.filter(c => c.status === "PASS").length || 0} Pass
-                            {nist.controls?.filter(c => c.status === "PARTIAL").length > 0 && ` / ${nist.controls.filter(c => c.status === "PARTIAL").length} Part`}
-                          </span>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
-                          <span style={{ color: "#94a3b8" }}>OWASP LLM Issues:</span>
-                          <span style={{ fontWeight: "700", color: data.critical_count > 0 ? "#ef4444" : "inherit" }}>
-                            {data.critical_count + data.warning_count} ({data.critical_count} Crit)
-                          </span>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => setSelectedCisoAgent({ name: agentName, data })}
-                        style={{
-                          background: "rgba(59, 130, 246, 0.15)",
-                          color: "#38bdf8",
-                          border: "1px solid rgba(59, 130, 246, 0.25)",
-                          padding: "8px 12px",
-                          borderRadius: "8px",
-                          fontSize: "0.8rem",
-                          fontWeight: "700",
-                          cursor: "pointer",
-                          textAlign: "center",
-                          width: "100%",
-                          transition: "all 0.2s"
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.background = "rgba(59, 130, 246, 0.25)";
-                          e.currentTarget.style.borderColor = "rgba(59, 130, 246, 0.45)";
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.background = "rgba(59, 130, 246, 0.15)";
-                          e.currentTarget.style.borderColor = "rgba(59, 130, 246, 0.25)";
-                        }}
-                      >
-                        Review Safety Report
-                      </button>
-                    </div>
-                  );
-                })
-              ) : (
-                <div style={{ gridColumn: "1/-1", padding: "2rem", textAlign: "center", color: "var(--text-muted)", fontStyle: "italic" }}>
-                  Awaiting security scan history... Click "Run Aivyuh Swarm Audit" in SecOps tab to populate compliance ratings.
-                </div>
-              )}
-            </div>
-          </div>
 
           {/* Core Safety Posture Checklist */}
           <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "2rem" }}>
@@ -1075,15 +1339,15 @@ export default function ComplianceDashboard({ onBack }) {
               </div>
             )}
 
-            {/* Swarm Fleet Compliance Matrix (Technical Operations) */}
+            {/* NIST Swarm Fleet Compliance Matrix (Audits) */}
             <div className="hud-card">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.2rem" }}>
                 <div>
                   <h3 className="orbitron-title" style={{ fontSize: "1.05rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Shield size={16} color="#38bdf8" /> Swarm Fleet Compliance Matrix
+                    <Shield size={16} color="#3b82f6" /> NIST AI RMF 1.0 Swarm Fleet Audit Matrix
                   </h3>
                   <p style={{ color: "#94a3b8", fontSize: "0.8rem", marginTop: "4px" }}>
-                    Granular security controls and threat status mapping for all 14 active agents.
+                    NIST compliance scores, risk classifications, and capability footprint maps for active agents.
                   </p>
                 </div>
               </div>
@@ -1095,8 +1359,8 @@ export default function ComplianceDashboard({ onBack }) {
                       <th style={{ padding: "10px 8px" }}>AGENT</th>
                       <th style={{ padding: "10px 8px" }}>RISK TIER</th>
                       <th style={{ padding: "10px 8px" }}>NIST COMPLIANCE</th>
-                      <th style={{ padding: "10px 8px" }}>CRITICAL ISSUES</th>
-                      <th style={{ padding: "10px 8px" }}>WARNING ISSUES</th>
+                      <th style={{ padding: "10px 8px" }}>APPLICABLE</th>
+                      <th style={{ padding: "10px 8px" }}>BYPASSED</th>
                       <th style={{ padding: "10px 8px", textAlign: "right" }}>ACTIONS</th>
                     </tr>
                   </thead>
@@ -1104,7 +1368,7 @@ export default function ComplianceDashboard({ onBack }) {
                     {!securityStatus ? (
                       <tr>
                         <td colSpan={6} style={{ textAlign: "center", padding: "1.5rem", color: "#94a3b8", fontStyle: "italic" }}>
-                          No audit history available. Trigger a scan above to populate matrix.
+                          No NIST audit history available.
                         </td>
                       </tr>
                     ) : (
@@ -1112,6 +1376,7 @@ export default function ComplianceDashboard({ onBack }) {
                         const nist = data.nist_audit || { score: 100, risk: "LOW", controls: [] };
                         const riskColor = nist.risk === "CRITICAL" ? "#b91c1c" : nist.risk === "HIGH" ? "#ef4444" : nist.risk === "MEDIUM" ? "#f59e0b" : "#10b981";
                         const riskBg = nist.risk === "CRITICAL" ? "rgba(185,28,28,0.1)" : nist.risk === "HIGH" ? "rgba(239,68,68,0.08)" : nist.risk === "MEDIUM" ? "rgba(245,158,11,0.08)" : "rgba(16,185,129,0.08)";
+                        const scope = data.scope_analysis || { applicable_count: 0, non_applicable_count: 0, unmapped_count: 0 };
                         
                         return (
                           <tr key={agentName} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.04)" }}>
@@ -1143,27 +1408,281 @@ export default function ComplianceDashboard({ onBack }) {
                                 <span style={{ fontWeight: "700" }}>{nist.score}%</span>
                               </div>
                             </td>
-                            <td style={{ padding: "10px 8px", color: data.critical_count > 0 ? "#ef4444" : "inherit", fontWeight: data.critical_count > 0 ? "700" : "normal" }}>
-                              {data.critical_count}
+                            <td style={{ padding: "10px 8px", color: "#e2e8f0" }}>
+                              {scope.applicable_count}
                             </td>
-                            <td style={{ padding: "10px 8px", color: data.warning_count > 0 ? "#f59e0b" : "inherit" }}>
-                              {data.warning_count}
+                            <td style={{ padding: "10px 8px", color: "#94a3b8" }}>
+                              {scope.non_applicable_count + scope.unmapped_count}
                             </td>
                             <td style={{ padding: "10px 8px", textAlign: "right" }}>
                               <button
-                                onClick={() => setSelectedSecopsAgent({ name: agentName, data })}
+                                onClick={() => {
+                                  setSecopsFramework("nist");
+                                  setSelectedSecopsAgent({ name: agentName, data });
+                                }}
                                 style={{
                                   background: "none",
                                   border: "none",
                                   cursor: "pointer",
-                                  color: "var(--primary)",
+                                  color: "#3b82f6",
                                   fontWeight: "700",
                                   display: "inline-flex",
                                   alignItems: "center",
                                   gap: "4px"
                                 }}
                               >
-                                <Eye size={12} /> Inspect Controls
+                                <Eye size={12} /> Inspect NIST
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* NIST Swarm Fleet Details Matrix */}
+            <div className="hud-card" style={{ marginTop: "1rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.2rem" }}>
+                <div>
+                  <h3 className="orbitron-title" style={{ fontSize: "1.05rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Shield size={16} color="#3b82f6" /> NIST AI RMF 1.0 Swarm Fleet Details Matrix
+                  </h3>
+                  <p style={{ color: "#94a3b8", fontSize: "0.8rem", marginTop: "4px" }}>
+                    Granular parent category compliance status mapping for all active agents. Hover over headers or dots for details.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ overflowX: "auto", position: "relative", maxWidth: "100%", borderRadius: "12px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", minWidth: "1200px" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)", color: "#94a3b8", textAlign: "left", backgroundColor: "#070c16" }}>
+                      <th style={{ position: "sticky", left: 0, backgroundColor: "#070c16", zIndex: 12, padding: "12px 10px", minWidth: "120px", borderRight: "1px solid rgba(255, 255, 255, 0.08)" }}>AGENT</th>
+                      {nistParentCategories.map(cat => (
+                        <th key={cat} title={getNistCategoryTooltip(cat)} style={{ padding: "12px 6px", textAlign: "center", cursor: "help", fontSize: "0.68rem" }}>
+                          {cat}
+                        </th>
+                      ))}
+                      <th style={{ padding: "12px 10px", textAlign: "right", minWidth: "100px" }}>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!securityStatus ? (
+                      <tr>
+                        <td colSpan={21} style={{ textAlign: "center", padding: "1.5rem", color: "#94a3b8", fontStyle: "italic" }}>
+                          No details available.
+                        </td>
+                      </tr>
+                    ) : (
+                      Object.entries(securityStatus).map(([agentName, data]) => {
+                        const controls = data.nist_audit?.controls || [];
+                        return (
+                          <tr key={agentName} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.04)" }}>
+                            <td style={{ position: "sticky", left: 0, backgroundColor: "#0e1628", zIndex: 10, padding: "10px 10px", fontWeight: "700", textTransform: "uppercase", borderRight: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                              {agentName.replace("_", " ")}
+                            </td>
+                            {nistParentCategories.map(cat => {
+                              const status = resolveNistCategoryStatus(controls, cat);
+                              const tooltip = `${agentName.replace("_", " ").toUpperCase()} - ${cat} (${getNistCategoryTooltip(cat)}): ${status}`;
+                              return (
+                                <td key={cat} style={{ padding: "10px 6px", textAlign: "center" }}>
+                                  {renderStatusDot(status, tooltip)}
+                                </td>
+                              );
+                            })}
+                            <td style={{ padding: "10px 10px", textAlign: "right" }}>
+                              <button
+                                onClick={() => {
+                                  setSecopsFramework("nist");
+                                  setSelectedSecopsAgent({ name: agentName, data });
+                                }}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  color: "#3b82f6",
+                                  fontWeight: "700"
+                                }}
+                              >
+                                Inspect
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* OWASP Top 10 LLM Compliance Matrix (Audits) */}
+            <div className="hud-card">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.2rem" }}>
+                <div>
+                  <h3 className="orbitron-title" style={{ fontSize: "1.05rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Shield size={16} color="#10b981" /> OWASP Top 10 LLM Swarm Fleet Audit Matrix
+                  </h3>
+                  <p style={{ color: "#94a3b8", fontSize: "0.8rem", marginTop: "4px" }}>
+                    AST-verified vulnerability counts, critical warnings, and compliance scores for active agents.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)", color: "#94a3b8", textAlign: "left" }}>
+                      <th style={{ padding: "10px 8px" }}>AGENT</th>
+                      <th style={{ padding: "10px 8px" }}>COMPLIANCE STATUS</th>
+                      <th style={{ padding: "10px 8px" }}>CRITICAL FAILURES</th>
+                      <th style={{ padding: "10px 8px" }}>WARNING FAILURES</th>
+                      <th style={{ padding: "10px 8px" }}>OWASP SCORE</th>
+                      <th style={{ padding: "10px 8px", textAlign: "right" }}>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!securityStatus ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: "center", padding: "1.5rem", color: "#94a3b8", fontStyle: "italic" }}>
+                          No OWASP audit history available.
+                        </td>
+                      </tr>
+                    ) : (
+                      Object.entries(securityStatus).map(([agentName, data]) => {
+                        const crit = data.critical_count !== null ? data.critical_count : 0;
+                        const warn = data.warning_count !== null ? data.warning_count : 0;
+                        
+                        const owaspScore = crit === 0 ? "100%" : `${Math.max(0, 100 - crit * 10)}%`;
+                        const statusColor = crit > 0 ? "#ef4444" : warn > 0 ? "#f59e0b" : "#10b981";
+                        const statusBg = crit > 0 ? "rgba(239,68,68,0.08)" : warn > 0 ? "rgba(245,158,11,0.08)" : "rgba(16,185,129,0.08)";
+                        const statusText = crit > 0 ? "VULNERABLE" : warn > 0 ? "WARNINGS" : "SECURE";
+                        
+                        return (
+                          <tr key={agentName} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.04)" }}>
+                            <td style={{ padding: "10px 8px", fontWeight: "700", textTransform: "uppercase" }}>
+                              {agentName.replace("_", " ")}
+                            </td>
+                            <td style={{ padding: "10px 8px" }}>
+                              <span style={{
+                                fontSize: "0.68rem",
+                                fontWeight: "800",
+                                padding: "2px 6px",
+                                borderRadius: "4px",
+                                background: statusBg,
+                                color: statusColor,
+                                border: `1px solid ${statusColor}33`
+                              }}>
+                                {statusText}
+                              </span>
+                            </td>
+                            <td style={{ padding: "10px 8px", color: crit > 0 ? "#ef4444" : "#94a3b8", fontWeight: crit > 0 ? "700" : "normal" }}>
+                              {crit}
+                            </td>
+                            <td style={{ padding: "10px 8px", color: warn > 0 ? "#f59e0b" : "#94a3b8" }}>
+                              {warn}
+                            </td>
+                            <td style={{ padding: "10px 8px", fontWeight: "700", color: crit > 0 ? "#ef4444" : "#10b981" }}>
+                              {owaspScore}
+                            </td>
+                            <td style={{ padding: "10px 8px", textAlign: "right" }}>
+                              <button
+                                onClick={() => {
+                                  setSecopsFramework("owasp");
+                                  setSelectedSecopsAgent({ name: agentName, data });
+                                }}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  color: "#10b981",
+                                  fontWeight: "700",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px"
+                                }}
+                              >
+                                <Eye size={12} /> Inspect OWASP
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* OWASP Top 10 LLM Swarm Fleet Details Matrix */}
+            <div className="hud-card" style={{ marginTop: "1rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.2rem" }}>
+                <div>
+                  <h3 className="orbitron-title" style={{ fontSize: "1.05rem", fontWeight: "800", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Shield size={16} color="#10b981" /> OWASP Top 10 LLM Swarm Fleet Details Matrix
+                  </h3>
+                  <p style={{ color: "#94a3b8", fontSize: "0.8rem", marginTop: "4px" }}>
+                    Vulnerability compliance status mapped across all OWASP LLM01-LLM10 controls. Hover for control categories.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ overflowX: "auto", position: "relative", maxWidth: "100%", borderRadius: "12px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", minWidth: "800px" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)", color: "#94a3b8", textAlign: "left", backgroundColor: "#070c16" }}>
+                      <th style={{ position: "sticky", left: 0, backgroundColor: "#070c16", zIndex: 12, padding: "12px 10px", minWidth: "120px", borderRight: "1px solid rgba(255, 255, 255, 0.08)" }}>AGENT</th>
+                      {owaspControls.map(c => (
+                        <th key={c.id} title={getOwaspCategoryTooltip(c.id)} style={{ padding: "12px 6px", textAlign: "center", cursor: "help", fontSize: "0.68rem" }}>
+                          {c.id}
+                        </th>
+                      ))}
+                      <th style={{ padding: "12px 10px", textAlign: "right", minWidth: "100px" }}>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!securityStatus ? (
+                      <tr>
+                        <td colSpan={12} style={{ textAlign: "center", padding: "1.5rem", color: "#94a3b8", fontStyle: "italic" }}>
+                          No details available.
+                        </td>
+                      </tr>
+                    ) : (
+                      Object.entries(securityStatus).map(([agentName, data]) => {
+                        const summary = data.report_summary || [];
+                        return (
+                          <tr key={agentName} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.04)" }}>
+                            <td style={{ position: "sticky", left: 0, backgroundColor: "#0e1628", zIndex: 10, padding: "10px 10px", fontWeight: "700", textTransform: "uppercase", borderRight: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                              {agentName.replace("_", " ")}
+                            </td>
+                            {owaspControls.map(c => {
+                              const failedLine = summary.find(line => line.startsWith(c.id));
+                              const status = failedLine ? "FAIL" : "PASS";
+                              const tooltip = `${agentName.replace("_", " ").toUpperCase()} - ${c.id} (${c.name}): ${status === "FAIL" ? "FAILED - " + failedLine : "PASSED"}`;
+                              return (
+                                <td key={c.id} style={{ padding: "10px 6px", textAlign: "center" }}>
+                                  {renderStatusDot(status, tooltip)}
+                                </td>
+                              );
+                            })}
+                            <td style={{ padding: "10px 10px", textAlign: "right" }}>
+                              <button
+                                onClick={() => {
+                                  setSecopsFramework("owasp");
+                                  setSelectedSecopsAgent({ name: agentName, data });
+                                }}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  color: "#10b981",
+                                  fontWeight: "700"
+                                }}
+                              >
+                                Inspect
                               </button>
                             </td>
                           </tr>
@@ -1704,6 +2223,161 @@ export default function ComplianceDashboard({ onBack }) {
 }
 
 // Helpers
+// Helpers
+const owaspControls = [
+  { id: "LLM01", name: "Prompt Injection", category: "Prompt Injection", type: "warning", desc: "Attackers manipulate LLM through crafted inputs causing unauthorized actions." },
+  { id: "LLM02", name: "Insecure Output Handling", category: "Insecure Output Handling", type: "critical", desc: "LLM outputs accepted without validation, leading to XSS/RCE/SSRF." },
+  { id: "LLM03", name: "Training Data Poisoning", category: "Training Data Poisoning", type: "warning", desc: "Vulnerabilities or bias introduced into training data." },
+  { id: "LLM04", name: "Model Denial of Service", category: "Model Denial of Service", type: "critical", desc: "Context window exhaustion or rate limits bypass causing service degradation." },
+  { id: "LLM05", name: "Supply Chain Vulnerabilities", category: "Supply Chain Vulnerabilities", type: "warning", desc: "Vulnerable packages, dependencies, or unverified base models." },
+  { id: "LLM06", name: "Sensitive Information Disclosure", category: "Sensitive Information Disclosure", type: "critical", desc: "PII leakage or sensitive corporate secrets exposure in outputs." },
+  { id: "LLM07", name: "Insecure Plugin Design", category: "Insecure Plugin Design", type: "warning", desc: "Insufficient verification on inputs or excessive permissions for plugins." },
+  { id: "LLM08", name: "Excessive Agency", category: "Excessive Agency", type: "warning", desc: "Excessive functionality or permissions without human-in-the-loop (HITL)." },
+  { id: "LLM09", name: "Overreliance", category: "Overreliance", type: "warning", desc: "Blindly trusting model outputs without cross-checking or citations." },
+  { id: "LLM10", name: "Model Theft", category: "Model Theft", type: "critical", desc: "Unauthorized exfiltration of weights, architecture, or model parameters." }
+];
+
+const nistParentCategories = [
+  "GV-1", "GV-2", "GV-3", "GV-4", "GV-5", "GV-6",
+  "MAP-1", "MAP-2", "MAP-3", "MAP-4", "MAP-5",
+  "MEAS-1", "MEAS-2", "MEAS-3", "MEAS-4",
+  "MAN-1", "MAN-2", "MAN-3", "MAN-4"
+];
+
+const getNistCategoryTooltip = (cat) => {
+  const tooltips = {
+    "GV-1": "Policies, processes, procedures, and practices",
+    "GV-2": "Governance roles, responsibilities, and authorities",
+    "GV-3": "Diversity, equity, and inclusion in AI teams",
+    "GV-4": "Security, threat analysis, and incident reporting",
+    "GV-5": "Stakeholder feedback and public engagement",
+    "GV-6": "Third-party vendor and supply chain risk",
+    "MAP-1": "Intended use, domain context, and constraints",
+    "MAP-2": "AI requirements, validation, and threat modeling",
+    "MAP-3": "Expected benefits, alternatives, and human overrides",
+    "MAP-4": "Third-party integration and APIs",
+    "MAP-5": "System impact and risk estimation",
+    "MEAS-1": "Evaluation, verification, and testing",
+    "MEAS-2": "Reliability, content safety, and metrics",
+    "MEAS-3": "Risk register, reviews, and distributions",
+    "MEAS-4": "Post-incident feedback and adjustments",
+    "MAN-1": "Deployment authorization, triage, and response plans",
+    "MAN-2": "Risk treatment budget and guardrails enforcement",
+    "MAN-3": "Vendor SLAs and contract auditing",
+    "MAN-4": "APM monitoring, PR disclosure, and escalations"
+  };
+  return tooltips[cat] || "NIST Category";
+};
+
+const getOwaspCategoryTooltip = (id) => {
+  const names = {
+    "LLM01": "Prompt Injection",
+    "LLM02": "Insecure Output Handling",
+    "LLM03": "Training Data Poisoning",
+    "LLM04": "Model Denial of Service",
+    "LLM05": "Supply Chain Vulnerabilities",
+    "LLM06": "Sensitive Information Disclosure",
+    "LLM07": "Insecure Plugin Design",
+    "LLM08": "Excessive Agency",
+    "LLM09": "Overreliance",
+    "LLM10": "Model Theft"
+  };
+  return names[id] || "OWASP Control";
+};
+
+const getNistParentCategory = (controlId) => {
+  const parts = controlId.split('-');
+  if (parts.length >= 2) {
+    const prefix = parts[0];
+    const num = parts[1].split('.')[0];
+    const prefixMap = {
+      "GV": "GV",
+      "MP": "MAP",
+      "MS": "MEAS",
+      "MG": "MAN"
+    };
+    const stdPrefix = prefixMap[prefix] || prefix;
+    return `${stdPrefix}-${num}`;
+  }
+  const p2 = controlId.split('.');
+  if (p2.length >= 1) {
+    const parts2 = p2[0].split('-');
+    if (parts2.length >= 2) {
+      const prefix = parts2[0];
+      const num = parts2[1];
+      const prefixMap = {
+        "GV": "GV",
+        "MP": "MAP",
+        "MS": "MEAS",
+        "MG": "MAN"
+      };
+      const stdPrefix = prefixMap[prefix] || prefix;
+      return `${stdPrefix}-${num}`;
+    }
+  }
+  return null;
+};
+
+const resolveNistCategoryStatus = (controls = [], cat) => {
+  const matched = controls.filter(c => getNistParentCategory(c.id) === cat);
+  if (matched.length === 0) return "BYPASSED";
+  
+  let hasFail = false;
+  let hasPartial = false;
+  let hasPass = false;
+  let hasBypassed = false;
+  
+  matched.forEach(c => {
+    if (c.status === "FAIL") hasFail = true;
+    else if (c.status === "PARTIAL") hasPartial = true;
+    else if (c.status === "PASS") hasPass = true;
+    else if (c.status === "UNMAPPED" || c.status === "NON-APPLICABLE") hasBypassed = true;
+  });
+  
+  if (hasFail) return "FAIL";
+  if (hasPartial) return "PARTIAL";
+  if (hasPass) return "PASS";
+  return "BYPASSED";
+};
+
+const renderStatusDot = (status, tooltipText) => {
+  let color = "#64748b";
+  let title = tooltipText || status;
+  
+  switch (status) {
+    case "PASS":
+      color = "#10b981";
+      break;
+    case "FAIL":
+      color = "#ef4444";
+      break;
+    case "PARTIAL":
+      color = "#f59e0b";
+      break;
+    case "BYPASSED":
+    default:
+      color = "#475569";
+      break;
+  }
+  
+  return (
+    <span 
+      title={title}
+      style={{
+        display: "inline-block",
+        width: "12px",
+        height: "12px",
+        borderRadius: "50%",
+        backgroundColor: color,
+        border: `1px solid ${color}4d`,
+        boxShadow: `0 0 8px ${color}33`,
+        cursor: "help"
+      }}
+    />
+  );
+};
+
+
 const getEventTypeFriendlyName = (type) => {
   return type
     .split("_")

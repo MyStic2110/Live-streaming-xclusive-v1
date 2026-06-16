@@ -4,6 +4,8 @@ import sys
 import re
 from datetime import datetime
 
+from owasp import EvidenceEngine
+
 # Path definitions
 SEVA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../seva"))
 AIVYUH_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -343,7 +345,7 @@ def run_aivyuh_swarm_audit():
     if os.path.exists(agents_root):
         for item in os.listdir(agents_root):
             full_path = os.path.join(agents_root, item)
-            if os.path.isdir(full_path) and not item.startswith("__") and not item.startswith(".") and item != "aivyuh":
+            if os.path.isdir(full_path) and not item.startswith("__") and not item.startswith("."):
                 agents_list.append(item)
 
     # Purge any stale/deleted agent entries from history
@@ -352,96 +354,63 @@ def run_aivyuh_swarm_audit():
     total_criticals = 0
     total_warnings = 0
     
+    engine = EvidenceEngine()
+    all_controls = list(engine.patterns.keys())
+    
+    failures = {
+        "LLM01": "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+        "LLM02": "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+        "LLM03": "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+        "LLM04": "LLM04: Critical! Model Denial of Service: Lacks rate limiting, resource throttling, or context window constraints.",
+        "LLM05": "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+        "LLM06": "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+        "LLM07": "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+        "LLM08": "LLM08: Warning. Excessive Agency: Lacks Human-in-the-Loop (HITL) approval gates or authorization restrictions.",
+        "LLM09": "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+        "LLM10": "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
+    }
+    
     for agent_name in agents_list:
         target_name = agent_name.lower().strip()
         primary_paths = [
             os.path.join(agents_root, target_name, f"{target_name}_agent.py"),
             os.path.join(agents_root, target_name, f"{target_name}.py")
         ]
-        content = ""
         scanned_file_path = None
         for p_opt in primary_paths:
             if os.path.exists(p_opt):
-                try:
-                    with open(p_opt, "r", encoding="utf-8", errors="ignore") as f:
-                        content = f.read()
-                        scanned_file_path = p_opt
-                        break
-                except Exception:
-                    pass
+                scanned_file_path = p_opt
+                break
                     
-        if not content:
+        if not scanned_file_path:
             search_path = os.path.join(agents_root, target_name, "*.py")
             files = glob.glob(search_path)
             for f_path in files:
                 bn = os.path.basename(f_path)
                 if "trigger" not in bn and "create" not in bn:
-                    try:
-                        with open(f_path, "r", encoding="utf-8", errors="ignore") as f:
-                            content = f.read()
-                            scanned_file_path = f_path
-                            break
-                    except Exception:
-                        pass
+                    scanned_file_path = f_path
+                    break
                         
-        if not content:
+        if not scanned_file_path:
             continue
             
         fail_count = 0
         warn_count = 0
         report_summary = []
         
-        has_delimiters = "<" in content and ">" in content and ("user" in content.lower() or "input" in content.lower())
-        if not has_delimiters:
-            warn_count += 1
-            report_summary.append("LLM01: Warning. Lacks strict XML delimiters to sandbox user input.")
-            
-        has_insecure_exec = "exec(" in content or "eval(" in content or "os.system(" in content
-        if has_insecure_exec:
-            fail_count += 1
-            report_summary.append("LLM02: Critical! Detected raw OS or eval execution which can lead to RCE.")
-            
-        has_raw_append = "open(" in content and "'a'" in content and "transcript" in content.lower()
-        if has_raw_append:
-            warn_count += 1
-            report_summary.append("LLM03: Warning. Writing raw user data to disk could poison future training datasets.")
-            
-        has_cost_guard = "CostGuard" in content
-        if not has_cost_guard:
-            fail_count += 1
-            report_summary.append("LLM04: Critical! Agent lacks CostGuard. Vulnerable to API bankruptcy via DoS.")
-            
-        has_suspicious_imports = "urllib" in content or "requests" in content
-        if has_suspicious_imports:
-            warn_count += 1
-            report_summary.append("LLM05: Warning. Agent makes raw network requests outside of standard LiveKit plugins.")
-            
-        has_transcript_logging = "logger.info(f\"--- [INPUT]" in content or "print(" in content
-        has_securelytix = "Securelytix" in content or "vault" in content.lower()
-        if has_transcript_logging and not has_securelytix:
-            fail_count += 1
-            report_summary.append("LLM06: Critical! Raw transcript logging without Securelytix vault integration.")
-            
-        has_pydantic = "pydantic" in content.lower() or "BaseModel" in content
-        tool_count = content.count("@llm.function_tool")
-        if tool_count > 0 and not has_pydantic:
-            warn_count += 1
-            report_summary.append("LLM07: Warning. Tools are present but lack Pydantic strict typing validation.")
-            
-        has_write = "UPDATE " in content or "INSERT " in content or "DELETE " in content
-        if tool_count > 0 and has_write:
-            warn_count += 1
-            report_summary.append("LLM08: Warning. Write capabilities detected. Enforce HITL (Human-in-the-Loop).")
-            
-        has_fallback = "confidence" in content.lower() or "fallback" in content.lower()
-        if not has_fallback:
-            warn_count += 1
-            report_summary.append("LLM09: Warning. Agent trusts outputs blindly. Implement a confidence scoring mechanism.")
-            
-        has_hardcoded_keys = "sk-" in content or "api_key=\"" in content or "api_key='" in content
-        if has_hardcoded_keys:
-            fail_count += 1
-            report_summary.append("LLM10: Critical! Hardcoded API keys found. Use os.getenv() immediately.")
+        try:
+            results = engine.evaluate(scanned_file_path, all_controls)
+            for res in results:
+                if res["status"] == "FAIL":
+                    c_id = res["control"]
+                    report_summary.append(failures.get(c_id, f"{c_id}: Warning. Control verification failed."))
+                    if c_id in ["LLM02", "LLM04", "LLM06", "LLM10"]:
+                        fail_count += 1
+                    else:
+                        warn_count += 1
+        except Exception as e:
+            print(f"Error evaluating agent {agent_name} AST: {e}", file=sys.stderr)
+            continue
             
         total_criticals += fail_count
         total_warnings += warn_count

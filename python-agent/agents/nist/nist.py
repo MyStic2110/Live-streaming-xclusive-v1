@@ -242,6 +242,23 @@ class ControlEvaluator:
 # ==========================================
 # Core Engine
 # ==========================================
+def get_parent_id(control_id):
+    parts = control_id.split('-')
+    if len(parts) < 2:
+        return control_id
+    prefix, num = parts[0], parts[1]
+    prefix_map = {
+        "GV": "GV",
+        "MP": "MAP",
+        "MS": "MEAS",
+        "MG": "MAN"
+    }
+    std_prefix = prefix_map.get(prefix, prefix)
+    return f"{std_prefix}-{num}"
+
+# ==========================================
+# Core Engine
+# ==========================================
 class EvidenceEngine:
     def __init__(self):
         self.patterns = CONTROL_PATTERNS
@@ -254,7 +271,12 @@ class EvidenceEngine:
         return collector.matches
 
     def evaluate_control(self, control_id, findings):
-        config = self.patterns.get(control_id, {})
+        config = self.patterns.get(control_id)
+        if config is None:
+            # Fall back to parent subcategory patterns
+            parent_id = get_parent_id(control_id)
+            config = self.patterns.get(parent_id, {})
+            
         positives = config.get("positive", [])
         evidence = []
 

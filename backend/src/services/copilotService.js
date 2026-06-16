@@ -421,16 +421,30 @@ export const routeContext = async (query, lastVertical) => {
       
       if (vertical === "security") {
         const runsPath = path.join(AIVYUH_DIR, "audit_runs.json");
-        const historyPath = path.join(AIVYUH_DIR, "audit_history.json");
         if (fs.existsSync(runsPath)) {
           try {
             verticalData["live_audit_runs"] = JSON.parse(fs.readFileSync(runsPath, "utf-8"));
           } catch (e) {}
         }
-        if (fs.existsSync(historyPath)) {
-          try {
-            verticalData["live_audit_history"] = JSON.parse(fs.readFileSync(historyPath, "utf-8"));
-          } catch (e) {}
+        try {
+          const dbHistory = await dbQuery('SELECT * FROM agent_security_status');
+          const historyMap = {};
+          for (const row of dbHistory.rows) {
+            historyMap[row.agent_name] = {
+              timestamp: row.timestamp,
+              critical_count: parseInt(row.critical_count || 0, 10),
+              warning_count: parseInt(row.warning_count || 0, 10),
+              report_summary: row.report_summary || [],
+              nist_audit: {
+                score: parseFloat(row.nist_score || 100.0),
+                risk: row.nist_risk || "LOW",
+                controls: row.nist_controls || []
+              }
+            };
+          }
+          verticalData["live_audit_history"] = historyMap;
+        } catch (dbErr) {
+          console.error("[COPILOT_SERVICE] Failed to query compliance from DB:", dbErr.message);
         }
       }
 

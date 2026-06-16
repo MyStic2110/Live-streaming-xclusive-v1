@@ -19,20 +19,15 @@ export const getComplianceSummary = async (req, res) => {
     
     const counts = logRes.rows[0] || {};
     
-    let criticalCVEs = 0;
-    let warningCVEs = 0;
-    
-    if (fs.existsSync(AUDIT_PATH)) {
-      try {
-        const history = JSON.parse(fs.readFileSync(AUDIT_PATH, "utf-8"));
-        Object.values(history).forEach(agent => {
-          criticalCVEs += (agent.critical_count || 0);
-          warningCVEs += (agent.warning_count || 0);
-        });
-      } catch (e) {
-        console.error("[COMPLIANCE_CONTROLLER] Error parsing audit path:", e.message);
-      }
-    }
+    const sumRes = await query(`
+      SELECT 
+        SUM(critical_count) as critical_count,
+        SUM(warning_count) as warning_count
+      FROM agent_security_status
+    `);
+    const sumRow = sumRes.rows[0] || {};
+    const criticalCVEs = parseInt(sumRow.critical_count || 0, 10);
+    const warningCVEs = parseInt(sumRow.warning_count || 0, 10);
 
     res.json({
       jailbreaksBlocked: parseInt(counts.jailbreak_count || 0, 10),

@@ -38,7 +38,6 @@ async function runSSG() {
   const sitemapUrls = [
     `<url><loc>${DOMAIN}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
     `<url><loc>${DOMAIN}/learn</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>`,
-    `<url><loc>${DOMAIN}/observability-agents-oswap-llm</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
     `<url><loc>${DOMAIN}/governed-deployment</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
     `<url><loc>${DOMAIN}/sneak-peak</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
     `<url><loc>${DOMAIN}/insights</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`

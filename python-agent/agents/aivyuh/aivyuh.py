@@ -21,10 +21,12 @@ from livekit.agents import (
 from livekit.plugins import silero, deepgram, openai
 
 import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard, filter_code_blocks_and_long_text
 from utils.traced_llm import TracedLLM
+from owasp import EvidenceEngine
 
 # Load environment configs
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
@@ -93,6 +95,26 @@ class AivyuhSecurityTools:
                     pass
         return ""
 
+    def _get_agent_file_path(self, agent_name: str) -> str:
+        target_name = agent_name.lower().strip()
+        # Prefer target_name + "_agent.py" or just target_name + ".py" inside the target_name dir
+        primary_paths = [
+            os.path.join(AGENTS_ROOT_PATH, target_name, f"{target_name}_agent.py"),
+            os.path.join(AGENTS_ROOT_PATH, target_name, f"{target_name}.py")
+        ]
+        
+        for p in primary_paths:
+            if os.path.exists(p):
+                return p
+                    
+        # Fallback to search
+        search_path = os.path.join(AGENTS_ROOT_PATH, "**", "*.py")
+        for file_path in glob.glob(search_path, recursive=True):
+            bn = os.path.basename(file_path)
+            if target_name in bn and "trigger" not in bn and "create" not in bn:
+                return file_path
+        return ""
+
     @llm.function_tool(description="List active agent folders available for scanning.")
     async def get_swarm_agent_manifest(self) -> str:
         """Scan python-agent/agents subdirectories to list active swarm nodes."""
@@ -114,9 +136,9 @@ class AivyuhSecurityTools:
     async def run_full_owasp_audit(self, agent_name: str) -> str:
         """Runs heuristics for all 10 OWASP Top 10 LLM vulnerabilities against the target agent."""
         await self._ui_log(f"Initiating full OWASP Top 10 Audit for {agent_name.upper()}...", "info")
-        content = self._get_agent_file_content(agent_name)
+        scanned_file_path = self._get_agent_file_path(agent_name)
         
-        if not content:
+        if not scanned_file_path:
             await self._ui_log(f"Failed to locate code for {agent_name}", "error")
             return f"I could not find the code file for the {agent_name} agent."
             
@@ -124,97 +146,67 @@ class AivyuhSecurityTools:
         fail_count = 0
         warn_count = 0
 
-        # LLM01: Prompt Injection
-        has_delimiters = "<" in content and ">" in content and ("user" in content.lower() or "input" in content.lower())
-        if has_delimiters:
-            await self._ui_log("LLM01 Prompt Injection: PASSED", "success")
-        else:
-            await self._ui_log("LLM01 Prompt Injection: WARNING - Missing XML delimiters for user input", "warn")
-            warn_count += 1
-            report_summary.append("LLM01: Warning. Lacks strict XML delimiters to sandbox user input.")
+        engine = EvidenceEngine()
+        all_controls = list(engine.patterns.keys())
+        
+        failures = {
+            "LLM01": "LLM01: Warning. Prompt Injection: Lacks strict prompt sanitization, guards, or isolation delimiters.",
+            "LLM02": "LLM02: Critical! Insecure Output Handling: Lacks proper output validation or sanitization, potentially allowing XSS/RCE.",
+            "LLM03": "LLM03: Warning. Training Data Poisoning: Lacks dataset integrity checks, provenance validation, or anomaly detection.",
+            "LLM04": "LLM04: Critical! Model Denial of Service: Lacks rate limiting, resource throttling, or context window constraints.",
+            "LLM05": "LLM05: Warning. Supply Chain Vulnerabilities: Lacks dependency scans, model signature checking, or SBOM verification.",
+            "LLM06": "LLM06: Critical! Sensitive Information Disclosure: Lacks PII tokenization, masking, or data loss prevention.",
+            "LLM07": "LLM07: Warning. Insecure Plugin Design: Lacks validation, OAuth, or signature verification on plugin inputs.",
+            "LLM08": "LLM08: Warning. Excessive Agency: Lacks Human-in-the-Loop (HITL) approval gates or authorization restrictions.",
+            "LLM09": "LLM09: Warning. Overreliance: Lacks confidence metrics, citation checking, or automated output verification.",
+            "LLM10": "LLM10: Critical! Model Theft: Lacks API authentication, inference throttling, or weight obfuscation."
+        }
+        
+        OWASP_NAMES = {
+            "LLM01": "Prompt Injection",
+            "LLM02": "Insecure Output Handling",
+            "LLM03": "Training Data Poisoning",
+            "LLM04": "Model Denial of Service",
+            "LLM05": "Supply Chain Vulnerabilities",
+            "LLM06": "Sensitive Information Disclosure",
+            "LLM07": "Insecure Plugin Design",
+            "LLM08": "Excessive Agency",
+            "LLM09": "Overreliance",
+            "LLM10": "Model Theft"
+        }
 
-        # LLM02: Insecure Output Handling
-        has_insecure_exec = "exec(" in content or "eval(" in content or "os.system(" in content
-        if has_insecure_exec:
-            await self._ui_log("LLM02 Insecure Output Handling: FAILED - Dangerous exec() detected", "error")
-            fail_count += 1
-            report_summary.append("LLM02: Critical! Detected raw OS or eval execution which can lead to RCE.")
-        else:
-            await self._ui_log("LLM02 Insecure Output Handling: PASSED", "success")
+        OWASP_FAIL_MESSAGES = {
+            "LLM01": "WARNING - Missing XML delimiters for user input",
+            "LLM02": "FAILED - Dangerous exec() detected",
+            "LLM03": "WARNING - Appending raw transcripts to files",
+            "LLM04": "FAILED - No CostGuard or rate limiting found",
+            "LLM05": "WARNING - Unvetted network requests detected",
+            "LLM06": "FAILED - Raw PII logging detected",
+            "LLM07": "WARNING - Tools lack strict type validation",
+            "LLM08": "WARNING - Unrestricted DB writes detected",
+            "LLM09": "WARNING - Lacks confidence scoring",
+            "LLM10": "FAILED - Hardcoded API keys detected"
+        }
 
-        # LLM03: Training Data Poisoning
-        has_raw_append = "open(" in content and "'a'" in content and "transcript" in content.lower()
-        if has_raw_append:
-            await self._ui_log("LLM03 Data Poisoning: WARNING - Appending raw transcripts to files", "warn")
-            warn_count += 1
-            report_summary.append("LLM03: Warning. Writing raw user data to disk could poison future training datasets.")
-        else:
-            await self._ui_log("LLM03 Data Poisoning: PASSED", "success")
-
-        # LLM04: Model Denial of Service (DoS)
-        has_cost_guard = "CostGuard" in content
-        if has_cost_guard:
-            await self._ui_log("LLM04 Model DoS: PASSED - CostGuard detected", "success")
-        else:
-            await self._ui_log("LLM04 Model DoS: FAILED - No CostGuard or rate limiting found", "error")
-            fail_count += 1
-            report_summary.append("LLM04: Critical! Agent lacks CostGuard. Vulnerable to API bankruptcy via DoS.")
-
-        # LLM05: Supply Chain Vulnerabilities
-        has_suspicious_imports = "urllib" in content or "requests" in content
-        if has_suspicious_imports:
-            await self._ui_log("LLM05 Supply Chain: WARNING - Unvetted network requests detected", "warn")
-            warn_count += 1
-            report_summary.append("LLM05: Warning. Agent makes raw network requests outside of standard LiveKit plugins.")
-        else:
-            await self._ui_log("LLM05 Supply Chain: PASSED", "success")
-
-        # LLM06: Sensitive Information Disclosure
-        has_transcript_logging = "logger.info(f\"--- [INPUT]" in content or "print(" in content
-        has_securelytix = "Securelytix" in content or "vault" in content.lower()
-        if has_transcript_logging and not has_securelytix:
-            await self._ui_log("LLM06 Sensitive Data: FAILED - Raw PII logging detected", "error")
-            fail_count += 1
-            report_summary.append("LLM06: Critical! Raw transcript logging without Securelytix vault integration.")
-        else:
-            await self._ui_log("LLM06 Sensitive Data: PASSED", "success")
-
-        # LLM07: Insecure Plugin Design
-        has_pydantic = "pydantic" in content.lower() or "BaseModel" in content
-        tool_count = content.count("@llm.function_tool")
-        if tool_count > 0 and not has_pydantic:
-            await self._ui_log("LLM07 Insecure Plugin: WARNING - Tools lack strict type validation", "warn")
-            warn_count += 1
-            report_summary.append("LLM07: Warning. Tools are present but lack Pydantic strict typing validation.")
-        else:
-            await self._ui_log("LLM07 Insecure Plugin: PASSED", "success")
-
-        # LLM08: Excessive Agency
-        has_write = "UPDATE " in content or "INSERT " in content or "DELETE " in content
-        if tool_count > 0 and has_write:
-            await self._ui_log("LLM08 Excessive Agency: WARNING - Unrestricted DB writes detected", "warn")
-            warn_count += 1
-            report_summary.append("LLM08: Warning. Write capabilities detected. Enforce HITL (Human-in-the-Loop).")
-        else:
-            await self._ui_log("LLM08 Excessive Agency: PASSED", "success")
-
-        # LLM09: Overreliance
-        has_fallback = "confidence" in content.lower() or "fallback" in content.lower()
-        if has_fallback:
-            await self._ui_log("LLM09 Overreliance: PASSED - Confidence scoring active", "success")
-        else:
-            await self._ui_log("LLM09 Overreliance: WARNING - Lacks confidence scoring", "warn")
-            warn_count += 1
-            report_summary.append("LLM09: Warning. Agent trusts outputs blindly. Implement a confidence scoring mechanism.")
-
-        # LLM10: Model Theft / Secrets
-        has_hardcoded_keys = "sk-" in content or "api_key=\"" in content or "api_key='" in content
-        if has_hardcoded_keys:
-            await self._ui_log("LLM10 API Key Leak: FAILED - Hardcoded API keys detected", "error")
-            fail_count += 1
-            report_summary.append("LLM10: Critical! Hardcoded API keys found. Use os.getenv() immediately.")
-        else:
-            await self._ui_log("LLM10 API Key Leak: PASSED", "success")
+        try:
+            results = engine.evaluate(scanned_file_path, all_controls)
+            for res in results:
+                control_id = res["control"]
+                control_name = OWASP_NAMES.get(control_id, "Unknown Control")
+                if res["status"] == "FAIL":
+                    report_summary.append(failures.get(control_id, f"{control_id}: Warning. Control verification failed."))
+                    if control_id in ["LLM02", "LLM04", "LLM06", "LLM10"]:
+                        fail_count += 1
+                        await self._ui_log(f"{control_id} {control_name}: {OWASP_FAIL_MESSAGES[control_id]}", "error")
+                    else:
+                        warn_count += 1
+                        await self._ui_log(f"{control_id} {control_name}: {OWASP_FAIL_MESSAGES[control_id]}", "warn")
+                else:
+                    await self._ui_log(f"{control_id} {control_name}: PASSED", "success")
+        except Exception as e:
+            logger.error(f"Error evaluating agent {agent_name} AST: {e}")
+            await self._ui_log(f"Error evaluating AST: {str(e)}", "error")
+            return f"An error occurred while scanning the {agent_name} agent codebase: {str(e)}"
 
         await asyncio.sleep(1)
         await self._ui_log(f"Audit Complete. {fail_count} Critical, {warn_count} Warnings.", "info")

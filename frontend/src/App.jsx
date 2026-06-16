@@ -9,7 +9,6 @@ import BlogSection from "./components/layout/BlogSection";
 import AstraRoom from "./components/rooms/AstraRoom";
 import RehearsalRoom from "./components/rooms/RehearsalRoom";
 import SevaRoom from "./components/rooms/SevaRoom";
-import SwarmTelemetryPage from "./components/dashboard/SwarmTelemetryPage";
 import MartechRoom from "./components/rooms/MartechRoom";
 import OctaneRoom from "./components/rooms/OctaneRoom";
 import DevopsGeniRoom from "./components/rooms/DevopsGeniRoom";
@@ -48,8 +47,7 @@ function App() {
 
   // Sync currentPath to activeTab
   React.useEffect(() => {
-    if (isTelemetryPath) setActiveTab("telemetry");
-    else if (isDashboardPath) setActiveTab("analytics");
+    if (isDashboardPath) setActiveTab("analytics");
     else if (isDeploymentPath) setActiveTab("governance");
     else if (isShortsPath) setActiveTab("sneak-peak");
     else if (isInsightsPath) setActiveTab("insights");
@@ -61,10 +59,7 @@ function App() {
     setActiveTab(tabId);
     setShowBlog(false);
     setShowShorts(false);
-    if (tabId === "telemetry") {
-      window.history.pushState({}, "", "/observability-agents-oswap-llm");
-      setCurrentPath("/observability-agents-oswap-llm");
-    } else if (tabId === "analytics") {
+    if (tabId === "analytics") {
       window.history.pushState({}, "", "/dashboard");
       setCurrentPath("/dashboard");
     } else if (tabId === "compliance") {
@@ -117,7 +112,6 @@ function App() {
     };
   }, []);
 
-  const navigateToTelemetry = () => handleTabChange("telemetry");
   const navigateToShorts = () => handleTabChange("sneak-peak");
   const navigateToDashboard = () => handleTabChange("analytics");
   const navigateToDeployment = () => handleTabChange("governance");
@@ -191,13 +185,6 @@ function App() {
   const isDevopsGeni = roomData?.creatorId === "DEVOPS_GENI";
   const isAivyuh    = roomData?.creatorId === "AIVYUH" || roomData?.creatorId === "aivyuh";
 
-  const isTelemetryPath = 
-    currentPath.replace(/\/$/, "") === "/observability-agents-oswap-llm" || 
-    currentPath.replace(/\/$/, "") === "/security" || 
-    window.location.hash.replace(/\/$/, "") === "#/observability-agents-oswap-llm" ||
-    window.location.hash.replace(/\/$/, "") === "#/security" ||
-    window.location.hash === "#observability-agents-oswap-llm" ||
-    window.location.hash === "#security";
 
   const isFleetPath =
     currentPath.replace(/\/$/, "") === "/fleet" ||
@@ -252,8 +239,6 @@ function App() {
     content = <BlogSection onBack={() => handleTabChange("fleet")} currentPath={currentPath} setCurrentPath={setCurrentPath} />;
   } else if (showShorts || isShortsPath || activeTab === "sneak-peak") {
     content = <SwarmShortsPage onBack={() => handleTabChange("fleet")} />;
-  } else if (isTelemetryPath || activeTab === "telemetry") {
-    content = <SwarmTelemetryPage onBack={() => handleTabChange("fleet")} />;
   } else if (isDashboardPath || activeTab === "analytics") {
     content = <DashboardPage onBack={() => handleTabChange("fleet")} />;
   } else if (isCompliancePath || activeTab === "compliance") {
@@ -298,7 +283,6 @@ function App() {
       <LiveList 
         onJoin={handleJoin} 
         onBlogClick={() => handleTabChange("insights")} 
-        onTelemetryClick={navigateToTelemetry}
         onShortsClick={navigateToShorts}
         onDashboardClick={navigateToDashboard}
         onDeploymentClick={navigateToDeployment}
@@ -345,7 +329,7 @@ function App() {
   // When authenticated, the operator Control Panel Workspace is wrapped inside ConsoleLayout
   const isLandingPage =
     !isAuthenticated &&
-    !isTelemetryPath && !isDashboardPath && !isDeploymentPath && !isCompliancePath &&
+    !isDashboardPath && !isDeploymentPath && !isCompliancePath &&
     !showBlog && !isShortsPath && !isLoginPath && !isResetPasswordPath && !isInsightsPath && !isBlogPath &&
     (currentPath === "/" || currentPath === "" || isFleetPath ||
      (currentPath.startsWith("#") && !currentPath.startsWith("#/login") && !currentPath.startsWith("#/reset-password")) ||
@@ -364,8 +348,8 @@ function App() {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // Gate protected pages (Telemetry, Analytics/Dashboard, Compliance) behind login
-  const isProtected = isTelemetryPath || isDashboardPath || isCompliancePath;
+  // Gate protected pages (Analytics/Dashboard, Compliance) behind login
+  const isProtected = isDashboardPath || isCompliancePath;
   if (!isAuthenticated && isProtected) {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }

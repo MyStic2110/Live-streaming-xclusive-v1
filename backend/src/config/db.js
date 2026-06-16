@@ -215,32 +215,84 @@ const initializeTables = async (client) => {
         non_applicable_controls TEXT[] NOT NULL,
         applicable_count INTEGER NOT NULL,
         non_applicable_count INTEGER NOT NULL,
+        unmapped_count INTEGER NOT NULL DEFAULT 0,
         control_map JSONB NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
-    // Check if nist_rmf_core is empty, and seed it
-    const nistCountRes = await client.query('SELECT COUNT(*) FROM nist_rmf_core');
-    if (parseInt(nistCountRes.rows[0].count, 10) === 0) {
-      logger.info('[DATABASE] ⏳ Seeding NIST AI RMF Core subcategories...');
-      const nistJsonPath = path.join(__dirname, 'nist-rmf-core.json');
-      if (fs.existsSync(nistJsonPath)) {
-        const rawNist = fs.readFileSync(nistJsonPath, 'utf8');
-        const nistItems = JSON.parse(rawNist);
-        for (const item of nistItems) {
-          const { function: func, category, subcategory_id, description } = item;
-          await client.query(
-            `INSERT INTO nist_rmf_core (function, category, subcategory_id, description)
-             VALUES ($1, $2, $3, $4)
-             ON CONFLICT (subcategory_id) DO NOTHING;`,
-            [func, category, subcategory_id, description]
-          );
-        }
-        logger.info(`[DATABASE] ✅ Seeded ${nistItems.length} subcategories into nist_rmf_core.`);
-      } else {
-        logger.warn(`[DATABASE] ⚠️ Seed file not found at ${nistJsonPath}. NIST table was not seeded.`);
+    // 12. Create Agent Security Status table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS agent_security_status (
+        agent_name VARCHAR(255) PRIMARY KEY,
+        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        critical_count INTEGER DEFAULT 0,
+        warning_count INTEGER DEFAULT 0,
+        report_summary JSONB DEFAULT '[]'::jsonb,
+        nist_score NUMERIC DEFAULT 100,
+        nist_risk VARCHAR(50) DEFAULT 'LOW',
+        nist_controls JSONB DEFAULT '[]'::jsonb
+      );
+    `);
+
+    // 13. Create OWASP LLM Core Master table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS owasp_llm_core (
+        id SERIAL PRIMARY KEY,
+        framework VARCHAR(100) NOT NULL,
+        control_id VARCHAR(50) UNIQUE NOT NULL,
+        category VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Truncate and re-seed nist_rmf_core to ensure it is in sync with nist-rmf-core.json
+    logger.info('[DATABASE] ⏳ Syncing NIST AI RMF Core subcategories...');
+    const nistJsonPath = path.join(__dirname, 'nist-rmf-core.json');
+    if (fs.existsSync(nistJsonPath)) {
+      const rawNist = fs.readFileSync(nistJsonPath, 'utf8');
+      const nistItems = JSON.parse(rawNist);
+      
+      // Perform a transaction or simple truncate to reload
+      await client.query('TRUNCATE TABLE nist_rmf_core RESTART IDENTITY CASCADE');
+      
+      for (const item of nistItems) {
+        const { function: func, category, subcategory_id, description } = item;
+        await client.query(
+          `INSERT INTO nist_rmf_core (function, category, subcategory_id, description)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (subcategory_id) DO NOTHING;`,
+          [func, category, subcategory_id, description]
+        );
       }
+      logger.info(`[DATABASE] ✅ Sync complete. Seeded ${nistItems.length} subcategories into nist_rmf_core.`);
+    } else {
+      logger.warn(`[DATABASE] ⚠️ Seed file not found at ${nistJsonPath}. NIST table was not seeded.`);
+    }
+
+    // Truncate and re-seed owasp_llm_core to ensure it is in sync with owasp-llm-core.json
+    logger.info('[DATABASE] ⏳ Syncing OWASP Top 10 for LLM subcategories...');
+    const owaspJsonPath = path.join(__dirname, 'owasp-llm-core.json');
+    if (fs.existsSync(owaspJsonPath)) {
+      const rawOwasp = fs.readFileSync(owaspJsonPath, 'utf8');
+      const owaspItems = JSON.parse(rawOwasp);
+      
+      // Perform a transaction or simple truncate to reload
+      await client.query('TRUNCATE TABLE owasp_llm_core RESTART IDENTITY CASCADE');
+      
+      for (const item of owaspItems) {
+        const { framework, control_id, category, description } = item;
+        await client.query(
+          `INSERT INTO owasp_llm_core (framework, control_id, category, description)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (control_id) DO NOTHING;`,
+          [framework, control_id, category, description]
+        );
+      }
+      logger.info(`[DATABASE] ✅ Sync complete. Seeded ${owaspItems.length} subcategories into owasp_llm_core.`);
+    } else {
+      logger.warn(`[DATABASE] ⚠️ Seed file not found at ${owaspJsonPath}. OWASP table was not seeded.`);
     }
 
     // Dynamic agent analysis execution
@@ -275,6 +327,7 @@ const initializeTables = async (client) => {
               non_applicable_controls,
               applicable_count,
               non_applicable_count,
+              unmapped_count,
               control_map
             } = item;
 
@@ -292,8 +345,9 @@ const initializeTables = async (client) => {
                 non_applicable_controls,
                 applicable_count,
                 non_applicable_count,
+                unmapped_count,
                 control_map
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
               ON CONFLICT (agent_name)
               DO UPDATE SET
                 agent_type = EXCLUDED.agent_type,
@@ -307,6 +361,7 @@ const initializeTables = async (client) => {
                 non_applicable_controls = EXCLUDED.non_applicable_controls,
                 applicable_count = EXCLUDED.applicable_count,
                 non_applicable_count = EXCLUDED.non_applicable_count,
+                unmapped_count = EXCLUDED.unmapped_count,
                 control_map = EXCLUDED.control_map;`,
               [
                 agent_name,
@@ -321,6 +376,7 @@ const initializeTables = async (client) => {
                 non_applicable_controls,
                 applicable_count,
                 non_applicable_count,
+                unmapped_count || 0,
                 JSON.stringify(control_map)
               ]
             );
@@ -334,6 +390,55 @@ const initializeTables = async (client) => {
       logger.error(`[DATABASE] ❌ Dynamic Agent analysis failed: ${analysisError.message}`);
     }
 
+    // Dynamic agent compliance scan execution
+    try {
+      logger.info('[DATABASE] ⏳ Running dynamic Agent Compliance scan...');
+      const isWindows = process.platform === 'win32';
+      const pythonPath = isWindows
+        ? path.join(__dirname, '..', '..', '..', 'python-agent', 'venv', 'Scripts', 'python.exe')
+        : path.join(__dirname, '..', '..', '..', 'python-agent', 'venv', 'bin', 'python');
+      
+      const scannerPath = path.join(__dirname, '..', '..', '..', 'python-agent', 'agents', 'nist', 'scanner.py');
+
+      if (fs.existsSync(pythonPath) && fs.existsSync(scannerPath)) {
+        const { stdout, stderr } = await execPromise(`"${pythonPath}" "${scannerPath}"`);
+        if (stderr) {
+          logger.info(`[DATABASE] Agent compliance scanner logs: ${stderr.trim()}`);
+        }
+        if (stdout) {
+          const scanResult = JSON.parse(stdout.trim());
+          if (scanResult && scanResult.success && scanResult.history) {
+            logger.info(`[DATABASE] Ingesting compliance results for ${Object.keys(scanResult.history).length} agents dynamically...`);
+            for (const [agentName, data] of Object.entries(scanResult.history)) {
+              const nist = data.nist_audit || { score: 100, risk: "LOW", controls: [] };
+              await client.query(
+                `INSERT INTO agent_security_status (agent_name, nist_score, nist_risk, nist_controls, timestamp)
+                 VALUES ($1, $2, $3, $4, $5)
+                 ON CONFLICT (agent_name)
+                 DO UPDATE SET
+                   nist_score = EXCLUDED.nist_score,
+                   nist_risk = EXCLUDED.nist_risk,
+                   nist_controls = EXCLUDED.nist_controls,
+                   timestamp = EXCLUDED.timestamp;`,
+                [
+                  agentName.toLowerCase(),
+                  nist.score !== undefined ? nist.score : 100.0,
+                  nist.risk || "LOW",
+                  JSON.stringify(nist.controls || []),
+                  data.timestamp || new Date().toISOString()
+                ]
+              );
+            }
+            logger.info(`[DATABASE] ✅ Dynamic Agent compliance scan database sync complete.`);
+          }
+        }
+      } else {
+        logger.warn(`[DATABASE] ⚠️ Python executable or scanner script not found at ${pythonPath} or ${scannerPath}. Dynamic compliance scan skipped.`);
+      }
+    } catch (scanError) {
+      logger.error(`[DATABASE] ❌ Dynamic Agent compliance scan failed: ${scanError.message}`);
+    }
+ 
     logger.info(`[DATABASE] ✅ PostgreSQL Tables Initialized.`);
   } catch (error) {
     logger.error(`[DATABASE] ❌ Table initialization failed: ${error.message}`);

@@ -1,0 +1,62 @@
+[
+  {
+    "framework": "OWASP Top 10 for LLM Applications",
+    "control_id": "LLM01",
+    "category": "Prompt Injection",
+    "description": "Attackers manipulate a large language model through crafted inputs, causing the LLM to unknowingly execute the attacker's intentions. This includes direct (jailbreaking) and indirect (via external data) prompt injections."
+  },
+  {
+    "framework": "OWASP Top 10 for LLM Applications",
+    "control_id": "LLM02",
+    "category": "Insecure Output Handling",
+    "description": "Occurs when an LLM output is accepted without scrutiny, validation, or sanitization before being passed to downstream components or systems, leading to vulnerabilities like XSS, CSRF, or SSRF."
+  },
+  {
+    "framework": "OWASP Top 10 for LLM Applications",
+    "control_id": "LLM03",
+    "category": "Training Data Poisoning",
+    "description": "Occurs when vulnerabilities, backdoors, or biases are introduced into the training data, compromising the model's security, effectiveness, or ethical behavior."
+  },
+  {
+    "framework": "OWASP Top 10 for LLM Applications",
+    "control_id": "LLM04",
+    "category": "Model Denial of Service",
+    "description": "Attackers interact with an LLM in a way that consumes an exceptionally high amount of resources (compute, memory), resulting in a decline in quality of service or high infrastructure costs."
+  },
+  {
+    "framework": "OWASP Top 10 for LLM Applications",
+    "control_id": "LLM05",
+    "category": "Supply Chain Vulnerabilities",
+    "description": "Vulnerabilities arising from compromised third-party components, such as pre-trained models, crowdsourced datasets, or external plugin extensions."
+  },
+  {
+    "framework": "OWASP Top 10 for LLM Applications",
+    "control_id": "LLM06",
+    "category": "Sensitive Information Disclosure",
+    "description": "Occurs when the LLM inadvertently reveals confidential data, PII, proprietary algorithms, or internal architecture details in its responses."
+  },
+  {
+    "framework": "OWASP Top 10 for LLM Applications",
+    "control_id": "LLM07",
+    "category": "Insecure Plugin Design",
+    "description": "Plugins invoked by the LLM that process untrusted inputs without adequate validation, strict access control, or secure architecture, exposing the application to exploitation."
+  },
+  {
+    "framework": "OWASP Top 10 for LLM Applications",
+    "control_id": "LLM08",
+    "category": "Excessive Agency",
+    "description": "Granting the LLM functionality, permissions, or autonomy beyond what is strictly necessary, enabling it to take damaging actions without human oversight."
+  },
+  {
+    "framework": "OWASP Top 10 for LLM Applications",
+    "control_id": "LLM09",
+    "category": "Overreliance",
+    "description": "When systems or human operators accept LLM outputs as factual or correct without verification, leading to errors, misinformation, or security failures (often tied to model hallucinations)."
+  },
+  {
+    "framework": "OWASP Top 10 for LLM Applications",
+    "control_id": "LLM10",
+    "category": "Model Theft",
+    "description": "Unauthorized access, copying, or exfiltration of proprietary LLM models, weights, or training architectures by malicious actors."
+  }
+]

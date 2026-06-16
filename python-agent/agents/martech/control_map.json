@@ -1,343 +1,949 @@
 {
     "applicable_controls": [
-        "GV-2.2",
-        "GV-4.2",
-        "MAP-1.4",
-        "MAP-2.1",
-        "MEAS-1.1",
-        "MEAS-1.2",
-        "MEAS-1.3",
-        "MEAS-2.1",
-        "MEAS-2.2",
-        "MEAS-2.5",
-        "MEAS-3.1",
-        "MAN-1.4"
+        "GV-4.2-001",
+        "GV-4.2-002",
+        "GV-4.2-003",
+        "MP-2.1-001",
+        "MP-2.1-002",
+        "MS-1.1-001",
+        "MS-1.1-002",
+        "MS-1.1-003",
+        "MS-1.1-004",
+        "MS-1.1-005",
+        "MS-1.1-006",
+        "MS-1.1-007",
+        "MS-1.1-008",
+        "MS-1.1-009",
+        "MS-1.3-001",
+        "MS-1.3-002",
+        "MS-1.3-003",
+        "MS-2.2-001",
+        "MS-2.2-002",
+        "MS-2.2-003",
+        "MS-2.2-004",
+        "MS-2.5-001",
+        "MS-2.5-002",
+        "MS-2.5-003",
+        "MS-2.5-004",
+        "MS-2.5-005",
+        "MS-2.5-006"
     ],
     "non_applicable_controls": [
-        "GV-1.4",
-        "GV-3.1",
-        "GV-5.1",
-        "GV-6.1",
-        "GV-6.2",
-        "MAP-1.3",
-        "MAP-1.5",
-        "MAP-3.2",
-        "MAP-5.1",
-        "MAP-5.2",
-        "MEAS-2.3",
-        "MEAS-2.4",
-        "MEAS-2.6",
-        "MEAS-2.7",
-        "MEAS-4.2",
-        "MEAS-4.3",
-        "MAN-1.1",
-        "MAN-1.2",
-        "MAN-1.3",
-        "MAN-2.1",
-        "MAN-2.2",
-        "MAN-2.4"
+        "GV-1.4-001",
+        "GV-1.4-002",
+        "GV-5.1-001",
+        "GV-5.1-002",
+        "GV-6.1-001",
+        "GV-6.1-002",
+        "GV-6.1-003",
+        "GV-6.1-004",
+        "GV-6.1-005",
+        "GV-6.1-006",
+        "GV-6.1-007",
+        "GV-6.1-008",
+        "GV-6.1-009",
+        "GV-6.1-010",
+        "GV-6.2-001",
+        "GV-6.2-002",
+        "GV-6.2-003",
+        "GV-6.2-004",
+        "GV-6.2-005",
+        "GV-6.2-006",
+        "GV-6.2-007",
+        "MP-5.1-001",
+        "MP-5.1-002",
+        "MP-5.1-003",
+        "MP-5.1-004",
+        "MP-5.1-005",
+        "MP-5.1-006",
+        "MP-5.2-001",
+        "MP-5.2-002",
+        "MS-2.3-001",
+        "MS-2.3-002",
+        "MS-2.3-003",
+        "MS-2.3-004",
+        "MS-2.6-001",
+        "MS-2.6-002",
+        "MS-2.6-003",
+        "MS-2.6-004",
+        "MS-2.6-005",
+        "MS-2.6-006",
+        "MS-2.6-007",
+        "MS-2.7-001",
+        "MS-2.7-002",
+        "MS-2.7-003",
+        "MS-2.7-004",
+        "MS-2.7-005",
+        "MS-2.7-006",
+        "MS-2.7-007",
+        "MS-2.7-008",
+        "MS-2.7-009",
+        "MS-4.2-001",
+        "MS-4.2-002",
+        "MS-4.2-003",
+        "MS-4.2-004",
+        "MS-4.2-005",
+        "MG-1.3-001",
+        "MG-1.3-002",
+        "MG-2.2-001",
+        "MG-2.2-002",
+        "MG-2.2-003",
+        "MG-2.2-004",
+        "MG-2.2-005",
+        "MG-2.2-006",
+        "MG-2.2-007",
+        "MG-2.2-008",
+        "MG-2.2-009",
+        "MG-2.4-001",
+        "MG-2.4-002",
+        "MG-2.4-003",
+        "MG-2.4-004"
     ],
-    "applicable_count": 12,
-    "non_applicable_count": 22,
-    "unmapped_count": 41,
+    "applicable_count": 27,
+    "non_applicable_count": 69,
+    "unmapped_count": 115,
     "control_map": {
-        "GV-1.4": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, DELETE_DB, PAYMENTS."
-        },
-        "GV-2.2": {
-            "status": "applicable",
-            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
-        },
-        "GV-3.1": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, RAG, MCP."
-        },
-        "GV-4.2": {
-            "status": "applicable",
-            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
-        },
-        "GV-5.1": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: MCP."
-        },
-        "GV-6.1": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
-        },
-        "GV-6.2": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, DELETE_DB, ADMIN_ACCESS."
-        },
-        "MAP-1.3": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, RAG."
-        },
-        "MAP-1.4": {
-            "status": "applicable",
-            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
-        },
-        "MAP-1.5": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: MCP."
-        },
-        "MAP-2.1": {
-            "status": "applicable",
-            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
-        },
-        "MAP-3.2": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS."
-        },
-        "MAP-5.1": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
-        },
-        "MAP-5.2": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: AGENT_DELEGATION."
-        },
-        "MEAS-1.1": {
-            "status": "applicable",
-            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
-        },
-        "MEAS-1.2": {
-            "status": "applicable",
-            "rationale": "Applicable because the agent has the following required capabilities: INTERNET_ACCESS, TOOLS."
-        },
-        "MEAS-1.3": {
-            "status": "applicable",
-            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
-        },
-        "MEAS-2.1": {
-            "status": "applicable",
-            "rationale": "Applicable because the agent has the following required capabilities: INTERNET_ACCESS."
-        },
-        "MEAS-2.2": {
-            "status": "applicable",
-            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
-        },
-        "MEAS-2.3": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: ADMIN_ACCESS, WRITE_DB."
-        },
-        "MEAS-2.4": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: MCP."
-        },
-        "MEAS-2.5": {
-            "status": "applicable",
-            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
-        },
-        "MEAS-2.6": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
-        },
-        "MEAS-2.7": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
-        },
-        "MEAS-3.1": {
-            "status": "applicable",
-            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
-        },
-        "MEAS-4.2": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
-        },
-        "MEAS-4.3": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: AGENT_DELEGATION."
-        },
-        "MAN-1.1": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, WRITE_DB, DELETE_DB, ADMIN_ACCESS."
-        },
-        "MAN-1.2": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, WRITE_DB, DELETE_DB."
-        },
-        "MAN-1.3": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: WRITE_DB, DELETE_DB."
-        },
-        "MAN-1.4": {
-            "status": "applicable",
-            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
-        },
-        "MAN-2.1": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, WRITE_DB, DELETE_DB."
-        },
-        "MAN-2.2": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
-        },
-        "MAN-2.4": {
-            "status": "non-applicable",
-            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, ADMIN_ACCESS."
-        },
-        "GV-1.1": {
+        "GV-1.1-001": {
             "status": "unmapped",
             "rationale": "Managed at the organizational level; the company legal team monitors and documents AI compliance requirements."
         },
-        "GV-1.2": {
+        "GV-1.2-001": {
             "status": "unmapped",
             "rationale": "Handled at the organizational level via standard corporate policies and developer training guidelines."
         },
-        "GV-1.3": {
+        "GV-1.2-002": {
+            "status": "unmapped",
+            "rationale": "Handled at the organizational level via standard corporate policies and developer training guidelines."
+        },
+        "GV-1.3-001": {
             "status": "unmapped",
             "rationale": "Determined by executive leadership and the risk management committee at the corporate level."
         },
-        "GV-1.5": {
+        "GV-1.3-002": {
+            "status": "unmapped",
+            "rationale": "Determined by executive leadership and the risk management committee at the corporate level."
+        },
+        "GV-1.3-003": {
+            "status": "unmapped",
+            "rationale": "Determined by executive leadership and the risk management committee at the corporate level."
+        },
+        "GV-1.3-004": {
+            "status": "unmapped",
+            "rationale": "Determined by executive leadership and the risk management committee at the corporate level."
+        },
+        "GV-1.3-005": {
+            "status": "unmapped",
+            "rationale": "Determined by executive leadership and the risk management committee at the corporate level."
+        },
+        "GV-1.3-006": {
+            "status": "unmapped",
+            "rationale": "Determined by executive leadership and the risk management committee at the corporate level."
+        },
+        "GV-1.3-007": {
+            "status": "unmapped",
+            "rationale": "Determined by executive leadership and the risk management committee at the corporate level."
+        },
+        "GV-1.4-001": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, DELETE_DB, PAYMENTS."
+        },
+        "GV-1.4-002": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, DELETE_DB, PAYMENTS."
+        },
+        "GV-1.5-001": {
             "status": "unmapped",
             "rationale": "Conducted via periodic, organization-wide compliance audits and reviews."
         },
-        "GV-1.6": {
+        "GV-1.5-002": {
+            "status": "unmapped",
+            "rationale": "Conducted via periodic, organization-wide compliance audits and reviews."
+        },
+        "GV-1.5-003": {
+            "status": "unmapped",
+            "rationale": "Conducted via periodic, organization-wide compliance audits and reviews."
+        },
+        "GV-1.6-001": {
             "status": "unmapped",
             "rationale": "Maintained centrally in the company's master software registry and CMDB."
         },
-        "GV-1.7": {
+        "GV-1.6-002": {
+            "status": "unmapped",
+            "rationale": "Maintained centrally in the company's master software registry and CMDB."
+        },
+        "GV-1.6-003": {
+            "status": "unmapped",
+            "rationale": "Maintained centrally in the company's master software registry and CMDB."
+        },
+        "GV-1.7-001": {
             "status": "unmapped",
             "rationale": "Defined in the standard IT lifecycle and system decommissioning policies."
         },
-        "GV-2.1": {
+        "GV-1.7-002": {
+            "status": "unmapped",
+            "rationale": "Defined in the standard IT lifecycle and system decommissioning policies."
+        },
+        "GV-2.1-001": {
             "status": "unmapped",
             "rationale": "Defined in the organizational chart, job descriptions, and team charters."
         },
-        "GV-2.3": {
+        "GV-2.1-002": {
             "status": "unmapped",
-            "rationale": "Executive leadership maintains ultimate oversight and sign-off on AI deployments."
+            "rationale": "Defined in the organizational chart, job descriptions, and team charters."
         },
-        "GV-3.2": {
+        "GV-2.1-003": {
+            "status": "unmapped",
+            "rationale": "Defined in the organizational chart, job descriptions, and team charters."
+        },
+        "GV-2.1-004": {
+            "status": "unmapped",
+            "rationale": "Defined in the organizational chart, job descriptions, and team charters."
+        },
+        "GV-2.1-005": {
+            "status": "unmapped",
+            "rationale": "Defined in the organizational chart, job descriptions, and team charters."
+        },
+        "GV-3.2-001": {
             "status": "unmapped",
             "rationale": "Administered by HR and the DEI committee through company-wide policies."
         },
-        "GV-4.1": {
+        "GV-3.2-002": {
+            "status": "unmapped",
+            "rationale": "Administered by HR and the DEI committee through company-wide policies."
+        },
+        "GV-3.2-003": {
+            "status": "unmapped",
+            "rationale": "Administered by HR and the DEI committee through company-wide policies."
+        },
+        "GV-3.2-004": {
+            "status": "unmapped",
+            "rationale": "Administered by HR and the DEI committee through company-wide policies."
+        },
+        "GV-3.2-005": {
+            "status": "unmapped",
+            "rationale": "Administered by HR and the DEI committee through company-wide policies."
+        },
+        "GV-4.1-001": {
             "status": "unmapped",
             "rationale": "Promoted through company-wide training and leadership-led awareness initiatives."
         },
-        "GV-4.3": {
+        "GV-4.1-002": {
+            "status": "unmapped",
+            "rationale": "Promoted through company-wide training and leadership-led awareness initiatives."
+        },
+        "GV-4.1-003": {
+            "status": "unmapped",
+            "rationale": "Promoted through company-wide training and leadership-led awareness initiatives."
+        },
+        "GV-4.2-001": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
+        },
+        "GV-4.2-002": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
+        },
+        "GV-4.2-003": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
+        },
+        "GV-4.3-002": {
             "status": "unmapped",
             "rationale": "Governed by corporate incident response and escalation protocols."
         },
-        "GV-5.2": {
+        "GV-4.3-003": {
             "status": "unmapped",
-            "rationale": "Managed via corporate feedback channels, customer support teams, and user relations."
+            "rationale": "Governed by corporate incident response and escalation protocols."
         },
-        "MAP-1.1": {
+        "GV-5.1-001": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MCP."
+        },
+        "GV-5.1-002": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MCP."
+        },
+        "GV-6.1-001": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "GV-6.1-002": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "GV-6.1-003": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "GV-6.1-004": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "GV-6.1-005": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "GV-6.1-006": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "GV-6.1-007": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "GV-6.1-008": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "GV-6.1-009": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "GV-6.1-010": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "GV-6.2-001": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, DELETE_DB, ADMIN_ACCESS."
+        },
+        "GV-6.2-002": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, DELETE_DB, ADMIN_ACCESS."
+        },
+        "GV-6.2-003": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, DELETE_DB, ADMIN_ACCESS."
+        },
+        "GV-6.2-004": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, DELETE_DB, ADMIN_ACCESS."
+        },
+        "GV-6.2-005": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, DELETE_DB, ADMIN_ACCESS."
+        },
+        "GV-6.2-006": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, DELETE_DB, ADMIN_ACCESS."
+        },
+        "GV-6.2-007": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, DELETE_DB, ADMIN_ACCESS."
+        },
+        "MP-1.1-001": {
             "status": "unmapped",
             "rationale": "Documented in the product requirement documents (PRD) and agent charter."
         },
-        "MAP-1.2": {
+        "MP-1.1-002": {
+            "status": "unmapped",
+            "rationale": "Documented in the product requirement documents (PRD) and agent charter."
+        },
+        "MP-1.1-003": {
+            "status": "unmapped",
+            "rationale": "Documented in the product requirement documents (PRD) and agent charter."
+        },
+        "MP-1.1-004": {
+            "status": "unmapped",
+            "rationale": "Documented in the product requirement documents (PRD) and agent charter."
+        },
+        "MP-1.2-001": {
             "status": "unmapped",
             "rationale": "Evaluated during the R&D and model selection phase before agent development."
         },
-        "MAP-1.6": {
+        "MP-1.2-002": {
             "status": "unmapped",
-            "rationale": "Defined in the system design documentation and model cards."
+            "rationale": "Evaluated during the R&D and model selection phase before agent development."
         },
-        "MAP-2.2": {
+        "MP-2.1-001": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
+        },
+        "MP-2.1-002": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
+        },
+        "MP-2.2-001": {
             "status": "unmapped",
             "rationale": "Specified in the QA testing suite and validation frameworks."
         },
-        "MAP-2.3": {
+        "MP-2.2-002": {
+            "status": "unmapped",
+            "rationale": "Specified in the QA testing suite and validation frameworks."
+        },
+        "MP-2.3-001": {
             "status": "unmapped",
             "rationale": "Identified during the initial project threat modeling and risk assessment phases."
         },
-        "MAP-2.4": {
+        "MP-2.3-002": {
             "status": "unmapped",
-            "rationale": "Governed by corporate data lake policies and database ingestion pipelines."
+            "rationale": "Identified during the initial project threat modeling and risk assessment phases."
         },
-        "MAP-2.5": {
+        "MP-2.3-003": {
             "status": "unmapped",
-            "rationale": "Evaluated in the project's Privacy and Algorithmic Impact Assessments."
+            "rationale": "Identified during the initial project threat modeling and risk assessment phases."
         },
-        "MAP-2.6": {
+        "MP-2.3-004": {
             "status": "unmapped",
-            "rationale": "Documented in the infrastructure architecture diagram and Terraform files."
+            "rationale": "Identified during the initial project threat modeling and risk assessment phases."
         },
-        "MAP-3.1": {
+        "MP-2.3-005": {
             "status": "unmapped",
-            "rationale": "Defined in the project business case and ROI analysis."
+            "rationale": "Identified during the initial project threat modeling and risk assessment phases."
         },
-        "MAP-3.3": {
-            "status": "unmapped",
-            "rationale": "Established in the model performance evaluation and monitoring guidelines."
-        },
-        "MAP-3.4": {
+        "MP-3.4-001": {
             "status": "unmapped",
             "rationale": "Defined in the cloud deployment guide and infrastructure limits."
         },
-        "MAP-3.5": {
+        "MP-3.4-002": {
             "status": "unmapped",
-            "rationale": "Outlined in the User Experience (UX) design and operational runbooks."
+            "rationale": "Defined in the cloud deployment guide and infrastructure limits."
         },
-        "MAP-4.1": {
+        "MP-3.4-003": {
+            "status": "unmapped",
+            "rationale": "Defined in the cloud deployment guide and infrastructure limits."
+        },
+        "MP-3.4-004": {
+            "status": "unmapped",
+            "rationale": "Defined in the cloud deployment guide and infrastructure limits."
+        },
+        "MP-3.4-005": {
+            "status": "unmapped",
+            "rationale": "Defined in the cloud deployment guide and infrastructure limits."
+        },
+        "MP-3.4-006": {
+            "status": "unmapped",
+            "rationale": "Defined in the cloud deployment guide and infrastructure limits."
+        },
+        "MP-4.1-001": {
             "status": "unmapped",
             "rationale": "Managed via vendor risk assessment and third-party procurement reviews."
         },
-        "MAP-4.2": {
+        "MP-4.1-002": {
             "status": "unmapped",
-            "rationale": "Documented in the system architecture diagrams and dependency trees."
+            "rationale": "Managed via vendor risk assessment and third-party procurement reviews."
         },
-        "MEAS-2.8": {
+        "MP-4.1-003": {
+            "status": "unmapped",
+            "rationale": "Managed via vendor risk assessment and third-party procurement reviews."
+        },
+        "MP-4.1-004": {
+            "status": "unmapped",
+            "rationale": "Managed via vendor risk assessment and third-party procurement reviews."
+        },
+        "MP-4.1-005": {
+            "status": "unmapped",
+            "rationale": "Managed via vendor risk assessment and third-party procurement reviews."
+        },
+        "MP-4.1-006": {
+            "status": "unmapped",
+            "rationale": "Managed via vendor risk assessment and third-party procurement reviews."
+        },
+        "MP-4.1-007": {
+            "status": "unmapped",
+            "rationale": "Managed via vendor risk assessment and third-party procurement reviews."
+        },
+        "MP-4.1-008": {
+            "status": "unmapped",
+            "rationale": "Managed via vendor risk assessment and third-party procurement reviews."
+        },
+        "MP-4.1-009": {
+            "status": "unmapped",
+            "rationale": "Managed via vendor risk assessment and third-party procurement reviews."
+        },
+        "MP-4.1-010": {
+            "status": "unmapped",
+            "rationale": "Managed via vendor risk assessment and third-party procurement reviews."
+        },
+        "MP-5.1-001": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "MP-5.1-002": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "MP-5.1-003": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "MP-5.1-004": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "MP-5.1-005": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "MP-5.1-006": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "MP-5.2-001": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: AGENT_DELEGATION."
+        },
+        "MP-5.2-002": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: AGENT_DELEGATION."
+        },
+        "MS-1.1-001": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-1.1-002": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-1.1-003": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-1.1-004": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-1.1-005": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-1.1-006": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-1.1-007": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-1.1-008": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-1.1-009": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-1.3-001": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
+        },
+        "MS-1.3-002": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
+        },
+        "MS-1.3-003": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: PII_ACCESS."
+        },
+        "MS-2.2-001": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-2.2-002": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-2.2-003": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-2.2-004": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-2.3-001": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: ADMIN_ACCESS, WRITE_DB."
+        },
+        "MS-2.3-002": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: ADMIN_ACCESS, WRITE_DB."
+        },
+        "MS-2.3-003": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: ADMIN_ACCESS, WRITE_DB."
+        },
+        "MS-2.3-004": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: ADMIN_ACCESS, WRITE_DB."
+        },
+        "MS-2.5-001": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-2.5-002": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-2.5-003": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-2.5-004": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-2.5-005": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-2.5-006": {
+            "status": "applicable",
+            "rationale": "Applicable because the agent has the following required capabilities: TOOLS."
+        },
+        "MS-2.6-001": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.6-002": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.6-003": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.6-004": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.6-005": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.6-006": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.6-007": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.7-001": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.7-002": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.7-003": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.7-004": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.7-005": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.7-006": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.7-007": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.7-008": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.7-009": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MS-2.8-001": {
             "status": "unmapped",
             "rationale": "Monitored at the cloud provider/data center level (carbon offset tracking)."
         },
-        "MEAS-2.9": {
+        "MS-2.8-002": {
+            "status": "unmapped",
+            "rationale": "Monitored at the cloud provider/data center level (carbon offset tracking)."
+        },
+        "MS-2.8-003": {
+            "status": "unmapped",
+            "rationale": "Monitored at the cloud provider/data center level (carbon offset tracking)."
+        },
+        "MS-2.8-004": {
+            "status": "unmapped",
+            "rationale": "Monitored at the cloud provider/data center level (carbon offset tracking)."
+        },
+        "MS-2.9-001": {
             "status": "unmapped",
             "rationale": "Managed via the Jira/Linear tracking board and risk register."
         },
-        "MEAS-2.10": {
+        "MS-2.9-002": {
+            "status": "unmapped",
+            "rationale": "Managed via the Jira/Linear tracking board and risk register."
+        },
+        "MS-2.10-001": {
             "status": "unmapped",
             "rationale": "Monitored via Datadog, Prometheus, or Grafana dashboards."
         },
-        "MEAS-2.11": {
+        "MS-2.10-002": {
+            "status": "unmapped",
+            "rationale": "Monitored via Datadog, Prometheus, or Grafana dashboards."
+        },
+        "MS-2.10-003": {
+            "status": "unmapped",
+            "rationale": "Monitored via Datadog, Prometheus, or Grafana dashboards."
+        },
+        "MS-2.11-001": {
             "status": "unmapped",
             "rationale": "Evaluated via user experience feedback and interaction analytics."
         },
-        "MEAS-2.12": {
+        "MS-2.11-002": {
+            "status": "unmapped",
+            "rationale": "Evaluated via user experience feedback and interaction analytics."
+        },
+        "MS-2.11-003": {
+            "status": "unmapped",
+            "rationale": "Evaluated via user experience feedback and interaction analytics."
+        },
+        "MS-2.11-004": {
+            "status": "unmapped",
+            "rationale": "Evaluated via user experience feedback and interaction analytics."
+        },
+        "MS-2.11-005": {
+            "status": "unmapped",
+            "rationale": "Evaluated via user experience feedback and interaction analytics."
+        },
+        "MS-2.12-001": {
             "status": "unmapped",
             "rationale": "Defined in Key Performance Indicators (KPIs) and Service Level Objectives (SLOs)."
         },
-        "MEAS-2.13": {
+        "MS-2.12-002": {
+            "status": "unmapped",
+            "rationale": "Defined in Key Performance Indicators (KPIs) and Service Level Objectives (SLOs)."
+        },
+        "MS-2.12-003": {
+            "status": "unmapped",
+            "rationale": "Defined in Key Performance Indicators (KPIs) and Service Level Objectives (SLOs)."
+        },
+        "MS-2.12-004": {
+            "status": "unmapped",
+            "rationale": "Defined in Key Performance Indicators (KPIs) and Service Level Objectives (SLOs)."
+        },
+        "MS-2.13-001": {
             "status": "unmapped",
             "rationale": "Reviewed periodically by the data science and engineering leadership teams."
         },
-        "MEAS-3.2": {
+        "MS-3.2-001": {
             "status": "unmapped",
             "rationale": "Managed under data governance and quality assurance guidelines."
         },
-        "MEAS-3.3": {
+        "MS-3.3-001": {
             "status": "unmapped",
             "rationale": "Shared via regular executive status reports and stakeholder updates."
         },
-        "MEAS-4.1": {
+        "MS-3.3-002": {
             "status": "unmapped",
-            "rationale": "Assessed during quarterly business and technology reviews."
+            "rationale": "Shared via regular executive status reports and stakeholder updates."
         },
-        "MAN-2.3": {
+        "MS-3.3-003": {
+            "status": "unmapped",
+            "rationale": "Shared via regular executive status reports and stakeholder updates."
+        },
+        "MS-3.3-004": {
+            "status": "unmapped",
+            "rationale": "Shared via regular executive status reports and stakeholder updates."
+        },
+        "MS-3.3-005": {
+            "status": "unmapped",
+            "rationale": "Shared via regular executive status reports and stakeholder updates."
+        },
+        "MS-4.2-001": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "MS-4.2-002": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "MS-4.2-003": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "MS-4.2-004": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "MS-4.2-005": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: MEMORY."
+        },
+        "MG-1.3-001": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: WRITE_DB, DELETE_DB."
+        },
+        "MG-1.3-002": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: WRITE_DB, DELETE_DB."
+        },
+        "MG-2.2-001": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MG-2.2-002": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MG-2.2-003": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MG-2.2-004": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MG-2.2-005": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MG-2.2-006": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MG-2.2-007": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MG-2.2-008": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MG-2.2-009": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: READ_DB, WRITE_DB, PAYMENTS."
+        },
+        "MG-2.3-001": {
             "status": "unmapped",
             "rationale": "Covered by the general incident management and disaster recovery plans."
         },
-        "MAN-3.1": {
+        "MG-2.4-001": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, ADMIN_ACCESS."
+        },
+        "MG-2.4-002": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, ADMIN_ACCESS."
+        },
+        "MG-2.4-003": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, ADMIN_ACCESS."
+        },
+        "MG-2.4-004": {
+            "status": "non-applicable",
+            "rationale": "Not applicable because the agent lacks any of the required capabilities: PAYMENTS, ADMIN_ACCESS."
+        },
+        "MG-3.1-001": {
             "status": "unmapped",
             "rationale": "Governed by vendor service level agreements (SLAs) and contract terms."
         },
-        "MAN-3.2": {
+        "MG-3.1-002": {
+            "status": "unmapped",
+            "rationale": "Governed by vendor service level agreements (SLAs) and contract terms."
+        },
+        "MG-3.1-003": {
+            "status": "unmapped",
+            "rationale": "Governed by vendor service level agreements (SLAs) and contract terms."
+        },
+        "MG-3.1-004": {
+            "status": "unmapped",
+            "rationale": "Governed by vendor service level agreements (SLAs) and contract terms."
+        },
+        "MG-3.1-005": {
+            "status": "unmapped",
+            "rationale": "Governed by vendor service level agreements (SLAs) and contract terms."
+        },
+        "MG-3.2-001": {
             "status": "unmapped",
             "rationale": "Conducted via SOC2 Type II audits and vendor security questionnaires."
         },
-        "MAN-4.1": {
+        "MG-3.2-002": {
+            "status": "unmapped",
+            "rationale": "Conducted via SOC2 Type II audits and vendor security questionnaires."
+        },
+        "MG-3.2-003": {
+            "status": "unmapped",
+            "rationale": "Conducted via SOC2 Type II audits and vendor security questionnaires."
+        },
+        "MG-3.2-004": {
+            "status": "unmapped",
+            "rationale": "Conducted via SOC2 Type II audits and vendor security questionnaires."
+        },
+        "MG-3.2-005": {
+            "status": "unmapped",
+            "rationale": "Conducted via SOC2 Type II audits and vendor security questionnaires."
+        },
+        "MG-3.2-006": {
+            "status": "unmapped",
+            "rationale": "Conducted via SOC2 Type II audits and vendor security questionnaires."
+        },
+        "MG-3.2-007": {
+            "status": "unmapped",
+            "rationale": "Conducted via SOC2 Type II audits and vendor security questionnaires."
+        },
+        "MG-3.2-008": {
+            "status": "unmapped",
+            "rationale": "Conducted via SOC2 Type II audits and vendor security questionnaires."
+        },
+        "MG-3.2-009": {
+            "status": "unmapped",
+            "rationale": "Conducted via SOC2 Type II audits and vendor security questionnaires."
+        },
+        "MG-4.1-001": {
             "status": "unmapped",
             "rationale": "Handled via automated application performance monitoring (APM) tools."
         },
-        "MAN-4.2": {
+        "MG-4.1-002": {
+            "status": "unmapped",
+            "rationale": "Handled via automated application performance monitoring (APM) tools."
+        },
+        "MG-4.1-003": {
+            "status": "unmapped",
+            "rationale": "Handled via automated application performance monitoring (APM) tools."
+        },
+        "MG-4.1-004": {
+            "status": "unmapped",
+            "rationale": "Handled via automated application performance monitoring (APM) tools."
+        },
+        "MG-4.1-005": {
+            "status": "unmapped",
+            "rationale": "Handled via automated application performance monitoring (APM) tools."
+        },
+        "MG-4.1-006": {
+            "status": "unmapped",
+            "rationale": "Handled via automated application performance monitoring (APM) tools."
+        },
+        "MG-4.1-007": {
+            "status": "unmapped",
+            "rationale": "Handled via automated application performance monitoring (APM) tools."
+        },
+        "MG-4.2-001": {
             "status": "unmapped",
             "rationale": "Governed by the corporate cybersecurity and operational incident response plans."
         },
-        "MAN-4.3": {
+        "MG-4.2-002": {
+            "status": "unmapped",
+            "rationale": "Governed by the corporate cybersecurity and operational incident response plans."
+        },
+        "MG-4.2-003": {
+            "status": "unmapped",
+            "rationale": "Governed by the corporate cybersecurity and operational incident response plans."
+        },
+        "MG-4.3-001": {
+            "status": "unmapped",
+            "rationale": "Managed by the corporate communications and public relations teams."
+        },
+        "MG-4.3-002": {
+            "status": "unmapped",
+            "rationale": "Managed by the corporate communications and public relations teams."
+        },
+        "MG-4.3-003": {
             "status": "unmapped",
             "rationale": "Managed by the corporate communications and public relations teams."
         }

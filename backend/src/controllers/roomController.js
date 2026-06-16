@@ -132,7 +132,7 @@ export const getAstraInsights = async (req, res) => {
 
     const files = fs.readdirSync(blogsDir);
     const insights = files
-      .filter(f => f.endsWith(".json") && !f.startsWith("idea-"))
+      .filter(f => f.endsWith(".json"))
       .map(f => {
         const content = fs.readFileSync(path.join(blogsDir, f), "utf-8");
         return JSON.parse(content);
@@ -229,13 +229,17 @@ const runNistAnalyzer = () => {
   });
 };
 
-const runNistScanner = () => {
+const runNistScanner = (agentName = null) => {
   return new Promise((resolve, reject) => {
     const pythonPath = getPythonPath();
     const nistScannerPath = path.resolve(__dirname, "../../../python-agent/agents/nist/scanner.py");
+    const args = [nistScannerPath];
+    if (agentName) {
+      args.push(agentName);
+    }
     
-    console.log(`[NIST] Running compliance scanner: ${pythonPath} ${nistScannerPath}`);
-    const proc = spawn(pythonPath, [nistScannerPath]);
+    console.log(`[NIST] Running compliance scanner: ${pythonPath} ${args.join(" ")}`);
+    const proc = spawn(pythonPath, args);
     let stdout = "";
     let stderr = "";
     
@@ -275,6 +279,7 @@ export const runNistScan = async (req, res) => {
           non_applicable_controls,
           applicable_count,
           non_applicable_count,
+          unmapped_count,
           control_map
         } = item;
 
@@ -292,8 +297,9 @@ export const runNistScan = async (req, res) => {
             non_applicable_controls,
             applicable_count,
             non_applicable_count,
+            unmapped_count,
             control_map
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
           ON CONFLICT (agent_name)
           DO UPDATE SET
             agent_type = EXCLUDED.agent_type,
@@ -307,6 +313,7 @@ export const runNistScan = async (req, res) => {
             non_applicable_controls = EXCLUDED.non_applicable_controls,
             applicable_count = EXCLUDED.applicable_count,
             non_applicable_count = EXCLUDED.non_applicable_count,
+            unmapped_count = EXCLUDED.unmapped_count,
             control_map = EXCLUDED.control_map;`,
           [
             agent_name,
@@ -321,6 +328,7 @@ export const runNistScan = async (req, res) => {
             non_applicable_controls,
             applicable_count,
             non_applicable_count,
+            unmapped_count || 0,
             JSON.stringify(control_map)
           ]
         );
@@ -345,9 +353,13 @@ export const runNistScan = async (req, res) => {
       }
     }
     
-    // Also trigger the new NIST scanner to update audit_history.json
+    // Also trigger the new NIST scanner to update audit_history.json and database
     try {
-      await runNistScanner();
+      const { agent } = req.query; // optional targeted agent scan, e.g. /security/nist-scan?agent=astra
+      const nistResult = await runNistScanner(agent);
+      if (nistResult && nistResult.success) {
+        await upsertNistScanResults(nistResult.history);
+      }
     } catch (scannerErr) {
       console.error("[SECURITY_CONTROLLER] ❌ NIST compliance scanner script failed:", scannerErr.message);
     }
@@ -359,49 +371,118 @@ export const runNistScan = async (req, res) => {
   }
 };
 
+const upsertAivyuhScanResults = async (history) => {
+  if (!history || typeof history !== 'object') return;
+  for (const [agentName, data] of Object.entries(history)) {
+    try {
+      await dbQuery(
+        `INSERT INTO agent_security_status (agent_name, critical_count, warning_count, report_summary, timestamp)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (agent_name)
+         DO UPDATE SET
+           critical_count = EXCLUDED.critical_count,
+           warning_count = EXCLUDED.warning_count,
+           report_summary = EXCLUDED.report_summary,
+           timestamp = EXCLUDED.timestamp`,
+        [
+          agentName.toLowerCase(),
+          data.critical_count || 0,
+          data.warning_count || 0,
+          JSON.stringify(data.report_summary || []),
+          data.timestamp || new Date().toISOString()
+        ]
+      );
+    } catch (err) {
+      console.error(`[SECURITY_CONTROLLER] Error upserting Aivyuh status for ${agentName}:`, err.message);
+    }
+  }
+};
+
+const upsertNistScanResults = async (history) => {
+  if (!history || typeof history !== 'object') return;
+  for (const [agentName, data] of Object.entries(history)) {
+    try {
+      const nist = data.nist_audit || { score: 100, risk: "LOW", controls: [] };
+      await dbQuery(
+        `INSERT INTO agent_security_status (agent_name, nist_score, nist_risk, nist_controls, timestamp)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (agent_name)
+         DO UPDATE SET
+           nist_score = EXCLUDED.nist_score,
+           nist_risk = EXCLUDED.nist_risk,
+           nist_controls = EXCLUDED.nist_controls,
+           timestamp = EXCLUDED.timestamp`,
+        [
+          agentName.toLowerCase(),
+          nist.score !== undefined ? nist.score : 100.0,
+          nist.risk || "LOW",
+          JSON.stringify(nist.controls || []),
+          data.timestamp || new Date().toISOString()
+        ]
+      );
+    } catch (err) {
+      console.error(`[SECURITY_CONTROLLER] Error upserting NIST status for ${agentName}:`, err.message);
+    }
+  }
+};
+
 export const getSecurityStatus = async (req, res) => {
   try {
-    const aivyuhPath = path.resolve(__dirname, "../../../python-agent/agents/aivyuh/audit_history.json");
-    const nistPath = path.resolve(__dirname, "../../../python-agent/agents/nist/audit_history.json");
+    const statusRes = await dbQuery('SELECT * FROM agent_security_status');
+    const analysisRes = await dbQuery('SELECT * FROM agent_analysis');
     
-    let aivyuhData = {};
-    let nistData = {};
-
-    if (fs.existsSync(aivyuhPath)) {
-      try {
-        aivyuhData = JSON.parse(fs.readFileSync(aivyuhPath, "utf-8"));
-      } catch (err) {
-        console.error("[SECURITY_CONTROLLER] Error reading Aivyuh status:", err.message);
-      }
-    }
-
-    if (fs.existsSync(nistPath)) {
-      try {
-        nistData = JSON.parse(fs.readFileSync(nistPath, "utf-8"));
-      } catch (err) {
-        console.error("[SECURITY_CONTROLLER] Error reading NIST status:", err.message);
-      }
-    }
-
-    // Merge logic
-    const merged = {};
-    const allKeys = new Set([...Object.keys(aivyuhData), ...Object.keys(nistData)]);
-
-    for (const key of allKeys) {
-      const aivyuhObj = aivyuhData[key] || {};
-      const nistObj = nistData[key] || {};
-
-      merged[key] = {
-        timestamp: nistObj.timestamp || aivyuhObj.timestamp || new Date().toISOString(),
-        critical_count: aivyuhObj.critical_count !== undefined ? aivyuhObj.critical_count : 0,
-        warning_count: aivyuhObj.warning_count !== undefined ? aivyuhObj.warning_count : 0,
-        report_summary: aivyuhObj.report_summary || [],
-        nist_audit: nistObj.nist_audit || {
-          score: 100,
-          risk: "LOW",
-          controls: []
-        }
+    const analysisMap = {};
+    for (const row of analysisRes.rows) {
+      analysisMap[row.agent_name.toLowerCase()] = {
+        agent_type: row.agent_type,
+        business_function: row.business_function,
+        autonomy: row.autonomy,
+        risk_tier: row.risk_tier,
+        capabilities: row.capabilities,
+        data_classes: row.data_classes,
+        external_reach: row.external_reach,
+        applicable_controls: row.applicable_controls,
+        non_applicable_controls: row.non_applicable_controls,
+        applicable_count: row.applicable_count,
+        non_applicable_count: row.non_applicable_count,
+        unmapped_count: row.unmapped_count,
+        control_map: row.control_map
       };
+    }
+
+    const merged = {};
+    for (const row of statusRes.rows) {
+      const nameKey = row.agent_name.toLowerCase();
+      merged[nameKey] = {
+        timestamp: row.timestamp || new Date().toISOString(),
+        critical_count: row.critical_count !== null ? parseInt(row.critical_count, 10) : 0,
+        warning_count: row.warning_count !== null ? parseInt(row.warning_count, 10) : 0,
+        report_summary: row.report_summary || [],
+        nist_audit: {
+          score: row.nist_score !== null ? parseFloat(row.nist_score) : 100.0,
+          risk: row.nist_risk || "LOW",
+          controls: row.nist_controls || []
+        },
+        scope_analysis: analysisMap[nameKey] || null
+      };
+    }
+    
+    // Also include any agents in analysis that don't have a status row yet
+    for (const [nameKey, analysis] of Object.entries(analysisMap)) {
+      if (!merged[nameKey]) {
+        merged[nameKey] = {
+          timestamp: new Date().toISOString(),
+          critical_count: 0,
+          warning_count: 0,
+          report_summary: [],
+          nist_audit: {
+            score: 100.0,
+            risk: "LOW",
+            controls: []
+          },
+          scope_analysis: analysis
+        };
+      }
     }
 
     res.json(merged);
@@ -417,6 +498,7 @@ export const runSecurityScan = async (req, res) => {
     
     // Log compliance audit event to database
     if (result && result.success) {
+      await upsertAivyuhScanResults(result.history);
       const { total_agents, critical_issues, warning_issues, compliance_score } = result;
       try {
         await dbQuery(
@@ -453,6 +535,7 @@ export const runAivyuhScan = async (req, res) => {
     
     // Log compliance audit event to database
     if (result && result.success) {
+      await upsertAivyuhScanResults(result.history);
       const { total_agents, critical_issues, warning_issues, compliance_score } = result;
       try {
         await dbQuery(

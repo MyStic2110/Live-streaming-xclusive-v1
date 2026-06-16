@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Monitor, Activity, BarChart2, Cpu, LogOut, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
+import { Monitor, BarChart2, Cpu, LogOut, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -35,7 +35,6 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
 
   const menuItems = [
     { id: 'fleet',      label: 'Fleet Control',   Icon: Monitor   },
-    { id: 'telemetry',  label: 'Observability',    Icon: Activity  },
     { id: 'analytics',  label: 'Analytics & Costs', Icon: BarChart2 },
     { id: 'compliance', label: 'Compliance Hub',  Icon: Shield    },
   ];
@@ -45,7 +44,7 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
     return activeItem ? activeItem.label : 'Dashboard';
   };
 
-  const isDarkTab = activeTab === 'telemetry' || activeTab === 'compliance';
+  const isDarkTab = activeTab === 'compliance';
 
   return (
     <div className="console-container" style={isDarkTab ? { backgroundColor: '#070913', minHeight: '100vh' } : {}}>

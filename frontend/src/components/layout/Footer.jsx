@@ -11,7 +11,7 @@ const COLORS = {
   border: "rgba(255, 255, 255, 0.08)"
 };
 
-const Footer = ({ onBlogClick, onTelemetryClick, onShortsClick, onLegalClick, onDashboardClick, onDeploymentClick }) => {
+const Footer = ({ onBlogClick, onShortsClick, onLegalClick, onDashboardClick, onDeploymentClick }) => {
   return (
     <footer style={{
       background: COLORS.bg,
@@ -51,7 +51,6 @@ const Footer = ({ onBlogClick, onTelemetryClick, onShortsClick, onLegalClick, on
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <h4 style={{ fontSize: "1.05rem", fontWeight: "800", margin: "0 0 0.5rem 0", color: "#fff" }}>Product</h4>
           <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo(0, 0); }} style={linkStyle}>Agent Directory</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); if (onTelemetryClick) onTelemetryClick(); }} style={linkStyle}>Security Telemetry</a>
           <a href="#" onClick={(e) => { e.preventDefault(); if (onShortsClick) onShortsClick(); }} style={linkStyle}>Swarm Shorts</a>
           <a href="#" onClick={(e) => { e.preventDefault(); if (onDashboardClick) onDashboardClick(); }} style={linkStyle}>LLM Telemetry Dashboard</a>
           <a href="#" onClick={(e) => { e.preventDefault(); if (onDeploymentClick) onDeploymentClick(); }} style={linkStyle}>Governed Deployment</a>
