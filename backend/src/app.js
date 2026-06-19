@@ -9,6 +9,7 @@ import telemetryRoutes from './routes/telemetryRoutes.js';
 import crawlerRoutes from './routes/crawlerRoutes.js';
 import githubRoutes from './routes/githubRoutes.js';
 import coldEmailRoutes from './routes/coldEmailRoutes.js';
+import changelogRoutes from './routes/changelogRoutes.js';
 
 const app = express();
 
@@ -25,4 +26,5 @@ app.use('/api', telemetryRoutes); // Mounts /api/llm-trace, /api/llm-traces, /ap
 app.use('/', telemetryRoutes);   // Mounts root-level routes: /security/status, /security/scan, /security/remediate, /detokenize
 app.use('/', roomRoutes);        // Mounts root-level routes: /talk-to-ai, /trigger-reels, /copilot/chat, /copilot/session/clear
 app.use('/cold-email', coldEmailRoutes);
+app.use('/api/changelog', changelogRoutes);
 export default app;

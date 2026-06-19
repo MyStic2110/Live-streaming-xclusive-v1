@@ -182,7 +182,7 @@ const ConsoleAgentCard = ({ agent, onAction }) => {
   );
 };
 
-export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboardClick, onDeploymentClick, user, onLoginClick, onLogout }) {
+export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboardClick, onDeploymentClick, onChangelogClick, user, onLoginClick, onLogout }) {
   const [legalModalType, setLegalModalType] = useState(null);
   const [enabledAgents, setEnabledAgents] = useState([]);
   const [copilotOpen, setCopilotOpen] = useState(false);
@@ -542,7 +542,8 @@ export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboa
           onShortsClick={onShortsClick} 
           onLegalClick={setLegalModalType} 
           onDashboardClick={onDashboardClick} 
-          onDeploymentClick={onDeploymentClick} 
+          onDeploymentClick={onDeploymentClick}
+          onChangelogClick={onChangelogClick}
         />
 
         {legalModalType && (

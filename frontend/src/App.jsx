@@ -14,6 +14,7 @@ import OctaneRoom from "./components/rooms/OctaneRoom";
 import DevopsGeniRoom from "./components/rooms/DevopsGeniRoom";
 import AivyuhRoom from "./components/rooms/AivyuhRoom";
 import ShoppeRoom from "./components/rooms/ShoppeRoom";
+import ChangelogPage from "./pages/ChangelogPage";
 import DevopsOrb from "./components/layout/DevopsOrb";
 import SwarmShortsPage from "./components/dashboard/SwarmShortsPage";
 import DashboardPage from "./components/dashboard/DashboardPage";
@@ -41,6 +42,7 @@ function App() {
   const [token, setToken] = useState(() => localStorage.getItem("token") || null);
   const [roomData, setRoomData] = useState(null);
   const [showBlog, setShowBlog] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
   const [showShorts, setShowShorts] = useState(false);
   const [currentPath, setCurrentPath] = useState(window.location.hash || window.location.pathname);
   const [isWaPopupOpen, setIsWaPopupOpen] = useState(false);
@@ -53,6 +55,7 @@ function App() {
     else if (isShortsPath) setActiveTab("sneak-peak");
     else if (isInsightsPath) setActiveTab("insights");
     else if (isCompliancePath) setActiveTab("compliance");
+    else if (isChangelogPath) setActiveTab("changelog");
     else setActiveTab("fleet");
   }, [currentPath]);
 
@@ -60,6 +63,7 @@ function App() {
     setActiveTab(tabId);
     setShowBlog(false);
     setShowShorts(false);
+    setShowChangelog(false);
     if (tabId === "analytics") {
       window.history.pushState({}, "", "/dashboard");
       setCurrentPath("/dashboard");
@@ -76,6 +80,10 @@ function App() {
       window.history.pushState({}, "", "/insights");
       setCurrentPath("/insights");
       setShowBlog(true);
+    } else if (tabId === "changelog") {
+      window.history.pushState({}, "", "/changelog");
+      setCurrentPath("/changelog");
+      setShowChangelog(true);
     } else {
       window.history.pushState({}, "", "/");
       setCurrentPath("/");
@@ -221,6 +229,11 @@ function App() {
     window.location.hash === "#insights" ||
     window.location.hash === "#/insights/";
 
+  const isChangelogPath =
+    currentPath.replace(/\/$/, "") === "/changelog" ||
+    window.location.hash.replace(/\/$/, "") === "#/changelog" ||
+    window.location.hash === "#changelog";
+
   const isBlogPath =
     currentPath.replace(/\/$/, "") === "/blog" ||
     currentPath.startsWith("/blog/") ||
@@ -237,7 +250,9 @@ function App() {
     window.location.hash.replace(/\/$/, "") === "#/reset-password";
 
   let content;
-  if (showBlog || isInsightsPath || isBlogPath || activeTab === "insights") {
+  if (showChangelog || isChangelogPath || activeTab === "changelog") {
+    content = <ChangelogPage onBack={() => handleTabChange("fleet")} />;
+  } else if (showBlog || isInsightsPath || isBlogPath || activeTab === "insights") {
     content = <BlogSection onBack={() => handleTabChange("fleet")} currentPath={currentPath} setCurrentPath={setCurrentPath} />;
   } else if (showShorts || isShortsPath || activeTab === "sneak-peak") {
     content = <SwarmShortsPage onBack={() => handleTabChange("fleet")} />;
@@ -290,6 +305,7 @@ function App() {
         onShortsClick={navigateToShorts}
         onDashboardClick={navigateToDashboard}
         onDeploymentClick={navigateToDeployment}
+        onChangelogClick={() => handleTabChange("changelog")}
         user={user}
         onLoginClick={navigateToLogin}
         onLogout={handleLogout}
@@ -334,7 +350,7 @@ function App() {
   const isLandingPage =
     !isAuthenticated &&
     !isDashboardPath && !isDeploymentPath && !isCompliancePath &&
-    !showBlog && !isShortsPath && !isLoginPath && !isResetPasswordPath && !isInsightsPath && !isBlogPath &&
+    !showBlog && !isShortsPath && !isLoginPath && !isResetPasswordPath && !isInsightsPath && !isBlogPath && !isChangelogPath && !showChangelog &&
     (currentPath === "/" || currentPath === "" || isFleetPath ||
      (currentPath.startsWith("#") && !currentPath.startsWith("#/login") && !currentPath.startsWith("#/reset-password")) ||
      activeTab === "fleet");

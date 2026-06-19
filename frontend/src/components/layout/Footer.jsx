@@ -11,7 +11,7 @@ const COLORS = {
   border: "rgba(255, 255, 255, 0.08)"
 };
 
-const Footer = ({ onBlogClick, onShortsClick, onLegalClick, onDashboardClick, onDeploymentClick }) => {
+const Footer = ({ onBlogClick, onShortsClick, onLegalClick, onDashboardClick, onDeploymentClick, onChangelogClick }) => {
   return (
     <footer style={{
       background: COLORS.bg,
@@ -61,6 +61,7 @@ const Footer = ({ onBlogClick, onShortsClick, onLegalClick, onDashboardClick, on
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <h4 style={{ fontSize: "1.05rem", fontWeight: "800", margin: "0 0 0.5rem 0", color: "#fff" }}>Resources</h4>
           <a href="#" onClick={(e) => { e.preventDefault(); if (onBlogClick) onBlogClick(); }} style={linkStyle}>Insights & Blog</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); if (onChangelogClick) onChangelogClick(); }} style={linkStyle}>Changelog ✨</a>
           <a href="#" style={linkStyle}>Documentation</a>
           <a href="#" style={linkStyle}>API Reference</a>
           <a href="#" style={linkStyle}>Case Studies</a>
