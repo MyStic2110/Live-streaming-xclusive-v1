@@ -13,6 +13,7 @@ import MartechRoom from "./components/rooms/MartechRoom";
 import OctaneRoom from "./components/rooms/OctaneRoom";
 import DevopsGeniRoom from "./components/rooms/DevopsGeniRoom";
 import AivyuhRoom from "./components/rooms/AivyuhRoom";
+import ShoppeRoom from "./components/rooms/ShoppeRoom";
 import DevopsOrb from "./components/layout/DevopsOrb";
 import SwarmShortsPage from "./components/dashboard/SwarmShortsPage";
 import DashboardPage from "./components/dashboard/DashboardPage";
@@ -184,6 +185,7 @@ function App() {
   const isOctane    = roomData?.creatorId === "OCTANE";
   const isDevopsGeni = roomData?.creatorId === "DEVOPS_GENI";
   const isAivyuh    = roomData?.creatorId === "AIVYUH" || roomData?.creatorId === "aivyuh";
+  const isShoppe    = roomData?.creatorId === "SHOPPE";
 
 
   const isFleetPath =
@@ -265,6 +267,8 @@ function App() {
       <RehearsalRoom roomData={roomData} onLeave={handleLeave} />
     ) : isSeva ? (
       <SevaRoom roomData={roomData} onLeave={handleLeave} />
+    ) : isShoppe ? (
+      <ShoppeRoom roomData={roomData} onLeave={handleLeave} />
     ) : isMartech ? (
       <MartechRoom roomData={roomData} onLeave={handleLeave} />
     ) : isOctane ? (

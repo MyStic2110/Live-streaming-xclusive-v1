@@ -246,6 +246,10 @@ export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboa
     {
       id: "aivyuh", title: "Aivyuh Agent", IconComponent: Dna, color: "#14b8a6",
       desc: "Advanced swarm logic coordinator. Dispatches complex multi-turn sub-agents to solve nested workflows."
+    },
+    {
+      id: "shoppe", title: "Shoppe Agent", IconComponent: Bot, color: "#10b981",
+      desc: "Conversational shopping assistant for Indian consumers. Searches lowest prices, streams checkout browser, and generates instant UPI payments."
     }
   ];
 

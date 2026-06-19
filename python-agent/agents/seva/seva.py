@@ -847,15 +847,15 @@ async def entrypoint(ctx: JobContext):
             elif key == "typing_cancelled":
                 user_typing = False
                 logger.info("[SEVA] User typing cancelled. Restoring conversation.")
-                asyncio.create_task(session.say("Sure! Let's continue booking your service by voice. What service do you need?"))
+                session.say("Sure! Let's continue booking your service by voice. What service do you need?")
             elif key == "confirm_details":
                 user_typing = False
                 chat_ctx.add_message(role="user", content="[User clicked the CONFIRM DETAILS button in the UI]")
-                asyncio.create_task(session.say("Perfect, thank you for confirming! Your details are confirmed. How can I help you with your booking?"))
+                session.say("Perfect, thank you for confirming! Your details are confirmed. How can I help you with your booking?")
             elif key == "change_details":
                 user_typing = True
                 chat_ctx.add_message(role="user", content="[User clicked the CHANGE DETAILS button in the UI]")
-                asyncio.create_task(session.say("No worries, please update the details in the form on your screen, or let me know what needs to be changed."))
+                session.say("No worries, please update the details in the form on your screen, or let me know what needs to be changed.")
             elif key == "update_details_from_ui":
                 user_typing = False
                 phone = msg.get("phone", "")
@@ -874,7 +874,7 @@ async def entrypoint(ctx: JobContext):
                     # Inject user message
                     chat_ctx.add_message(role="user", content=f"[User manually updated details in UI: Name={name}, Phone={phone}, Address={address}]")
                     # Make agent confirm via TTS
-                    asyncio.create_task(session.say(f"Got it! I have updated your name to {name}, phone number to {phone}, and address to {address}. Proceeding with these details!"))
+                    session.say(f"Got it! I have updated your name to {name}, phone number to {phone}, and address to {address}. Proceeding with these details!")
             elif key == "payment_completed":
                 booking_id = msg.get("booking_id", "")
                 amount = msg.get("amount", 0)

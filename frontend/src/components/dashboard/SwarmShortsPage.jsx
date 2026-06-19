@@ -104,7 +104,23 @@ const SHORTS = [
     tag: "HARDWARE",
     color: "#3b82f6",
     videoSrc: "/shorts/Robotic_hand_picking_microchip_202606011943.mp4",
-  }
+  },
+  {
+      id: 15,
+      title: "Female Operator on Ship",
+      desc: "A thrilling scene featuring a female operator aboard a futuristic ship.",
+      tag: "SCENARIO",
+      color: C.amber,
+      videoSrc: "/shorts/Female_operator_on_ship_202606191348.mp4",
+    },
+    {
+      id: 16,
+      title: "Woman Riding Electric Bike",
+      desc: "Showcasing a woman riding an electric bike through a vibrant cityscape.",
+      tag: "DEMO",
+      color: C.sky,
+      videoSrc: "/shorts/Woman_riding_electric_bike_202606191331.mp4",
+    },
 ];
 
 // ─── Shorts Player Component ──────────────────────────────────────────────────

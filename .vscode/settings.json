@@ -72,7 +72,7 @@
   "docker.defaultRegistryPath": "",
 
   // --- Misc ---
-  "workbench.colorTheme": "Default Dark Modern",
+  "workbench.colorTheme": "Dark Modern",
   "workbench.iconTheme": "vs-seti",
   "explorer.confirmDelete": false,
   "explorer.confirmDragAndDrop": false

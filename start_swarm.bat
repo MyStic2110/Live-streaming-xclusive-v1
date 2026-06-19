@@ -34,6 +34,7 @@ echo [7] Rehearsal
 echo [8] Seva
 echo [9] Martech
 echo [10] Octane (Telemetry)
+echo [11] Shoppe (Shopping)
 echo.
 echo [99] ALL AGENTS (WARNING: WILL CONSUME 3GB+ RAM)
 echo [0] Exit Launcher
@@ -50,6 +51,7 @@ if "%choice%"=="7" start "Rehearsal" cmd /c "cd python-agent && .\venv\Scripts\p
 if "%choice%"=="8" start "Seva" cmd /c "cd python-agent && .\venv\Scripts\python.exe agents\seva\seva.py dev 2>&1 | .\venv\Scripts\python.exe ..\tee.py ..\swarm_master.log" & goto MENU
 if "%choice%"=="9" start "Martech" cmd /c "cd python-agent && .\venv\Scripts\python.exe agents\martech\martech_agent.py dev 2>&1 | .\venv\Scripts\python.exe ..\tee.py ..\swarm_master.log" & goto MENU
 if "%choice%"=="10" start "Octane" cmd /c "cd python-agent && .\venv\Scripts\python.exe agents\octane\octane.py dev 2>&1 | .\venv\Scripts\python.exe ..\tee.py ..\swarm_master.log" & goto MENU
+if "%choice%"=="11" start "Shoppe" cmd /c "cd python-agent && .\venv\Scripts\python.exe agents\shoppe\shoppe.py dev 2>&1 | .\venv\Scripts\python.exe ..\tee.py ..\swarm_master.log" & goto MENU
 if "%choice%"=="99" start "All Agents" cmd /c "npm run swarm-all 2>&1 | python-agent\venv\Scripts\python.exe tee.py swarm_master.log" & goto MENU
 if "%choice%"=="0" goto EOF
 

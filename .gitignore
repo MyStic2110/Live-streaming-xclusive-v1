@@ -39,3 +39,6 @@ python-agent/agents/lina/Video/
 
 # persistent trace storage
 backend/llm_traces_persistent.json
+
+# Shoppe agent — Playwright persistent browser session cache (cookies, DB, etc.)
+python-agent/agents/shoppe/user_data/

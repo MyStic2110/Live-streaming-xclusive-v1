@@ -1,6 +1,6 @@
 {
   "astra": {
-    "timestamp": "2026-06-16T08:21:05.774155",
+    "timestamp": "2026-06-19T20:34:30.559223",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -1697,7 +1697,7 @@
     }
   },
   "bi": {
-    "timestamp": "2026-06-16T08:21:05.794209",
+    "timestamp": "2026-06-19T20:34:30.581190",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -3891,7 +3891,7 @@
     }
   },
   "bi2": {
-    "timestamp": "2026-06-16T08:21:05.817507",
+    "timestamp": "2026-06-19T20:34:30.605070",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -5588,7 +5588,7 @@
     }
   },
   "devopsgeni": {
-    "timestamp": "2026-06-16T08:21:05.881749",
+    "timestamp": "2026-06-19T20:34:30.657323",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -7285,7 +7285,7 @@
     }
   },
   "lina": {
-    "timestamp": "2026-06-16T08:21:05.898864",
+    "timestamp": "2026-06-19T20:34:30.673229",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -8982,7 +8982,7 @@
     }
   },
   "martech": {
-    "timestamp": "2026-06-16T08:21:05.960430",
+    "timestamp": "2026-06-19T20:34:30.736845",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -10679,7 +10679,7 @@
     }
   },
   "nist": {
-    "timestamp": "2026-06-16T08:21:05.979282",
+    "timestamp": "2026-06-19T20:34:30.763795",
     "nist_audit": {
       "score": 100.0,
       "risk": "LOW",
@@ -12376,7 +12376,7 @@
     }
   },
   "nova": {
-    "timestamp": "2026-06-16T08:21:06.038636",
+    "timestamp": "2026-06-19T20:34:30.884661",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -14073,7 +14073,7 @@
     }
   },
   "octane": {
-    "timestamp": "2026-06-16T08:21:06.093635",
+    "timestamp": "2026-06-19T20:34:30.972800",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -15770,7 +15770,7 @@
     }
   },
   "reels": {
-    "timestamp": "2026-06-16T08:21:06.114115",
+    "timestamp": "2026-06-19T20:34:30.990321",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -17467,7 +17467,7 @@
     }
   },
   "rehearsal": {
-    "timestamp": "2026-06-16T08:21:06.146490",
+    "timestamp": "2026-06-19T20:34:31.022873",
     "nist_audit": {
       "score": 100.0,
       "risk": "LOW",
@@ -19164,7 +19164,7 @@
     }
   },
   "seva": {
-    "timestamp": "2026-06-16T08:21:06.220199",
+    "timestamp": "2026-06-19T20:34:31.096645",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -20861,7 +20861,7 @@
     }
   },
   "swarm_copilot": {
-    "timestamp": "2026-06-16T08:21:06.256207",
+    "timestamp": "2026-06-19T20:34:31.192156",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -22558,7 +22558,7 @@
     }
   },
   "aivyuh": {
-    "timestamp": "2026-06-16T08:21:05.662401",
+    "timestamp": "2026-06-19T20:34:30.475958",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -24250,6 +24250,1868 @@
           "evidence": [],
           "score": 0,
           "rationale": "Managed by the corporate communications and public relations teams."
+        }
+      ]
+    }
+  },
+  "shoppe": {
+    "timestamp": "2026-06-19T20:34:31.167884",
+    "nist_audit": {
+      "score": 0.0,
+      "risk": "CRITICAL",
+      "controls": [
+        {
+          "id": "GV-1.1-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.2-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.2-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.3-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.3-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.3-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.3-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.3-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.3-006",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.3-007",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.4-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.4-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.5-001",
+          "status": "PASS",
+          "confidence": 100,
+          "evidence": [
+            {
+              "line": 35,
+              "match": "logger",
+              "code": "logger = logging.getLogger('shoppe')"
+            },
+            {
+              "line": 35,
+              "match": "logger",
+              "code": "logging.getLogger('shoppe')"
+            },
+            {
+              "line": 36,
+              "match": "logger",
+              "code": "logger.setLevel(logging.INFO)"
+            },
+            {
+              "line": 863,
+              "match": "logger",
+              "code": "room_logger = RoomLoggerAdapter(logger, {'room': ctx.room.name})"
+            },
+            {
+              "line": 863,
+              "match": "logger",
+              "code": "RoomLoggerAdapter(logger, {'room': ctx.room.name})"
+            },
+            {
+              "line": 864,
+              "match": "logger",
+              "code": "room_logger.info('--- SHOPPE SHOPPING AGENT CONNECTING ---')"
+            },
+            {
+              "line": 957,
+              "match": "logger",
+              "code": "room_logger.error(f'Error parsing data channel payload: {e}')"
+            },
+            {
+              "line": 972,
+              "match": "logger",
+              "code": "room_logger.info('Shoppe worker terminating.')"
+            }
+          ],
+          "score": 5,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.5-002",
+          "status": "PASS",
+          "confidence": 100,
+          "evidence": [
+            {
+              "line": 35,
+              "match": "logger",
+              "code": "logger = logging.getLogger('shoppe')"
+            },
+            {
+              "line": 35,
+              "match": "logger",
+              "code": "logging.getLogger('shoppe')"
+            },
+            {
+              "line": 36,
+              "match": "logger",
+              "code": "logger.setLevel(logging.INFO)"
+            },
+            {
+              "line": 863,
+              "match": "logger",
+              "code": "room_logger = RoomLoggerAdapter(logger, {'room': ctx.room.name})"
+            },
+            {
+              "line": 863,
+              "match": "logger",
+              "code": "RoomLoggerAdapter(logger, {'room': ctx.room.name})"
+            },
+            {
+              "line": 864,
+              "match": "logger",
+              "code": "room_logger.info('--- SHOPPE SHOPPING AGENT CONNECTING ---')"
+            },
+            {
+              "line": 957,
+              "match": "logger",
+              "code": "room_logger.error(f'Error parsing data channel payload: {e}')"
+            },
+            {
+              "line": 972,
+              "match": "logger",
+              "code": "room_logger.info('Shoppe worker terminating.')"
+            }
+          ],
+          "score": 5,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.5-003",
+          "status": "PASS",
+          "confidence": 100,
+          "evidence": [
+            {
+              "line": 35,
+              "match": "logger",
+              "code": "logger = logging.getLogger('shoppe')"
+            },
+            {
+              "line": 35,
+              "match": "logger",
+              "code": "logging.getLogger('shoppe')"
+            },
+            {
+              "line": 36,
+              "match": "logger",
+              "code": "logger.setLevel(logging.INFO)"
+            },
+            {
+              "line": 863,
+              "match": "logger",
+              "code": "room_logger = RoomLoggerAdapter(logger, {'room': ctx.room.name})"
+            },
+            {
+              "line": 863,
+              "match": "logger",
+              "code": "RoomLoggerAdapter(logger, {'room': ctx.room.name})"
+            },
+            {
+              "line": 864,
+              "match": "logger",
+              "code": "room_logger.info('--- SHOPPE SHOPPING AGENT CONNECTING ---')"
+            },
+            {
+              "line": 957,
+              "match": "logger",
+              "code": "room_logger.error(f'Error parsing data channel payload: {e}')"
+            },
+            {
+              "line": 972,
+              "match": "logger",
+              "code": "room_logger.info('Shoppe worker terminating.')"
+            }
+          ],
+          "score": 5,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.6-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.6-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.6-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.7-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-1.7-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-2.1-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-2.1-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-2.1-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-2.1-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-2.1-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-3.2-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-3.2-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-3.2-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-3.2-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-3.2-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-4.1-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-4.1-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-4.1-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-4.2-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-4.2-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-4.2-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-4.3-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-4.3-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-5.1-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-5.1-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.1-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.1-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.1-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.1-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.1-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.1-006",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.1-007",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.1-008",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.1-009",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.1-010",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.2-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.2-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.2-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.2-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.2-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.2-006",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "GV-6.2-007",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-1.1-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-1.1-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-1.1-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-1.1-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-1.2-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-1.2-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-2.1-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-2.1-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-2.2-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-2.2-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-2.3-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-2.3-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-2.3-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-2.3-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-2.3-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-3.4-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-3.4-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-3.4-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-3.4-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-3.4-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-3.4-006",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-4.1-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-4.1-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-4.1-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-4.1-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-4.1-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-4.1-006",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-4.1-007",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-4.1-008",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-4.1-009",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-4.1-010",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-5.1-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-5.1-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-5.1-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-5.1-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-5.1-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-5.1-006",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-5.2-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MP-5.2-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-1.1-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-1.1-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-1.1-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-1.1-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-1.1-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-1.1-006",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-1.1-007",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-1.1-008",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-1.1-009",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-1.3-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-1.3-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-1.3-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.2-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.2-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.2-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.2-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.3-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.3-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.3-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.3-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.5-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.5-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.5-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.5-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.5-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.5-006",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.6-001",
+          "status": "FAIL",
+          "confidence": 25,
+          "evidence": [
+            {
+              "line": 306,
+              "match": "mask",
+              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
+            }
+          ],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.6-002",
+          "status": "FAIL",
+          "confidence": 25,
+          "evidence": [
+            {
+              "line": 306,
+              "match": "mask",
+              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
+            }
+          ],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.6-003",
+          "status": "FAIL",
+          "confidence": 25,
+          "evidence": [
+            {
+              "line": 306,
+              "match": "mask",
+              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
+            }
+          ],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.6-004",
+          "status": "FAIL",
+          "confidence": 25,
+          "evidence": [
+            {
+              "line": 306,
+              "match": "mask",
+              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
+            }
+          ],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.6-005",
+          "status": "FAIL",
+          "confidence": 25,
+          "evidence": [
+            {
+              "line": 306,
+              "match": "mask",
+              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
+            }
+          ],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.6-006",
+          "status": "FAIL",
+          "confidence": 25,
+          "evidence": [
+            {
+              "line": 306,
+              "match": "mask",
+              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
+            }
+          ],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.6-007",
+          "status": "FAIL",
+          "confidence": 25,
+          "evidence": [
+            {
+              "line": 306,
+              "match": "mask",
+              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
+            }
+          ],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.7-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.7-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.7-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.7-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.7-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.7-006",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.7-007",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.7-008",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.7-009",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.8-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.8-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.8-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.8-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.9-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.9-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.10-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.10-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.10-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.11-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.11-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.11-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.11-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.11-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.12-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.12-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.12-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.12-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-2.13-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-3.2-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-3.3-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-3.3-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-3.3-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-3.3-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-3.3-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-4.2-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-4.2-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-4.2-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-4.2-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MS-4.2-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-1.3-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-1.3-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.2-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.2-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.2-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.2-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.2-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.2-006",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.2-007",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.2-008",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.2-009",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.3-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.4-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.4-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.4-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-2.4-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.1-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.1-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.1-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.1-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.1-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.2-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.2-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.2-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.2-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.2-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.2-006",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.2-007",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.2-008",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-3.2-009",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-4.1-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-4.1-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-4.1-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-4.1-004",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-4.1-005",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-4.1-006",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-4.1-007",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-4.2-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-4.2-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-4.2-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-4.3-001",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-4.3-002",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
+        },
+        {
+          "id": "MG-4.3-003",
+          "status": "FAIL",
+          "confidence": 0,
+          "evidence": [],
+          "score": 0,
+          "rationale": "Applicable based on active shoppe capabilities."
         }
       ]
     }

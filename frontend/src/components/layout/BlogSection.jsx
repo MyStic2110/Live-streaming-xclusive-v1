@@ -269,14 +269,14 @@ const BlogSection = ({ onBack, externalPosts = [], currentPath = "", setCurrentP
           <div>
             {selectedPost.featuredImage ? (
               <div style={{ 
-                width: "100%", height: "500px", borderRadius: "40px", 
+                width: "100%", height: "auto", aspectRatio: "16 / 9", borderRadius: "40px", 
                 overflow: "hidden", marginBottom: "4rem", boxShadow: "0 40px 80px rgba(0,0,0,0.1)"
               }}>
                 <img src={selectedPost.featuredImage} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={selectedPost.imageAlt} />
               </div>
             ) : (
               <div style={{
-                width: "100%", height: "500px", borderRadius: "40px",
+                width: "100%", height: "auto", aspectRatio: "16 / 9", borderRadius: "40px",
                 marginBottom: "4rem", background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)",
                 display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column",
                 color: "white", boxShadow: "0 40px 80px rgba(0,0,0,0.1)"
@@ -815,7 +815,7 @@ const BlogSection = ({ onBack, externalPosts = [], currentPath = "", setCurrentP
                 onClick={() => handleSelectPost(post)}
               >
                 <div style={{ 
-                  width: "100%", height: "480px", borderRadius: "40px", 
+                  width: "100%", height: "auto", aspectRatio: "16 / 9", borderRadius: "40px", 
                   overflow: "hidden", position: "relative",
                   boxShadow: post.featured ? `0 40px 80px ${COLORS.accent}11` : "0 30px 60px rgba(0,0,0,0.08)",
                   border: post.featured ? `1px solid ${COLORS.accent}22` : "none"
