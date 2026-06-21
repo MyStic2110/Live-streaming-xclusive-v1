@@ -343,6 +343,7 @@ function App() {
   // When authenticated, the operator Control Panel Workspace is wrapped inside ConsoleLayout
   const isLandingPage =
     !isAuthenticated &&
+    !isLoginPath &&
     !isDashboardPath && !isDeploymentPath && !isCompliancePath && !viewMode &&
     (currentPath === "/" || currentPath === "" || isFleetPath ||
      (currentPath.startsWith("#") && !currentPath.startsWith("#/login") && !currentPath.startsWith("#/reset-password")) ||

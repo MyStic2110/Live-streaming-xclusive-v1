@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Server, Cloud, Layers, Network, ArrowLeft, Check, ChevronRight, Shield, Zap, Cpu, DollarSign, TrendingUp } from "lucide-react";
+import { Server, Cloud, Layers, Network, ArrowLeft, Check, ChevronRight, Shield, Zap, Cpu, DollarSign, TrendingUp, ArrowRight } from "lucide-react";
 import { setupPageAEO, cleanupPageAEO } from "../../utils/aeo";
 
 const COLORS = {
-  bg: "#080c14",
-  bgSoft: "rgba(17, 24, 39, 0.7)",
-  primary: "#ffffff",
-  textMuted: "#9ca3af",
+  bg: "#f8fafc",
+  bgSoft: "#ffffff",
+  primary: "#0f172a",
+  textMuted: "#64748b",
   accent: "#3b82f6",
-  accentGlow: "rgba(59, 130, 246, 0.4)",
-  success: "#10b981",
-  border: "rgba(255, 255, 255, 0.08)",
-  cardBg: "rgba(255, 255, 255, 0.02)",
+  accentGlow: "rgba(59, 130, 246, 0.1)",
+  success: "#16a34a",
+  border: "#cbd5e1",
+  cardBg: "#ffffff",
   cardBorderHover: "rgba(59, 130, 246, 0.3)"
 };
 
@@ -47,34 +47,50 @@ function GovernedDeployment({ onBack }) {
     {
       id: "on-prem",
       title: "On-Prem",
-      icon: <Server size={24} style={{ color: "#3b82f6" }} />,
+      icon: Server,
       desc: "GPU servers in your data centre. Full control, zero external dependencies. Recommended for regulated industries and air-gapped requirements.",
       badge: "Air-Gapped",
-      specs: ["Local hardware isolation", "Physical security perimeter", "Zero latency data ingress"]
+      specs: ["Local hardware isolation", "Physical security perimeter", "Zero latency data ingress"],
+      color: "#3b82f6",
+      bgSoft: "rgba(59, 130, 246, 0.05)",
+      borderHover: "rgba(59, 130, 246, 0.2)",
+      glow: "rgba(59, 130, 246, 0.15)"
     },
     {
       id: "private-cloud",
       title: "Private Cloud",
-      icon: <Cloud size={24} style={{ color: "#8b5cf6" }} />,
+      icon: Cloud,
       desc: "AWS, Azure, or GCP — deployed inside your VPC. No data leaves your cloud account. Supports GPU instance types across all major providers.",
       badge: "VPC Enclave",
-      specs: ["AWS / GCP / Azure Native", "IAM & Private Link integration", "Dynamic scaling of GPU groups"]
+      specs: ["AWS / GCP / Azure Native", "IAM & Private Link integration", "Dynamic scaling of GPU groups"],
+      color: "#8b5cf6",
+      bgSoft: "rgba(139, 92, 246, 0.05)",
+      borderHover: "rgba(139, 92, 246, 0.2)",
+      glow: "rgba(139, 92, 246, 0.15)"
     },
     {
       id: "self-hosted",
       title: "Self-Hosted Private Cloud",
-      icon: <Layers size={24} style={{ color: "#ec4899" }} />,
+      icon: Layers,
       desc: "VMware, OpenStack, or Proxmox on your existing data centre infrastructure. Swarm Agentic Lab deploys via Docker Compose or Kubernetes.",
       badge: "Hypervisor Native",
-      specs: ["Docker Compose & K8s ready", "Enterprise virtualization support", "Multi-tenant resource pools"]
+      specs: ["Docker Compose & K8s ready", "Enterprise virtualization support", "Multi-tenant resource pools"],
+      color: "#ec4899",
+      bgSoft: "rgba(236, 72, 153, 0.05)",
+      borderHover: "rgba(236, 72, 153, 0.2)",
+      glow: "rgba(236, 72, 153, 0.15)"
     },
     {
       id: "hybrid",
       title: "Hybrid",
-      icon: <Network size={24} style={{ color: "#10b981" }} />,
+      icon: Network,
       desc: "On-prem inference combined with cloud integrations. Run your models on owned hardware while connecting to cloud-based storage or services.",
       badge: "Split-plane",
-      specs: ["Edge inference optimization", "Secure cloud gateway tunnels", "Distributed agent orchestrator"]
+      specs: ["Edge inference optimization", "Secure cloud gateway tunnels", "Distributed agent orchestrator"],
+      color: "#10b981",
+      bgSoft: "rgba(16, 185, 129, 0.05)",
+      borderHover: "rgba(16, 185, 129, 0.2)",
+      glow: "rgba(16, 185, 129, 0.15)"
     }
   ];
 
@@ -83,7 +99,7 @@ function GovernedDeployment({ onBack }) {
       style={{
         minHeight: "100vh",
         background: COLORS.bg,
-        backgroundImage: "radial-gradient(circle at top right, rgba(59, 130, 246, 0.08) 0%, transparent 45%), radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.04) 0%, transparent 40%)",
+        backgroundImage: "radial-gradient(circle at top right, rgba(59, 130, 246, 0.04) 0%, transparent 45%), radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.02) 0%, transparent 40%)",
         color: COLORS.primary,
         fontFamily: "'Outfit', sans-serif",
         padding: "2rem 5%",
@@ -111,14 +127,13 @@ function GovernedDeployment({ onBack }) {
           }
         }
         .tier-card-wrapper {
-          background: rgba(255, 255, 255, 0.01);
-          backdrop-filter: blur(20px);
+          background: #ffffff;
           border-radius: 24px;
           padding: 2rem;
           display: flex;
           flex-direction: column;
           gap: 1.5rem;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.02);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.03);
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .tier-card-image-container {
@@ -127,8 +142,8 @@ function GovernedDeployment({ onBack }) {
           height: 180px;
           border-radius: 16px;
           overflow: hidden;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+          border: 1px solid #cbd5e1;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
         .tier-card-image {
           width: 100%;
@@ -162,14 +177,14 @@ function GovernedDeployment({ onBack }) {
               width: "42px",
               borderRadius: "10px",
               objectFit: "cover",
-              boxShadow: "0 4px 20px rgba(59, 130, 246, 0.2)"
+              boxShadow: "0 4px 12px rgba(59, 130, 246, 0.15)"
             }}
           />
           <div>
-            <span style={{ fontSize: "0.65rem", background: "rgba(59, 130, 246, 0.15)", color: "#60a5fa", padding: "3px 10px", borderRadius: "50px", fontWeight: "900", letterSpacing: "1px" }}>
+            <span style={{ fontSize: "0.65rem", background: "rgba(59, 130, 246, 0.08)", color: "#2563eb", padding: "3px 10px", borderRadius: "50px", fontWeight: "900", letterSpacing: "1px" }}>
               ENTERPRISE CONTROL PLANE
             </span>
-            <div style={{ fontSize: "1.3rem", fontWeight: "900", letterSpacing: "0.5px", marginTop: "4px" }}>
+            <div style={{ fontSize: "1.3rem", fontWeight: "900", letterSpacing: "0.5px", marginTop: "4px", color: "#0f172a" }}>
               SWARM <span style={{ color: COLORS.accent }}>SECURE</span>
             </div>
           </div>
@@ -183,22 +198,22 @@ function GovernedDeployment({ onBack }) {
             alignItems: "center",
             gap: "8px",
             padding: "0.75rem 1.5rem",
-            background: "rgba(255, 255, 255, 0.02)",
+            background: "rgba(0, 0, 0, 0.03)",
             border: `1px solid ${COLORS.border}`,
             borderRadius: "12px",
-            color: "#f3f4f6",
+            color: "#475569",
             fontWeight: "600",
             cursor: "pointer",
             fontSize: "0.9rem",
             transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)"
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-            e.currentTarget.style.border = `1px solid rgba(59, 130, 246, 0.4)`;
+            e.currentTarget.style.background = "rgba(0, 0, 0, 0.06)";
+            e.currentTarget.style.border = `1px solid rgba(59, 130, 246, 0.3)`;
             e.currentTarget.style.transform = "translateX(-3px)";
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)";
+            e.currentTarget.style.background = "rgba(0, 0, 0, 0.03)";
             e.currentTarget.style.border = `1px solid ${COLORS.border}`;
             e.currentTarget.style.transform = "translateX(0)";
           }}
@@ -224,15 +239,15 @@ function GovernedDeployment({ onBack }) {
             display: "inline-flex",
             alignItems: "center",
             gap: "8px",
-            background: "linear-gradient(90deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))",
+            background: "rgba(59, 130, 246, 0.06)",
             border: "1px solid rgba(59, 130, 246, 0.2)",
             padding: "6px 16px",
             borderRadius: "99px",
-            color: "#60a5fa",
+            color: "#2563eb",
             fontSize: "0.85rem",
             fontWeight: "700",
             letterSpacing: "0.5px",
-            boxShadow: "0 4px 30px rgba(59, 130, 246, 0.05)"
+            boxShadow: "0 2px 8px rgba(59, 130, 246, 0.03)"
           }}
         >
           <Shield size={14} /> SECURITY & ISOLATION
@@ -245,7 +260,7 @@ function GovernedDeployment({ onBack }) {
             lineHeight: "1.05",
             letterSpacing: "-2px",
             margin: "0.5rem 0",
-            background: "linear-gradient(to right, #ffffff, #93c5fd, #c084fc)",
+            background: "linear-gradient(135deg, #0f172a 30%, #2563eb 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent"
           }}
@@ -257,7 +272,7 @@ function GovernedDeployment({ onBack }) {
           style={{
             fontSize: "1.8rem",
             fontWeight: "400",
-            color: "#e2e8f0",
+            color: "#1e293b",
             maxWidth: "750px",
             lineHeight: "1.3",
             margin: 0
@@ -291,7 +306,7 @@ function GovernedDeployment({ onBack }) {
         }}
       >
         <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
-          <h2 style={{ fontSize: "2rem", fontWeight: "900", letterSpacing: "-0.5px", margin: 0 }}>
+          <h2 style={{ fontSize: "2rem", fontWeight: "900", letterSpacing: "-0.5px", margin: 0, color: "#0f172a" }}>
             Deployment Models
           </h2>
           <p style={{ fontSize: "1.1rem", color: COLORS.textMuted, maxWidth: "600px", margin: "0 auto", lineHeight: "1.6" }}>
@@ -302,6 +317,7 @@ function GovernedDeployment({ onBack }) {
         <div className="deployment-grid">
           {models.map(model => {
             const isHovered = hoveredCard === model.id;
+            const Icon = model.icon;
             return (
               <div
                 id={`card-model-${model.id}`}
@@ -309,46 +325,60 @@ function GovernedDeployment({ onBack }) {
                 onMouseEnter={() => setHoveredCard(model.id)}
                 onMouseLeave={() => setHoveredCard(null)}
                 style={{
+                  position: "relative",
+                  overflow: "hidden",
                   background: COLORS.cardBg,
-                  backdropFilter: "blur(16px)",
-                  border: `1px solid ${isHovered ? COLORS.cardBorderHover : COLORS.border}`,
+                  border: `1px solid ${isHovered ? model.color : COLORS.border}`,
                   borderRadius: "24px",
-                  padding: "2.5rem 2rem",
+                  padding: "3rem 2rem 2.5rem",
                   transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                   display: "flex",
                   flexDirection: "column",
                   gap: "1.5rem",
                   boxShadow: isHovered 
-                    ? `0 15px 40px -10px ${COLORS.accentGlow}, inset 0 1px 0 rgba(255,255,255,0.05)`
-                    : "0 10px 30px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.02)",
+                    ? `0 20px 40px -15px ${model.glow}, 0 4px 6px -1px rgba(0, 0, 0, 0.02)`
+                    : "0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.03)",
                   transform: isHovered ? "translateY(-6px)" : "translateY(0)"
                 }}
               >
+                {/* Top Theme Strip Accent */}
+                <div style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "5px",
+                  background: `linear-gradient(90deg, ${model.color}, ${model.color}88)`
+                }} />
+
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div
                     style={{
                       height: "56px",
                       width: "56px",
                       borderRadius: "16px",
-                      background: "rgba(255, 255, 255, 0.03)",
-                      border: `1px solid ${COLORS.border}`,
+                      background: isHovered ? model.bgSoft : "rgba(0, 0, 0, 0.02)",
+                      border: `1px solid ${isHovered ? model.borderHover : COLORS.border}`,
                       display: "flex",
                       justifyContent: "center",
                       alignItems: "center",
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.2)"
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+                      transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
                     }}
                   >
-                    {model.icon}
+                    <Icon size={24} style={{ color: model.color, transition: "transform 0.3s ease", transform: isHovered ? "scale(1.1)" : "scale(1)" }} />
                   </div>
                   <span
                     style={{
                       fontSize: "0.75rem",
                       fontWeight: "800",
-                      background: "rgba(255,255,255,0.04)",
-                      padding: "4px 10px",
-                      borderRadius: "6px",
-                      color: COLORS.textMuted,
-                      border: `1px solid ${COLORS.border}`
+                      background: model.bgSoft,
+                      padding: "5px 12px",
+                      borderRadius: "8px",
+                      color: model.color,
+                      border: `1px solid ${model.borderHover}`,
+                      boxShadow: `0 2px 6px ${model.bgSoft}`,
+                      transition: "all 0.3s"
                     }}
                   >
                     {model.badge}
@@ -356,7 +386,7 @@ function GovernedDeployment({ onBack }) {
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  <h3 style={{ fontSize: "1.4rem", fontWeight: "800", letterSpacing: "-0.3px", margin: 0, color: isHovered ? "#60a5fa" : "#ffffff", transition: "color 0.2s" }}>
+                  <h3 style={{ fontSize: "1.4rem", fontWeight: "800", letterSpacing: "-0.3px", margin: 0, color: isHovered ? model.color : "#0f172a", transition: "color 0.2s" }}>
                     {model.title}
                   </h3>
                   <p style={{ fontSize: "0.95rem", lineHeight: "1.6", color: COLORS.textMuted, margin: 0 }}>
@@ -364,15 +394,35 @@ function GovernedDeployment({ onBack }) {
                   </p>
                 </div>
 
-                <div style={{ height: "1px", background: COLORS.border, margin: "0.5rem 0" }} />
+                <div style={{ height: "1px", background: `linear-gradient(90deg, ${COLORS.border}, transparent)`, margin: "0.5rem 0" }} />
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem", marginTop: "auto" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
                   {model.specs.map((spec, sIdx) => (
                     <div key={sIdx} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <Check size={14} style={{ color: COLORS.success, flexShrink: 0 }} />
-                      <span style={{ fontSize: "0.85rem", color: "#d1d5db" }}>{spec}</span>
+                      <Check size={14} style={{ color: model.color, flexShrink: 0 }} />
+                      <span style={{ fontSize: "0.85rem", color: "#475569" }}>{spec}</span>
                     </div>
                   ))}
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto", paddingTop: "0.5rem" }}>
+                  <span style={{ fontSize: "0.85rem", fontWeight: "700", color: isHovered ? model.color : COLORS.textMuted, transition: "color 0.3s" }}>
+                    Explore blueprint
+                  </span>
+                  <div style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "32px",
+                    width: "32px",
+                    borderRadius: "50%",
+                    background: isHovered ? model.color : "rgba(0, 0, 0, 0.02)",
+                    color: isHovered ? "#ffffff" : COLORS.textMuted,
+                    transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                    transform: isHovered ? "translateX(4px)" : "translateX(0)"
+                  }}>
+                    <ArrowRight size={16} />
+                  </div>
                 </div>
               </div>
             );
@@ -386,25 +436,24 @@ function GovernedDeployment({ onBack }) {
           maxWidth: "1200px",
           width: "100%",
           margin: "2rem auto 0",
-          background: "rgba(255, 255, 255, 0.01)",
-          backdropFilter: "blur(20px)",
+          background: "#ffffff",
           border: `1px solid ${COLORS.border}`,
           borderRadius: "32px",
           padding: "3.5rem 3rem",
           boxSizing: "border-box",
-          boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.03)"
         }}
       >
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "2rem", marginBottom: "3rem", alignItems: "flex-end" }}>
           <div>
-            <h3 style={{ fontSize: "1.8rem", fontWeight: "900", letterSpacing: "-0.5px", margin: 0 }}>
+            <h3 style={{ fontSize: "1.8rem", fontWeight: "900", letterSpacing: "-0.5px", margin: 0, color: "#0f172a" }}>
               Architecture Matrix
             </h3>
             <p style={{ fontSize: "1rem", color: COLORS.textMuted, margin: "0.5rem 0 0 0" }}>
               How governed deployment compares with standard black-box SaaS APIs.
             </p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "rgba(255, 255, 255, 0.02)", border: `1px solid ${COLORS.border}`, padding: "8px 16px", borderRadius: "12px", fontSize: "0.85rem", color: "#60a5fa", fontWeight: "600" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", background: "rgba(0, 0, 0, 0.02)", border: `1px solid ${COLORS.border}`, padding: "8px 16px", borderRadius: "12px", fontSize: "0.85rem", color: "#2563eb", fontWeight: "600" }}>
             <Cpu size={14} /> Local Agent Host Protocol
           </div>
         </div>
@@ -413,9 +462,9 @@ function GovernedDeployment({ onBack }) {
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px", textAlign: "left" }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${COLORS.border}` }}>
-                <th style={{ padding: "1.2rem 1.5rem", color: "#fff", fontWeight: "800", fontSize: "0.9rem" }}>VECTOR / ANGLE</th>
-                <th style={{ padding: "1.2rem 1.5rem", color: "#9ca3af", fontWeight: "800", fontSize: "0.9rem" }}>BLACK-BOX SaaS API</th>
-                <th style={{ padding: "1.2rem 1.5rem", color: "#60a5fa", fontWeight: "800", fontSize: "0.9rem" }}>SWARM GOVERNED DEPLOYMENT</th>
+                <th style={{ padding: "1.2rem 1.5rem", color: "#0f172a", fontWeight: "800", fontSize: "0.9rem" }}>VECTOR / ANGLE</th>
+                <th style={{ padding: "1.2rem 1.5rem", color: "#64748b", fontWeight: "800", fontSize: "0.9rem" }}>BLACK-BOX SaaS API</th>
+                <th style={{ padding: "1.2rem 1.5rem", color: "#2563eb", fontWeight: "800", fontSize: "0.9rem" }}>SWARM GOVERNED DEPLOYMENT</th>
               </tr>
             </thead>
             <tbody>
@@ -426,10 +475,10 @@ function GovernedDeployment({ onBack }) {
                 { vector: "Tool Integrations", saas: "Requires exposing internal APIs to external triggers", swarm: "Direct secure orchestration with databases & internal microservices" },
                 { vector: "Compliance & Audit", saas: "Relies on external platform SLAs and trust protocols", swarm: "Complete audit trails and self-sovereign telemetry logging" }
               ].map((row, idx) => (
-                <tr key={idx} style={{ borderBottom: `1px solid ${COLORS.border}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.01)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                  <td style={{ padding: "1.5rem", fontWeight: "700", color: "#ffffff", fontSize: "0.95rem" }}>{row.vector}</td>
+                <tr key={idx} style={{ borderBottom: `1px solid ${COLORS.border}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.01)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <td style={{ padding: "1.5rem", fontWeight: "700", color: "#0f172a", fontSize: "0.95rem" }}>{row.vector}</td>
                   <td style={{ padding: "1.5rem", color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "1.5" }}>{row.saas}</td>
-                  <td style={{ padding: "1.5rem", color: "#e2e8f0", fontSize: "0.9rem", lineHeight: "1.5", fontWeight: "500" }}>{row.swarm}</td>
+                  <td style={{ padding: "1.5rem", color: "#334155", fontSize: "0.9rem", lineHeight: "1.5", fontWeight: "500" }}>{row.swarm}</td>
                 </tr>
               ))}
             </tbody>
@@ -449,7 +498,7 @@ function GovernedDeployment({ onBack }) {
         }}
       >
         <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          <h2 style={{ fontSize: "2rem", fontWeight: "900", letterSpacing: "-0.5px", margin: 0 }}>
+          <h2 style={{ fontSize: "2rem", fontWeight: "900", letterSpacing: "-0.5px", margin: 0, color: "#0f172a" }}>
             Hardware Requirements by Tier
           </h2>
           <p style={{ fontSize: "1.1rem", color: COLORS.textMuted, maxWidth: "600px", margin: "0 auto", lineHeight: "1.6" }}>
@@ -518,19 +567,19 @@ function GovernedDeployment({ onBack }) {
               onMouseEnter={e => {
                 e.currentTarget.style.transform = "translateY(-6px)";
                 e.currentTarget.style.border = `1px solid ${tierCard.border}`;
-                e.currentTarget.style.boxShadow = `0 15px 40px -10px ${tierCard.glow}, inset 0 1px 0 rgba(255,255,255,0.05)`;
+                e.currentTarget.style.boxShadow = `0 15px 40px -10px ${tierCard.glow}, 0 4px 6px -1px rgba(0,0,0,0.02)`;
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = "translateY(0)";
                 e.currentTarget.style.border = `1px solid ${COLORS.border}`;
-                e.currentTarget.style.boxShadow = `0 10px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.02)`;
+                e.currentTarget.style.boxShadow = `0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.03)`;
               }}
             >
               <div className="tier-card-image-container">
                 <img src={tierCard.image} alt={tierCard.tier} className="tier-card-image" />
               </div>
               <div>
-                <h3 style={{ fontSize: "1.3rem", fontWeight: "900", margin: 0, color: "#ffffff" }}>
+                <h3 style={{ fontSize: "1.3rem", fontWeight: "900", margin: 0, color: "#0f172a" }}>
                   {tierCard.tier}
                 </h3>
                 <p style={{ fontSize: "0.85rem", color: COLORS.textMuted, marginTop: "6px", lineHeight: "1.4", minHeight: "2.8rem" }}>
@@ -540,7 +589,7 @@ function GovernedDeployment({ onBack }) {
 
               <div
                 style={{
-                  background: "rgba(255,255,255,0.02)",
+                  background: "rgba(0, 0, 0, 0.02)",
                   border: `1px solid ${COLORS.border}`,
                   borderRadius: "16px",
                   padding: "1.2rem",
@@ -550,14 +599,14 @@ function GovernedDeployment({ onBack }) {
                 }}
               >
                 <div style={{ fontSize: "0.7rem", fontWeight: "800", color: COLORS.textMuted, letterSpacing: "1px" }}>RECOMMENDED GPU</div>
-                <div style={{ fontSize: "0.95rem", fontWeight: "800", color: "#60a5fa" }}>{tierCard.gpu}</div>
+                <div style={{ fontSize: "0.95rem", fontWeight: "800", color: "#2563eb" }}>{tierCard.gpu}</div>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "0.5rem" }}>
                 {tierCard.specs.map((spec, sIdx) => (
                   <div key={sIdx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem" }}>
                     <span style={{ color: COLORS.textMuted }}>{spec.label}</span>
-                    <span style={{ fontWeight: "700", color: "#e2e8f0" }}>{spec.val}</span>
+                    <span style={{ fontWeight: "700", color: "#1e293b" }}>{spec.val}</span>
                   </div>
                 ))}
               </div>
@@ -572,18 +621,17 @@ function GovernedDeployment({ onBack }) {
           maxWidth: "1200px",
           width: "100%",
           margin: "2rem auto 0",
-          background: "rgba(255, 255, 255, 0.01)",
-          backdropFilter: "blur(20px)",
+          background: "#ffffff",
           border: `1px solid ${COLORS.border}`,
           borderRadius: "32px",
           padding: "3.5rem 3rem",
           boxSizing: "border-box",
-          boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.03)"
         }}
       >
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "2rem", marginBottom: "2.5rem", alignItems: "flex-end" }}>
           <div>
-            <h3 style={{ fontSize: "1.8rem", fontWeight: "900", letterSpacing: "-0.5px", margin: 0 }}>
+            <h3 style={{ fontSize: "1.8rem", fontWeight: "900", letterSpacing: "-0.5px", margin: 0, color: "#0f172a" }}>
               Deployment Blueprints
             </h3>
             <p style={{ fontSize: "1rem", color: COLORS.textMuted, margin: "0.5rem 0 0 0" }}>
@@ -592,7 +640,7 @@ function GovernedDeployment({ onBack }) {
           </div>
           
           {/* Tab buttons */}
-          <div style={{ display: "flex", gap: "8px", background: "rgba(255, 255, 255, 0.02)", border: `1px solid ${COLORS.border}`, padding: "6px", borderRadius: "14px" }}>
+          <div style={{ display: "flex", gap: "8px", background: "rgba(0, 0, 0, 0.02)", border: `1px solid ${COLORS.border}`, padding: "6px", borderRadius: "14px" }}>
             {[
               { id: "docker", label: "Docker Compose" },
               { id: "helm", label: "Kubernetes (Helm)" },
@@ -605,10 +653,10 @@ function GovernedDeployment({ onBack }) {
                   onClick={() => setActiveTab(tab.id)}
                   style={{
                     padding: "8px 16px",
-                    background: isActive ? "rgba(59, 130, 246, 0.1)" : "transparent",
+                    background: isActive ? "rgba(59, 130, 246, 0.08)" : "transparent",
                     border: "none",
                     borderRadius: "10px",
-                    color: isActive ? "#60a5fa" : COLORS.textMuted,
+                    color: isActive ? "#2563eb" : COLORS.textMuted,
                     fontWeight: "700",
                     cursor: "pointer",
                     fontSize: "0.85rem",
@@ -732,29 +780,28 @@ ssh secure-node "/opt/swarm/bin/swarm-admin init --local-weights-path /opt/model
         {/* Pricing Philosophy */}
         <div
           style={{
-            background: "rgba(255, 255, 255, 0.01)",
-            backdropFilter: "blur(20px)",
+            background: "#ffffff",
             border: `1px solid ${COLORS.border}`,
             borderRadius: "28px",
             padding: "3rem 2.5rem",
             display: "flex",
             flexDirection: "column",
             gap: "1.5rem",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.03)",
             boxSizing: "border-box"
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ height: "48px", width: "48px", borderRadius: "12px", background: "rgba(59, 130, 246, 0.1)", border: `1px solid ${COLORS.border}`, display: "flex", justifyContent: "center", alignItems: "center", color: "#60a5fa" }}>
+            <div style={{ height: "48px", width: "48px", borderRadius: "12px", background: "rgba(59, 130, 246, 0.08)", border: `1px solid ${COLORS.border}`, display: "flex", justifyContent: "center", alignItems: "center", color: "#2563eb" }}>
               <DollarSign size={20} />
             </div>
             <div>
-              <span style={{ fontSize: "0.7rem", fontWeight: "900", color: "#60a5fa", letterSpacing: "1px" }}>LICENSING STRUCTURE</span>
-              <h3 style={{ fontSize: "1.5rem", fontWeight: "900", margin: "2px 0 0 0", color: "#ffffff", letterSpacing: "-0.5px" }}>Pricing Philosophy</h3>
+              <span style={{ fontSize: "0.7rem", fontWeight: "900", color: "#2563eb", letterSpacing: "1px" }}>LICENSING STRUCTURE</span>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "900", margin: "2px 0 0 0", color: "#0f172a", letterSpacing: "-0.5px" }}>Pricing Philosophy</h3>
             </div>
           </div>
           
-          <h4 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#ffffff", margin: "0.5rem 0 0 0" }}>
+          <h4 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#1e293b", margin: "0.5rem 0 0 0" }}>
             Why pricing starts with scope, not seats.
           </h4>
           <p style={{ fontSize: "0.95rem", lineHeight: "1.7", color: COLORS.textMuted, margin: 0 }}>
@@ -765,25 +812,24 @@ ssh secure-node "/opt/swarm/bin/swarm-admin init --local-weights-path /opt/model
         {/* Budgeting Guidance */}
         <div
           style={{
-            background: "rgba(255, 255, 255, 0.01)",
-            backdropFilter: "blur(20px)",
+            background: "#ffffff",
             border: `1px solid ${COLORS.border}`,
             borderRadius: "28px",
             padding: "3rem 2.5rem",
             display: "flex",
             flexDirection: "column",
             gap: "1.5rem",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.03)",
             boxSizing: "border-box"
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ height: "48px", width: "48px", borderRadius: "12px", background: "rgba(16, 185, 129, 0.1)", border: `1px solid ${COLORS.border}`, display: "flex", justifyContent: "center", alignItems: "center", color: "#34d399" }}>
+            <div style={{ height: "48px", width: "48px", borderRadius: "12px", background: "rgba(16, 185, 129, 0.08)", border: `1px solid ${COLORS.border}`, display: "flex", justifyContent: "center", alignItems: "center", color: "#16a34a" }}>
               <TrendingUp size={20} />
             </div>
             <div>
-              <span style={{ fontSize: "0.7rem", fontWeight: "900", color: "#34d399", letterSpacing: "1px" }}>ENGAGEMENT PATHWAY</span>
-              <h3 style={{ fontSize: "1.5rem", fontWeight: "900", margin: "2px 0 0 0", color: "#ffffff", letterSpacing: "-0.5px" }}>Budgeting Guidance</h3>
+              <span style={{ fontSize: "0.7rem", fontWeight: "900", color: "#16a34a", letterSpacing: "1px" }}>ENGAGEMENT PATHWAY</span>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "900", margin: "2px 0 0 0", color: "#0f172a", letterSpacing: "-0.5px" }}>Budgeting Guidance</h3>
             </div>
           </div>
           
@@ -792,9 +838,9 @@ ssh secure-node "/opt/swarm/bin/swarm-admin init --local-weights-path /opt/model
               Most enterprise integrations begin with a readiness diagnostic or a proof-of-concept pilot before transitioning to annual platform subscriptions.
             </p>
             
-            <div style={{ display: "flex", gap: "12px", background: "rgba(239, 68, 68, 0.04)", border: "1px solid rgba(239, 68, 68, 0.15)", padding: "1rem", borderRadius: "12px" }}>
-              <span style={{ color: "#f87171", fontSize: "1.2rem", lineHeight: "1" }}>⚠️</span>
-              <p style={{ fontSize: "0.85rem", lineHeight: "1.5", color: "#f87171", margin: 0, fontWeight: "500" }}>
+            <div style={{ display: "flex", gap: "12px", background: "rgba(239, 68, 68, 0.03)", border: "1px solid rgba(239, 68, 68, 0.15)", padding: "1rem", borderRadius: "12px" }}>
+              <span style={{ color: "#ef4444", fontSize: "1.2rem", lineHeight: "1" }}>⚠️</span>
+              <p style={{ fontSize: "0.85rem", lineHeight: "1.5", color: "#ef4444", margin: 0, fontWeight: "500" }}>
                 Infrastructure spend (dedicated GPU clusters, cloud storage hosts, VPC networking interfaces) remains completely separate and is borne directly by the customer in their cloud accounts.
               </p>
             </div>
@@ -808,7 +854,7 @@ ssh secure-node "/opt/swarm/bin/swarm-admin init --local-weights-path /opt/model
           maxWidth: "1200px",
           width: "100%",
           margin: "0 auto 4rem",
-          background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(139, 92, 246, 0.03) 100%)",
+          background: "linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.02) 100%)",
           border: `1px solid ${COLORS.border}`,
           borderRadius: "32px",
           padding: "4rem",
@@ -818,10 +864,10 @@ ssh secure-node "/opt/swarm/bin/swarm-admin init --local-weights-path /opt/model
           flexDirection: "column",
           alignItems: "center",
           gap: "1.5rem",
-          boxShadow: "0 10px 40px rgba(59, 130, 246, 0.05)"
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.03)"
         }}
       >
-        <h3 style={{ fontSize: "2.2rem", fontWeight: "900", letterSpacing: "-0.5px", margin: 0 }}>
+        <h3 style={{ fontSize: "2.2rem", fontWeight: "900", letterSpacing: "-0.5px", margin: 0, color: "#0f172a" }}>
           Ready to Deploy Secure AI?
         </h3>
         <p style={{ fontSize: "1.1rem", color: COLORS.textMuted, maxWidth: "550px", margin: 0, lineHeight: "1.6" }}>
