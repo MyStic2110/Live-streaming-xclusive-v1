@@ -142,17 +142,16 @@ function CommitCard({ commit, index }) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.4, delay: index * 0.04, ease: "easeOut" }}
       style={{
-        background: "rgba(15,23,42,0.85)",
-        border: `1px solid ${meta.color}35`,
+        background: "#ffffff",
+        border: `1.5px solid #cbd5e1`,
         borderRadius: 20,
-        backdropFilter: "blur(20px)",
-        boxShadow: `0 0 0 1px ${meta.color}15, 0 8px 40px ${meta.glow}`,
+        boxShadow: `0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.03)`,
         overflow: "hidden",
         transition: "box-shadow 0.3s, transform 0.2s",
         cursor: "default",
       }}
       whileHover={{
-        boxShadow: `0 0 0 1.5px ${meta.color}60, 0 12px 50px ${meta.glow}`,
+        boxShadow: `0 10px 30px ${meta.color}15, 0 4px 6px -1px rgba(0,0,0,0.02)`,
         y: -3,
       }}
     >
@@ -164,7 +163,7 @@ function CommitCard({ commit, index }) {
           <img src={avatar} alt={authorName} onError={e => { e.target.style.display = "none"; }}
             style={{ width: 36, height: 36, borderRadius: "50%", border: `2px solid ${meta.color}55`, flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: "0.8rem", fontWeight: "800", color: "#f1f5f9", lineHeight: 1.2 }}>{authorName}</div>
+            <div style={{ fontSize: "0.8rem", fontWeight: "800", color: "#0f172a", lineHeight: 1.2 }}>{authorName}</div>
             <div style={{ fontSize: "0.65rem", color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
               <Clock size={10} />{timeAgo(date)}
             </div>
@@ -172,20 +171,20 @@ function CommitCard({ commit, index }) {
           <span style={{
             fontSize: "0.6rem", fontWeight: "900", letterSpacing: "1.5px",
             padding: "3px 10px", borderRadius: 99,
-            background: `${meta.color}20`, color: meta.color,
-            border: `1px solid ${meta.color}40`,
+            background: `${meta.color}10`, color: meta.color,
+            border: `1px solid ${meta.color}30`,
             display: "flex", alignItems: "center", gap: 4, flexShrink: 0
           }}>
             <span>{meta.emoji}</span>{meta.label}
           </span>
         </div>
 
-        <p style={{ fontSize: "0.95rem", fontWeight: "800", color: "#f8fafc", margin: "0 0 0.5rem 0", lineHeight: 1.4, letterSpacing: "-0.01em" }}>
+        <p style={{ fontSize: "0.95rem", fontWeight: "800", color: "#0f172a", margin: "0 0 0.5rem 0", lineHeight: 1.4, letterSpacing: "-0.01em" }}>
           {title || c.message.slice(0, 80)}
         </p>
 
         {body && (
-          <p style={{ fontSize: "0.78rem", color: "#94a3b8", margin: "0 0 0.9rem 0", lineHeight: 1.55, borderLeft: `2px solid ${meta.color}40`, paddingLeft: 10 }}>
+          <p style={{ fontSize: "0.78rem", color: "#475569", margin: "0 0 0.9rem 0", lineHeight: 1.55, borderLeft: `2px solid ${meta.color}40`, paddingLeft: 10 }}>
             {body}{body.length >= 180 ? "…" : ""}
           </p>
         )}
@@ -193,17 +192,17 @@ function CommitCard({ commit, index }) {
         {tags.length > 0 && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: "0.9rem" }}>
             {tags.map(tag => (
-              <span key={tag} style={{ fontSize: "0.65rem", fontWeight: "700", color: meta.color, padding: "2px 8px", borderRadius: 99, background: `${meta.color}12` }}>
+              <span key={tag} style={{ fontSize: "0.65rem", fontWeight: "700", color: meta.color, padding: "2px 8px", borderRadius: 99, background: `${meta.color}10` }}>
                 #{tag}
               </span>
             ))}
           </div>
         )}
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "0.75rem", flexWrap: "wrap", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid #cbd5e1", paddingTop: "0.75rem", flexWrap: "wrap", gap: 6 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <a href={html_url} target="_blank" rel="noreferrer"
-              style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.65rem", fontWeight: "900", letterSpacing: "1px", color: "#64748b", textDecoration: "none", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", padding: "3px 8px", borderRadius: 8, fontFamily: "monospace", transition: "color 0.2s" }}
+              style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.65rem", fontWeight: "900", letterSpacing: "1px", color: "#64748b", textDecoration: "none", background: "rgba(0,0,0,0.02)", border: "1px solid #cbd5e1", padding: "3px 8px", borderRadius: 8, fontFamily: "monospace", transition: "color 0.2s" }}
               onMouseEnter={e => e.currentTarget.style.color = meta.color}
               onMouseLeave={e => e.currentTarget.style.color = "#64748b"}
             >
@@ -228,7 +227,7 @@ function TimelineDot({ color }) {
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, width: 28, paddingTop: 22 }}>
       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
         style={{ width: 12, height: 12, borderRadius: "50%", background: color, boxShadow: `0 0 10px ${color}`, flexShrink: 0 }} />
-      <div style={{ flex: 1, width: 2, background: "rgba(255,255,255,0.05)", marginTop: 6, minHeight: 40 }} />
+      <div style={{ flex: 1, width: 2, background: "rgba(15,23,42,0.06)", marginTop: 6, minHeight: 40 }} />
     </div>
   );
 }
@@ -237,15 +236,16 @@ function TimelineDot({ color }) {
 function FilterPill({ label, emoji, color, active, count, onClick }) {
   return (
     <button onClick={onClick} style={{
-      padding: "5px 14px", borderRadius: 99, border: "none", cursor: "pointer",
+      padding: "5px 14px", borderRadius: 99, cursor: "pointer",
       fontSize: "0.72rem", fontWeight: "800", letterSpacing: "0.5px",
-      background: active ? `${color}25` : "rgba(255,255,255,0.04)",
+      background: active ? `${color}15` : "rgba(0,0,0,0.02)",
       color: active ? color : "#64748b",
-      border: active ? `1px solid ${color}50` : "1px solid rgba(255,255,255,0.07)",
+      border: active ? `1px solid ${color}35` : "1px solid #cbd5e1",
       transition: "all 0.2s", display: "flex", alignItems: "center", gap: 5,
+      fontFamily: "inherit"
     }}>
       <span>{emoji}</span>{label}
-      <span style={{ background: active ? `${color}30` : "rgba(255,255,255,0.06)", padding: "1px 6px", borderRadius: 99, fontSize: "0.6rem" }}>{count}</span>
+      <span style={{ background: active ? `${color}25` : "rgba(0,0,0,0.04)", padding: "1px 6px", borderRadius: 99, fontSize: "0.6rem" }}>{count}</span>
     </button>
   );
 }
@@ -353,27 +353,29 @@ export default function ChangelogPage({ onBack }) {
 
   const filtered = filter === "all" ? commits : commits.filter(c => detectType(c.commit.message) === filter);
 
-  const BG     = "#030712";
-  const BORDER = "rgba(255,255,255,0.07)";
+  const BG     = "#f8fafc";
+  const BORDER = "#cbd5e1";
 
   return (
     <LikesContext.Provider value={likesCtx}>
     <div style={{
-      minHeight: "100vh", background: BG, color: "#f1f5f9",
+      minHeight: "100vh", background: BG, color: "#0f172a",
       fontFamily: "'Outfit', sans-serif",
+      backgroundImage: `radial-gradient(circle at 10% 20%, rgba(59,130,246,0.04) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(16,185,129,0.02) 0%, transparent 40%)`,
     }}>
       {/* ── Ambient blobs */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>
         <div style={{
           position: "absolute", top: "5%", left: "10%",
           width: 500, height: 500, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(99,102,241,0.04) 0%, transparent 70%)",
           filter: "blur(60px)",
         }} />
         <div style={{
           position: "absolute", bottom: "15%", right: "5%",
           width: 400, height: 400, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(16,185,129,0.03) 0%, transparent 70%)",
           filter: "blur(60px)",
         }} />
       </div>
@@ -381,19 +383,19 @@ export default function ChangelogPage({ onBack }) {
       {/* ── Header */}
       <div style={{
         position: "sticky", top: 0, zIndex: 100,
-        background: "rgba(3,7,18,0.85)", backdropFilter: "blur(20px)",
+        background: "rgba(255,255,255,0.85)", backdropFilter: "blur(20px)",
         borderBottom: `1px solid ${BORDER}`,
       }}>
         <div style={{ maxWidth: 880, margin: "0 auto", padding: "1.25rem 2rem", display: "flex", alignItems: "center", gap: 16 }}>
           <button onClick={onBack} style={{
-            background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`,
-            color: "#94a3b8", cursor: "pointer", borderRadius: 10,
+            background: "rgba(0,0,0,0.03)", border: `1px solid ${BORDER}`,
+            color: "#64748b", cursor: "pointer", borderRadius: 10,
             display: "flex", alignItems: "center", gap: 6,
             padding: "7px 14px", fontSize: "0.8rem", fontWeight: "700",
             transition: "all 0.2s",
           }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#f1f5f9"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "#94a3b8"; }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0.06)"; e.currentTarget.style.color = "#0f172a"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(0,0,0,0.03)"; e.currentTarget.style.color = "#64748b"; }}
           >
             <ArrowLeft size={14} /> BACK
           </button>
@@ -408,7 +410,7 @@ export default function ChangelogPage({ onBack }) {
                 <GitBranch size={18} color="#fff" />
               </div>
               <div>
-                <h1 style={{ margin: 0, fontSize: "1.3rem", fontWeight: "900", letterSpacing: "-0.02em" }}>
+                <h1 style={{ margin: 0, fontSize: "1.3rem", fontWeight: "900", letterSpacing: "-0.02em", color: "#0f172a" }}>
                   SWARM LAB <span style={{ color: "#6366f1" }}>CHANGELOG</span>
                 </h1>
                 <div style={{ fontSize: "0.65rem", color: "#64748b", letterSpacing: "1px" }}>
@@ -427,10 +429,10 @@ export default function ChangelogPage({ onBack }) {
               color: "#64748b", textDecoration: "none",
               padding: "7px 12px", borderRadius: 10,
               border: `1px solid ${BORDER}`,
-              background: "rgba(255,255,255,0.03)",
+              background: "rgba(0,0,0,0.02)",
               transition: "all 0.2s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.color = "#f1f5f9"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; }}
+            onMouseEnter={e => { e.currentTarget.style.color = "#0f172a"; e.currentTarget.style.borderColor = "rgba(0,0,0,0.15)"; }}
             onMouseLeave={e => { e.currentTarget.style.color = "#64748b"; e.currentTarget.style.borderColor = BORDER; }}
           >
             <Code2 size={14} />
@@ -478,8 +480,8 @@ export default function ChangelogPage({ onBack }) {
         >
           <div style={{
             padding: "6px 16px", borderRadius: 99,
-            background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)",
-            fontSize: "0.7rem", fontWeight: "900", color: "#818cf8", letterSpacing: "1.5px",
+            background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)",
+            fontSize: "0.7rem", fontWeight: "900", color: "#6366f1", letterSpacing: "1.5px",
             display: "flex", alignItems: "center", gap: 6,
           }}>
             <motion.span
@@ -488,7 +490,7 @@ export default function ChangelogPage({ onBack }) {
             >⚡</motion.span>
             LIVE COMMIT FEED
           </div>
-          <div style={{ fontSize: "0.75rem", color: "#475569" }}>
+          <div style={{ fontSize: "0.75rem", color: "#64748b" }}>
             Auto-synced from GitHub · {filtered.length} commits {filter !== "all" ? `(${COMMIT_TYPES[filter]?.label})` : ""}
           </div>
         </motion.div>
@@ -502,8 +504,8 @@ export default function ChangelogPage({ onBack }) {
                 transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.1 }}
                 style={{
                   height: 140, borderRadius: 20,
-                  background: "rgba(15,23,42,0.8)",
-                  border: "1px solid rgba(255,255,255,0.05)",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
                 }}
               />
             ))}
@@ -514,16 +516,16 @@ export default function ChangelogPage({ onBack }) {
         {error && !loading && (
           <div style={{
             textAlign: "center", padding: "4rem 2rem",
-            background: "rgba(239,68,68,0.05)",
-            border: "1px solid rgba(239,68,68,0.2)",
+            background: "rgba(239,68,68,0.03)",
+            border: "1px solid rgba(239,68,68,0.15)",
             borderRadius: 20,
           }}>
             <div style={{ fontSize: "2rem", marginBottom: 12 }}>⚠️</div>
             <div style={{ color: "#ef4444", fontWeight: "700", marginBottom: 8 }}>GitHub API Error</div>
             <div style={{ color: "#64748b", fontSize: "0.85rem", marginBottom: 20 }}>{error}</div>
             <button onClick={() => fetchCommits(1)} style={{
-              padding: "8px 20px", borderRadius: 10, border: "1px solid rgba(239,68,68,0.3)",
-              background: "rgba(239,68,68,0.1)", color: "#ef4444",
+              padding: "8px 20px", borderRadius: 10, border: "1px solid rgba(239,68,68,0.2)",
+              background: "rgba(239,68,68,0.05)", color: "#ef4444",
               cursor: "pointer", fontWeight: "700", fontSize: "0.8rem",
               display: "flex", alignItems: "center", gap: 6, margin: "0 auto",
             }}>
@@ -552,12 +554,12 @@ export default function ChangelogPage({ onBack }) {
 
         {/* Empty state */}
         {!loading && !error && filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: "5rem 2rem", color: "#475569" }}>
+          <div style={{ textAlign: "center", padding: "5rem 2rem", color: "#64748b" }}>
             <div style={{ fontSize: "3rem", marginBottom: 16 }}>🔍</div>
             <div style={{ fontWeight: "800", marginBottom: 8 }}>No commits found for this filter</div>
             <button onClick={() => setFilter("all")} style={{
-              padding: "8px 20px", borderRadius: 10, border: "1px solid rgba(99,102,241,0.3)",
-              background: "rgba(99,102,241,0.1)", color: "#818cf8",
+              padding: "8px 20px", borderRadius: 10, border: "1px solid rgba(99,102,241,0.2)",
+              background: "rgba(99,102,241,0.05)", color: "#6366f1",
               cursor: "pointer", fontWeight: "700", fontSize: "0.8rem",
             }}>Show all commits</button>
           </div>
@@ -568,15 +570,16 @@ export default function ChangelogPage({ onBack }) {
           <div style={{ display: "flex", justifyContent: "center", marginTop: "2rem" }}>
             <button onClick={loadMore} disabled={loadingMore} style={{
               padding: "12px 36px", borderRadius: 99,
-              background: "rgba(99,102,241,0.12)",
-              border: "1px solid rgba(99,102,241,0.3)",
-              color: "#818cf8", cursor: loadingMore ? "default" : "pointer",
+              background: "rgba(99,102,241,0.08)",
+              border: "1px solid rgba(99,102,241,0.2)",
+              color: "#6366f1", cursor: loadingMore ? "default" : "pointer",
               fontWeight: "800", fontSize: "0.85rem", letterSpacing: "0.5px",
               display: "flex", alignItems: "center", gap: 8,
               transition: "all 0.2s", opacity: loadingMore ? 0.6 : 1,
+              fontFamily: "inherit"
             }}
-              onMouseEnter={e => !loadingMore && (e.currentTarget.style.background = "rgba(99,102,241,0.2)")}
-              onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.12)"}
+              onMouseEnter={e => !loadingMore && (e.currentTarget.style.background = "rgba(99,102,241,0.15)")}
+              onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.08)"}
             >
               {loadingMore
                 ? <><motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><RefreshCw size={15} /></motion.span> Loading...</>
