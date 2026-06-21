@@ -40,7 +40,8 @@ async function runSSG() {
     `<url><loc>${DOMAIN}/learn</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>`,
     `<url><loc>${DOMAIN}/governed-deployment</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
     `<url><loc>${DOMAIN}/sneak-peak</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
-    `<url><loc>${DOMAIN}/insights</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`
+    `<url><loc>${DOMAIN}/insights</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
+    `<url><loc>${DOMAIN}/careers</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>`
   ];
 
   console.log(`[SSG] Found ${blogFiles.length} blog posts to pre-render.`);
@@ -167,6 +168,33 @@ async function runSSG() {
     console.log('[SSG] Rendered: /insights');
   } catch (err) {
     console.error('[SSG] Error pre-rendering insights page:', err);
+  }
+
+  // Pre-render Careers page
+  try {
+    const title = "Careers | Swarm AI Agentic Lab";
+    const desc = "Join Swarm Agentic Lab. We are looking for Generative AI / Agentic AI Architects and AI Product Managers to build self-directed agent swarms.";
+    const url = `${DOMAIN}/careers`;
+    const img = `${DOMAIN}/logo.jpeg`;
+
+    const updatedHtml = originalHtml
+      .replace(/<title>.*?<\/title>/g, `<title>${title}</title>`)
+      .replace(/<meta name="description" content=".*?"\s*\/>/g, `<meta name="description" content="${desc}" />`)
+      .replace(/<meta property="og:url" content=".*?"\s*\/>/g, `<meta property="og:url" content="${url}" />`)
+      .replace(/<meta property="og:title" content=".*?"\s*\/>/g, `<meta property="og:title" content="${title}" />`)
+      .replace(/<meta property="og:description" content=".*?"\s*\/>/g, `<meta property="og:description" content="${desc}" />`)
+      .replace(/<meta property="og:image" content=".*?"\s*\/>/g, `<meta property="og:image" content="${img}" />`)
+      .replace(/<meta property="twitter:url" content=".*?"\s*\/>/g, `<meta property="twitter:url" content="${url}" />`)
+      .replace(/<meta property="twitter:title" content=".*?"\s*\/>/g, `<meta property="twitter:title" content="${title}" />`)
+      .replace(/<meta property="twitter:description" content=".*?"\s*\/>/g, `<meta property="twitter:description" content="${desc}" />`)
+      .replace(/<meta property="twitter:image" content=".*?"\s*\/>/g, `<meta property="twitter:image" content="${img}" />`);
+
+    const pageDir = path.join(DIST_DIR, 'careers');
+    fs.mkdirSync(pageDir, { recursive: true });
+    fs.writeFileSync(path.join(pageDir, 'index.html'), updatedHtml);
+    console.log('[SSG] Rendered: /careers');
+  } catch (err) {
+    console.error('[SSG] Error pre-rendering careers page:', err);
   }
 
   // Generate dynamic sitemap

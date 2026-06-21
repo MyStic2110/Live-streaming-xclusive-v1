@@ -1,6 +1,6 @@
 {
   "astra": {
-    "timestamp": "2026-06-19T20:34:30.559223",
+    "timestamp": "2026-06-21T18:57:15.199743",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -1697,7 +1697,7 @@
     }
   },
   "bi": {
-    "timestamp": "2026-06-19T20:34:30.581190",
+    "timestamp": "2026-06-21T18:57:15.224195",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -3891,7 +3891,7 @@
     }
   },
   "bi2": {
-    "timestamp": "2026-06-19T20:34:30.605070",
+    "timestamp": "2026-06-21T18:57:15.248590",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -5588,7 +5588,7 @@
     }
   },
   "devopsgeni": {
-    "timestamp": "2026-06-19T20:34:30.657323",
+    "timestamp": "2026-06-21T18:57:15.306704",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -7285,7 +7285,7 @@
     }
   },
   "lina": {
-    "timestamp": "2026-06-19T20:34:30.673229",
+    "timestamp": "2026-06-21T18:57:15.322906",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -8982,7 +8982,7 @@
     }
   },
   "martech": {
-    "timestamp": "2026-06-19T20:34:30.736845",
+    "timestamp": "2026-06-21T18:57:15.376559",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -10679,7 +10679,7 @@
     }
   },
   "nist": {
-    "timestamp": "2026-06-19T20:34:30.763795",
+    "timestamp": "2026-06-21T18:57:15.389210",
     "nist_audit": {
       "score": 100.0,
       "risk": "LOW",
@@ -12376,7 +12376,7 @@
     }
   },
   "nova": {
-    "timestamp": "2026-06-19T20:34:30.884661",
+    "timestamp": "2026-06-21T18:57:15.437179",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -14073,7 +14073,7 @@
     }
   },
   "octane": {
-    "timestamp": "2026-06-19T20:34:30.972800",
+    "timestamp": "2026-06-21T18:57:15.473790",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -15770,7 +15770,7 @@
     }
   },
   "reels": {
-    "timestamp": "2026-06-19T20:34:30.990321",
+    "timestamp": "2026-06-21T18:57:15.488980",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -17467,7 +17467,7 @@
     }
   },
   "rehearsal": {
-    "timestamp": "2026-06-19T20:34:31.022873",
+    "timestamp": "2026-06-21T18:57:15.526500",
     "nist_audit": {
       "score": 100.0,
       "risk": "LOW",
@@ -19164,7 +19164,7 @@
     }
   },
   "seva": {
-    "timestamp": "2026-06-19T20:34:31.096645",
+    "timestamp": "2026-06-21T18:57:15.588401",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -20861,7 +20861,7 @@
     }
   },
   "swarm_copilot": {
-    "timestamp": "2026-06-19T20:34:31.192156",
+    "timestamp": "2026-06-21T18:57:15.661447",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -22558,7 +22558,7 @@
     }
   },
   "aivyuh": {
-    "timestamp": "2026-06-19T20:34:30.475958",
+    "timestamp": "2026-06-21T18:57:15.090763",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -24255,7 +24255,7 @@
     }
   },
   "shoppe": {
-    "timestamp": "2026-06-19T20:34:31.167884",
+    "timestamp": "2026-06-21T18:57:15.637071",
     "nist_audit": {
       "score": 0.0,
       "risk": "CRITICAL",
@@ -24362,44 +24362,114 @@
           "confidence": 100,
           "evidence": [
             {
-              "line": 35,
+              "line": 30,
               "match": "logger",
               "code": "logger = logging.getLogger('shoppe')"
             },
             {
-              "line": 35,
+              "line": 30,
               "match": "logger",
               "code": "logging.getLogger('shoppe')"
             },
             {
-              "line": 36,
+              "line": 31,
               "match": "logger",
               "code": "logger.setLevel(logging.INFO)"
             },
             {
-              "line": 863,
+              "line": 162,
+              "match": "logger",
+              "code": "logger.error('\ud83d\udca5 Unhandled Browser Exception: %s', err.message)"
+            },
+            {
+              "line": 183,
+              "match": "logger",
+              "code": "logger.exception('Error publishing native WebRTC track')"
+            },
+            {
+              "line": 212,
+              "match": "logger",
+              "code": "logger.exception('Error in stream loop')"
+            },
+            {
+              "line": 275,
+              "match": "logger",
+              "code": "logger.exception('Google search failed')"
+            },
+            {
+              "line": 287,
+              "match": "logger",
+              "code": "logger.exception('SearXNG fallback search failed')"
+            },
+            {
+              "line": 321,
+              "match": "logger",
+              "code": "logger.exception('Failed to evaluate DOM for search results')"
+            },
+            {
+              "line": 380,
+              "match": "logger",
+              "code": "logger.exception('Playwright navigation failed')"
+            },
+            {
+              "line": 464,
+              "match": "logger",
+              "code": "logger.exception('Click element failed')"
+            },
+            {
+              "line": 483,
+              "match": "logger",
+              "code": "logger.exception('Scroll page failed')"
+            },
+            {
+              "line": 495,
               "match": "logger",
               "code": "room_logger = RoomLoggerAdapter(logger, {'room': ctx.room.name})"
             },
             {
-              "line": 863,
+              "line": 495,
               "match": "logger",
               "code": "RoomLoggerAdapter(logger, {'room': ctx.room.name})"
             },
             {
-              "line": 864,
+              "line": 496,
               "match": "logger",
               "code": "room_logger.info('--- SHOPPE SHOPPING AGENT CONNECTING ---')"
             },
             {
-              "line": 957,
+              "line": 511,
+              "match": "logger",
+              "code": "logger.exception('Error in initialization')"
+            },
+            {
+              "line": 557,
+              "match": "logger",
+              "code": "logger.exception('Error greeting')"
+            },
+            {
+              "line": 577,
               "match": "logger",
               "code": "room_logger.error(f'Error parsing data channel payload: {e}')"
             },
             {
-              "line": 972,
+              "line": 582,
+              "match": "logger",
+              "code": "logger.exception('Error session start')"
+            },
+            {
+              "line": 589,
+              "match": "logger",
+              "code": "logger.exception('Shoppe loop error')"
+            },
+            {
+              "line": 591,
               "match": "logger",
               "code": "room_logger.info('Shoppe worker terminating.')"
+            },
+            {
+              "line": 595,
+              "match": "logger",
+              "code": "logger.exception('Error cleaning up shoppe tools')"
             }
           ],
           "score": 5,
@@ -24411,44 +24481,114 @@
           "confidence": 100,
           "evidence": [
             {
-              "line": 35,
+              "line": 30,
               "match": "logger",
               "code": "logger = logging.getLogger('shoppe')"
             },
             {
-              "line": 35,
+              "line": 30,
               "match": "logger",
               "code": "logging.getLogger('shoppe')"
             },
             {
-              "line": 36,
+              "line": 31,
               "match": "logger",
               "code": "logger.setLevel(logging.INFO)"
             },
             {
-              "line": 863,
+              "line": 162,
+              "match": "logger",
+              "code": "logger.error('\ud83d\udca5 Unhandled Browser Exception: %s', err.message)"
+            },
+            {
+              "line": 183,
+              "match": "logger",
+              "code": "logger.exception('Error publishing native WebRTC track')"
+            },
+            {
+              "line": 212,
+              "match": "logger",
+              "code": "logger.exception('Error in stream loop')"
+            },
+            {
+              "line": 275,
+              "match": "logger",
+              "code": "logger.exception('Google search failed')"
+            },
+            {
+              "line": 287,
+              "match": "logger",
+              "code": "logger.exception('SearXNG fallback search failed')"
+            },
+            {
+              "line": 321,
+              "match": "logger",
+              "code": "logger.exception('Failed to evaluate DOM for search results')"
+            },
+            {
+              "line": 380,
+              "match": "logger",
+              "code": "logger.exception('Playwright navigation failed')"
+            },
+            {
+              "line": 464,
+              "match": "logger",
+              "code": "logger.exception('Click element failed')"
+            },
+            {
+              "line": 483,
+              "match": "logger",
+              "code": "logger.exception('Scroll page failed')"
+            },
+            {
+              "line": 495,
               "match": "logger",
               "code": "room_logger = RoomLoggerAdapter(logger, {'room': ctx.room.name})"
             },
             {
-              "line": 863,
+              "line": 495,
               "match": "logger",
               "code": "RoomLoggerAdapter(logger, {'room': ctx.room.name})"
             },
             {
-              "line": 864,
+              "line": 496,
               "match": "logger",
               "code": "room_logger.info('--- SHOPPE SHOPPING AGENT CONNECTING ---')"
             },
             {
-              "line": 957,
+              "line": 511,
+              "match": "logger",
+              "code": "logger.exception('Error in initialization')"
+            },
+            {
+              "line": 557,
+              "match": "logger",
+              "code": "logger.exception('Error greeting')"
+            },
+            {
+              "line": 577,
               "match": "logger",
               "code": "room_logger.error(f'Error parsing data channel payload: {e}')"
             },
             {
-              "line": 972,
+              "line": 582,
+              "match": "logger",
+              "code": "logger.exception('Error session start')"
+            },
+            {
+              "line": 589,
+              "match": "logger",
+              "code": "logger.exception('Shoppe loop error')"
+            },
+            {
+              "line": 591,
               "match": "logger",
               "code": "room_logger.info('Shoppe worker terminating.')"
+            },
+            {
+              "line": 595,
+              "match": "logger",
+              "code": "logger.exception('Error cleaning up shoppe tools')"
             }
           ],
           "score": 5,
@@ -24460,44 +24600,114 @@
           "confidence": 100,
           "evidence": [
             {
-              "line": 35,
+              "line": 30,
               "match": "logger",
               "code": "logger = logging.getLogger('shoppe')"
             },
             {
-              "line": 35,
+              "line": 30,
               "match": "logger",
               "code": "logging.getLogger('shoppe')"
             },
             {
-              "line": 36,
+              "line": 31,
               "match": "logger",
               "code": "logger.setLevel(logging.INFO)"
             },
             {
-              "line": 863,
+              "line": 162,
+              "match": "logger",
+              "code": "logger.error('\ud83d\udca5 Unhandled Browser Exception: %s', err.message)"
+            },
+            {
+              "line": 183,
+              "match": "logger",
+              "code": "logger.exception('Error publishing native WebRTC track')"
+            },
+            {
+              "line": 212,
+              "match": "logger",
+              "code": "logger.exception('Error in stream loop')"
+            },
+            {
+              "line": 275,
+              "match": "logger",
+              "code": "logger.exception('Google search failed')"
+            },
+            {
+              "line": 287,
+              "match": "logger",
+              "code": "logger.exception('SearXNG fallback search failed')"
+            },
+            {
+              "line": 321,
+              "match": "logger",
+              "code": "logger.exception('Failed to evaluate DOM for search results')"
+            },
+            {
+              "line": 380,
+              "match": "logger",
+              "code": "logger.exception('Playwright navigation failed')"
+            },
+            {
+              "line": 464,
+              "match": "logger",
+              "code": "logger.exception('Click element failed')"
+            },
+            {
+              "line": 483,
+              "match": "logger",
+              "code": "logger.exception('Scroll page failed')"
+            },
+            {
+              "line": 495,
               "match": "logger",
               "code": "room_logger = RoomLoggerAdapter(logger, {'room': ctx.room.name})"
             },
             {
-              "line": 863,
+              "line": 495,
               "match": "logger",
               "code": "RoomLoggerAdapter(logger, {'room': ctx.room.name})"
             },
             {
-              "line": 864,
+              "line": 496,
               "match": "logger",
               "code": "room_logger.info('--- SHOPPE SHOPPING AGENT CONNECTING ---')"
             },
             {
-              "line": 957,
+              "line": 511,
+              "match": "logger",
+              "code": "logger.exception('Error in initialization')"
+            },
+            {
+              "line": 557,
+              "match": "logger",
+              "code": "logger.exception('Error greeting')"
+            },
+            {
+              "line": 577,
               "match": "logger",
               "code": "room_logger.error(f'Error parsing data channel payload: {e}')"
             },
             {
-              "line": 972,
+              "line": 582,
+              "match": "logger",
+              "code": "logger.exception('Error session start')"
+            },
+            {
+              "line": 589,
+              "match": "logger",
+              "code": "logger.exception('Shoppe loop error')"
+            },
+            {
+              "line": 591,
               "match": "logger",
               "code": "room_logger.info('Shoppe worker terminating.')"
+            },
+            {
+              "line": 595,
+              "match": "logger",
+              "code": "logger.exception('Error cleaning up shoppe tools')"
             }
           ],
           "score": 5,
@@ -25362,98 +25572,56 @@
         {
           "id": "MS-2.6-001",
           "status": "FAIL",
-          "confidence": 25,
-          "evidence": [
-            {
-              "line": 306,
-              "match": "mask",
-              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
-            }
-          ],
+          "confidence": 0,
+          "evidence": [],
           "score": 0,
           "rationale": "Applicable based on active shoppe capabilities."
         },
         {
           "id": "MS-2.6-002",
           "status": "FAIL",
-          "confidence": 25,
-          "evidence": [
-            {
-              "line": 306,
-              "match": "mask",
-              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
-            }
-          ],
+          "confidence": 0,
+          "evidence": [],
           "score": 0,
           "rationale": "Applicable based on active shoppe capabilities."
         },
         {
           "id": "MS-2.6-003",
           "status": "FAIL",
-          "confidence": 25,
-          "evidence": [
-            {
-              "line": 306,
-              "match": "mask",
-              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
-            }
-          ],
+          "confidence": 0,
+          "evidence": [],
           "score": 0,
           "rationale": "Applicable based on active shoppe capabilities."
         },
         {
           "id": "MS-2.6-004",
           "status": "FAIL",
-          "confidence": 25,
-          "evidence": [
-            {
-              "line": 306,
-              "match": "mask",
-              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
-            }
-          ],
+          "confidence": 0,
+          "evidence": [],
           "score": 0,
           "rationale": "Applicable based on active shoppe capabilities."
         },
         {
           "id": "MS-2.6-005",
           "status": "FAIL",
-          "confidence": 25,
-          "evidence": [
-            {
-              "line": 306,
-              "match": "mask",
-              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
-            }
-          ],
+          "confidence": 0,
+          "evidence": [],
           "score": 0,
           "rationale": "Applicable based on active shoppe capabilities."
         },
         {
           "id": "MS-2.6-006",
           "status": "FAIL",
-          "confidence": 25,
-          "evidence": [
-            {
-              "line": 306,
-              "match": "mask",
-              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
-            }
-          ],
+          "confidence": 0,
+          "evidence": [],
           "score": 0,
           "rationale": "Applicable based on active shoppe capabilities."
         },
         {
           "id": "MS-2.6-007",
           "status": "FAIL",
-          "confidence": 25,
-          "evidence": [
-            {
-              "line": 306,
-              "match": "mask",
-              "code": "stealth_js = \"\\n        // 1. Overwrite webdriver flag\\n        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });\\n\\n        // 2. Overwrite languages\\n        Object.defineProp"
-            }
-          ],
+          "confidence": 0,
+          "evidence": [],
           "score": 0,
           "rationale": "Applicable based on active shoppe capabilities."
         },

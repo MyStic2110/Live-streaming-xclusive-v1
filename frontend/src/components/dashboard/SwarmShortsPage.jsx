@@ -106,21 +106,101 @@ const SHORTS = [
     videoSrc: "/shorts/Robotic_hand_picking_microchip_202606011943.mp4",
   },
   {
-      id: 15,
-      title: "Female Operator on Ship",
-      desc: "A thrilling scene featuring a female operator aboard a futuristic ship.",
-      tag: "SCENARIO",
-      color: C.amber,
-      videoSrc: "/shorts/Female_operator_on_ship_202606191348.mp4",
-    },
-    {
-      id: 16,
-      title: "Woman Riding Electric Bike",
-      desc: "Showcasing a woman riding an electric bike through a vibrant cityscape.",
-      tag: "DEMO",
-      color: C.sky,
-      videoSrc: "/shorts/Woman_riding_electric_bike_202606191331.mp4",
-    },
+    id: 15,
+    title: "Female Operator on Ship",
+    desc: "A thrilling scene featuring a female operator aboard a futuristic ship.",
+    tag: "SCENARIO",
+    color: C.amber,
+    videoSrc: "/shorts/Female_operator_on_ship_202606191348.mp4",
+  },
+  {
+    id: 16,
+    title: "Woman Riding Electric Bike",
+    desc: "Showcasing a woman riding an electric bike through a vibrant cityscape.",
+    tag: "DEMO",
+    color: C.sky,
+    videoSrc: "/shorts/Woman_riding_electric_bike_202606191331.mp4",
+  },
+  {
+    id: 17,
+    title: "AI-Powered Farm Intelligence",
+    desc: "Revolutionizing agriculture with computer vision, soil health analysis, and autonomous crop forecasting agents.",
+    tag: "AGRITECH",
+    color: C.green,
+    videoSrc: "/shorts/AI-powered_farm_intelligence_202606212110.mp4",
+  },
+  {
+    id: 18,
+    title: "AI Survivor Search",
+    desc: "Using search-and-rescue drones powered by thermal imaging AI to detect survivors in active fire zones.",
+    tag: "SAFETY",
+    color: C.amber,
+    videoSrc: "/shorts/AI_finds_survivor_in_fire_202606201346.mp4",
+  },
+  {
+    id: 19,
+    title: "Passenger Flow Prediction",
+    desc: "Analyzing real-time pedestrian telemetry and forecasting transit terminal bottlenecks using agentic simulations.",
+    tag: "TRANSIT",
+    color: C.sky,
+    videoSrc: "/shorts/AI_predicts_passenger_movement_202606212126.mp4",
+  },
+  {
+    id: 20,
+    title: "Grid Blackout Prevention",
+    desc: "Intelligent energy routing agents mitigating load spikes in smart grid networks during peak demand periods.",
+    tag: "UTILITIES",
+    color: C.indigo,
+    videoSrc: "/shorts/AI_prevents_blackout_202606212103.mp4",
+  },
+  {
+    id: 21,
+    title: "Smart Building Diagnostics",
+    desc: "Predictive HVAC maintenance and dynamic building utility optimization using real-time IoT sensory streams.",
+    tag: "INFRASTRUCTURE",
+    color: "#ec4899",
+    videoSrc: "/shorts/Buildings_see_future_AI_202606201330.mp4",
+  },
+  {
+    id: 22,
+    title: "Agentic Systems Workflow",
+    desc: "An educational walkthrough of multi-agent state machines, context sharing, and dynamic back-and-forth orchestration.",
+    tag: "TUTORIAL",
+    color: C.indigo,
+    videoSrc: "/shorts/Learn_agentic_systems_workflow_a…_202606212055.mp4",
+  },
+  {
+    id: 23,
+    title: "AI Storyboard Panel Generation",
+    desc: "Watch how video generation agents automatically synthesize storyboard panels, sequences, and character designs.",
+    tag: "CREATIVE",
+    color: "#a855f7",
+    videoSrc: "/shorts/Make_video_using_panels_202606191543.mp4",
+  },
+  {
+    id: 24,
+    title: "Maritime Threat Detection",
+    desc: "Autonomous marine navigation safety models tracking incoming atmospheric and obstacle threats.",
+    tag: "MARITIME",
+    color: C.sky,
+    videoSrc: "/shorts/Ships_know_threat_coming_202606201335.mp4",
+  },
+  {
+    id: 25,
+    title: "Predictive Vibe Simulation",
+    desc: "Simulating agentic interaction patterns to dry-run and stress-test target configurations before deploying to production.",
+    tag: "SIMULATION",
+    color: C.amber,
+    videoSrc: "/shorts/Test_future_before_it_happens_202606201341.mp4",
+  },
+  {
+    id: 26,
+    title: "AI Transportation Future",
+    desc: "An expert review of smart public transit networks, autonomous driving corridors, and high-speed cargo delivery grids.",
+    tag: "MOBILITY",
+    color: C.green,
+    videoSrc: "/shorts/Woman_speaking_about_AI_transpor…_202606212120.mp4",
+  },
 ];
 
 // ─── Shorts Player Component ──────────────────────────────────────────────────
@@ -298,6 +378,38 @@ function ShortsPlayer({ short, isActive, isMuted, toggleMute }) {
   );
 }
 
+// Helper to parse video ID from URL query parameters or hash segments
+const getVideoIdFromUrl = (shortsList) => {
+  const hash = window.location.hash;
+  const path = window.location.pathname;
+  const search = window.location.search;
+
+  const getQueryParam = (str, param) => {
+    const match = new RegExp(`[?&]${param}=([^&]*)`).exec(str);
+    return match ? decodeURIComponent(match[1]) : null;
+  };
+
+  const idFromSearch = getQueryParam(search, "v") || getQueryParam(search, "id");
+  const idFromHashQuery = getQueryParam(hash, "v") || getQueryParam(hash, "id");
+
+  if (idFromSearch) return parseInt(idFromSearch, 10);
+  if (idFromHashQuery) return parseInt(idFromHashQuery, 10);
+
+  const pathParts = path.split("/");
+  const lastPathPart = pathParts[pathParts.length - 1];
+  if (lastPathPart && /^\d+$/.test(lastPathPart)) {
+    return parseInt(lastPathPart, 10);
+  }
+
+  const hashParts = hash.split("/");
+  const lastHashPart = hashParts[hashParts.length - 1];
+  if (lastHashPart && /^\d+$/.test(lastHashPart)) {
+    return parseInt(lastHashPart, 10);
+  }
+
+  return null;
+};
+
 // ─── Main Page ───────────────────────────────────────────────────────────────────
 export default function SwarmShortsPage({ onBack, customData, customHeader, customTitle }) {
   const containerRef = useRef(null);
@@ -307,6 +419,35 @@ export default function SwarmShortsPage({ onBack, customData, customHeader, cust
   const shortsList = customData || SHORTS;
   const headerTitle = customHeader || "SWARM AGENTIC LAB · AI-GENERATED";
   const subTitle = customTitle || "Reels Gallery";
+
+  // Scroll to deep-linked video on mount
+  useEffect(() => {
+    const targetId = getVideoIdFromUrl(shortsList);
+    if (targetId !== null) {
+      const targetIndex = shortsList.findIndex(s => s.id === targetId);
+      if (targetIndex !== -1) {
+        setActiveIndex(targetIndex);
+        setTimeout(() => {
+          const el = containerRef.current?.querySelector(`.shorts-item[data-index="${targetIndex}"]`);
+          if (el) {
+            el.scrollIntoView({ behavior: "instant", block: "start" });
+          }
+        }, 150);
+      }
+    }
+  }, [shortsList]);
+
+  // Update URL search parameters when activeIndex changes
+  useEffect(() => {
+    if (activeIndex >= 0 && activeIndex < shortsList.length) {
+      const activeShort = shortsList[activeIndex];
+      if (activeShort) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("v", activeShort.id);
+        window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+      }
+    }
+  }, [activeIndex, shortsList]);
 
   useEffect(() => {
     // Generate VideoObject schemas for all shorts

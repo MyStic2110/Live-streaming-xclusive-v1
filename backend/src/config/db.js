@@ -247,6 +247,26 @@ const initializeTables = async (client) => {
       );
     `);
 
+    // 14. Create Careers Applications table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS careers_applications (
+        id SERIAL PRIMARY KEY,
+        role_id VARCHAR(255) NOT NULL,
+        role_title VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        portfolio VARCHAR(1024) NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Migrate: Add resume_data column if not exists
+    await client.query(`
+      ALTER TABLE careers_applications
+        ADD COLUMN IF NOT EXISTS resume_data JSONB NULL;
+    `);
+
     // Truncate and re-seed nist_rmf_core to ensure it is in sync with nist-rmf-core.json
     logger.info('[DATABASE] ⏳ Syncing NIST AI RMF Core subcategories...');
     const nistJsonPath = path.join(__dirname, 'nist-rmf-core.json');

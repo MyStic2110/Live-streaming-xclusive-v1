@@ -15,6 +15,7 @@ import DevopsGeniRoom from "./components/rooms/DevopsGeniRoom";
 import AivyuhRoom from "./components/rooms/AivyuhRoom";
 import ShoppeRoom from "./components/rooms/ShoppeRoom";
 import ChangelogPage from "./pages/ChangelogPage";
+import CareersPage from "./pages/CareersPage";
 import DevopsOrb from "./components/layout/DevopsOrb";
 import SwarmShortsPage from "./components/dashboard/SwarmShortsPage";
 import DashboardPage from "./components/dashboard/DashboardPage";
@@ -41,9 +42,8 @@ function App() {
   });
   const [token, setToken] = useState(() => localStorage.getItem("token") || null);
   const [roomData, setRoomData] = useState(null);
-  const [showBlog, setShowBlog] = useState(false);
-  const [showChangelog, setShowChangelog] = useState(false);
-  const [showShorts, setShowShorts] = useState(false);
+  // ponytail: unified view mode state
+  const [viewMode, setViewMode] = useState(null); // 'blog' | 'shorts' | 'changelog' | 'careers' | null
   const [currentPath, setCurrentPath] = useState(window.location.hash || window.location.pathname);
   const [isWaPopupOpen, setIsWaPopupOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("fleet");
@@ -56,14 +56,13 @@ function App() {
     else if (isInsightsPath) setActiveTab("insights");
     else if (isCompliancePath) setActiveTab("compliance");
     else if (isChangelogPath) setActiveTab("changelog");
+    else if (isCareersPath) setActiveTab("careers");
     else setActiveTab("fleet");
   }, [currentPath]);
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
-    setShowBlog(false);
-    setShowShorts(false);
-    setShowChangelog(false);
+    setViewMode(null); // reset any view mode when changing tabs
     if (tabId === "analytics") {
       window.history.pushState({}, "", "/dashboard");
       setCurrentPath("/dashboard");
@@ -79,11 +78,14 @@ function App() {
     } else if (tabId === "insights") {
       window.history.pushState({}, "", "/insights");
       setCurrentPath("/insights");
-      setShowBlog(true);
+      setViewMode('blog');
     } else if (tabId === "changelog") {
       window.history.pushState({}, "", "/changelog");
       setCurrentPath("/changelog");
-      setShowChangelog(true);
+      setViewMode('changelog');
+    } else if (tabId === "careers") {
+      window.history.pushState({}, "", "/careers");
+      setCurrentPath("/careers");
     } else {
       window.history.pushState({}, "", "/");
       setCurrentPath("/");
@@ -121,10 +123,15 @@ function App() {
     };
   }, []);
 
-  const navigateToShorts = () => handleTabChange("sneak-peak");
-  const navigateToDashboard = () => handleTabChange("analytics");
-  const navigateToDeployment = () => handleTabChange("governance");
-  const navigateHome = () => handleTabChange("fleet");
+  const navigateToShorts = () => setViewMode('shorts');
+  const navigateToDashboard = () => handleTabChange('analytics');
+  const navigateToDeployment = () => handleTabChange('governance');
+  const navigateToCareers = () => {
+    window.history.pushState({}, "", "/careers");
+    setCurrentPath("/careers");
+    setViewMode('careers');
+  };
+  const navigateHome = () => handleTabChange('fleet');
   const navigateToLogin = () => {
     console.log('navigateToLogin invoked');
     window.location.hash = "#/login";
@@ -178,22 +185,26 @@ function App() {
   };
 
   const toggleBlog = () => {
-    setShowBlog(!showBlog);
+    setViewMode(viewMode === 'blog' ? null : 'blog');
   };
 
-  const isLina      = roomData?.creatorId === "LINA";
-  const isBI        = roomData?.creatorId === "BI";
-  const isBI2       = roomData?.creatorId === "BI2";
-  const isNova      = roomData?.creatorId === "NOVA";
-
-  const isAstra     = roomData?.creatorId === "ASTRA";
-  const isRehearsal = roomData?.creatorId === "REHEARSAL";
-  const isSeva      = roomData?.creatorId === "SEVA";
-  const isMartech   = roomData?.creatorId === "MARTECH";
-  const isOctane    = roomData?.creatorId === "OCTANE";
-  const isDevopsGeni = roomData?.creatorId === "DEVOPS_GENI";
-  const isAivyuh    = roomData?.creatorId === "AIVYUH" || roomData?.creatorId === "aivyuh";
-  const isShoppe    = roomData?.creatorId === "SHOPPE";
+  // ponytail: replaced individual room type flags with a lookup map
+  const ROOM_COMPONENTS = {
+    LINA: LinaRoom,
+    BI: BIRoom,
+    BI2: BIRoom,
+    NOVA: NovaRoom,
+    ASTRA: AstraRoom,
+    REHEARSAL: RehearsalRoom,
+    SEVA: SevaRoom,
+    MARTECH: MartechRoom,
+    OCTANE: OctaneRoom,
+    DEVOPS_GENI: DevopsGeniRoom,
+    AIVYUH: AivyuhRoom,
+    aivyuh: AivyuhRoom,
+    SHOPPE: ShoppeRoom,
+  };
+  const CurrentRoom = ROOM_COMPONENTS[roomData?.creatorId] || VideoRoom; // fallback to generic VideoRoom
 
 
   const isFleetPath =
@@ -203,8 +214,9 @@ function App() {
     window.location.hash === "#/fleet/";
 
   const isShortsPath =
-    currentPath.replace(/\/$/, "") === "/sneak-peak" ||
-    window.location.hash === "#/sneak-peak";
+    currentPath.split("?")[0].replace(/\/$/, "") === "/sneak-peak" ||
+    window.location.hash.split("?")[0] === "#/sneak-peak" ||
+    currentPath.includes("sneak-peak");
 
   const isDashboardPath =
     currentPath.replace(/\/$/, "") === "/dashboard" ||
@@ -240,6 +252,11 @@ function App() {
     window.location.hash.replace(/\/$/, "") === "#/blog" ||
     window.location.hash.startsWith("#/blog/");
 
+  const isCareersPath =
+    currentPath.replace(/\/$/, "") === "/careers" ||
+    window.location.hash.replace(/\/$/, "") === "#/careers" ||
+    window.location.hash === "#careers";
+
   const isLoginPath =
     currentPath.replace(/\/$/, "") === "/login" ||
     window.location.hash.replace(/\/$/, "") === "#/login" ||
@@ -250,12 +267,14 @@ function App() {
     window.location.hash.replace(/\/$/, "") === "#/reset-password";
 
   let content;
-  if (showChangelog || isChangelogPath || activeTab === "changelog") {
+  if (viewMode === 'changelog' || isChangelogPath || activeTab === "changelog") {
     content = <ChangelogPage onBack={() => handleTabChange("fleet")} />;
-  } else if (showBlog || isInsightsPath || isBlogPath || activeTab === "insights") {
-    content = <BlogSection onBack={() => handleTabChange("fleet")} currentPath={currentPath} setCurrentPath={setCurrentPath} />;
-  } else if (showShorts || isShortsPath || activeTab === "sneak-peak") {
+  } else if (viewMode === 'blog' || isInsightsPath || isBlogPath || activeTab === "insights") {
+    content = <BlogSection onBack={() => handleTabChange("fleet")} currentPath={currentPath} setCurrentPath={setCurrentPath} onCareersClick={navigateToCareers} />;
+  } else if (viewMode === 'shorts' || isShortsPath || activeTab === "sneak-peak") {
     content = <SwarmShortsPage onBack={() => handleTabChange("fleet")} />;
+  } else if (viewMode === 'careers' || isCareersPath || activeTab === "careers") {
+    content = <CareersPage onBack={() => handleTabChange("fleet")} />;
   } else if (isDashboardPath || activeTab === "analytics") {
     content = <DashboardPage onBack={() => handleTabChange("fleet")} />;
   } else if (isCompliancePath || activeTab === "compliance") {
@@ -263,34 +282,8 @@ function App() {
   } else if (isDeploymentPath || activeTab === "governance") {
     content = <GovernedDeployment onBack={() => handleTabChange("fleet")} />;
   } else if (roomData) {
-    content = isDevopsGeni ? (
-      <DevopsGeniRoom roomData={roomData} onLeave={handleLeave} />
-    ) : isLina ? (
-      <LinaRoom roomData={roomData} onLeave={handleLeave} />
-    ) : isBI ? (
-      <BIRoom roomData={roomData} onLeave={handleLeave} />
-    ) : isBI2 ? (
-      <BIRoom roomData={roomData} onLeave={handleLeave} />
-    ) : isNova ? (
-      <NovaRoom roomData={roomData} onLeave={handleLeave} />
-
-    ) : isAivyuh ? (
-      <AivyuhRoom roomData={roomData} onLeave={handleLeave} />
-    ) : isAstra ? (
-      <AstraRoom roomData={roomData} onLeave={handleLeave} />
-    ) : isRehearsal ? (
-      <RehearsalRoom roomData={roomData} onLeave={handleLeave} />
-    ) : isSeva ? (
-      <SevaRoom roomData={roomData} onLeave={handleLeave} />
-    ) : isShoppe ? (
-      <ShoppeRoom roomData={roomData} onLeave={handleLeave} />
-    ) : isMartech ? (
-      <MartechRoom roomData={roomData} onLeave={handleLeave} />
-    ) : isOctane ? (
-      <OctaneRoom roomData={roomData} onLeave={handleLeave} />
-    ) : (
-      <VideoRoom roomData={roomData} onLeave={handleLeave} />
-    );
+    const RoomComponent = CurrentRoom;
+    content = <RoomComponent roomData={roomData} onLeave={handleLeave} />;
   } else if (
     currentPath === "/" ||
     currentPath === "" ||
@@ -306,6 +299,7 @@ function App() {
         onDashboardClick={navigateToDashboard}
         onDeploymentClick={navigateToDeployment}
         onChangelogClick={() => handleTabChange("changelog")}
+        onCareersClick={navigateToCareers}
         user={user}
         onLoginClick={navigateToLogin}
         onLogout={handleLogout}
@@ -321,7 +315,7 @@ function App() {
     if (currentPath === "/login" || window.location.hash === "#/login" || window.location.hash === "#login") {
       navigateHome();
     }
-  };
+  }; // ponytail: kept unchanged
 
   React.useEffect(() => {
     if (token && user && isLoginPath) {
@@ -349,8 +343,7 @@ function App() {
   // When authenticated, the operator Control Panel Workspace is wrapped inside ConsoleLayout
   const isLandingPage =
     !isAuthenticated &&
-    !isDashboardPath && !isDeploymentPath && !isCompliancePath &&
-    !showBlog && !isShortsPath && !isLoginPath && !isResetPasswordPath && !isInsightsPath && !isBlogPath && !isChangelogPath && !showChangelog &&
+    !isDashboardPath && !isDeploymentPath && !isCompliancePath && !viewMode &&
     (currentPath === "/" || currentPath === "" || isFleetPath ||
      (currentPath.startsWith("#") && !currentPath.startsWith("#/login") && !currentPath.startsWith("#/reset-password")) ||
      activeTab === "fleet");

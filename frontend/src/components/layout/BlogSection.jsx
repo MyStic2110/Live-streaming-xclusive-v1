@@ -40,7 +40,7 @@ const parseInlineMarkdown = (text) => {
 const INITIAL_POSTS = [];
 
 
-const BlogSection = ({ onBack, externalPosts = [], currentPath = "", setCurrentPath }) => {
+const BlogSection = ({ onBack, externalPosts = [], currentPath = "", setCurrentPath, onCareersClick }) => {
   const [posts, setPosts] = useState([...externalPosts, ...INITIAL_POSTS]);
   const [selectedPost, setSelectedPost] = useState(null);
   const [legalModalType, setLegalModalType] = useState(null);
@@ -955,7 +955,7 @@ const BlogSection = ({ onBack, externalPosts = [], currentPath = "", setCurrentP
       </main>
 
       {/* Footer */}
-      <Footer onBlogClick={() => {}} onLegalClick={setLegalModalType} />
+      <Footer onBlogClick={() => {}} onLegalClick={setLegalModalType} onCareersClick={onCareersClick} />
 
       {/* --- LEGAL MODAL --- */}
       <AnimatePresence>

@@ -18,7 +18,7 @@ PRICING = {
     "default": {"input": 0.15, "output": 0.60}
 }
 
-VOICE_AGENTS = {"NOVA", "CORTEX_BI", "CORTEX_BI2", "LINA", "AIVYUH", "ASTRA", "MARTECH", "OCTANE", "SEVA", "VONE", "BI", "BI2", "CORTEX", "CORTEX2"}
+VOICE_AGENTS = {"NOVA", "CORTEX_BI", "CORTEX_BI2", "LINA", "AIVYUH", "ASTRA", "MARTECH", "OCTANE", "SEVA", "VONE", "BI", "BI2", "CORTEX", "CORTEX2", "SHOPPE"}
 
 def is_voice_agent(agent_name: str) -> bool:
     if not agent_name:

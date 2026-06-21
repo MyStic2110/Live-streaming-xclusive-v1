@@ -20,6 +20,7 @@ import roomRoutes from './src/routes/roomRoutes.js';
 import telemetryRoutes from './src/routes/telemetryRoutes.js';
 import crawlerRoutes from './src/routes/crawlerRoutes.js';
 import githubRoutes from './src/routes/githubRoutes.js';
+import careersRoutes from './src/routes/careersRoutes.js';
 
 // Global console redirection to Pino structured JSON logger for high-throughput enterprise performance
 console.log = (...args) => logger.info(args.join(' '));
@@ -38,7 +39,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
@@ -131,6 +132,7 @@ await connectDB();
 app.use('/api/auth', authRoutes);
 app.use('/api/crawler', crawlerRoutes);
 app.use('/api/github', githubRoutes);
+app.use('/api/careers', careersRoutes);
 app.use('/api', configRoutes);
 app.use('/api', telemetryRoutes); // Mounts /api/llm-trace, /api/llm-traces, /api/evaluate-hallucination, etc.
 app.use('/', telemetryRoutes);   // Mounts root-level routes: /security/status, /security/scan, /security/remediate, /detokenize

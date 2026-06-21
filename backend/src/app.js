@@ -10,11 +10,12 @@ import crawlerRoutes from './routes/crawlerRoutes.js';
 import githubRoutes from './routes/githubRoutes.js';
 import coldEmailRoutes from './routes/coldEmailRoutes.js';
 import changelogRoutes from './routes/changelogRoutes.js';
+import careersRoutes from './routes/careersRoutes.js';
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // --- ROUTE MOUNTINGS ---
 // Consolidated routing system. Maintains strict backward compatibility with the frontend endpoints.
@@ -27,4 +28,5 @@ app.use('/', telemetryRoutes);   // Mounts root-level routes: /security/status, 
 app.use('/', roomRoutes);        // Mounts root-level routes: /talk-to-ai, /trigger-reels, /copilot/chat, /copilot/session/clear
 app.use('/cold-email', coldEmailRoutes);
 app.use('/api/changelog', changelogRoutes);
+app.use('/api/careers', careersRoutes);
 export default app;
