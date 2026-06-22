@@ -182,10 +182,22 @@ const ConsoleAgentCard = ({ agent, onAction }) => {
   );
 };
 
-export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboardClick, onDeploymentClick, onChangelogClick, onCareersClick, user, onLoginClick, onLogout }) {
+export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboardClick, onDeploymentClick, onChangelogClick, onCareersClick, onBattleClick, user, onLoginClick, onLogout }) {
   const [legalModalType, setLegalModalType] = useState(null);
   const [enabledAgents, setEnabledAgents] = useState([]);
   const [copilotOpen, setCopilotOpen] = useState(false);
+  const [heroWord, setHeroWord] = useState("Factories");
+
+  useEffect(() => {
+    if (user) return;
+    const words = ["Factories", "Marketplaces", "Farms"];
+    let idx = 0;
+    const interval = setInterval(() => {
+      idx = (idx + 1) % words.length;
+      setHeroWord(words[idx]);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   useEffect(() => {
     axios.get(`${API}/api/whitelabel/config`)
@@ -341,7 +353,7 @@ export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboa
             letterSpacing: "-2px",
             marginBottom: "2rem"
           }}>
-            Stop Renting Intelligence.<br/>Own Your <span style={{ color: COLORS.primary }}>Agent Factories.</span>
+            Stop Renting Intelligence.<br/>Own Your <span style={{ color: COLORS.primary }}>Agent {heroWord}.</span>
           </h1>
 
           <p style={{
@@ -536,7 +548,6 @@ export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboa
           </div>
         </section>
 
-        {/* Footer */}
         <Footer 
           onBlogClick={onBlogClick} 
           onShortsClick={onShortsClick} 
@@ -545,6 +556,7 @@ export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboa
           onDeploymentClick={onDeploymentClick}
           onChangelogClick={onChangelogClick}
           onCareersClick={onCareersClick}
+          onBattleClick={onBattleClick}
         />
 
         {legalModalType && (

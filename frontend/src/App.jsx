@@ -16,6 +16,7 @@ import AivyuhRoom from "./components/rooms/AivyuhRoom";
 import ShoppeRoom from "./components/rooms/ShoppeRoom";
 import ChangelogPage from "./pages/ChangelogPage";
 import CareersPage from "./pages/CareersPage";
+import InterviewPortalPage from "./pages/InterviewPortalPage";
 import DevopsOrb from "./components/layout/DevopsOrb";
 import SwarmShortsPage from "./components/dashboard/SwarmShortsPage";
 import DashboardPage from "./components/dashboard/DashboardPage";
@@ -130,6 +131,11 @@ function App() {
     window.history.pushState({}, "", "/careers");
     setCurrentPath("/careers");
     setViewMode('careers');
+  };
+  const navigateToBattle = () => {
+    window.history.pushState({}, "", "/battle");
+    setCurrentPath("/battle");
+    setViewMode(null);
   };
   const navigateHome = () => handleTabChange('fleet');
   const navigateToLogin = () => {
@@ -257,6 +263,12 @@ function App() {
     window.location.hash.replace(/\/$/, "") === "#/careers" ||
     window.location.hash === "#careers";
 
+  const isBattlePath =
+    currentPath.replace(/\/$/, "") === "/battle" ||
+    window.location.hash.replace(/\/$/, "") === "#/battle" ||
+    window.location.hash === "#battle" ||
+    currentPath.includes("battle");
+
   const isLoginPath =
     currentPath.replace(/\/$/, "") === "/login" ||
     window.location.hash.replace(/\/$/, "") === "#/login" ||
@@ -270,11 +282,13 @@ function App() {
   if (viewMode === 'changelog' || isChangelogPath || activeTab === "changelog") {
     content = <ChangelogPage onBack={() => handleTabChange("fleet")} />;
   } else if (viewMode === 'blog' || isInsightsPath || isBlogPath || activeTab === "insights") {
-    content = <BlogSection onBack={() => handleTabChange("fleet")} currentPath={currentPath} setCurrentPath={setCurrentPath} onCareersClick={navigateToCareers} />;
+    content = <BlogSection onBack={() => handleTabChange("fleet")} currentPath={currentPath} setCurrentPath={setCurrentPath} onCareersClick={navigateToCareers} onBattleClick={navigateToBattle} />;
   } else if (viewMode === 'shorts' || isShortsPath || activeTab === "sneak-peak") {
     content = <SwarmShortsPage onBack={() => handleTabChange("fleet")} />;
   } else if (viewMode === 'careers' || isCareersPath || activeTab === "careers") {
     content = <CareersPage onBack={() => handleTabChange("fleet")} />;
+  } else if (isBattlePath) {
+    content = <InterviewPortalPage onBack={() => handleTabChange("fleet")} />;
   } else if (isDashboardPath || activeTab === "analytics") {
     content = <DashboardPage onBack={() => handleTabChange("fleet")} />;
   } else if (isCompliancePath || activeTab === "compliance") {
@@ -300,6 +314,7 @@ function App() {
         onDeploymentClick={navigateToDeployment}
         onChangelogClick={() => handleTabChange("changelog")}
         onCareersClick={navigateToCareers}
+        onBattleClick={navigateToBattle}
         user={user}
         onLoginClick={navigateToLogin}
         onLogout={handleLogout}

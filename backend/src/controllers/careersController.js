@@ -164,16 +164,25 @@ async function processOcrInBackground(applicationId, resumeBase64, resumeName) {
   }
 }
 
+const generateBattleToken = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let token = '';
+  for (let i = 0; i < 4; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `BATTLE-${token}`;
+};
+
 /**
  * POST /api/careers/apply
  * Submits a new career application to the database and schedules OCR parsing in the background.
  */
 export const applyToRole = async (req, res) => {
-  const { roleId, roleTitle, name, email, portfolio, message, resumeBase64, resumeName } = req.body;
+  const { roleId, roleTitle, name, email, mobile, portfolio, message, resumeBase64, resumeName } = req.body;
 
   // Validation
-  if (!roleId || !roleTitle || !name || !email || !message) {
-    return res.status(400).json({ error: 'Missing required fields. Please fill in name, email, and message.' });
+  if (!roleId || !roleTitle || !name || !email || !mobile || !message) {
+    return res.status(400).json({ error: 'Missing required fields. Please fill in name, email, mobile number, and message.' });
   }
 
   // Simple email format check
@@ -184,25 +193,27 @@ export const applyToRole = async (req, res) => {
 
   try {
     const initialStatus = resumeBase64 ? { status: 'processing' } : null;
+    const battleToken = generateBattleToken();
     
     // 1. Insert record immediately with processing state
     const result = await query(
-      `INSERT INTO careers_applications (role_id, role_title, name, email, portfolio, message, resume_data)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, created_at;`,
-      [roleId, roleTitle, name, email, portfolio || null, message, initialStatus]
+      `INSERT INTO careers_applications (role_id, role_title, name, email, mobile, portfolio, message, resume_data, battle_token)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING id, created_at, battle_token;`,
+      [roleId, roleTitle, name, email, mobile, portfolio || null, message, initialStatus, battleToken]
     );
 
     const newApplication = result.rows[0];
     const applicationId = newApplication.id;
-    logger.info(`[CAREERS] Application submitted instantly by ${name} (${email}) for role "${roleTitle}" (ID: ${applicationId})`);
+    logger.info(`[CAREERS] Application submitted instantly by ${name} (${email}) for role "${roleTitle}" (ID: ${applicationId}, Token: ${battleToken})`);
 
     // 2. Respond to client instantly
     res.status(201).json({
       success: true,
       message: 'Application submitted successfully. Resume parsing scheduled in background.',
       applicationId,
-      submittedAt: newApplication.created_at
+      submittedAt: newApplication.created_at,
+      battleToken: newApplication.battle_token
     });
 
     // 3. Fire-and-forget background OCR parsing

@@ -21,6 +21,8 @@ import telemetryRoutes from './src/routes/telemetryRoutes.js';
 import crawlerRoutes from './src/routes/crawlerRoutes.js';
 import githubRoutes from './src/routes/githubRoutes.js';
 import careersRoutes from './src/routes/careersRoutes.js';
+import battleRoutes from './src/routes/battleRoutes.js';
+import { registerBattleSockets } from './src/sockets/battleSocket.js';
 
 // Global console redirection to Pino structured JSON logger for high-throughput enterprise performance
 console.log = (...args) => logger.info(args.join(' '));
@@ -124,6 +126,7 @@ process.on("unhandledRejection", (reason) => {
 // Inject io instance into the controllers
 roomController.setSocketIO(io);
 telemetryController.setSocketIO(io);
+registerBattleSockets(io);
 
 // Connect to Database
 await connectDB();
@@ -133,6 +136,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/crawler', crawlerRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/careers', careersRoutes);
+app.use('/api/battle', battleRoutes);
 app.use('/api', configRoutes);
 app.use('/api', telemetryRoutes); // Mounts /api/llm-trace, /api/llm-traces, /api/evaluate-hallucination, etc.
 app.use('/', telemetryRoutes);   // Mounts root-level routes: /security/status, /security/scan, /security/remediate, /detokenize

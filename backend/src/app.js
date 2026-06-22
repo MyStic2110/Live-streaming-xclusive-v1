@@ -11,6 +11,7 @@ import githubRoutes from './routes/githubRoutes.js';
 import coldEmailRoutes from './routes/coldEmailRoutes.js';
 import changelogRoutes from './routes/changelogRoutes.js';
 import careersRoutes from './routes/careersRoutes.js';
+import battleRoutes from './routes/battleRoutes.js';
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/crawler', crawlerRoutes);
 app.use('/api/github', githubRoutes);
+app.use('/api/battle', battleRoutes);
 app.use('/api', configRoutes);
 app.use('/api', telemetryRoutes); // Mounts /api/llm-trace, /api/llm-traces, /api/evaluate-hallucination, etc.
 app.use('/', telemetryRoutes);   // Mounts root-level routes: /security/status, /security/scan, /security/remediate, /detokenize

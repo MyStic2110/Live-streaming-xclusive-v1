@@ -64,7 +64,7 @@ const COLORS = {
   green: "#16a34a"
 };
 
-const Footer = ({ onBlogClick, onShortsClick, onLegalClick, onDashboardClick, onDeploymentClick, onChangelogClick, onCareersClick }) => {
+const Footer = ({ onBlogClick, onShortsClick, onLegalClick, onDashboardClick, onDeploymentClick, onChangelogClick, onCareersClick, onBattleClick }) => {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [latency, setLatency] = useState(28);
@@ -221,6 +221,7 @@ const Footer = ({ onBlogClick, onShortsClick, onLegalClick, onDashboardClick, on
         .newsletter-btn:hover {
           transform: translateY(-2px);
           box-shadow: 0 6px 20px rgba(59, 130, 246, 0.25) !important;
+          background: #ffffff !important;
         }
         .newsletter-btn:active {
           transform: translateY(0);
@@ -298,15 +299,15 @@ const Footer = ({ onBlogClick, onShortsClick, onLegalClick, onDashboardClick, on
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   style={{
-                    padding: "12px 16px 12px 42px",
-                    borderRadius: "12px",
-                    border: `1.5px solid ${COLORS.border}`,
-                    background: "#ffffff",
-                    fontSize: "0.9rem",
-                    width: "280px",
-                    outline: "none",
-                    transition: "all 0.25s ease",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
+                     padding: "12px 16px 12px 42px",
+                     borderRadius: "12px",
+                     border: `1.5px solid ${COLORS.border}`,
+                     background: "#ffffff",
+                     fontSize: "0.9rem",
+                     width: "280px",
+                     outline: "none",
+                     transition: "all 0.25s ease",
+                     boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
                   }}
                   className="newsletter-input"
                 />
@@ -427,6 +428,9 @@ const Footer = ({ onBlogClick, onShortsClick, onLegalClick, onDashboardClick, on
             <a href="#" className="footer-link">About Swarm Lab</a>
             <a href="#" onClick={(e) => { e.preventDefault(); if (onCareersClick) onCareersClick(); }} className="footer-link footer-link-highlight">
               Careers <span style={{ fontSize: "0.75rem", padding: "2px 6px", background: "rgba(59, 130, 246, 0.1)", borderRadius: "6px", marginLeft: "4px" }}>We're Hiring</span>
+            </a>
+            <a href="#" onClick={(e) => { e.preventDefault(); if (onBattleClick) onBattleClick(); }} className="footer-link">
+              1v1 Battle Arena <span style={{ fontSize: "0.75rem", padding: "2px 6px", background: "rgba(245, 158, 11, 0.1)", color: "#d97706", borderRadius: "6px", marginLeft: "4px" }}>Play & Win</span>
             </a>
             <a href="https://wa.me/919791388549" target="_blank" rel="noreferrer" className="footer-link">Contact Operator</a>
           </div>

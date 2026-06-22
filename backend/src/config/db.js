@@ -255,6 +255,7 @@ const initializeTables = async (client) => {
         role_title VARCHAR(255) NOT NULL,
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
+        mobile VARCHAR(50) NULL,
         portfolio VARCHAR(1024) NULL,
         message TEXT NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -264,8 +265,165 @@ const initializeTables = async (client) => {
     // Migrate: Add resume_data column if not exists
     await client.query(`
       ALTER TABLE careers_applications
-        ADD COLUMN IF NOT EXISTS resume_data JSONB NULL;
+        ADD COLUMN IF NOT EXISTS resume_data JSONB NULL,
+        ADD COLUMN IF NOT EXISTS mobile VARCHAR(50) NULL,
+        ADD COLUMN IF NOT EXISTS battle_token VARCHAR(50) UNIQUE DEFAULT NULL,
+        ADD COLUMN IF NOT EXISTS battle_token_used BOOLEAN DEFAULT FALSE;
     `);
+
+    // 15. Create Battle Arena Questions Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS battle_questions (
+        id VARCHAR(50) PRIMARY KEY,
+        topic VARCHAR(255) NOT NULL,
+        question TEXT NOT NULL,
+        grading_rubric JSONB NOT NULL,
+        model_answer TEXT NOT NULL,
+        role_id VARCHAR(50) DEFAULT 'ai-pm',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 16. Create Battle Arena Answered Questions tracking Table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS battle_answered_questions (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) NOT NULL,
+        question_id VARCHAR(50) NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (email, question_id)
+      );
+    `);
+
+    // Seed/sync static AI-PM questions
+    logger.info('[DATABASE] ⏳ Syncing static AI-PM challenge questions...');
+    const pmQuestions = [
+      {
+        id: "SWARM_01",
+        topic: "LiveKit Latency & Conversational UX (Barge-in)",
+        question: "A user is speaking to our Swarm via LiveKit. Our STT processes the text, passes it to the Orchestrator, which queries RAG, sends it to the LLM, and streams to TTS. The total round-trip latency is 2.5 seconds, making the conversation feel unnatural. Worse, when the user interrupts (barge-in), the TTS keeps speaking for 2 seconds. How do you fix the latency and the barge-in UX?",
+        grading_rubric: [
+          "Proposes semantic chunking/streaming from LLM directly to TTS.",
+          "Addresses LiveKit/WebRTC voice activity detection (VAD) for instant TTS cancellation.",
+          "Suggests filling the silence with 'filler words' (e.g., 'Hmm', 'Let me check') via a fast, local model."
+        ],
+        model_answer: "To fix the 2.5s latency, I'd move to a fully streaming pipeline. The LLM shouldn't wait for the full response; it needs to stream token chunks directly into the TTS engine so audio begins playing after the first sentence is generated. For the barge-in issue, the problem is the audio buffer. I would implement strict Voice Activity Detection (VAD) on the LiveKit client side. The millisecond the VAD detects the user speaking, the client must send an interrupt signal to immediately flush the TTS audio buffer and halt the LLM generation to save tokens. Finally, to mask the remaining 500ms network latency, I'd deploy a tiny, local edge model that instantly outputs filler sounds like 'Got it, let me pull that up' while the main Swarm does the heavy lifting."
+      },
+      {
+        id: "SWARM_02",
+        topic: "Agent Deadlocks and Infinite Loops",
+        question: "In our 20-agent Swarm, Agent A (Research) asks Agent B (Data Analysis) for a summary. Agent B needs more context and queries Agent A. They enter an infinite loop, burning through $50 of LLM tokens in 3 minutes before hitting a hard timeout. How do you architect the orchestration layer to prevent this?",
+        grading_rubric: [
+          "Introduces a central Orchestrator/Router instead of pure peer-to-peer agent communication.",
+          "Implements strict 'Time-to-Live' (TTL) or hop-count limits on agent requests.",
+          "Proposes circuit breakers or token-burn alerts."
+        ],
+        model_answer: "Peer-to-peer agent communication at a 20-agent scale is a recipe for catastrophic token burn. I would transition to a centralized Orchestrator or 'Supervisor' model. Agents shouldn't trigger each other directly; they must return a 'tool_call' request to the Supervisor, which evaluates if the routing makes sense. To physically prevent loops, I'd attach a 'hop-count' metadata tag to every user prompt. If a single prompt gets passed between agents more than 4 times, the Supervisor forces a circuit breaker, halts the chain, and returns a graceful fallback message to the user. I'd also implement a hard token-budget cap per session ID at the API gateway level."
+      },
+      {
+        id: "SWARM_03",
+        topic: "Data Conflict: RAG vs. SearxNG",
+        question: "A user asks for the latest Q3 financial metrics of a competitor. The internal RAG database (updated last week) says revenue is $40M. The SearxNG agent fetches a press release from 10 minutes ago saying $45M. The Synthesis Agent gets confused and hallucinates an average of $42.5M. How do you handle conflicting multi-source data?",
+        grading_rubric: [
+          "Implements a source-hierarchy or trust-scoring system.",
+          "Forces the LLM to output explicit citations and timestamp comparisons.",
+          "Identifies that averaging categorical/factual data is a prompt engineering failure."
+        ],
+        model_answer: "The Synthesis Agent shouldn't be doing math on facts. This is a routing and prompt engineering failure. I would implement a strict 'Timestamp and Trust' hierarchy in the orchestrator. When passing context to the final LLM, the payload must include metadata: Source, Trust Score, and Timestamp. The system prompt for the Synthesis Agent must explicitly state: 'If data sources conflict, prioritize the most recent timestamp. Never average factual numbers.' In the UX, the TTS should verbally acknowledge the discrepancy: 'Our internal records show $40M, but a press release from today indicates $45M.' This builds trust rather than hiding the system's underlying complexity."
+      },
+      {
+        id: "SWARM_04",
+        topic: "Multi-Agent Evaluation & Observability",
+        question: "Our Swarm works perfectly in testing, but in production, 15% of user queries result in poor answers. Because a single query might trigger 6 different agents, RAG, and SearxNG, debugging takes days. What telemetry and observability stack do you build to monitor this Swarm?",
+        grading_rubric: [
+          "Mentions distributed tracing (e.g., LangSmith, Phoenix, Datadog).",
+          "Proposes logging intermediate inputs/outputs for every agent node.",
+          "Implements user feedback loops (implicit or explicit) tied to the trace ID."
+        ],
+        model_answer: "Debugging a 20-agent swarm with standard logs is impossible. I would implement distributed tracing using a framework like LangSmith, Arize Phoenix, or OpenTelemetry. Every incoming LiveKit session gets a unique Trace ID. Every time the Orchestrator calls RAG, SearxNG, or another agent, it generates a Child Span ID. This gives us a visual waterfall graph of the exact latency, token count, and intermediate prompt/response payload for every single hop. If a user gives a thumbs-down or terminates the call abruptly, that Trace ID is automatically flagged in our dashboard. We can then replay the exact agent trajectory to see if the STT misheard a word, SearxNG failed to scrape, or an agent hallucinated."
+      },
+      {
+        id: "SWARM_05",
+        topic: "SearxNG Rate Limiting and Fallbacks",
+        question: "During a massive spike in user traffic, Google and Bing temporarily IP-ban our SearxNG instances for scraping too aggressively. Suddenly, our Web Research Agents are throwing 403 errors and failing completely. How do you architect a resilient web search pipeline?",
+        grading_rubric: [
+          "Suggests rotating proxy networks for SearxNG.",
+          "Proposes graceful degradation (falling back to RAG/internal data).",
+          "Mentions caching frequent live search results."
+        ],
+        model_answer: "Relying purely on live metasearch at enterprise scale without a buffer is too fragile. First, on the infrastructure side, our SearxNG instances need to be routed through a robust rotating residential proxy network to avoid IP bans from Google/Bing. Second, we need an aggressive caching layer (like Redis). If 50 users ask about the 'latest fed interest rate' in an hour, we should only hit SearxNG once and serve the cached result to the other 49. Finally, if the search API completely fails, the Orchestrator needs a graceful degradation protocol. The TTS should say, 'I'm having trouble accessing the live web right now, but based on our internal data...' rather than simply crashing or saying 'Error 403'."
+      },
+      {
+        id: "SWARM_06",
+        topic: "Context Window Management Across 20 Agents",
+        question: "A user is on a 45-minute LiveKit call. As the conversation progresses, the context window grows massive. Passing the entire STT transcript to every agent is causing API latency to exceed 5 seconds and costs are spiraling. How do you manage conversational memory?",
+        grading_rubric: [
+          "Proposes dynamic memory summarization (rolling summaries).",
+          "Suggests passing only task-relevant context to specialized agents, not the whole transcript.",
+          "Uses a hybrid memory architecture (Vector DB for long-term, sliding window for short-term)."
+        ],
+        model_answer: "We cannot pass a 45-minute raw STT transcript to every agent node; it destroys both latency and unit economics. I would implement a hybrid, tiered memory system. The Orchestrator should only maintain a sliding window of the last 5 conversation turns for immediate conversational context. For the rest of the call, I'd deploy a background 'Memory Agent' that constantly summarizes the transcript into key facts and updates a fast Redis store or user profile. When the Orchestrator calls a specialized agent (like a coding agent), it only passes the specific task prompt and the relevant summary, completely dropping the conversational pleasantries. This keeps our token payload extremely lean and fast."
+      },
+      {
+        id: "SWARM_07",
+        topic: "Handling STT Hallucinations in RAG",
+        question: "A user says 'Pull the metrics for our client, *AeroTech*'. The STT engine mishears it as 'Error Tech'. The Swarm's Orchestrator searches the RAG database for 'Error Tech', finds nothing, and tells the user 'We have no data on that.' How do you build resilience against STT errors?",
+        grading_rubric: [
+          "Suggests semantic/fuzzy searching in the RAG retrieval instead of exact keyword matching.",
+          "Proposes an LLM-based query rewriting step.",
+          "Uses the Orchestrator to ask clarifying questions when confidence is low."
+        ],
+        model_answer: "STT phonetic errors are inevitable, especially with accents or background noise. The worst thing we can do is pass raw STT output directly into a strict database query. I'd insert a lightweight 'Query Rewriter' step before the RAG retrieval. This LLM looks at the STT text and the conversation context to generate an optimized search vector. More importantly, our RAG Vector DB needs to rely on semantic embeddings, not exact keyword matching—'Error Tech' and 'AeroTech' have different phonetic spellings, but a good embedding model might catch the contextual similarity. If the retrieval still returns zero results, the Orchestrator must be programmed to fallback gracefully: 'I didn't catch that company name perfectly. Did you mean AeroTech?'"
+      },
+      {
+        id: "SWARM_08",
+        topic: "Routing Strategy: Semantic vs. Deterministic",
+        question: "Currently, your Orchestrator uses an LLM to decide which of the 20 agents to call based on the user's prompt (Semantic Routing). This adds 800ms of latency before the actual work even begins. The engineering team wants to switch to hard-coded keyword routing. As a PM, how do you resolve this?",
+        grading_rubric: [
+          "Recognizes the trade-off between latency (deterministic) and flexibility (semantic).",
+          "Proposes a hybrid/cascading routing system.",
+          "Mentions using faster, smaller models or embedding classifiers for routing."
+        ],
+        model_answer: "Pure LLM semantic routing is too slow for real-time voice, but hard-coded keyword routing is too rigid for natural conversation. I would implement a cascading hybrid router. First, the user's STT input hits a fast, deterministic layer—using regex or a lightweight intent classifier (like a fast embedding comparison). If the intent is obvious (e.g., 'What is the weather', 'Search the web for X'), it routes instantly in under 50ms. If the classifier confidence is below 80%, *then* it falls back to the LLM semantic router to handle the complex ambiguity. This gives us the 800ms penalty only on the edge cases, dramatically lowering average latency while maintaining the Swarm's intelligence."
+      },
+      {
+        id: "SWARM_09",
+        topic: "Multi-Modal Context Synchronization",
+        question: "A user is interacting with your Swarm via both a dashboard UI and LiveKit voice. The user clicks a chart on the screen and says, 'Agent, tell me why this metric dropped.' The STT captures the voice, but the agent has no idea what 'this' refers to. How do you synchronize state between the visual UI and the voice Swarm?",
+        grading_rubric: [
+          "Proposes a shared state/event bus between the frontend UI and backend Swarm.",
+          "Passes UI interaction metadata into the Orchestrator's context window.",
+          "Mentions visual context grounding."
+        ],
+        model_answer: "The voice agent is flying blind because it lacks spatial UI context. We need to bridge the WebSocket/LiveKit connection with the frontend application state. I would implement a shared event bus. Whenever the user hovers over, clicks, or highlights an element on the dashboard, the frontend silently pushes a lightweight JSON payload to the Orchestrator's active context window (e.g., `{'active_element': 'Q3 Revenue Chart', 'highlighted_data': 'August Drop'}`). When the user says 'Why did *this* drop?', the Orchestrator injects that recent UI metadata into the prompt. The LLM now reads: 'User asked: Why did this drop? Context: User is currently clicking on Q3 Revenue Chart.' This creates a seamless, multi-modal illusion for the user."
+      },
+      {
+        id: "SWARM_10",
+        topic: "Enterprise Security and Agent Boundary Control",
+        question: "Your Swarm has an Internal SQL Agent (accesses private enterprise data) and a SearxNG Agent (accesses the public web). An enterprise security auditor is terrified of a prompt-injection attack where a user tricks the Swarm into reading private SQL data and posting it to an external URL via the web agent. How do you secure this?",
+        grading_rubric: [
+          "Implements strict sandboxing and Network/VPC isolation for specific agents.",
+          "Uses a Zero-Trust architecture where the Orchestrator strips sensitive data before passing context.",
+          "Mentions output guardrails/DLP (Data Loss Prevention) scanners."
+        ],
+        model_answer: "This is a severe exfiltration risk. We cannot rely on LLM system prompts for security; we need infrastructure-level hard boundaries. First, the agents must be strictly sandboxed. The Internal SQL Agent runs in a private VPC with zero outbound internet access. The SearxNG Agent runs in a separate environment with no access to internal networks. Second, I would implement a Data Loss Prevention (DLP) middleware layer within the Orchestrator. If the SQL Agent returns sensitive PII or financial data, the Orchestrator masks it or flags the session. If the Orchestrator tries to pass that context to the SearxNG agent, the DLP scanner physically blocks the request, acting as a zero-trust firewall between internal knowledge and external actions."
+      }
+    ];
+
+    for (const q of pmQuestions) {
+      await client.query(`
+        INSERT INTO battle_questions (id, topic, question, grading_rubric, model_answer, role_id)
+        VALUES ($1, $2, $3, $4, $5, 'ai-pm')
+        ON CONFLICT (id) DO UPDATE
+        SET topic = EXCLUDED.topic,
+            question = EXCLUDED.question,
+            grading_rubric = EXCLUDED.grading_rubric,
+            model_answer = EXCLUDED.model_answer,
+            role_id = EXCLUDED.role_id;
+      `, [q.id, q.topic, q.question, JSON.stringify(q.grading_rubric), q.model_answer]);
+    }
+    logger.info(`[DATABASE] ✅ Seeded ${pmQuestions.length} PM questions into battle_questions.`);
+
 
     // Truncate and re-seed nist_rmf_core to ensure it is in sync with nist-rmf-core.json
     logger.info('[DATABASE] ⏳ Syncing NIST AI RMF Core subcategories...');

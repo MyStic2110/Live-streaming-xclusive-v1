@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Send, Sparkles, BrainCircuit, UserCheck, ShieldCheck, Trophy, Briefcase, Award } from "lucide-react";
 import axios from "axios";
@@ -60,6 +60,22 @@ export default function CareersPage({ onBack }) {
   const [resumeFile, setResumeFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [battleToken, setBattleToken] = useState("");
+  const [leaderboard, setLeaderboard] = useState([]);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const res = await axios.get(`${API}/api/battle/leaderboard`);
+        if (res.data?.success) {
+          setLeaderboard(res.data.leaderboard || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch battle leaderboard:", err);
+      }
+    };
+    fetchLeaderboard();
+  }, []);
 
   // ponytail: use native FormData and uncontrolled inputs to eliminate state tracking boilerplate
   const handleApplyClick = (role) => {
@@ -95,10 +111,11 @@ export default function CareersPage({ onBack }) {
     const data = new FormData(e.currentTarget);
     const name = data.get("name");
     const email = data.get("email");
+    const mobile = data.get("mobile");
     const portfolio = data.get("portfolio");
     const message = data.get("message");
 
-    if (!name || !email || !message || !resumeFile) {
+    if (!name || !email || !mobile || !message || !resumeFile) {
       alert("Please fill in all required fields and upload your resume.");
       return;
     }
@@ -117,12 +134,14 @@ export default function CareersPage({ onBack }) {
         roleTitle: selectedRole.title,
         name,
         email,
+        mobile,
         portfolio,
         message,
         resumeBase64,
         resumeName: resumeFile.name
       });
       if (response.data?.success) {
+        setBattleToken(response.data?.battleToken || "");
         setSubmitSuccess(true);
       } else {
         alert(response.data?.error || "Submission failed. Please try again.");
@@ -356,6 +375,48 @@ export default function CareersPage({ onBack }) {
                       </ul>
                     </div>
 
+                    {/* Role specific Mini Leaderboard */}
+                    {(() => {
+                      const roleLeaderboard = leaderboard.filter(item => item.role === role.title).slice(0, 3);
+                      if (roleLeaderboard.length === 0) return null;
+
+                      return (
+                        <div style={{
+                          background: `${role.color}05`,
+                          border: `1.5px solid ${role.color}15`,
+                          borderRadius: "16px",
+                          padding: "1.25rem"
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "0.75rem" }}>
+                            <Trophy size={16} color="#f59e0b" style={{ flexShrink: 0 }} />
+                            <span style={{ fontSize: "0.85rem", fontWeight: "900", color: COLORS.textLight }}>
+                              Top Performers / Leaderboard
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                            {roleLeaderboard.map((item, idx) => (
+                              <div key={idx} style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                fontSize: "0.85rem",
+                                borderBottom: idx < roleLeaderboard.length - 1 ? `1px solid ${COLORS.border}` : "none",
+                                paddingBottom: idx < roleLeaderboard.length - 1 ? "6px" : 0
+                              }}>
+                                <span style={{ color: COLORS.textMuted, display: "flex", alignItems: "center", gap: "6px" }}>
+                                  <span style={{ fontWeight: "950", color: idx === 0 ? "#eab308" : idx === 1 ? "#94a3b8" : "#b45309" }}>#{idx + 1}</span>
+                                  <span style={{ color: COLORS.textLight, fontWeight: "700" }}>{item.name}</span>
+                                </span>
+                                <span style={{ fontWeight: "900", color: role.color }}>
+                                  {item.score} pts
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <div style={{
                       background: "rgba(22, 163, 74, 0.03)",
                       border: `1px solid rgba(22, 163, 74, 0.1)`,
@@ -473,6 +534,19 @@ export default function CareersPage({ onBack }) {
                     </div>
 
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <label htmlFor="mobile-input" style={{ fontSize: "0.85rem", fontWeight: "800", color: COLORS.textLight }}>Mobile Number *</label>
+                      <input
+                        id="mobile-input"
+                        type="tel"
+                        name="mobile"
+                        required
+                        defaultValue="+91"
+                        placeholder="e.g. +91 98765 43210"
+                        className="careers-input"
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                       <label htmlFor="portfolio-input" style={{ fontSize: "0.85rem", fontWeight: "800", color: COLORS.textLight }}>GitHub or Portfolio Link</label>
                       <input
                         id="portfolio-input"
@@ -543,40 +617,115 @@ export default function CareersPage({ onBack }) {
                   </form>
                 </>
               ) : (
-                <div style={{ textAlign: "center", padding: "2rem 0" }}>
+                <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
                   <div style={{
-                    width: "64px",
-                    height: "64px",
+                    width: "60px",
+                    height: "60px",
                     borderRadius: "50%",
                     background: "rgba(22, 163, 74, 0.05)",
                     border: `2px solid ${COLORS.green}`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    margin: "0 auto 1.5rem auto"
+                    margin: "0 auto 1.25rem auto"
                   }}>
-                    <ShieldCheck size={32} color={COLORS.green} />
+                    <ShieldCheck size={30} color={COLORS.green} />
                   </div>
-                  <h3 style={{ fontSize: "1.75rem", fontWeight: "900", marginBottom: "0.5rem", color: COLORS.textLight }}>Transmission Complete</h3>
-                  <p style={{ color: COLORS.textMuted, fontSize: "0.95rem", lineHeight: "1.6", marginBottom: "2rem" }}>
-                    Your application has been stored. Our swarm orchestration team will parse your experience and reach out shortly.
+                  <h3 style={{ fontSize: "1.6rem", fontWeight: "900", marginBottom: "0.5rem", color: COLORS.textLight }}>Transmission Complete</h3>
+                  <p style={{ color: COLORS.textMuted, fontSize: "0.9rem", lineHeight: "1.5", marginBottom: "1.5rem" }}>
+                    Your application has been stored. You have been selected to enter the 1v1 AI-Supervised Technical Arena.
                   </p>
-                  <button
-                    id="careers-success-close"
-                    onClick={() => setSelectedRole(null)}
-                    style={{
-                      padding: "10px 24px",
-                      background: "rgba(0,0,0,0.03)",
-                      border: `1px solid ${COLORS.border}`,
-                      color: COLORS.textLight,
+
+                  {/* Battle Token Ticket */}
+                  {battleToken && (
+                    <div style={{
+                      background: "radial-gradient(circle at 100% 50%, transparent 10px, #fafafa 10px) 0% 50% / 51% 100% no-repeat, radial-gradient(circle at 0% 50%, transparent 10px, #fafafa 10px) 100% 50% / 51% 100% no-repeat",
+                      filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.05))",
+                      border: "1.5px dashed #e2e8f0",
                       borderRadius: "12px",
-                      fontWeight: "800",
-                      cursor: "pointer",
-                      fontSize: "0.9rem"
-                    }}
-                  >
-                    RETURN TO CAREERS
-                  </button>
+                      padding: "1.25rem",
+                      margin: "0 auto 1.5rem auto",
+                      maxWidth: "360px",
+                      textAlign: "center"
+                    }}>
+                      <span style={{ fontSize: "0.7rem", fontWeight: "800", color: COLORS.textMuted, letterSpacing: "1.5px", textTransform: "uppercase" }}>
+                        OFFICIAL BATTLE TOKEN
+                      </span>
+                      <div style={{
+                        fontSize: "1.8rem",
+                        fontWeight: "900",
+                        fontFamily: "monospace",
+                        color: selectedRole.color,
+                        letterSpacing: "4px",
+                        margin: "8px 0"
+                      }}>
+                        {battleToken}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(battleToken);
+                          alert("Battle Token copied to clipboard!");
+                        }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: COLORS.accent,
+                          fontSize: "0.75rem",
+                          fontWeight: "800",
+                          cursor: "pointer",
+                          textDecoration: "underline"
+                        }}
+                      >
+                        Copy Token
+                      </button>
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "360px", margin: "0 auto" }}>
+                    <button
+                      id="careers-arena-btn"
+                      onClick={() => {
+                        // Navigate to battle page with token query param
+                        window.history.pushState({}, "", `/battle?token=${battleToken}`);
+                        window.dispatchEvent(new Event("popstate"));
+                        setSelectedRole(null);
+                      }}
+                      style={{
+                        padding: "12px 24px",
+                        background: `linear-gradient(135deg, ${selectedRole.color}, #3b82f6)`,
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "12px",
+                        fontWeight: "800",
+                        fontSize: "0.95rem",
+                        cursor: "pointer",
+                        boxShadow: `0 4px 15px ${selectedRole.color}30`,
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.filter = "brightness(1.1)"}
+                      onMouseLeave={e => e.currentTarget.style.filter = "brightness(1)"}
+                    >
+                      ENTER 1v1 INTERVIEW ARENA
+                    </button>
+
+                    <button
+                      id="careers-success-close"
+                      onClick={() => setSelectedRole(null)}
+                      style={{
+                        padding: "10px 24px",
+                        background: "rgba(0,0,0,0.02)",
+                        border: `1px solid ${COLORS.border}`,
+                        color: COLORS.textMuted,
+                        borderRadius: "12px",
+                        fontWeight: "800",
+                        cursor: "pointer",
+                        fontSize: "0.85rem"
+                      }}
+                    >
+                      Return to Careers
+                    </button>
+                  </div>
                 </div>
               )}
             </motion.div>

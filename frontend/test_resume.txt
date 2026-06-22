@@ -1,0 +1,18 @@
+TEST CANDIDATE RESUME
+Name: Test Candidate
+Email: testcandidate@gmail.com
+Phone: +91 9876543210
+
+Professional Summary:
+Generative AI and Agentic AI Architect with hands-on experience designing high-throughput, private, local-first agent swarms.
+
+Skills:
+- LLM fine-tuning and prompting
+- Node.js, Python, WebSocket, Redis, PostgreSQL
+- Vector search and agent orchestration state machines
+
+Experience:
+- Senior AI Engineer, Swarm Tech (2 years)
+  Led engineering of decentralized agent network executing low-latency client commands.
+- Software Engineer, Nexus AI (3 years)
+  Built event-driven microservices with Redis queues.
