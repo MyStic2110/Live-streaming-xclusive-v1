@@ -50,6 +50,13 @@ export default function InterviewPortalPage({ onBack }) {
   const [opponentDisconnected, setOpponentDisconnected] = useState(false);
   const [opponentDisconnectTimeLeft, setOpponentDisconnectTimeLeft] = useState(30);
   const [selfDisconnected, setSelfDisconnected] = useState(false);
+
+  // Modern lobby & stats states
+  const [onlineStats, setOnlineStats] = useState({ totalConnected: 0, inQueue: 0, inMatches: 0 });
+  const [leaderboardFilter, setLeaderboardFilter] = useState("global");
+  const [lobbyFeed, setLobbyFeed] = useState([
+    { id: 1, type: "info", text: "Systems online. Encrypted tunnel connections verified.", time: "Live" }
+  ]);
   
   // Socket reference
   const socketRef = useRef(null);
@@ -82,6 +89,35 @@ export default function InterviewPortalPage({ onBack }) {
       idx = (idx + 1) % texts.length;
       setLobbyText(texts[idx]);
     }, 3000);
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  // Simulated lobby activity feed ticker during matchmaking phase
+  useEffect(() => {
+    if (phase !== "matchmaking") return;
+    
+    const feedTemplates = [
+      { type: "info", text: "Matched pairing engine pinged: 24ms latency." },
+      { type: "match", text: "New battle match secured in room_battle_84fb." },
+      { type: "results", text: "Candidate in room_battle_91a0 scored 88 pts." },
+      { type: "info", text: "Candidate BATTLE-9X12 entered matchmaking queue." },
+      { type: "results", text: "Malaika AI Bot completed grading in room_battle_20d2." },
+      { type: "info", text: "Redis zset leaderboard rankings recalculated." }
+    ];
+
+    const interval = setInterval(() => {
+      const template = feedTemplates[Math.floor(Math.random() * feedTemplates.length)];
+      setLobbyFeed((prev) => [
+        {
+          id: Date.now(),
+          type: template.type,
+          text: template.text,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        },
+        ...prev.slice(0, 15)
+      ]);
+    }, 4000);
+
     return () => clearInterval(interval);
   }, [phase]);
 
@@ -207,6 +243,21 @@ export default function InterviewPortalPage({ onBack }) {
 
     socket.on("answer_received", () => {
       setIsSubmitted(true);
+    });
+
+    socket.on("online_stats", (data) => {
+      console.log("[SOCKET] Stats received:", data);
+      setOnlineStats(data);
+      
+      setLobbyFeed((prev) => [
+        {
+          id: Date.now() + 1,
+          type: "info",
+          text: `Matchmaking server metrics updated: ${data.totalConnected} players online.`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        },
+        ...prev.slice(0, 15)
+      ]);
     });
 
     socket.on("opponent_disconnected", (data) => {
@@ -448,6 +499,10 @@ export default function InterviewPortalPage({ onBack }) {
         {phase === "verify" && (
           <div className="battle-card">
             <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(16, 185, 129, 0.08)", border: `1px solid rgba(16, 185, 129, 0.2)`, borderRadius: "99px", padding: "4px 12px", marginBottom: "1rem" }}>
+                <span className="live-dot" style={{ width: "6px", height: "6px", borderRadius: "50%", background: COLORS.accentGreen, display: "inline-block", animation: "pulse-warning 1s infinite alternate" }}></span>
+                <span style={{ fontSize: "0.75rem", color: COLORS.accentGreen, fontWeight: "900" }}>{onlineStats.totalConnected || 0} ACTIVE PLAYERS</span>
+              </div>
               <div style={{
                 width: "56px",
                 height: "56px",
@@ -460,7 +515,7 @@ export default function InterviewPortalPage({ onBack }) {
               }}>
                 <Code size={24} color={COLORS.accentBlue} />
               </div>
-              <h2 style={{ fontSize: "1.75rem", fontWeight: "900", margin: "0 0 6px 0" }}>Enter Battle Ticket</h2>
+              <h2 style={{ fontSize: "1.75rem", fontWeight: "900", margin: "0 0 6px 0", color: COLORS.textLight }}>Enter Battle Ticket</h2>
               <p style={{ margin: 0, color: COLORS.textMuted, fontSize: "0.95rem" }}>
                 Provide the battle token received during your resume submission to connect.
               </p>
@@ -531,16 +586,91 @@ export default function InterviewPortalPage({ onBack }) {
 
         {/* ── STEP 2: Matchmaking Lobby ── */}
         {phase === "matchmaking" && (
-          <div className="battle-card" style={{ textAlign: "center", padding: "3rem" }}>
-            <div className="pulse-loader"></div>
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "2rem", width: "100%", maxWidth: "900px" }}>
             
-            <h2 style={{ fontSize: "1.6rem", fontWeight: "900", marginBottom: "0.5rem" }}>Lobby Matchmaking</h2>
-            <p style={{ color: COLORS.accentCyan, fontSize: "0.95rem", fontWeight: "700", letterSpacing: "1px", minHeight: "24px" }}>
-              {lobbyText}
-            </p>
-            <p style={{ color: COLORS.textMuted, fontSize: "0.85rem", marginTop: "1rem", lineHeight: "1.5" }}>
-              Waiting in FIFO queue... If no human candidate connects within 15 seconds, you will pair up with our AI engineering bot "Malaika".
-            </p>
+            {/* Left Box: Loading status */}
+            <div className="battle-card" style={{ textAlign: "center", padding: "3rem", width: "100%", maxWidth: "none" }}>
+              <div className="pulse-loader"></div>
+              
+              <h2 style={{ fontSize: "1.8rem", fontWeight: "900", marginBottom: "0.5rem", color: COLORS.textLight }}>
+                Lobby Matchmaking
+              </h2>
+              <p style={{ color: COLORS.accentCyan, fontSize: "1rem", fontWeight: "700", letterSpacing: "1px", minHeight: "24px" }}>
+                {lobbyText}
+              </p>
+              
+              {/* Online Stats Widget */}
+              <div style={{
+                background: "rgba(0,0,0,0.02)",
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: "16px",
+                padding: "1rem",
+                marginTop: "2rem",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr",
+                gap: "10px"
+              }}>
+                <div>
+                  <span style={{ display: "block", fontSize: "0.75rem", color: COLORS.textMuted, textTransform: "uppercase", fontWeight: "800" }}>Connected</span>
+                  <span style={{ fontSize: "1.4rem", fontWeight: "900", color: COLORS.accentBlue }}>{onlineStats.totalConnected}</span>
+                </div>
+                <div>
+                  <span style={{ display: "block", fontSize: "0.75rem", color: COLORS.textMuted, textTransform: "uppercase", fontWeight: "800" }}>In Queue</span>
+                  <span style={{ fontSize: "1.4rem", fontWeight: "900", color: COLORS.accentOrange }}>{onlineStats.inQueue}</span>
+                </div>
+                <div>
+                  <span style={{ display: "block", fontSize: "0.75rem", color: COLORS.textMuted, textTransform: "uppercase", fontWeight: "800" }}>In Matches</span>
+                  <span style={{ fontSize: "1.4rem", fontWeight: "900", color: COLORS.accentGreen }}>{onlineStats.inMatches}</span>
+                </div>
+              </div>
+
+              <p style={{ color: COLORS.textMuted, fontSize: "0.85rem", marginTop: "2rem", lineHeight: "1.6" }}>
+                Waiting in FIFO queue... If no human candidate connects within 15 seconds, you will pair up with our AI engineering bot "Malaika".
+              </p>
+            </div>
+
+            {/* Right Box: Live Activity Ticker Feed */}
+            <div className="battle-card" style={{ width: "100%", maxWidth: "none", display: "flex", flexDirection: "column", padding: "2rem" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: "900", display: "flex", alignItems: "center", gap: "8px", margin: "0 0 1rem 0", color: COLORS.textLight }}>
+                <span className="live-dot" style={{ width: "8px", height: "8px", borderRadius: "50%", background: COLORS.accentRed, display: "inline-block", animation: "pulse-warning 1s infinite alternate" }}></span>
+                LIVE ARENA ACTIVITY
+              </h3>
+              
+              <div style={{
+                flexGrow: 1,
+                overflowY: "auto",
+                maxHeight: "300px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                paddingRight: "8px",
+                fontFamily: "monospace",
+                fontSize: "0.8rem",
+                textAlign: "left"
+              }}>
+                {lobbyFeed.map((feed) => {
+                  let badgeColor = COLORS.accentBlue;
+                  if (feed.type === "match") badgeColor = COLORS.accentOrange;
+                  if (feed.type === "results") badgeColor = COLORS.accentGreen;
+                  return (
+                    <div key={feed.id} style={{
+                      padding: "8px 12px",
+                      background: "rgba(0,0,0,0.02)",
+                      border: `1px solid ${COLORS.border}`,
+                      borderRadius: "8px",
+                      lineHeight: "1.4"
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.7rem", color: COLORS.textMuted }}>
+                        <span style={{ color: badgeColor, fontWeight: "900", textTransform: "uppercase" }}>[{feed.type}]</span>
+                        <span>{feed.time}</span>
+                      </div>
+                      <span style={{ color: COLORS.textLight }}>{feed.text}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -768,9 +898,28 @@ export default function InterviewPortalPage({ onBack }) {
                   placeholder={`// Provide your architectural details or code logic here...\n// Be concise but technically complete.`}
                 />
 
+                {/* Character limit neon progress bar */}
+                <div style={{ width: "100%", background: "rgba(0,0,0,0.05)", height: "4px", borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{
+                    width: `${Math.min((answer.length / 2000) * 100, 100)}%`,
+                    height: "100%",
+                    background: answer.length > 1700 
+                      ? COLORS.accentRed 
+                      : answer.length > 1000 
+                        ? COLORS.accentOrange 
+                        : COLORS.accentCyan,
+                    boxShadow: `0 0 8px ${answer.length > 1700 
+                      ? COLORS.accentRed 
+                      : answer.length > 1000 
+                        ? COLORS.accentOrange 
+                        : COLORS.accentCyan}`,
+                    transition: "width 0.2s, background-color 0.2s"
+                  }}></div>
+                </div>
+
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: "0.75rem", color: COLORS.textMuted }}>
-                    {answer.length} characters written
+                    {answer.length} / 2000 characters written
                   </span>
                   
                   <button
@@ -954,50 +1103,107 @@ export default function InterviewPortalPage({ onBack }) {
                 display: "flex",
                 flexDirection: "column"
               }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "1.5rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "1.25rem" }}>
                   <Trophy size={20} color={COLORS.accentOrange} />
-                  <h3 style={{ fontSize: "1.2rem", fontWeight: "900", margin: 0 }}>Global Rankings</h3>
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: "900", margin: 0, color: COLORS.textLight }}>Rankings</h3>
                 </div>
 
-                <div style={{ flexGrow: 1, overflowY: "auto", maxHeight: "420px" }}>
-                  {results?.leaderboard && results.leaderboard.length > 0 ? (
-                    results.leaderboard.map((item, idx) => {
-                      const isTop3 = idx < 3;
-                      const colors = [COLORS.accentOrange, "#9ca3af", "#b45309"];
-                      const borderLeftColor = isTop3 ? colors[idx] : "transparent";
+                {/* Filter Tabs */}
+                <div style={{
+                  display: "flex",
+                  background: "rgba(0, 0, 0, 0.02)",
+                  border: `1px solid ${COLORS.border}`,
+                  borderRadius: "10px",
+                  padding: "4px",
+                  marginBottom: "1.5rem"
+                }}>
+                  <button
+                    onClick={() => setLeaderboardFilter("global")}
+                    style={{
+                      flexGrow: 1,
+                      padding: "8px",
+                      background: leaderboardFilter === "global" ? "rgba(0,0,0,0.04)" : "transparent",
+                      border: "none",
+                      color: leaderboardFilter === "global" ? COLORS.accentCyan : COLORS.textMuted,
+                      borderRadius: "8px",
+                      fontWeight: "800",
+                      fontSize: "0.8rem",
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    GLOBAL
+                  </button>
+                  <button
+                    onClick={() => setLeaderboardFilter("role")}
+                    style={{
+                      flexGrow: 1,
+                      padding: "8px",
+                      background: leaderboardFilter === "role" ? "rgba(0,0,0,0.04)" : "transparent",
+                      border: "none",
+                      color: leaderboardFilter === "role" ? COLORS.accentCyan : COLORS.textMuted,
+                      borderRadius: "8px",
+                      fontWeight: "800",
+                      fontSize: "0.8rem",
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    ROLE PEERS
+                  </button>
+                </div>
 
-                      return (
-                        <div 
-                          key={idx} 
-                          className="leaderboard-row"
-                          style={{ borderLeftColor }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{ 
-                              fontWeight: "900", 
-                              color: isTop3 ? colors[idx] : COLORS.textMuted,
-                              width: "20px"
-                            }}>
-                              #{idx + 1}
-                            </span>
-                            <div style={{ textAlign: "left" }}>
-                              <span style={{ fontWeight: "800", color: COLORS.textLight, display: "block" }}>
-                                {item.name}
+                <div style={{ flexGrow: 1, overflowY: "auto", maxHeight: "350px" }}>
+                  {(() => {
+                    const originalList = results?.leaderboard || [];
+                    const filteredList = leaderboardFilter === "role" && selfInfo?.role
+                      ? originalList.filter(item => item.role === selfInfo.role)
+                      : originalList;
+
+                    if (filteredList.length > 0) {
+                      return filteredList.map((item, idx) => {
+                        const isTop3 = idx < 3;
+                        const colors = [COLORS.accentOrange, "#9ca3af", "#b45309"];
+                        const borderLeftColor = isTop3 ? colors[idx] : "transparent";
+
+                        return (
+                          <div 
+                            key={idx} 
+                            className="leaderboard-row"
+                            style={{ borderLeftColor, background: "rgba(0,0,0,0.01)", border: `1px solid ${COLORS.border}`, borderRadius: "10px", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                              <span style={{ 
+                                fontWeight: "950", 
+                                color: isTop3 ? colors[idx] : COLORS.textMuted,
+                                width: "20px"
+                              }}>
+                                #{idx + 1}
                               </span>
+                              <div style={{ textAlign: "left" }}>
+                                <span style={{ fontWeight: "800", color: COLORS.textLight, display: "block" }}>
+                                  {item.name}
+                                </span>
+                                <span style={{ fontSize: "0.7rem", color: COLORS.textMuted }}>
+                                  {item.role}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div style={{ fontWeight: "900", color: COLORS.accentCyan }}>
+                              {item.score} pts
                             </div>
                           </div>
-                          
-                          <div style={{ fontWeight: "900", color: COLORS.accentCyan }}>
-                            {item.score} pts
-                          </div>
+                        );
+                      });
+                    } else {
+                      return (
+                        <div style={{ textAlign: "center", color: COLORS.textMuted, padding: "2rem 0" }}>
+                          No ranked peers for this role.
                         </div>
                       );
-                    })
-                  ) : (
-                    <div style={{ textAlign: "center", color: COLORS.textMuted, padding: "2rem 0" }}>
-                      Leaderboard is empty.
-                    </div>
-                  )}
+                    }
+                  })()}
                 </div>
 
                 <button

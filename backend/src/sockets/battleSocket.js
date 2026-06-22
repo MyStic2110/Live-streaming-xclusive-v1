@@ -248,10 +248,10 @@ Do not return any markdown codeblock or trailing text.`;
   }
 }
 
-// Fetch Top 10 from Redis ZSET
-export async function getTopLeaderboard() {
+// Fetch Top 50 from Redis ZSET (enables frontend role peer filtering)
+export async function getTopLeaderboard(limit = 50) {
   try {
-    const list = await redisClient.zRangeWithScores('leaderboard_zset', 0, 9, { REV: true });
+    const list = await redisClient.zRangeWithScores('leaderboard_zset', 0, limit - 1, { REV: true });
     return list.map(item => {
       try {
         const details = JSON.parse(item.value);
@@ -289,8 +289,44 @@ async function updateLeaderboardScore(name, email, role, score) {
 }
 
 export const registerBattleSockets = (io) => {
-  io.on('connection', (socket) => {
+  // Helper to compute online stats
+  const getOnlineStats = async () => {
+    const totalConnected = io.sockets.sockets.size;
+    let inQueue = 0;
+    try {
+      inQueue = await redisClient.lLen('matchmaking_queue');
+    } catch (e) {
+      // ignore
+    }
+    const activeMatchesCount = activeRooms.size;
+    const inMatches = activeMatchesCount * 2;
+    return {
+      totalConnected: Math.max(totalConnected, inQueue + inMatches),
+      inQueue,
+      inMatches
+    };
+  };
+
+  // Broadcast stats periodically every 5 seconds
+  setInterval(async () => {
+    try {
+      const stats = await getOnlineStats();
+      io.emit('online_stats', stats);
+    } catch (err) {
+      // ignore
+    }
+  }, 5000);
+
+  io.on('connection', async (socket) => {
     logger.info(`[BATTLE_SOCKET] Connected: ${socket.id}`);
+
+    // Immediately send online stats to the new client
+    try {
+      const stats = await getOnlineStats();
+      socket.emit('online_stats', stats);
+    } catch (err) {
+      // ignore
+    }
 
     // Lobby timeout timer handle
     let lobbyTimeoutHandle = null;
