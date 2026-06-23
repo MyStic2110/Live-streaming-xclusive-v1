@@ -12,3 +12,5 @@ playwright-stealth
 bandit>=1.7.5
 sarif-om
 jschema-to-python
+mem0ai
+sentence-transformers

@@ -126,6 +126,7 @@ const CopilotWidget = () => {
     setMessages(prev => [...prev, userMsg]);
     if (!textToSend) setInputValue("");
     setIsLoading(true);
+    const startTime = performance.now();
 
     try {
       const token = localStorage.getItem("token");
@@ -196,6 +197,10 @@ const CopilotWidget = () => {
         }
       }
 
+      // Record end-to-end response latency and attach it to the copilot message
+      const latencyMs = performance.now() - startTime;
+      setMessages(prev => prev.map(m => m.id === copilotMsgId ? { ...m, latencyMs } : m));
+
     } catch (error) {
       console.error("Copilot request failed:", error);
       const errorMsg = {
@@ -214,6 +219,13 @@ const CopilotWidget = () => {
     if (e.key === "Enter") {
       handleSend();
     }
+  };
+
+  // Format a response latency (ms) for display, e.g. "2.1s" or "12s".
+  const formatLatency = (ms) => {
+    if (ms == null) return null;
+    const sec = ms / 1000;
+    return sec >= 10 ? `${Math.round(sec)}s` : `${sec.toFixed(1)}s`;
   };
 
   const formatText = (text) => {
@@ -529,8 +541,19 @@ const CopilotWidget = () => {
                 >
                   {formatText(msg.text)}
                 </div>
-                <span style={{ fontSize: "0.72rem", color: "#8c9ba5", marginTop: "6px", padding: "0 6px" }}>
-                  {msg.sender === "user" ? "You" : "Copilot"} • {msg.sender === "user" ? "User" : "CS Agent"} • Just now
+                <span style={{ fontSize: "0.72rem", color: "#8c9ba5", marginTop: "6px", padding: "0 6px", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span>{msg.sender === "user" ? "You" : "Copilot"} • {msg.sender === "user" ? "User" : "CS Agent"} • Just now</span>
+                  {msg.sender !== "user" && msg.latencyMs != null && (
+                    <span
+                      title="Response latency"
+                      style={{ display: "inline-flex", alignItems: "center", gap: "3px", color: "#8b5cf6", fontWeight: 600 }}
+                    >
+                      <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                      </svg>
+                      {formatLatency(msg.latencyMs)}
+                    </span>
+                  )}
                 </span>
               </div>
             ))}
