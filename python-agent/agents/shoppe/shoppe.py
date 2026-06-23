@@ -24,6 +24,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 from utils.sentry import get_sentry
 from utils.cost_guard import CostGuard, filter_code_blocks_and_long_text
 from utils.traced_llm import TracedLLM
+try:
+    # When run as a script, this file's own directory is on sys.path.
+    from price_compare import fetch_price_comparison, pick_lowest, summarize_comparison
+except ImportError:
+    from agents.shoppe.price_compare import fetch_price_comparison, pick_lowest, summarize_comparison
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
 
@@ -41,7 +46,7 @@ You search for products on real websites using virtual screen-sharing browser au
 STRATEGIC INSTRUCTIONS:
 1. Always greet the user warmly as their personal shopping coordinator.
 2. If they ask to search for a product or query something, call search_product to search SearXNG/Google. This will display the search results page on the virtual screen.
-3. Present the top search results to the user (with titles and URLs). Ask the user which website they want to visit.
+3. Present the top search results to the user (with titles and URLs). If the search_product result includes a "comparison_summary" and a "lowest" merchant, state the GENUINE cheapest option and the price difference out loud (e.g. "Cheapest is ₹X at Flipkart, ₹Y less than Amazon"). Never claim a "lowest price" you were not actually given. Then ask the user which website they want to visit.
 4. If the user chooses a website, or if their intent is to view a specific product or store page (e.g. Croma, Flipkart, Amazon), call navigate_to_url to load that actual website and display it live to the user.
 5. While displaying a search results page or any website, if the user asks you to select/click a result, click a button, click a link (like the first link or an item), or scroll down/up, call click_element or scroll_page.
 6. Stay on the real website and let the user view it. Focus strictly on browsing, navigating, scrolling, and variant matching. Do not attempt checkouts or payments.
@@ -349,9 +354,46 @@ class ShoppeTools:
 
         await self._ui_log(f"🏆 Found {len(listings_formatted)} search result links from web.", "success")
 
+        # --- Structured price comparison ---------------------------------------
+        # Pull real per-merchant prices so we can report the GENUINE cheapest
+        # option instead of guessing from the first search result. Falls back to
+        # the scraped listings above when no SERPAPI_KEY / no structured data.
+        comparison_summary = ""
+        try:
+            structured = await fetch_price_comparison(query)
+        except Exception:
+            logger.exception("Price comparison fetch failed")
+            structured = []
+
+        if structured:
+            listings_formatted = [{
+                "title": l.title, "url": l.url, "merchant": l.merchant,
+                "price": l.price, "snippet": "", "rating": l.rating, "source": "api",
+            } for l in structured]
+            comparison_summary = summarize_comparison(structured)
+            lowest = pick_lowest(structured)
+            lowest_payload = (
+                {"title": lowest.title, "url": lowest.url, "merchant": lowest.merchant, "price": lowest.price}
+                if lowest else None
+            )
+            await self._ui_log(f"💰 {comparison_summary}", "success")
+        else:
+            # No structured data: compute the TRUE lowest from any scraped prices
+            # (the old code wrongly used the first result as "lowest").
+            priced = [x for x in listings_formatted if x.get("price") and x["price"] > 0]
+            lowest_payload = min(priced, key=lambda x: x["price"]) if priced else None
+
+        if lowest_payload is None:
+            lowest_payload = listings_formatted[0] if listings_formatted else {"title": query, "merchant": "Web", "price": 0.0, "url": ""}
+
         try:
             await self.participant.publish_data(
-                json.dumps({"type": "search_results", "listings": listings_formatted}).encode("utf-8"),
+                json.dumps({
+                    "type": "search_results",
+                    "listings": listings_formatted,
+                    "comparison": comparison_summary,
+                    "lowest": lowest_payload,
+                }).encode("utf-8"),
                 topic="ui_control"
             )
         except Exception:
@@ -359,7 +401,8 @@ class ShoppeTools:
 
         return json.dumps({
             "listings": listings_formatted,
-            "lowest": listings_formatted[0] if listings_formatted else {"title": query, "merchant": "Web", "price": 0.0, "url": ""},
+            "lowest": lowest_payload,
+            "comparison_summary": comparison_summary,
         })
 
     @llm.function_tool(description="Open any website URL directly to display the real website to the user.")
