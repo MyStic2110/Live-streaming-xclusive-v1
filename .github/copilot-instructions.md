@@ -12,7 +12,7 @@ This file provides system context, tech stack rules, and conventions for GitHub 
 ---
 
 ## 2. Technology Stack & Ports
-* **Frontend**: React 18, Vite, TailwindCSS (for styling utilities), `@livekit/components-react`, Framer Motion.
+* **Frontend**: React 19, Vite, TailwindCSS (for styling utilities), `@livekit/components-react`, Framer Motion.
   * **Routing**: Custom hash/pathname routing in `App.jsx` via `window.history.pushState` + `window.location.hash`. **Do not introduce React Router.**
 * **Backend**: Node.js (ESM), Express 4, Socket.io 4, Pino logger, `node-postgres` pool, Redis.
 * **AI Swarm**: Python 3.10+, `livekit-agents` SDK, Deepgram STT, OpenAI / Mistral / Gemini.
@@ -29,13 +29,16 @@ This file provides system context, tech stack rules, and conventions for GitHub 
 ## 3. Coding Conventions & Critical Rules
 
 ### Backend
-1. **Never add routes to `index.js`**: All routes must go in `src/app.js` via dedicated router files in `src/routes/`.
-2. **Never block startup**: Do not wait/await Python execution during database boot/seeding in `dbBootstrap.js`. Scanners must run asynchronously in the background.
-3. **Use structured Pino logger**: Always use the imported `logger` from `src/config/logger.js`. Do not use plain `console.*` statements (which are re-routed to Pino in `index.js`).
-4. **Use global DB pool query**: Always import `query` from `src/config/db.js`. Never create new Pool instances.
-5. **Idempotency**: Use `ON CONFLICT ... DO UPDATE` (or similar upserts) for database bootstraps and logs.
-6. **State-mutating security**: Protect mutative endpoints using the `authenticateToken` middleware and `requireRole([...])`.
-7. **Compliance**: Log all major audit events (such as scanner finishes or PII blockings) to the `compliance_logs` table.
+1. **Single entrypoint is `index.js`**: All routers are mounted in `backend/index.js` (port 3002). Add a feature by creating `src/routes/<x>Routes.js` + `src/controllers/<x>Controller.js` and mounting it in `index.js`. (The old `src/app.js` duplicate router has been removed — do not recreate it or reference it.)
+2. **Three coexisting route shapes**: `/api/<resource>`, root-level paths with **no** `/api` prefix (`/talk-to-ai`, `/security/*`, `/detokenize`, `/copilot/*`, `/insights`, `/weather`), and additive `/api/v1/...` aliases. The frontend calls the first two; never add `/api` to root-level paths.
+3. **Error handling**: Wrap async controllers in `asyncHandler` and `throw ApiError.*` (`src/utils/ApiError.js`, `src/middlewares/errorHandler.js`). The central handler emits one envelope `{ error, code, traceId }` and masks 5xx messages. Validate input with Zod via `validate(schema)` (`src/middlewares/validate.js`, schemas in `src/validation/schemas.js`). Migrate any older `res.status(500).json({ error: err.message })` controllers to this pattern when you touch them. Preserve the exact auth-failure phrasing (e.g. "session expired", "access token required") that the frontend interceptor keys logout off. `GET /api/llm-traces` must keep returning a plain array (pagination via `?limit/offset/agent/status`).
+4. **Don't block startup unnecessarily**: Prefer running Python scanners asynchronously rather than blocking the boot path. Note: `src/config/db.js` currently `await`s some Python execution and `DROP`/`TRUNCATE`s tables during boot/seed — be deliberate when changing this. All schema DDL lives inline in `db.js`; there are no migration files in use.
+5. **Use structured Pino logger**: Always use the imported `logger` from `src/config/logger.js`. Do not use plain `console.*` statements (which are re-routed to Pino in `index.js`).
+6. **Use global DB pool query**: Always import `query` from `src/config/db.js`. Never create new Pool instances.
+7. **Idempotency**: Use `ON CONFLICT ... DO UPDATE` (or similar upserts) for database bootstraps and logs.
+8. **State-mutating security**: Protect mutative endpoints using the `authenticateToken` middleware and `requireRole([...])`.
+9. **Compliance**: Log all major audit events (such as scanner finishes or PII blockings) to the `compliance_logs` table.
+10. **API docs**: Swagger UI + OpenAPI 3.1 are served at `/api/docs` and `/api/openapi.json`. The spec in `src/docs/openapi.js` is hand-maintained — update it whenever you add or change an endpoint.
 
 ### Frontend
 1. **API base URL**: Always use `const API = import.meta.env.VITE_API_URL || ""`.
