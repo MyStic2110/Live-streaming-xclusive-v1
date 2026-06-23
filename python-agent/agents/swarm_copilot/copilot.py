@@ -9,6 +9,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 from integrations.securelytix import SecurelytixClient
+from integrations.mem0_client import Mem0Client
 
 logger = logging.getLogger("swarm_copilot.copilot")
 
@@ -45,6 +46,7 @@ class SwarmCopilot:
         self.router = ContextRouter(knowledge_dir)
         self.session_manager = SessionManager(sessions_dir)
         self.securelytix = SecurelytixClient()
+        self.mem0 = Mem0Client()
         
         self.llm_caller = llm_caller
         
@@ -147,8 +149,11 @@ class SwarmCopilot:
             last_vertical=session.last_vertical
         )
 
+        # Retrieve relevant semantic memories from Mem0
+        memories = self.mem0.get_relevant_facts(user_id=session_id, query=user_query)
+
         # 4. Tier 4: Dynamic System Prompt Selection & Compilation
-        compiled_system_prompt = self._compile_prompt(matched_verticals, context_json, session)
+        compiled_system_prompt = self._compile_prompt(matched_verticals, context_json, session, memories)
 
         # 5. LLM Call
         raw_response = ""
@@ -180,6 +185,9 @@ class SwarmCopilot:
             detokenized_response = raw_response
         safe_response = self.output_guardrail.verify(detokenized_response, allowed_urls)
 
+        # 6. Save turn to local Mem0 memory
+        self.mem0.add_interaction(user_id=session_id, query=user_query, response=safe_response)
+
         # 7. Session Intelligence Memory Updates
         session.turn_count += 1
         if is_explicit and matched_verticals:
@@ -198,7 +206,7 @@ class SwarmCopilot:
 
         return safe_response, session_id
 
-    def _compile_prompt(self, matched_verticals: List[str], context_json: str, session: SessionIntelligence) -> str:
+    def _compile_prompt(self, matched_verticals: List[str], context_json: str, session: SessionIntelligence, memories: List[str] = None) -> str:
         """Assembles the final system prompt dynamically based on matched intents."""
         base_rules = self.prompt_cache.get("base_rules.txt", "")
         
@@ -221,6 +229,11 @@ class SwarmCopilot:
             # Multiple verticals matched (Option B) or default fallback
             agent_prompt = self.prompt_cache.get("master_agent.txt", "")
 
+        # Format memories
+        memory_str = "None"
+        if memories:
+            memory_str = "\n".join(f"- {fact}" for fact in memories)
+
         # Structure final prompt template
         prompt_parts = [
             base_rules,
@@ -229,6 +242,7 @@ class SwarmCopilot:
             "\n## ACTIVE USER SESSION STATE:",
             f"Active interests: {', '.join(session.primary_interests)}",
             f"Prior conversation context: {session.memory_summary or 'None'}",
+            f"Retrieved User Context / Persistent Preferences:\n{memory_str}",
             "\n## APPROVED KNOWLEDGE CONTEXT (TRUSTED DATA):",
             "<approved_knowledge>",
             context_json,

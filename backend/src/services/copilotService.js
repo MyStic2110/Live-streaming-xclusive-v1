@@ -4,6 +4,7 @@ import { query as dbQuery } from "../config/db.js";
 import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
 import { pipeline } from "@huggingface/transformers";
+import { spawn, spawnSync } from "child_process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,6 +15,148 @@ const KNOWLEDGE_DIR = path.join(BASE_DIR, "knowledge");
 const PROMPTS_DIR = path.join(BASE_DIR, "prompts");
 const SESSIONS_DIR = path.join(BASE_DIR, "sessions");
 const AIVYUH_DIR = path.join(BASE_DIR, "agents/aivyuh");
+
+// --- Mem0 Sidecar (persistent Python HTTP daemon) ---
+// Replaces the old per-call CLI spawn (which reloaded PyTorch + the HuggingFace
+// embedder and re-acquired the embedded Qdrant lock on every request). The
+// sidecar boots a single Mem0 client and serves search/add over HTTP.
+const MEM0_SIDECAR_HOST = process.env.MEM0_SIDECAR_HOST || "127.0.0.1";
+const MEM0_SIDECAR_PORT = process.env.MEM0_SIDECAR_PORT || "8770";
+const MEM0_SIDECAR_URL = `http://${MEM0_SIDECAR_HOST}:${MEM0_SIDECAR_PORT}`;
+
+// Securelytix PII tokenization on the copilot path is OFF by default. Its NER
+// model can't distinguish a person's name from a public product/agent name, so
+// it inconsistently tokenizes terms like "DevOps Geni" and breaks entity matching
+// between the user query and the (public) knowledge base — causing valid questions
+// to be refused. The copilot answers public product knowledge and the input
+// guardrail already blocks cards/DB URLs/secrets, so leave it disabled unless
+// ENABLE_COPILOT_PII_TOKENIZATION=true is explicitly set.
+const COPILOT_PII_TOKENIZATION = process.env.ENABLE_COPILOT_PII_TOKENIZATION === "true";
+
+let mem0SidecarProc = null;
+
+const getPythonExecPath = () => {
+  const isWindows = process.platform === "win32";
+  const pythonExec = isWindows ? "venv/Scripts/python.exe" : "venv/bin/python";
+  return path.resolve(BASE_DIR, pythonExec);
+};
+
+// Quick readiness probe so we can detect an already-running sidecar.
+const probeMem0Sidecar = async (timeoutMs = 800) => {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const resp = await fetch(`${MEM0_SIDECAR_URL}/health`, { signal: controller.signal })
+      .finally(() => clearTimeout(timer));
+    return resp.ok;
+  } catch {
+    return false;
+  }
+};
+
+// Spawn the Python mem0 sidecar as a managed child process at server startup.
+const startMem0Sidecar = async () => {
+  if (process.env.ENABLE_MEM0_SIDECAR === "false") {
+    console.warn("[Mem0 Sidecar] Disabled via ENABLE_MEM0_SIDECAR=false; memory features inactive.");
+    return;
+  }
+
+  // Reuse an already-listening sidecar (e.g. one left behind by a `node --watch`
+  // reload, or a shared/externally-managed instance) instead of spawning a
+  // duplicate that would crash with EADDRINUSE on the same port. We deliberately
+  // do not adopt it as `mem0SidecarProc`, so we won't kill a process we didn't start.
+  if (await probeMem0Sidecar()) {
+    console.info(`[Mem0 Sidecar] Reusing existing sidecar at ${MEM0_SIDECAR_URL}.`);
+    return;
+  }
+
+  const pythonPath = getPythonExecPath();
+  const sidecarScript = path.resolve(BASE_DIR, "utils/mem0_sidecar.py");
+
+  try {
+    const proc = spawn(pythonPath, [sidecarScript], {
+      cwd: BASE_DIR,
+      env: { ...process.env, MEM0_SIDECAR_HOST, MEM0_SIDECAR_PORT },
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+
+    // The sidecar logs to stdout/stderr; surface those lines through our logger.
+    proc.stdout.on("data", (data) => { console.info(`[Mem0 Sidecar] ${data.toString().trim()}`); });
+    proc.stderr.on("data", (data) => { console.info(`[Mem0 Sidecar] ${data.toString().trim()}`); });
+    proc.on("error", (err) => {
+      console.error(`[Mem0 Sidecar] Failed to spawn: ${err.message}`);
+      mem0SidecarProc = null;
+    });
+    proc.on("exit", (code, signal) => {
+      console.warn(`[Mem0 Sidecar] Process exited (code=${code}, signal=${signal}).`);
+      mem0SidecarProc = null;
+    });
+
+    mem0SidecarProc = proc;
+    console.info(`[Mem0 Sidecar] Spawned (pid=${proc.pid}); endpoint ${MEM0_SIDECAR_URL}`);
+  } catch (err) {
+    console.error(`[Mem0 Sidecar] Could not start: ${err.message}`);
+  }
+};
+
+// Terminate the child sidecar so it does not outlive the Node process.
+const stopMem0Sidecar = () => {
+  const proc = mem0SidecarProc;
+  if (!proc || proc.killed) return;
+  mem0SidecarProc = null;
+  console.info("[Mem0 Sidecar] Shutting down child process.");
+
+  if (process.platform === "win32" && proc.pid) {
+    // On Windows `venv\Scripts\python.exe` is a launcher shim that re-execs the
+    // real interpreter as a GRANDCHILD which actually holds the sidecar port.
+    // proc.kill() would only kill the shim and orphan the real sidecar, so use
+    // taskkill /T to tear down the entire process tree.
+    try {
+      spawnSync("taskkill", ["/pid", String(proc.pid), "/T", "/F"], { stdio: "ignore" });
+      return;
+    } catch (e) {
+      // fall through to a best-effort direct kill
+    }
+  }
+  try { proc.kill(); } catch (e) { /* already gone */ }
+};
+
+// Boot the sidecar at module load (i.e. on backend startup) and register cleanup.
+startMem0Sidecar();
+process.once("exit", stopMem0Sidecar);
+process.once("SIGINT", () => { stopMem0Sidecar(); process.exit(0); });
+process.once("SIGTERM", () => { stopMem0Sidecar(); process.exit(0); });
+
+// HTTP client for the sidecar. Memory is best-effort: keep the timeout short and
+// retries minimal so an unavailable/slow sidecar can never stall the chat stream.
+const runMem0Sidecar = async (action, payload, { retries = 1, timeoutMs = 3000 } = {}) => {
+  const url = `${MEM0_SIDECAR_URL}/${action}`;
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      }).finally(() => clearTimeout(timer));
+
+      if (!resp.ok) {
+        const errBody = await resp.text().catch(() => "");
+        throw new Error(`sidecar ${action} HTTP ${resp.status}: ${errBody}`);
+      }
+      return await resp.json();
+    } catch (err) {
+      lastErr = err;
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+      }
+    }
+  }
+  throw lastErr || new Error(`mem0 sidecar ${action} failed`);
+};
 
 // Ensure sessions directory exists
 if (!fs.existsSync(SESSIONS_DIR)) {
@@ -507,6 +650,9 @@ export const routeContext = async (query, lastVertical) => {
 };
 
 // --- PROMPT COMPILER ---
+// Prompts are read from disk once and cached in-process for the lifetime of the
+// server. Editing the prompt .txt files therefore requires a backend restart to
+// take effect (node --watch does not watch these non-imported text files).
 const promptCache = {};
 const loadPrompts = () => {
   if (Object.keys(promptCache).length > 0) return;
@@ -528,7 +674,7 @@ const loadPrompts = () => {
   }
 };
 
-const compilePrompt = (matchedVerticals, contextJson, session) => {
+const compilePrompt = (matchedVerticals, contextJson, session, memories = []) => {
   loadPrompts();
 
   const baseRules = promptCache["base_rules.txt"] || "";
@@ -556,6 +702,10 @@ const compilePrompt = (matchedVerticals, contextJson, session) => {
   const activeInterests = session.primary_interests || [];
   const memorySummary = session.memory_summary || "None";
 
+  const memoriesStr = memories.length > 0
+    ? memories.map(f => `- ${f}`).join("\n")
+    : "None";
+
   return [
     baseRules,
     "\n",
@@ -563,6 +713,7 @@ const compilePrompt = (matchedVerticals, contextJson, session) => {
     "\n## ACTIVE USER SESSION STATE:",
     `Active interests: ${activeInterests.join(", ")}`,
     `Prior conversation context: ${memorySummary}`,
+    `Retrieved User Context / Persistent Preferences:\n${memoriesStr}`,
     "\n## APPROVED KNOWLEDGE CONTEXT (TRUSTED DATA):",
     "<approved_knowledge>",
     contextJson,
@@ -828,8 +979,17 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
   // 3. Router logic
   const { contextJson, matchedVerticals, allowedUrls, isExplicit } = await routeContext(query, session.last_vertical);
 
+  // Retrieve relevant semantic memories from Mem0 via the sidecar daemon
+  let memories = [];
+  try {
+    const mem0Result = await runMem0Sidecar("search", { user_id: activeSessionId, query });
+    memories = mem0Result.facts || [];
+  } catch (err) {
+    console.error("[Mem0 Node] Failed to search memories:", err.message);
+  }
+
   // 4. Compile dynamic prompt
-  const compiledSystemPrompt = compilePrompt(matchedVerticals, contextJson, session);
+  const compiledSystemPrompt = compilePrompt(matchedVerticals, contextJson, session, memories);
 
   // 5. Invoke OpenRouter (openai/gpt-4o-mini) with streaming
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -846,13 +1006,15 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
   let tokenizedSystemPrompt = compiledSystemPrompt;
   let tokenizedUserQuery = query;
 
-  try {
-    tokenizedSystemPrompt = await securelytixTokenize(compiledSystemPrompt);
-    tokenizedUserQuery = await securelytixTokenize(query);
-    tokenizedUserQuery = await detokenizeDates(tokenizedUserQuery);
-    tokenizedSystemPrompt = await detokenizeDates(tokenizedSystemPrompt);
-  } catch (tokenizeErr) {
-    console.error("[Securelytix] Tokenization or date detokenization failed, failing open:", tokenizeErr);
+  if (COPILOT_PII_TOKENIZATION) {
+    try {
+      tokenizedSystemPrompt = await securelytixTokenize(compiledSystemPrompt);
+      tokenizedUserQuery = await securelytixTokenize(query);
+      tokenizedUserQuery = await detokenizeDates(tokenizedUserQuery);
+      tokenizedSystemPrompt = await detokenizeDates(tokenizedSystemPrompt);
+    } catch (tokenizeErr) {
+      console.error("[Securelytix] Tokenization or date detokenization failed, failing open:", tokenizeErr);
+    }
   }
 
   const messages = [
@@ -888,6 +1050,34 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
 
+    // Token-aware streaming: the LLM output may contain Securelytix PII tokens
+    // (whole words ending in `_stx`) because the prompt/query were tokenized
+    // before the call. We must NOT stream those raw to the client. Buffer output
+    // and only flush up to the last whitespace boundary, holding back the trailing
+    // partial word so a token split across chunks is never leaked; detokenize any
+    // flushed segment that contains a token before sending it.
+    let pendingOut = "";
+    const flushPending = async (final = false) => {
+      let emit;
+      if (final) {
+        emit = pendingOut;
+        pendingOut = "";
+      } else {
+        let lastWs = -1;
+        for (let i = pendingOut.length - 1; i >= 0; i--) {
+          if (/\s/.test(pendingOut[i])) { lastWs = i; break; }
+        }
+        if (lastWs < 0) return; // entire buffer is one unterminated word — hold it
+        emit = pendingOut.slice(0, lastWs + 1);
+        pendingOut = pendingOut.slice(lastWs + 1);
+      }
+      if (!emit) return;
+      if (COPILOT_PII_TOKENIZATION && emit.includes("_stx")) {
+        try { emit = await securelytixDetokenize(emit); } catch (e) { /* fail open */ }
+      }
+      onChunk(emit);
+    };
+
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
@@ -907,7 +1097,8 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
             const content = choice?.delta?.content;
             if (content) {
               responseText += content;
-              onChunk(content);
+              pendingOut += content;
+              await flushPending();
             }
             if (parsed.usage) {
               promptTokens = parsed.usage.prompt_tokens || promptTokens;
@@ -920,8 +1111,13 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
       }
     }
 
+    // Flush any remaining buffered text (last word / unterminated token).
+    await flushPending(true);
+
     // 6. Detokenize response and apply output safety audit
-    const detokenizedResponse = await securelytixDetokenize(responseText);
+    const detokenizedResponse = COPILOT_PII_TOKENIZATION
+      ? await securelytixDetokenize(responseText)
+      : responseText;
     const [safeResponse, violationType] = verifyOutput(detokenizedResponse, allowedUrls);
 
     if (violationType) {
@@ -951,6 +1147,12 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
 
     updateSessionMemory(session, query, safeResponse);
     await saveSession(activeSessionId, session);
+
+    // Save interaction to Mem0 memory via the sidecar daemon. Fire-and-forget
+    // (not awaited) so persisting the turn never delays the streamed response;
+    // fact extraction can take a few seconds and must not block onDone/[DONE].
+    runMem0Sidecar("add", { user_id: activeSessionId, query, response: safeResponse }, { timeoutMs: 15000 })
+      .catch((err) => console.error("[Mem0 Node] Failed to save interaction to Mem0:", err.message));
 
     const duration = (performance.now() - startTime) / 1000;
     

@@ -42,3 +42,6 @@ backend/llm_traces_persistent.json
 
 # Shoppe agent — Playwright persistent browser session cache (cookies, DB, etc.)
 python-agent/agents/shoppe/user_data/
+
+# Qdrant vector store — live Docker data volume (./qdrant_storage:/qdrant/storage)
+qdrant_storage/

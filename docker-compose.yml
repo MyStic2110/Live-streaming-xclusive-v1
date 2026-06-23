@@ -98,3 +98,21 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  # Mem0 vector store for the Swarm Copilot. Runs as a SERVER (not embedded) so the
+  # Node CLI bridge and the in-process agent can access memories concurrently —
+  # embedded on-disk Qdrant holds an exclusive lock and fails under concurrent use.
+  # Point the agents at it with QDRANT_HOST=localhost (already in python-agent/.env).
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./qdrant_storage:/qdrant/storage
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
