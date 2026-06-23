@@ -3,6 +3,8 @@ import * as telemetryController from '../controllers/telemetryController.js';
 import * as roomController from '../controllers/roomController.js';
 import * as complianceController from '../controllers/complianceController.js';
 import { authenticateToken, requireRole } from '../middlewares/authMiddleware.js';
+import { validate } from '../middlewares/validate.js';
+import { tracesQuerySchema } from '../validation/schemas.js';
 
 const router = express.Router();
 
@@ -12,7 +14,7 @@ router.post('/llm-trace', telemetryController.handleLlmTrace);
 router.post('/llm-trace/tool-call', telemetryController.handleToolCall);
 
 // Trace management (Operator / Admin / Viewer RBAC)
-router.get('/llm-traces', authenticateToken, requireRole(['admin', 'operator', 'viewer']), telemetryController.getTraces);
+router.get('/llm-traces', authenticateToken, requireRole(['admin', 'operator', 'viewer']), validate(tracesQuerySchema, 'query'), telemetryController.getTraces);
 router.delete('/llm-traces', authenticateToken, requireRole(['admin']), telemetryController.clearTraces);
 
 // Hallucination evaluation (Operator / Admin / Viewer RBAC)

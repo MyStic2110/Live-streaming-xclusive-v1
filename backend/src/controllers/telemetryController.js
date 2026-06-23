@@ -1,4 +1,5 @@
 import { query } from '../config/db.js';
+import { asyncHandler } from '../middlewares/errorHandler.js';
 
 let ioInstance = null;
 const hallucinationStore = new Map();
@@ -223,10 +224,25 @@ export const handleToolCall = async (req, res) => {
   }
 };
 
-export const getTraces = async (req, res) => {
-  try {
-    const tracesRes = await query('SELECT * FROM traces ORDER BY timestamp DESC LIMIT 100');
-    const formatted = tracesRes.rows.map(t => ({
+export const getTraces = asyncHandler(async (req, res) => {
+  // Query params are validated/coerced upstream (tracesQuerySchema):
+  // limit (1-500, default 100), offset (>=0), optional agent + status filters.
+  const { limit = 100, offset = 0, agent, status } = req.query;
+
+  const conditions = [];
+  const params = [];
+  if (agent) { params.push(agent); conditions.push(`agent = $${params.length}`); }
+  if (status) { params.push(status); conditions.push(`status = $${params.length}`); }
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  params.push(limit); const limitIdx = params.length;
+  params.push(offset); const offsetIdx = params.length;
+
+  const tracesRes = await query(
+    `SELECT * FROM traces ${where} ORDER BY timestamp DESC LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+    params
+  );
+  const formatted = tracesRes.rows.map(t => ({
       run_id: t.run_id,
       input_id: t.input_id || null,
       output_id: t.output_id || null,
@@ -249,11 +265,8 @@ export const getTraces = async (req, res) => {
       otps: parseFloat(t.otps || 0),
       tool_calls: parseJson(t.tool_calls)
     }));
-    res.json(formatted);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+  res.json(formatted);
+});
 
 export const clearTraces = async (req, res) => {
   try {

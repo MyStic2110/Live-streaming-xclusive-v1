@@ -1,6 +1,5 @@
 import express from 'express';
 // Trigger DB Reconnect 4
-import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
 import fs from 'fs';
@@ -22,7 +21,14 @@ import crawlerRoutes from './src/routes/crawlerRoutes.js';
 import githubRoutes from './src/routes/githubRoutes.js';
 import careersRoutes from './src/routes/careersRoutes.js';
 import battleRoutes from './src/routes/battleRoutes.js';
+import changelogRoutes from './src/routes/changelogRoutes.js';
+import docsRoutes from './src/routes/docsRoutes.js';
 import { registerBattleSockets } from './src/sockets/battleSocket.js';
+
+// API platform middleware
+import { requestContext } from './src/middlewares/requestContext.js';
+import { securityHeaders, corsPolicy, globalRateLimiter } from './src/middlewares/httpSecurity.js';
+import { notFoundHandler, errorHandler } from './src/middlewares/errorHandler.js';
 
 // Global console redirection to Pino structured JSON logger for high-throughput enterprise performance
 console.log = (...args) => logger.info(args.join(' '));
@@ -40,13 +46,23 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors());
+// Trust proxy only when explicitly configured (e.g. behind a load balancer)
+// so client IPs for rate limiting cannot be spoofed via X-Forwarded-For.
+app.set('trust proxy', process.env.TRUST_PROXY ? Number(process.env.TRUST_PROXY) : false);
+app.use(securityHeaders);
+app.use(requestContext);
+app.use(corsPolicy());
+app.use(globalRateLimiter);
 app.use(express.json({ limit: '10mb' }));
 
 const httpServer = http.createServer(app);
+const socketOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 const io = new Server(httpServer, {
   cors: {
-    origin: "*",
+    origin: socketOrigins.length ? socketOrigins : "*",
     methods: ["GET", "POST"]
   }
 });
@@ -131,16 +147,37 @@ registerBattleSockets(io);
 // Connect to Database
 await connectDB();
 
-// --- ROUTE MOUNTINGS ---
+// --- ROUTE MOUNTINGS (legacy/stable surface — preserved for backward compatibility) ---
 app.use('/api/auth', authRoutes);
 app.use('/api/crawler', crawlerRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/careers', careersRoutes);
 app.use('/api/battle', battleRoutes);
+app.use('/api/changelog', changelogRoutes); // Reconciled: was only mounted in the dead src/app.js
 app.use('/api', configRoutes);
 app.use('/api', telemetryRoutes); // Mounts /api/llm-trace, /api/llm-traces, /api/evaluate-hallucination, etc.
 app.use('/', telemetryRoutes);   // Mounts root-level routes: /security/status, /security/scan, /security/remediate, /detokenize
 app.use('/', roomRoutes);        // Mounts root-level routes: /talk-to-ai, /trigger-reels, /copilot/chat, /copilot/session/clear
+
+// --- VERSIONED SURFACE (/api/v1) — additive aliases for new clients; legacy paths above remain valid ---
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/crawler', crawlerRoutes);
+app.use('/api/v1/github', githubRoutes);
+app.use('/api/v1/careers', careersRoutes);
+app.use('/api/v1/battle', battleRoutes);
+app.use('/api/v1/changelog', changelogRoutes);
+app.use('/api/v1', configRoutes);
+app.use('/api/v1', telemetryRoutes);
+app.use('/api/v1', roomRoutes);
+
+// --- API DOCUMENTATION (Swagger UI + raw OpenAPI 3.1 spec) ---
+if (process.env.ENABLE_API_DOCS !== 'false') {
+  app.use('/api', docsRoutes); // GET /api/docs and GET /api/openapi.json
+}
+
+// --- TERMINAL HANDLERS (must be registered after all routes) ---
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 httpServer.listen(config.port, "0.0.0.0", () => {
   console.log(`[ENTERPRISE] Business Layers Active on ${config.port}`);
