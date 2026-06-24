@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Mail, Shield, Zap, Code, Send, Activity, Globe } from "lucide-react";
+import { Mail, Shield, Zap, Code, Send, Activity, Globe, Map } from "lucide-react";
+import DelhiveryMapModal from "./DelhiveryMapModal";
+
 
 // Inline SVG icon components matching standard Lucide outlines to bypass build-time import errors
 const TwitterIcon = ({ size = 16, ...props }) => (
@@ -68,6 +70,8 @@ const Footer = ({ onBlogClick, onShortsClick, onLegalClick, onDashboardClick, on
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [latency, setLatency] = useState(28);
+  const [isMapOpen, setIsMapOpen] = useState(false);
+
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -433,6 +437,9 @@ const Footer = ({ onBlogClick, onShortsClick, onLegalClick, onDashboardClick, on
               1v1 Battle Arena <span style={{ fontSize: "0.75rem", padding: "2px 6px", background: "rgba(245, 158, 11, 0.1)", color: "#d97706", borderRadius: "6px", marginLeft: "4px" }}>Play & Win</span>
             </a>
             <a href="https://wa.me/919791388549" target="_blank" rel="noreferrer" className="footer-link">Contact Operator</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); setIsMapOpen(true); }} className="footer-link">
+              <Map size={14} style={{ marginRight: "6px" }} /> Location Intelligence
+            </a>
           </div>
 
         </div>
@@ -460,6 +467,7 @@ const Footer = ({ onBlogClick, onShortsClick, onLegalClick, onDashboardClick, on
         </div>
 
       </div>
+      <DelhiveryMapModal isOpen={isMapOpen} onClose={() => setIsMapOpen(false)} />
     </footer>
   );
 };

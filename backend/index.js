@@ -23,6 +23,7 @@ import careersRoutes from './src/routes/careersRoutes.js';
 import battleRoutes from './src/routes/battleRoutes.js';
 import changelogRoutes from './src/routes/changelogRoutes.js';
 import docsRoutes from './src/routes/docsRoutes.js';
+import delhiveryRoutes from './src/routes/delhiveryRoutes.js';
 import { registerBattleSockets } from './src/sockets/battleSocket.js';
 
 // API platform middleware
@@ -158,6 +159,8 @@ app.use('/api', configRoutes);
 app.use('/api', telemetryRoutes); // Mounts /api/llm-trace, /api/llm-traces, /api/evaluate-hallucination, etc.
 app.use('/', telemetryRoutes);   // Mounts root-level routes: /security/status, /security/scan, /security/remediate, /detokenize
 app.use('/', roomRoutes);        // Mounts root-level routes: /talk-to-ai, /trigger-reels, /copilot/chat, /copilot/session/clear
+app.use('/api/delhivery', delhiveryRoutes);
+
 
 // --- VERSIONED SURFACE (/api/v1) — additive aliases for new clients; legacy paths above remain valid ---
 app.use('/api/v1/auth', authRoutes);
@@ -169,6 +172,8 @@ app.use('/api/v1/changelog', changelogRoutes);
 app.use('/api/v1', configRoutes);
 app.use('/api/v1', telemetryRoutes);
 app.use('/api/v1', roomRoutes);
+app.use('/api/v1/delhivery', delhiveryRoutes);
+
 
 // --- API DOCUMENTATION (Swagger UI + raw OpenAPI 3.1 spec) ---
 if (process.env.ENABLE_API_DOCS !== 'false') {
