@@ -18,7 +18,6 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
   // Geocoding and Standardization State with Swarm HQ defaults
   const [locationData, setLocationData] = useState({ lat: 13.142667, lng: 80.237958 });
   const [standardData, setStandardData] = useState({
-    formatted_address: "Darling Showroom, Madhavaram, Chennai, Tamil Nadu, 600060",
     address_components: { building_name: "Swarm HQ Chennai Madhavaram Darling showroom" }
   });
 
@@ -42,7 +41,6 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
       cleanupMap();
       setLocationData({ lat: 13.142667, lng: 80.237958 });
       setStandardData({
-        formatted_address: "Darling Showroom, Madhavaram, Chennai, Tamil Nadu, 600060",
         address_components: { building_name: "Swarm HQ Chennai Madhavaram Darling showroom" }
       });
       setError(null);
