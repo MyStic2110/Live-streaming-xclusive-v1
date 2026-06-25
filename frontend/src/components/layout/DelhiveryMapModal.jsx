@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Search, MapPin, CheckCircle, Navigation, Compass, AlertCircle } from "lucide-react";
+import { X, Search, MapPin, CheckCircle, Navigation, Compass, AlertCircle, RefreshCw, Car } from "lucide-react";
 import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -7,49 +7,102 @@ import "leaflet/dist/leaflet.css";
 // Delhivery Bearer token used for loading tiles
 const DELHI_TOKEN = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InNvdXJjZSI6IldFQiIsInVjaWQiOiJlZDJjMWNlMi0xOTlhLTE0Y2YtYzEzYi0wYjI0NjRjM2JiZmYifSwiZXhwIjoxNzgyMzk2Njk0LCJpYXQiOjE3ODIzMTAyOTQsImp0aSI6ImZkY2UwYjJkLWIyZDctNDM5NC1hNzgxLTUzNTE2NTNmZDg5OSJ9.uN13LQf6eDHKGzti9ODqddL3Lq3LEvIaFtAVXuiZiYU";
 const API = import.meta.env.VITE_API_URL || "";
-
 const RAW_TOKEN = DELHI_TOKEN.replace("Bearer ", "");
 
+// Helper to decode OSRM / Leaflet shape geometry
+const decodePolyline = (str) => {
+  let index = 0, lat = 0, lng = 0, coordinates = [], shift = 0, result = 0, byte = null;
+  while (index < str.length) {
+    byte = null; shift = 0; result = 0;
+    do {
+      byte = str.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+    const latitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    shift = 0; result = 0;
+    do {
+      byte = str.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+    const longitude_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lat += latitude_change;
+    lng += longitude_change;
+    coordinates.push([lat / 100000, lng / 100000]);
+  }
+  return coordinates;
+};
+
 const DelhiveryMapModal = ({ isOpen, onClose }) => {
-  const [addressInput, setAddressInput] = useState("chennai Madhavaram Darling showroom");
+  const [addressInput, setAddressInput] = useState("Swarm HQ Chennai");
   const [loading, setLoading] = useState(false);
+  const [routeLoading, setRouteLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  // Geocoding and Standardization State with Swarm HQ defaults
-  const [locationData, setLocationData] = useState({ lat: 13.142667, lng: 80.237958 });
+  // Geocoding, Standardization & Directions State
+  const [locationData, setLocationData] = useState({ lat: 13.149554, lng: 80.229397 });
   const [standardData, setStandardData] = useState({
-    address_components: { building_name: "Swarm HQ Chennai Madhavaram Darling showroom" }
+    address_components: { building_name: "Swarm HQ Chennai" },
+    formatted_address: "Juicy, Madhavaram, Tamil Nadu 600060, India"
   });
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [directions, setDirections] = useState(null);
 
-  // References for leaflet
+  // References for leaflet and timeouts
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerInstanceRef = useRef(null);
+  const routeLineRef = useRef(null);
+  const userMarkerRef = useRef(null);
+  const suggestDebounceRef = useRef(null);
+  const suggestionsPanelRef = useRef(null);
 
   // Initialize and update geocode / address standardizer
   useEffect(() => {
     if (isOpen) {
       // Immediately render map at default Swarm HQ coordinates
       setTimeout(() => {
-        renderMap(13.142667, 80.237958, "Swarm HQ Chennai Madhavaram Darling showroom");
+        renderMap(13.149554, 80.229397, "Swarm HQ Chennai");
       }, 100);
-      
-      // Update metadata & corrections in background
-      handleSearch("chennai Madhavaram Darling showroom");
     } else {
       // Clean up map when modal closes
       cleanupMap();
-      setLocationData({ lat: 13.142667, lng: 80.237958 });
+      setLocationData({ lat: 13.149554, lng: 80.229397 });
       setStandardData({
-        address_components: { building_name: "Swarm HQ Chennai Madhavaram Darling showroom" }
+        address_components: { building_name: "Swarm HQ Chennai" },
+        formatted_address: "Juicy, Madhavaram, Tamil Nadu 600060, India"
       });
       setError(null);
+      setSuggestions([]);
+      setDirections(null);
+      setAddressInput("Swarm HQ Chennai");
     }
     return () => cleanupMap();
   }, [isOpen]);
 
-  // Clean up Leaflet map instance
+  // Handle click outside suggestions panel to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (suggestionsPanelRef.current && !suggestionsPanelRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Clean up Leaflet map instances and polylines
   const cleanupMap = () => {
+    if (routeLineRef.current) {
+      routeLineRef.current.remove();
+      routeLineRef.current = null;
+    }
+    if (userMarkerRef.current) {
+      userMarkerRef.current.remove();
+      userMarkerRef.current = null;
+    }
     if (mapInstanceRef.current) {
       mapInstanceRef.current.remove();
       mapInstanceRef.current = null;
@@ -57,12 +110,52 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
     markerInstanceRef.current = null;
   };
 
+  // As-you-type suggest query with debouncing
+  const handleInputChange = (e) => {
+    const val = e.target.value;
+    setAddressInput(val);
+    
+    if (suggestDebounceRef.current) {
+      clearTimeout(suggestDebounceRef.current);
+    }
+
+    if (val.trim().length <= 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    suggestDebounceRef.current = setTimeout(async () => {
+      try {
+        const response = await axios.post(`${API}/api/delhivery/search-entities`, {
+          query: val,
+          lat: locationData.lat,
+          lng: locationData.lng
+        });
+        const results = response.data;
+        if (results && results.results) {
+          setSuggestions(results.results.slice(0, 5));
+          setShowSuggestions(true);
+        }
+      } catch (err) {
+        console.error("Autocomplete suggestions failed:", err);
+      }
+    }, 300);
+  };
+
+  // Search Address Geocoding & Standardization
   const handleSearch = async (targetAddress) => {
     if (!targetAddress.trim()) return;
     setLoading(true);
     setError(null);
+    setShowSuggestions(false);
 
     try {
+      // Clear route lines when doing a new search
+      if (routeLineRef.current) routeLineRef.current.remove();
+      if (userMarkerRef.current) userMarkerRef.current.remove();
+      setDirections(null);
+
       // 1. Fetch Geocode (from Express Backend API Proxy)
       const geocodeRes = await axios.post(`${API}/api/delhivery/geocode`, { address: targetAddress });
       const geocode = geocodeRes.data;
@@ -82,6 +175,159 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Reverse Geocode when clicking on the map
+  const handleReverseGeocode = async (lat, lng) => {
+    setLoading(true);
+    setError(null);
+    setShowSuggestions(false);
+    
+    // Clear routes during custom click interaction
+    if (routeLineRef.current) routeLineRef.current.remove();
+    if (userMarkerRef.current) userMarkerRef.current.remove();
+    setDirections(null);
+
+    try {
+      const response = await axios.post(`${API}/api/delhivery/reverse-geocode`, { lat, lng });
+      const rvgData = response.data;
+
+      setLocationData({ lat, lng });
+      setStandardData({
+        formatted_address: rvgData.formatted_address,
+        address_components: rvgData.address_components || { building_name: "Map Pin Location" },
+        corrections: rvgData.corrections || []
+      });
+      setAddressInput(rvgData.formatted_address || `${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+
+      // Update Marker and Popup
+      if (markerInstanceRef.current && mapInstanceRef.current) {
+        markerInstanceRef.current.setLatLng([lat, lng]);
+        markerInstanceRef.current.getPopup().setContent(
+          `<strong style="font-family: sans-serif; font-size: 13px; color: #1e293b;">${rvgData.formatted_address || "Clicked Location"}</strong>`
+        ).openOn(mapInstanceRef.current);
+      }
+    } catch (err) {
+      console.error("Reverse geocoding failed:", err);
+      setError("Failed to resolve address for the selected map location.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Geolocation Directions Routing Logic
+  const handleGetDirections = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser.");
+      return;
+    }
+    setRouteLoading(true);
+    setError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const startLat = position.coords.latitude;
+        const startLng = position.coords.longitude;
+        console.log(`[DelhiveryMapModal] Geolocation start point: [${startLat}, ${startLng}]`);
+
+        try {
+          // Destination is Swarm HQ coordinates
+          const destLat = 13.149554;
+          const destLng = 80.229397;
+
+          const response = await axios.post(`${API}/api/delhivery/route`, {
+            geo_coords: [
+              [startLat, startLng],
+              [destLat, destLng]
+            ],
+            travel_mode: "auto"
+          });
+
+          const routeResult = response.data;
+          console.log("[DelhiveryMapModal] Route API response:", routeResult);
+          
+          if (routeResult.error) {
+            throw new Error(routeResult.error);
+          }
+
+          let path = null;
+          let distanceVal = 0;
+          let durationVal = 0;
+
+          if (routeResult && routeResult.recommended_route) {
+            const rec = routeResult.recommended_route;
+            distanceVal = Number(rec.distance);
+            durationVal = Math.round(Number(rec.duration) / 60); // convert seconds to minutes
+            path = rec.geometry;
+          } else if (routeResult && routeResult.routes && routeResult.routes.length > 0) {
+            const r = routeResult.routes[0];
+            distanceVal = Number(r.summary.length);
+            durationVal = Math.round(Number(r.summary.time) / 60);
+            if (r.shape) {
+              path = decodePolyline(r.shape);
+            }
+          }
+
+          if (path && path.length > 0) {
+            setDirections({
+              distance: distanceVal.toFixed(1), // km
+              duration: durationVal // minutes
+            });
+
+            if (mapInstanceRef.current) {
+              // Clear previous line
+              if (routeLineRef.current) {
+                routeLineRef.current.remove();
+              }
+
+              // Draw new polyline
+              routeLineRef.current = L.polyline(path, {
+                color: "#3b82f6",
+                weight: 6,
+                opacity: 0.85,
+                lineCap: "round",
+                lineJoin: "round"
+              }).addTo(mapInstanceRef.current);
+
+              // Fit bounds to fit route
+              mapInstanceRef.current.fitBounds(routeLineRef.current.getBounds(), { padding: [50, 50] });
+
+              // User Location Marker
+              const userMarkerIcon = L.divIcon({
+                html: `
+                  <div style="background-color: #22c55e; width: 14px; height: 14px; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(34, 197, 94, 0.8); position: relative; display: flex; align-items: center; justify-content: center;">
+                    <div style="position: absolute; width: 30px; height: 30px; border-radius: 50%; background-color: #22c55e; opacity: 0.3; animation: marker-pulse-ring 1.8s infinite;"></div>
+                  </div>
+                `,
+                className: "custom-user-marker",
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+              });
+
+              if (userMarkerRef.current) {
+                userMarkerRef.current.remove();
+              }
+              userMarkerRef.current = L.marker([startLat, startLng], { icon: userMarkerIcon })
+                .addTo(mapInstanceRef.current)
+                .bindPopup("<strong style='font-family: sans-serif; font-size: 12px; color: #1e293b;'>Your Current Position</strong>")
+                .openPopup();
+            }
+          } else {
+            throw new Error(`No route found by Delhivery Maps between [${startLat.toFixed(6)}, ${startLng.toFixed(6)}] and Swarm HQ.`);
+          }
+        } catch (err) {
+          console.error("Routing failed:", err);
+          setError(err.message || "Failed to retrieve route directions from Delhivery Maps.");
+        } finally {
+          setRouteLoading(false);
+        }
+      },
+      (err) => {
+        console.error("Geolocation request failed:", err);
+        setError(`Location retrieval failed (code ${err.code}): ${err.message}. Please verify browser permissions.`);
+        setRouteLoading(false);
+      }
+    );
   };
 
   const renderMap = (lat, lng, label) => {
@@ -122,6 +368,12 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
       // Add Marker
       markerInstanceRef.current = L.marker([lat, lng], { icon: customMarkerIcon }).addTo(mapInstanceRef.current);
       markerInstanceRef.current.bindPopup(`<strong style="font-family: sans-serif; font-size: 13px; color: #1e293b;">${label}</strong>`).openPopup();
+
+      // Bind Map Click Listener for Reverse Geocoding
+      mapInstanceRef.current.on("click", (e) => {
+        const { lat, lng } = e.latlng;
+        handleReverseGeocode(lat, lng);
+      });
     } else {
       // Update existing map
       const map = mapInstanceRef.current;
@@ -142,6 +394,12 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
   const onSubmit = (e) => {
     e.preventDefault();
     handleSearch(addressInput);
+  };
+
+  const handleSelectSuggestion = (s) => {
+    setAddressInput(s.display_name);
+    setShowSuggestions(false);
+    handleSearch(s.display_name);
   };
 
   if (!isOpen) return null;
@@ -189,12 +447,18 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
           border-right: 1px solid #e2e8f0;
           background: #f8fafc;
           overflow-y: auto;
+          position: relative;
         }
         .map-panel {
           width: 62%;
           position: relative;
           height: 100%;
           background: #e2e8f0;
+        }
+        .search-container {
+          position: relative;
+          margin-bottom: 1.5rem;
+          z-index: 1005;
         }
         .search-bar {
           display: flex;
@@ -204,7 +468,6 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
           padding: 4px;
           align-items: center;
           transition: all 0.2s ease;
-          margin-bottom: 1.5rem;
         }
         .search-bar:focus-within {
           border-color: #3b82f6;
@@ -233,6 +496,37 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
         }
         .search-btn:hover {
           background: #2563eb;
+        }
+        .suggestions-dropdown {
+          position: absolute;
+          top: calc(100% + 4px);
+          left: 0;
+          right: 0;
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1);
+          list-style: none;
+          padding: 4px;
+          margin: 0;
+          max-height: 200px;
+          overflow-y: auto;
+          z-index: 1050;
+        }
+        .suggestion-item {
+          padding: 10px 14px;
+          font-size: 0.85rem;
+          color: #334155;
+          cursor: pointer;
+          border-radius: 8px;
+          transition: background 0.15s ease;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .suggestion-item:hover {
+          background: #f1f5f9;
+          color: #0f172a;
         }
         .close-btn {
           position: absolute;
@@ -269,6 +563,52 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
+        .directions-badge {
+          position: absolute;
+          bottom: 24px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(15, 23, 42, 0.95);
+          backdrop-filter: blur(8px);
+          color: #ffffff;
+          padding: 10px 18px;
+          border-radius: 99px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 0.85rem;
+          font-weight: 700;
+          box-shadow: 0 10px 20px -5px rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.1);
+          z-index: 999;
+          animation: badge-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes badge-fade-in {
+          from { opacity: 0; transform: translate(-50%, 10px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .directions-btn {
+          width: 100%;
+          padding: 12px;
+          border: 1px solid #3b82f6;
+          background: rgba(59, 130, 246, 0.04);
+          color: #3b82f6;
+          border-radius: 12px;
+          font-size: 0.88rem;
+          font-weight: 800;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: all 0.2s ease;
+          margin-top: 0.5rem;
+        }
+        .directions-btn:hover {
+          background: #3b82f6;
+          color: #ffffff;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
         @media(max-width: 768px) {
           .modal-container {
             flex-direction: column;
@@ -295,7 +635,7 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
           <X size={18} />
         </button>
 
-        {/* Left Side: Address Details & Geocoder Input */}
+        {/* Left Side: Address Details, Autocomplete Suggest Input, and Directions */}
         <div className="address-panel">
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "0.5rem" }}>
             <div style={{
@@ -315,22 +655,37 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
             </h3>
           </div>
           <p style={{ color: "#64748b", fontSize: "0.85rem", margin: "0 0 1.25rem 0", lineHeight: "1.4" }}>
-            Search and standardize any location across India. Powered by proprietary Delhivery Naksha LLM mapping engine.
+            Search places with smart autocomplete suggestions, or click directly on the map to reverse-geocode addresses.
           </p>
 
-          <form onSubmit={onSubmit} className="search-bar">
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Enter location / address..."
-              value={addressInput}
-              onChange={(e) => setAddressInput(e.target.value)}
-              disabled={loading}
-            />
-            <button type="submit" className="search-btn" disabled={loading}>
-              {loading ? <div className="spinner" /> : <Search size={16} />}
-            </button>
-          </form>
+          {/* Autocomplete Search input */}
+          <div className="search-container" ref={suggestionsPanelRef}>
+            <form onSubmit={onSubmit} className="search-bar">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Enter location / address..."
+                value={addressInput}
+                onChange={handleInputChange}
+                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                disabled={loading}
+              />
+              <button type="submit" className="search-btn" disabled={loading}>
+                {loading ? <div className="spinner" /> : <Search size={16} />}
+              </button>
+            </form>
+
+            {showSuggestions && suggestions.length > 0 && (
+              <ul className="suggestions-dropdown">
+                {suggestions.map((s, idx) => (
+                  <li key={idx} className="suggestion-item" onClick={() => handleSelectSuggestion(s)}>
+                    <MapPin size={12} color="#94a3b8" />
+                    <span style={{ textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{s.display_name}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
           {/* Loader or Error UI */}
           {loading && !locationData && (
@@ -372,14 +727,16 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#3b82f6", fontWeight: "700", fontSize: "0.85rem", textTransform: "uppercase", marginBottom: "8px" }}>
                   <MapPin size={14} />
-                  <span>Standardized Address</span>
+                  <span>Resolved Location</span>
                 </div>
                 <div style={{ fontSize: "0.95rem", fontWeight: "800", color: "#0f172a", lineHeight: "1.4", marginBottom: "8px" }}>
-                  {standardData.address_components?.building_name || "Resolved Location"}
+                  {standardData.address_components?.building_name || "Point of Interest"}
                 </div>
-                <div style={{ fontSize: "0.88rem", color: "#475569", lineHeight: "1.5" }}>
-                  {standardData.formatted_address}
-                </div>
+                {standardData.formatted_address && (
+                  <div style={{ fontSize: "0.88rem", color: "#475569", lineHeight: "1.5" }}>
+                    {standardData.formatted_address}
+                  </div>
+                )}
               </div>
 
               {/* Coordinates & Accuracy */}
@@ -393,6 +750,21 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
                   <div style={{ fontSize: "0.85rem", fontWeight: "800", color: "#0f172a" }}>{locationData.lng?.toFixed(6)}</div>
                 </div>
               </div>
+
+              {/* Get Directions Trigger Button (Displays routing on click) */}
+              <button className="directions-btn" onClick={handleGetDirections} disabled={routeLoading}>
+                {routeLoading ? (
+                  <>
+                    <RefreshCw size={14} className="spinner" />
+                    <span>Routing Path...</span>
+                  </>
+                ) : (
+                  <>
+                    <Navigation size={14} style={{ transform: "rotate(45deg)" }} />
+                    <span>Get Directions to Swarm HQ</span>
+                  </>
+                )}
+              </button>
 
               {/* Delhivery Engine Corrections Applied */}
               {standardData.corrections && standardData.corrections.length > 0 && (
@@ -449,8 +821,21 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
             boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
           }}>
             <Navigation size={12} color="#3b82f6" style={{ transform: "rotate(45deg)" }} />
-            <span>Swarm HQ Chennai Madhavaram Darling showroom</span>
+            <span>Swarm HQ Chennai</span>
           </div>
+
+          {/* Route Distance/Duration Floating Badge Overlay */}
+          {directions && (
+            <div className="directions-badge">
+              <Car size={16} color="#3b82f6" />
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span>Route to Swarm HQ</span>
+                <span style={{ fontSize: "0.72rem", color: "#94a3b8", fontWeight: "normal" }}>
+                  Distance: {directions.distance} km | Time: {directions.duration} mins
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
