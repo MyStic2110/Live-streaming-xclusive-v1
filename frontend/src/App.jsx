@@ -20,6 +20,7 @@ import InterviewPortalPage from "./pages/InterviewPortalPage";
 import DevopsOrb from "./components/layout/DevopsOrb";
 import SwarmShortsPage from "./components/dashboard/SwarmShortsPage";
 import DashboardPage from "./components/dashboard/DashboardPage";
+import AgentOps from "./components/dashboard/AgentOps/AgentOps";
 import ComplianceDashboard from "./components/dashboard/ComplianceDashboard";
 import GovernedDeployment from "./components/dashboard/GovernedDeployment";
 import NotFoundPage from "./components/layout/NotFoundPage";
@@ -76,6 +77,10 @@ function App() {
     } else if (tabId === "sneak-peak") {
       window.history.pushState({}, "", "/sneak-peak");
       setCurrentPath("/sneak-peak");
+    } else if (tabId === "agent-ops") {
+      window.history.pushState({}, "", "/agent-ops");
+      setCurrentPath("/agent-ops");
+    } else if (tabId === "insights") {
     } else if (tabId === "insights") {
       window.history.pushState({}, "", "/insights");
       setCurrentPath("/insights");
@@ -241,6 +246,11 @@ function App() {
     window.location.hash === "#governed-deployment" ||
     window.location.hash === "#/governed-deployment/";
 
+  const isAgentOpsPath =
+    currentPath.replace(/\/$/, "") === "/agent-ops" ||
+    window.location.hash === "#/agent-ops" ||
+    window.location.hash === "#agent-ops";
+
   const isInsightsPath =
     currentPath.replace(/\/$/, "") === "/insights" ||
     window.location.hash.replace(/\/$/, "") === "#/insights" ||
@@ -295,6 +305,8 @@ function App() {
     content = <ComplianceDashboard onBack={() => handleTabChange("fleet")} />;
   } else if (isDeploymentPath || activeTab === "governance") {
     content = <GovernedDeployment onBack={() => handleTabChange("fleet")} />;
+  } else if (isAgentOpsPath || activeTab === "agent-ops") {
+    content = <AgentOps onBack={() => handleTabChange("fleet")} />;
   } else if (roomData) {
     const RoomComponent = CurrentRoom;
     content = <RoomComponent roomData={roomData} onLeave={handleLeave} />;

@@ -5,7 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 // Delhivery Bearer token used for loading tiles
-const DELHI_TOKEN = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InNvdXJjZSI6IldFQiIsInVjaWQiOiJlZDJjMWNlMi0xOTlhLTE0Y2YtYzEzYi0wYjI0NjRjM2JiZmYifSwiZXhwIjoxNzgyMzk2Njk0LCJpYXQiOjE3ODIzMTAyOTQsImp0aSI6ImZkY2UwYjJkLWIyZDctNDM5NC1hNzgxLTUzNTE2NTNmZDg5OSJ9.uN13LQf6eDHKGzti9ODqddL3Lq3LEvIaFtAVXuiZiYU";
+const DELHI_TOKEN = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InNvdXJjZSI6IldFQiIsInVjaWQiOiJlZDJjMWNlMi0xOTlhLTE0Y2YtYzEzYi0wYjI0NjRjM2JiZmYifSwiZXhwIjoxNzgyNTM5NDY0LCJpYXQiOjE3ODI0NTMwNjQsImp0aSI6IjY0ZDkxM2Y2LTRhMTgtNDI0Zi1hOWE3LTE1YWZkMTY1YmNmNSJ9.gXQDYGBg5692khlk-XTMJQTyc26kdee4q6GNTuH7wNk";
 const API = import.meta.env.VITE_API_URL || "";
 const RAW_TOKEN = DELHI_TOKEN.replace("Bearer ", "");
 
@@ -217,117 +217,134 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
 
   // Geolocation Directions Routing Logic
   const handleGetDirections = () => {
-    if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser.");
-      return;
-    }
     setRouteLoading(true);
     setError(null);
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const startLat = position.coords.latitude;
-        const startLng = position.coords.longitude;
-        console.log(`[DelhiveryMapModal] Geolocation start point: [${startLat}, ${startLng}]`);
+    // Destination is Swarm HQ coordinates
+    const destLat = 13.149554;
+    const destLng = 80.229397;
 
-        try {
-          // Destination is Swarm HQ coordinates
-          const destLat = 13.149554;
-          const destLng = 80.229397;
+    // Check if the current map marker location (locationData) is different from Swarm HQ
+    const isHQ = Math.abs(locationData.lat - destLat) < 0.0001 && Math.abs(locationData.lng - destLng) < 0.0001;
 
-          const response = await axios.post(`${API}/api/delhivery/route`, {
-            geo_coords: [
-              [startLat, startLng],
-              [destLat, destLng]
-            ],
-            travel_mode: "auto"
+    const runRouting = async (startLat, startLng, isUserPosition = false) => {
+      try {
+        const response = await axios.post(`${API}/api/delhivery/route`, {
+          geo_coords: [
+            [startLat, startLng],
+            [destLat, destLng]
+          ],
+          travel_mode: "auto"
+        });
+
+        const routeResult = response.data;
+        console.log("[DelhiveryMapModal] Route API response:", routeResult);
+        
+        if (routeResult.error) {
+          throw new Error(routeResult.error);
+        }
+
+        let path = null;
+        let distanceVal = 0;
+        let durationVal = 0;
+
+        if (routeResult && routeResult.recommended_route) {
+          const rec = routeResult.recommended_route;
+          distanceVal = Number(rec.distance);
+          durationVal = Math.round(Number(rec.duration) / 60); // convert seconds to minutes
+          path = rec.geometry;
+        } else if (routeResult && routeResult.routes && routeResult.routes.length > 0) {
+          const r = routeResult.routes[0];
+          distanceVal = Number(r.summary.length);
+          durationVal = Math.round(Number(r.summary.time) / 60);
+          if (r.shape) {
+            path = decodePolyline(r.shape);
+          }
+        }
+
+        if (path && path.length > 0) {
+          setDirections({
+            distance: distanceVal.toFixed(1), // km
+            duration: durationVal // minutes
           });
 
-          const routeResult = response.data;
-          console.log("[DelhiveryMapModal] Route API response:", routeResult);
-          
-          if (routeResult.error) {
-            throw new Error(routeResult.error);
-          }
-
-          let path = null;
-          let distanceVal = 0;
-          let durationVal = 0;
-
-          if (routeResult && routeResult.recommended_route) {
-            const rec = routeResult.recommended_route;
-            distanceVal = Number(rec.distance);
-            durationVal = Math.round(Number(rec.duration) / 60); // convert seconds to minutes
-            path = rec.geometry;
-          } else if (routeResult && routeResult.routes && routeResult.routes.length > 0) {
-            const r = routeResult.routes[0];
-            distanceVal = Number(r.summary.length);
-            durationVal = Math.round(Number(r.summary.time) / 60);
-            if (r.shape) {
-              path = decodePolyline(r.shape);
+          if (mapInstanceRef.current) {
+            // Clear previous line
+            if (routeLineRef.current) {
+              routeLineRef.current.remove();
             }
-          }
 
-          if (path && path.length > 0) {
-            setDirections({
-              distance: distanceVal.toFixed(1), // km
-              duration: durationVal // minutes
+            // Draw new polyline
+            routeLineRef.current = L.polyline(path, {
+              color: "#3b82f6",
+              weight: 6,
+              opacity: 0.85,
+              lineCap: "round",
+              lineJoin: "round"
+            }).addTo(mapInstanceRef.current);
+
+            // Fit bounds to fit route
+            mapInstanceRef.current.fitBounds(routeLineRef.current.getBounds(), { padding: [50, 50] });
+
+            // User Location Marker
+            const userMarkerIcon = L.divIcon({
+              html: `
+                <div style="background-color: #22c55e; width: 14px; height: 14px; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(34, 197, 94, 0.8); position: relative; display: flex; align-items: center; justify-content: center;">
+                  <div style="position: absolute; width: 30px; height: 30px; border-radius: 50%; background-color: #22c55e; opacity: 0.3; animation: marker-pulse-ring 1.8s infinite;"></div>
+                </div>
+              `,
+              className: "custom-user-marker",
+              iconSize: [20, 20],
+              iconAnchor: [10, 10]
             });
 
-            if (mapInstanceRef.current) {
-              // Clear previous line
-              if (routeLineRef.current) {
-                routeLineRef.current.remove();
-              }
-
-              // Draw new polyline
-              routeLineRef.current = L.polyline(path, {
-                color: "#3b82f6",
-                weight: 6,
-                opacity: 0.85,
-                lineCap: "round",
-                lineJoin: "round"
-              }).addTo(mapInstanceRef.current);
-
-              // Fit bounds to fit route
-              mapInstanceRef.current.fitBounds(routeLineRef.current.getBounds(), { padding: [50, 50] });
-
-              // User Location Marker
-              const userMarkerIcon = L.divIcon({
-                html: `
-                  <div style="background-color: #22c55e; width: 14px; height: 14px; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(34, 197, 94, 0.8); position: relative; display: flex; align-items: center; justify-content: center;">
-                    <div style="position: absolute; width: 30px; height: 30px; border-radius: 50%; background-color: #22c55e; opacity: 0.3; animation: marker-pulse-ring 1.8s infinite;"></div>
-                  </div>
-                `,
-                className: "custom-user-marker",
-                iconSize: [20, 20],
-                iconAnchor: [10, 10]
-              });
-
-              if (userMarkerRef.current) {
-                userMarkerRef.current.remove();
-              }
-              userMarkerRef.current = L.marker([startLat, startLng], { icon: userMarkerIcon })
-                .addTo(mapInstanceRef.current)
-                .bindPopup("<strong style='font-family: sans-serif; font-size: 12px; color: #1e293b;'>Your Current Position</strong>")
-                .openPopup();
+            if (userMarkerRef.current) {
+              userMarkerRef.current.remove();
             }
-          } else {
-            throw new Error(`No route found by Delhivery Maps between [${startLat.toFixed(6)}, ${startLng.toFixed(6)}] and Swarm HQ.`);
+            
+            const markerPopupContent = isUserPosition 
+              ? "Your Current Position"
+              : standardData?.address_components?.building_name || standardData?.formatted_address || "Starting Location";
+
+            userMarkerRef.current = L.marker([startLat, startLng], { icon: userMarkerIcon })
+              .addTo(mapInstanceRef.current)
+              .bindPopup(`<strong style='font-family: sans-serif; font-size: 12px; color: #1e293b;'>${markerPopupContent}</strong>`)
+              .openPopup();
           }
-        } catch (err) {
-          console.error("Routing failed:", err);
-          setError(err.message || "Failed to retrieve route directions from Delhivery Maps.");
-        } finally {
-          setRouteLoading(false);
+        } else {
+          throw new Error(`No route found by Delhivery Maps between [${startLat.toFixed(6)}, ${startLng.toFixed(6)}] and Swarm HQ.`);
         }
-      },
-      (err) => {
-        console.error("Geolocation request failed:", err);
-        setError(`Location retrieval failed (code ${err.code}): ${err.message}. Please verify browser permissions.`);
+      } catch (err) {
+        console.error("Routing failed:", err);
+        setError(err.message || "Failed to retrieve route directions from Delhivery Maps.");
+      } finally {
         setRouteLoading(false);
       }
-    );
+    };
+
+    if (!isHQ) {
+      console.log(`[DelhiveryMapModal] Routing from selected point: [${locationData.lat}, ${locationData.lng}]`);
+      runRouting(locationData.lat, locationData.lng, false);
+    } else {
+      if (!navigator.geolocation) {
+        setError("Geolocation is not supported by your browser. Please search a starting location first.");
+        setRouteLoading(false);
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const startLat = position.coords.latitude;
+          const startLng = position.coords.longitude;
+          console.log(`[DelhiveryMapModal] Geolocation start point: [${startLat}, ${startLng}]`);
+          runRouting(startLat, startLng, true);
+        },
+        (err) => {
+          console.error("Geolocation request failed:", err);
+          setError(`Location retrieval failed (code ${err.code}): ${err.message}. Please verify browser permissions or search a starting location.`);
+          setRouteLoading(false);
+        }
+      );
+    }
   };
 
   const renderMap = (lat, lng, label) => {
@@ -791,7 +808,7 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
           {/* Footer of panel */}
           <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "1rem", marginTop: "auto", fontSize: "0.75rem", color: "#94a3b8", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span>Map Tile Zoom: 0-20</span>
-            <span style={{ fontWeight: "700", color: "#3b82f6" }}>Delhivery Maps API</span>
+            <span style={{ fontWeight: "700", color: "#3b82f6" }}>Powered by Delhivery Maps</span>
           </div>
 
         </div>
@@ -822,6 +839,30 @@ const DelhiveryMapModal = ({ isOpen, onClose }) => {
           }}>
             <Navigation size={12} color="#3b82f6" style={{ transform: "rotate(45deg)" }} />
             <span>Swarm HQ Chennai</span>
+          </div>
+
+          {/* Powered by Delhivery Maps watermark */}
+          <div style={{
+            position: "absolute",
+            bottom: "10px",
+            left: "10px",
+            background: "rgba(255, 255, 255, 0.85)",
+            backdropFilter: "blur(4px)",
+            padding: "4px 8px",
+            borderRadius: "6px",
+            fontSize: "0.7rem",
+            fontWeight: "700",
+            color: "#475569",
+            zIndex: 999,
+            pointerEvents: "none",
+            border: "1px solid rgba(226, 232, 240, 0.8)",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px"
+          }}>
+            <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#3b82f6" }}></span>
+            <span>Powered by Delhivery Maps</span>
           </div>
 
           {/* Route Distance/Duration Floating Badge Overlay */}

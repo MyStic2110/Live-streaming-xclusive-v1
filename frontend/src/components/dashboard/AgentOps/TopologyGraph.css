@@ -1,0 +1,442 @@
+/* Premium TopologyGraph CSS with dynamic dark-glass elements and neon glows */
+
+.topology-graph-container {
+  flex: 1;
+  position: relative;
+  background: radial-gradient(circle at 50% 50%, #0d122b 0%, #060914 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6), 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.topology-svg {
+  width: 100%;
+  height: 100%;
+  min-height: 480px;
+}
+
+.topology-svg.resizing {
+  pointer-events: none;
+}
+
+/* Info overlay overlay style */
+.topology-info-overlay {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: rgba(10, 15, 36, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 10px;
+  z-index: 10;
+  max-width: 280px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.topology-info-overlay h3 {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.topology-info-overlay .subtext {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #8b9bb4;
+  line-height: 1.3;
+}
+
+/* Hover Card inside overlay */
+.hover-card {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hover-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.hover-card-desc {
+  font-size: 0.75rem;
+  color: #a0aec0;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.hover-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: #718096;
+}
+
+.hover-card-details span {
+  color: #cbd5e0;
+  font-weight: 500;
+}
+
+/* Status Dot indicators */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.status-dot.online {
+  background-color: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+.status-dot.offline {
+  background-color: #718096;
+}
+
+/* Connection Lines */
+.connection-line-bg {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.3);
+  stroke-width: 5;
+  pointer-events: none;
+}
+
+.connection-line {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.07);
+  stroke-width: 2;
+  pointer-events: none;
+  transition: stroke 0.3s ease, stroke-width 0.3s ease;
+}
+
+.connection-line.highlighted {
+  stroke: #4f46e5;
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.6));
+}
+
+/* Data flow animation on active lines */
+.connection-line.active-flow {
+  stroke: rgba(16, 185, 129, 0.35);
+  stroke-dasharray: 8 6;
+  animation: dash 35s linear infinite;
+}
+
+.connection-line.active-flow.highlighted {
+  stroke: rgba(16, 185, 129, 0.95);
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.8));
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+
+/* Nodes styling - Fix flickering by defining clean pointer boundaries */
+.graph-node {
+  /* Cursor is controlled dynamically via inline style on each node */
+}
+
+/* Let the main container group handle hover state, bypass inner child event noise */
+.graph-node * {
+  pointer-events: none;
+}
+
+/* Inner scaling group to apply scale transforms safely without interfering with physics positions */
+.node-content-scale {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.graph-node.hovered .node-content-scale {
+  transform: scale(1.06);
+}
+
+.node-circle {
+  fill: #151a30;
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 2;
+  transition: stroke 0.3s ease, fill 0.3s ease;
+}
+
+.node-circle.online {
+  stroke: #10b981;
+  fill: #0c2a20;
+}
+
+.node-circle.offline {
+  stroke: #4a5568;
+  fill: #1a202c;
+}
+
+/* Root/Hub special circular nodes */
+.root-node .node-circle {
+  stroke: #3b82f6;
+  fill: #0f1c3f;
+  stroke-width: 3;
+}
+
+.hub-node .node-circle {
+  stroke: #8b5cf6;
+  fill: #1d1238;
+}
+
+.sub-node .node-circle {
+  stroke: #10b981;
+  fill: #10b981;
+  opacity: 0.8;
+}
+
+.node-inner {
+  fill: rgba(255, 255, 255, 0.03);
+}
+
+/* Node Text and Icons */
+.node-icon-text {
+  font-size: 11px;
+  user-select: none;
+}
+
+.node-label {
+  fill: #a0aec0;
+  font-size: 0.7rem;
+  font-weight: 500;
+  user-select: none;
+  transition: fill 0.3s ease, font-weight 0.3s ease;
+}
+
+.graph-node.hovered .node-label {
+  fill: #fff;
+  font-weight: 600;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+.node-label.bold {
+  fill: #e2e8f0;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+/* Pulsing outer rings */
+.pulsing-ring {
+  fill: none;
+  stroke-width: 1.5;
+  stroke: rgba(16, 185, 129, 0.4);
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+.root-node .pulsing-ring {
+  stroke: rgba(59, 130, 246, 0.5);
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
+}
+
+/* Service Nodes & Paths styling */
+.node-card {
+  fill: rgba(13, 17, 38, 0.85);
+  backdrop-filter: blur(8px);
+  transition: fill 0.3s ease;
+}
+
+.node-card.online {
+  fill: rgba(9, 24, 25, 0.85);
+}
+
+.node-card.offline {
+  fill: rgba(30, 20, 25, 0.85);
+}
+
+.node-category-text {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  fill: #818cf8;
+  text-transform: uppercase;
+}
+
+.agent-node .node-category-text {
+  fill: #10b981;
+}
+
+.root-node .node-category-text {
+  fill: #3b82f6;
+}
+
+.node-main-label {
+  font-size: 11px;
+  font-weight: 600;
+  fill: #f3f4f6;
+}
+
+.node-sub-metric {
+  font-size: 8px;
+  fill: #9ca3af;
+}
+
+.status-dot-pulse {
+  animation: glow-pulse 1.5s infinite alternate;
+}
+
+@keyframes glow-pulse {
+  from {
+    filter: drop-shadow(0 0 1px currentColor);
+  }
+  to {
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+}
+
+/* Duplicated transitions removed for physics coordinate performance */
+
+.service-link-path {
+  stroke: rgba(255, 255, 255, 0.03);
+  stroke-dasharray: 4 4;
+}
+
+.service-link-path.active-flow {
+  stroke: rgba(99, 102, 241, 0.5);
+  stroke-dasharray: 6 4;
+  animation: dash 25s linear infinite;
+}
+
+.service-link-path.active-flow.highlighted {
+  stroke: rgba(99, 102, 241, 0.95);
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.8));
+}
+
+/* Styling for unconnected/dimmed service nodes and paths */
+.service-node.unconnected {
+  opacity: 0.25;
+  pointer-events: none;
+  filter: grayscale(80%);
+}
+
+.service-node.unconnected .node-label {
+  fill: #4a5568;
+}
+
+/* ─── Floating Packet Badge (appears on active glow links) ─── */
+@keyframes packetFadeIn {
+  from { opacity: 0; transform: translateY(4px) scale(0.92); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+.flow-packet-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 8px;
+  background: rgba(8, 12, 35, 0.92);
+  border: 1px solid rgba(99, 102, 241, 0.6);
+  border-radius: 7px;
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 0 12px rgba(99, 102, 241, 0.35),
+    0 4px 16px rgba(0, 0, 0, 0.55);
+  animation: packetFadeIn 0.18s ease-out forwards;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  white-space: nowrap;
+  pointer-events: none;
+  width: max-content;
+  max-width: 180px;
+}
+
+.flow-packet-id {
+  font-size: 9px;
+  font-weight: 700;
+  color: #818cf8;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.flow-packet-event {
+  font-size: 9px;
+  font-weight: 600;
+  color: #e0e7ff;
+  letter-spacing: 0.02em;
+}
+
+.flow-packet-label {
+  font-size: 8px;
+  color: #94a3b8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.flow-packet-ts {
+  font-size: 7.5px;
+  color: #475569;
+  margin-top: 1px;
+}
+
+/* ─── Canvas Controls for Zoom/Pan ─── */
+.canvas-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  padding: 6px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.canvas-controls button {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.canvas-controls button:hover {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: #fff;
+}
+
+.canvas-controls button:active {
+  transform: scale(0.92);
+}
+
+

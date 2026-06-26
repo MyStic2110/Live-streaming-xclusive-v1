@@ -37,6 +37,7 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
     { id: 'fleet',      label: 'Fleet Control',   Icon: Monitor   },
     { id: 'analytics',  label: 'Analytics & Costs', Icon: BarChart2 },
     { id: 'compliance', label: 'Compliance Hub',  Icon: Shield    },
+    { id: 'agent-ops',  label: 'Agent Ops',       Icon: Cpu       },
   ];
 
   const getBreadcrumb = () => {

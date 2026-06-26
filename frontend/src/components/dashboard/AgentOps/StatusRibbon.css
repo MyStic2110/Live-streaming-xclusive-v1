@@ -1,0 +1,90 @@
+/* Status Ribbon styles matching the premium dark theme */
+
+.status-ribbon-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px 24px;
+  background: rgba(10, 15, 30, 0.65);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  margin: 10px 24px 0 24px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+}
+
+.status-metric-card {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.status-metric-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.metric-icon {
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+.metric-icon.online {
+  filter: drop-shadow(0 0 6px #10b981);
+}
+
+.metric-icon.offline {
+  opacity: 0.6;
+}
+
+.metric-icon.health {
+  filter: drop-shadow(0 0 6px #3b82f6);
+}
+
+.metric-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.text-online {
+  color: #10b981;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+.text-offline {
+  color: #a0aec0;
+}
+
+.text-health {
+  color: #3b82f6;
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}

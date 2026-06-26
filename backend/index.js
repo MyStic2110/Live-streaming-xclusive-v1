@@ -25,6 +25,8 @@ import changelogRoutes from './src/routes/changelogRoutes.js';
 import docsRoutes from './src/routes/docsRoutes.js';
 import delhiveryRoutes from './src/routes/delhiveryRoutes.js';
 import { registerBattleSockets } from './src/sockets/battleSocket.js';
+import agentsRoutes from './src/routes/agentsRoutes.js';
+import { startMetricsMonitor } from './src/services/monitorService.js';
 
 // API platform middleware
 import { requestContext } from './src/middlewares/requestContext.js';
@@ -144,6 +146,7 @@ process.on("unhandledRejection", (reason) => {
 roomController.setSocketIO(io);
 telemetryController.setSocketIO(io);
 registerBattleSockets(io);
+startMetricsMonitor(io);
 
 // Connect to Database
 await connectDB();
@@ -160,6 +163,7 @@ app.use('/api', telemetryRoutes); // Mounts /api/llm-trace, /api/llm-traces, /ap
 app.use('/', telemetryRoutes);   // Mounts root-level routes: /security/status, /security/scan, /security/remediate, /detokenize
 app.use('/', roomRoutes);        // Mounts root-level routes: /talk-to-ai, /trigger-reels, /copilot/chat, /copilot/session/clear
 app.use('/api/delhivery', delhiveryRoutes);
+app.use('/api/agents', agentsRoutes);
 
 
 // --- VERSIONED SURFACE (/api/v1) — additive aliases for new clients; legacy paths above remain valid ---

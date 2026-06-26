@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const router = express.Router();
 
-const DELHI_TOKEN = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InNvdXJjZSI6IldFQiIsInVjaWQiOiJlZDJjMWNlMi0xOTlhLTE0Y2YtYzEzYi0wYjI0NjRjM2JiZmYifSwiZXhwIjoxNzgyMzk2Njk0LCJpYXQiOjE3ODIzMTAyOTQsImp0aSI6ImZkY2UwYjJkLWIyZDctNDM5NC1hNzgxLTUzNTE2NTNmZDg5OSJ9.uN13LQf6eDHKGzti9ODqddL3Lq3LEvIaFtAVXuiZiYU';
+const DELHI_TOKEN = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InNvdXJjZSI6IldFQiIsInVjaWQiOiJlZDJjMWNlMi0xOTlhLTE0Y2YtYzEzYi0wYjI0NjRjM2JiZmYifSwiZXhwIjoxNzgyNTM5NDY0LCJpYXQiOjE3ODI0NTMwNjQsImp0aSI6IjY0ZDkxM2Y2LTRhMTgtNDI0Zi1hOWE3LTE1YWZkMTY1YmNmNSJ9.gXQDYGBg5692khlk-XTMJQTyc26kdee4q6GNTuH7wNk';
 const MCP_URL = 'https://gateway-maps-pub-int.delhivery.com/mcp';
 
 // Helper to parse SSE formatted JSON-RPC messages from Delhivery MCP

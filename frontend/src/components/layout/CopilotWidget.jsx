@@ -142,6 +142,9 @@ const CopilotWidget = () => {
       });
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error("UNAUTHORIZED");
+        }
         throw new Error(`HTTP error ${response.status}`);
       }
 
@@ -203,10 +206,13 @@ const CopilotWidget = () => {
 
     } catch (error) {
       console.error("Copilot request failed:", error);
+      const isAuthError = error.message === "UNAUTHORIZED";
       const errorMsg = {
         id: Math.random().toString(),
         sender: "copilot",
-        text: "System communication timeout. Please verify agent server connectivity.",
+        text: isAuthError 
+          ? "Your session has expired. Please sign out and sign back in to re-authenticate."
+          : "System communication timeout. Please verify agent server connectivity.",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, errorMsg]);

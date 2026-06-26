@@ -616,7 +616,22 @@ const initializeTables = async (client) => {
     } catch (scanError) {
       logger.error(`[DATABASE] ❌ Dynamic Agent compliance scan failed: ${scanError.message}`);
     }
- 
+    // Ensure last_seen column exists and set startup heartbeats for default active agents
+    try {
+      await client.query(`
+        ALTER TABLE agent_analysis
+          ADD COLUMN IF NOT EXISTS last_seen TIMESTAMP WITH TIME ZONE
+      `).catch(() => {});
+      await client.query(`
+        UPDATE agent_analysis
+        SET last_seen = NOW()
+        WHERE LOWER(agent_name) IN ('swarm_copilot', 'devopsgeni')
+      `);
+      logger.info(`[DATABASE] ✅ Default active agents (swarm_copilot, devopsgeni) heartbeats initialized.`);
+    } catch (startupErr) {
+      logger.warn(`[DATABASE] ⚠️ Failed to initialize startup heartbeats: ${startupErr.message}`);
+    }
+
     logger.info(`[DATABASE] ✅ PostgreSQL Tables Initialized.`);
   } catch (error) {
     logger.error(`[DATABASE] ❌ Table initialization failed: ${error.message}`);

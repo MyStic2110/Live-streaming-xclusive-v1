@@ -95,6 +95,7 @@ export default defineConfig({
         }
       },
       // Direct Local Proxy to Backend
+      '/api': 'http://127.0.0.1:3002',
       '/go-live': 'http://127.0.0.1:3002',
       '/request-call': 'http://127.0.0.1:3002',
       '/talk-to-ai': 'http://127.0.0.1:3002',
