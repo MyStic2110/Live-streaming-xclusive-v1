@@ -239,10 +239,13 @@ class SwarmCopilot:
             base_rules,
             "\n",
             agent_prompt,
+            "\n<approved_knowledge>",
+            context_json,
+            "</approved_knowledge>",
             "\n## ACTIVE USER SESSION STATE:",
             f"Active interests: {', '.join(session.primary_interests)}",
             f"Prior conversation context: {session.memory_summary or 'None'}",
-                        f"Retrieved User Context / Persistent Preferences:\n{memory_str}"
+            f"Retrieved User Context / Persistent Preferences:\n{memory_str}"
         ]
         
         return "\n".join(prompt_parts)
