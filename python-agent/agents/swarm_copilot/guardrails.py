@@ -1,3 +1,4 @@
+import os
 import re
 import logging
 from typing import Tuple, List, Set
@@ -164,7 +165,8 @@ class OutputGuardrail:
                 if clean_url not in allowed_urls:
                     logger.warning(f"Output guardrail triggered: Hallucinated URL detected: {clean_url}")
                     # Replace the specific hallucinated URL with the root platform domain
-                    generated_response = generated_response.replace(url, "https://swarm.ai")
+                    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+                    generated_response = generated_response.replace(url, frontend_url)
 
             return generated_response
 

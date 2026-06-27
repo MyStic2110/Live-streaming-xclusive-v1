@@ -245,7 +245,7 @@ const verifyOutput = (generatedResponse, allowedUrls) => {
   for (const url of foundUrls) {
     const cleanUrl = url.replace(/[.,;!)?}]$/, "");
     if (!allowedUrls.has(cleanUrl)) {
-      responseCopy = responseCopy.replace(url, "https://swarm.ai");
+      responseCopy = responseCopy.replace(url, process.env.FRONTEND_URL || "http://localhost:5173");
       urlModified = true;
     }
   }
@@ -277,7 +277,8 @@ const routerMapping = {
   ],
   features: [
     "workflow", "capabilities", "limit", "run", "platform",
-    "create", "delete", "humanintheloop", "designer", "sandbox"
+    "create", "delete", "humanintheloop", "designer", "sandbox",
+    "build", "building", "custom"
   ],
   agents: [
     "agent", "prebuilt", "builtin", "listagents", "whatagents", "showagents",
@@ -364,10 +365,50 @@ export const initEmbedder = async () => {
     }
   })();
   return embedderPromise;
-};
-
 // Start initialization immediately in background
 initEmbedder().catch(() => {});
+
+// Convert arbitrary JSON/Objects into clean hierarchical Markdown for LLM prompt context
+const jsonToMarkdown = (obj, depth = 1) => {
+  if (obj === null || obj === undefined) return "";
+  const indent = "  ".repeat(Math.max(0, depth - 1));
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => {
+      if (typeof item === "object" && item !== null) {
+        return `${indent}- \n${jsonToMarkdown(item, depth + 1)}`;
+      } else {
+        return `${indent}- ${item}`;
+      }
+    }).join("\n");
+  }
+
+  if (typeof obj === "object") {
+    return Object.entries(obj).map(([key, val]) => {
+      const formattedKey = key
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, c => c.toUpperCase());
+      
+      const headerPrefix = depth <= 3 ? "#".repeat(depth) + " " : "";
+      
+      if (typeof val === "object" && val !== null) {
+        if (headerPrefix) {
+          return `${headerPrefix}${formattedKey}\n${jsonToMarkdown(val, depth + 1)}`;
+        } else {
+          return `${indent}*${formattedKey}*:\n${jsonToMarkdown(val, depth + 1)}`;
+        }
+      } else {
+        if (headerPrefix) {
+          return `${headerPrefix}${formattedKey}: ${val}`;
+        } else {
+          return `${indent}*${formattedKey}*: ${val}`;
+        }
+      }
+    }).join("\n");
+  }
+
+  return `${indent}${obj}`;
+};
 
 export const routeContext = async (query, lastVertical) => {
   loadKnowledgeFiles();
@@ -514,7 +555,12 @@ export const routeContext = async (query, lastVertical) => {
   }
 
   const mergedContext = {};
-  const allowedUrls = new Set(["https://swarm.ai", "https://docs.swarm.ai"]);
+  const localFrontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  const allowedUrls = new Set([
+    localFrontendUrl,
+    `${localFrontendUrl}/`,
+    `${localFrontendUrl}/docs`
+  ]);
 
   for (const vertical of matchedVerticals) {
     if (kbCache[vertical]) {
@@ -538,7 +584,10 @@ export const routeContext = async (query, lastVertical) => {
         
         // Sort by relevance and take top 3 pages to avoid bloating context
         relevantPages.sort((a, b) => b.relevanceScore - a.relevanceScore);
-        verticalData.pages = relevantPages.slice(0, 3).map(({ relevanceScore, ...rest }) => rest);
+        verticalData.pages = relevantPages.slice(0, 3).map(({ relevanceScore, ...rest }) => {
+          const { content, ...slim } = rest;
+          return slim;
+        });
       }
 
       if (vertical === "github_knowledge" && verticalData.pages) {
@@ -642,7 +691,7 @@ export const routeContext = async (query, lastVertical) => {
   }
 
   return {
-    contextJson: JSON.stringify(mergedContext, null, 2),
+    contextJson: jsonToMarkdown(mergedContext),
     matchedVerticals,
     allowedUrls,
     isExplicit
@@ -713,11 +762,7 @@ const compilePrompt = (matchedVerticals, contextJson, session, memories = []) =>
     "\n## ACTIVE USER SESSION STATE:",
     `Active interests: ${activeInterests.join(", ")}`,
     `Prior conversation context: ${memorySummary}`,
-    `Retrieved User Context / Persistent Preferences:\n${memoriesStr}`,
-    "\n## APPROVED KNOWLEDGE CONTEXT (TRUSTED DATA):",
-    "<approved_knowledge>",
-    contextJson,
-    "</approved_knowledge>"
+    `Retrieved User Context / Persistent Preferences:\n${memoriesStr}`
   ].join("\n");
 };
 

@@ -77,6 +77,17 @@ This file documents the specialized AI agents configured within the `python-agen
 * **Path**: [`python-agent/agents/swarm_copilot/`](file:///d:/Antigravity%20Workspace/livekit-video-app/python-agent/agents/swarm_copilot)
 * **Features**: Manages crawled knowledge files and file retrieval context.
 
+### 13. SHOPPE (Shoppe Co-Pilot)
+* **Specialty**: Indian e-commerce shopping co-pilot & virtual browser controller.
+* **Path**: [`python-agent/agents/shoppe/`](file:///d:/Antigravity%20Workspace/livekit-video-app/python-agent/agents/shoppe)
+* **LiveKit Room Match**: `shoppe_session_<userId>`
+* **Features**: Runs a virtual browser session inside the LiveKit WebRTC room using Playwright, allowing users to watch live searches and product navigations. Performs real-time price comparisons between Indian merchants (Flipkart, Amazon, Croma, Ajio, Tata Cliq, Myntra, etc.).
+
+### 14. REELS (Reels Creator)
+* **Specialty**: Blog-to-video autonomous reel creator (background task).
+* **Path**: [`python-agent/agents/reels/`](file:///d:/Antigravity%20Workspace/livekit-video-app/python-agent/agents/reels)
+* **Features**: Spawns Wav2Lip-based video composition processes in the background to convert Astra's blog posts into short video reels. Communicates progress to the frontend via Socket.io.
+
 ---
 
 ## 3. Compliance Scanners & Analyzers

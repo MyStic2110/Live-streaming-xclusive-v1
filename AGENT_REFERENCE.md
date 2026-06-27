@@ -87,9 +87,15 @@ livekit-video-app/
 |       |-- middlewares/
 |       |   `-- authMiddleware.js       # authenticateToken, requireRole, authRateLimiter
 |       |-- routes/
+|       |   |-- agentsRoutes.js      # Heartbeat + online/offline registry API
 |       |   |-- authRoutes.js
+|       |   |-- battleRoutes.js      # Candidate battle token verification + leaderboard
+|       |   |-- careersRoutes.js     # Job applications submission API
+|       |   |-- changelogRoutes.js   # Feature likes + toggle API
 |       |   |-- configRoutes.js
 |       |   |-- crawlerRoutes.js
+|       |   |-- delhiveryRoutes.js   # Delhivery Maps API/MCP proxy
+|       |   |-- docsRoutes.js        # Swagger API docs & OpenAPI spec endpoints
 |       |   |-- githubRoutes.js
 |       |   |-- roomRoutes.js
 |       |   `-- telemetryRoutes.js
@@ -129,7 +135,8 @@ livekit-video-app/
 |       |       |-- MartechRoom.jsx
 |       |       |-- OctaneRoom.jsx
 |       |       |-- DevopsGeniRoom.jsx
-|       |       `-- AivyuhRoom.jsx
+|       |       |-- AivyuhRoom.jsx
+|       |       `-- ShoppeRoom.jsx
 |       `-- nova-sdk/                # Client-side capability SDK for Nova agent
 |           |-- NovaClient.js        # Orchestrator: EventBus, ContextStore, TimelineSync
 |           |-- core/                # EventBus, ContextStore, TimelineSync, NovaLogger
@@ -152,6 +159,7 @@ livekit-video-app/
 |   |   |-- rehearsal/           # Rehearsal: presentation coach
 |   |   |-- reels/               # Reels: blog-to-video (Wav2Lip)
 |   |   |-- seva/                # Seva: customer onboarding
+|   |   |-- shoppe/              # Shoppe: Indian consumer shopping co-pilot (browser automation)
 |   |   `-- swarm_copilot/       # Swarm Copilot: knowledge base manager
 |   |-- integrations/
 |   |   `-- securelytix.py       # Securelytix SDK client
@@ -281,6 +289,45 @@ livekit-video-app/
 Crawler: `/api/crawler/*` — GET/POST config, POST run, GET status.
 GitHub: `/api/github/*` — GET/POST config, POST run, GET status, GET tree.
 
+#### Agents Fleet Registry (`/api/agents/*`)
+
+| Method | Path | Auth | Role | Description |
+|---|---|---|---|---|
+| POST | `/api/agents/heartbeat` | None | - | Heartbeat for agent liveness state |
+| GET | `/api/agents` | None | - | Fetch all agents with status and topology wiring |
+
+#### Delhivery MCP Proxy (`/api/delhivery/*`)
+
+| Method | Path | Auth | Role | Description |
+|---|---|---|---|---|
+| POST | `/api/delhivery/geocode` | None | - | Geocode address via Delhivery Maps MCP |
+| POST | `/api/delhivery/standardize` | None | - | Standardize address format |
+| POST | `/api/delhivery/reverse-geocode` | None | - | Reverse geocode coordinates to address |
+| POST | `/api/delhivery/search-entities` | None | - | Search maps entities by query and lat/lng |
+| POST | `/api/delhivery/route` | None | - | Get directions route given geo coordinates |
+
+#### Careers & Battle Arena (`/api/careers/*`, `/api/battle/*`)
+
+| Method | Path | Auth | Role | Description |
+|---|---|---|---|---|
+| POST | `/api/careers/apply` | None | - | Apply for a role (returns battle token) |
+| POST | `/api/battle/verify-token` | None | - | Verify battle token validity |
+| GET | `/api/battle/leaderboard` | None | - | Get top 10 leaderboard rankings |
+
+#### Changelog & Commit Likes (`/api/changelog/*`)
+
+| Method | Path | Auth | Role | Description |
+|---|---|---|---|---|
+| GET | `/api/changelog/likes` | None | - | Get list of liked items |
+| POST | `/api/changelog/likes/:sha/toggle` | None | - | Toggle like on a commit/item |
+
+#### Swagger API Documentation (`/api/*`)
+
+| Method | Path | Auth | Role | Description |
+|---|---|---|---|---|
+| GET | `/api/docs` | None | - | Swagger UI Interactive API Reference |
+| GET | `/api/openapi.json` | None | - | Raw OpenAPI 3.1 schema definition JSON |
+
 ### 5.4 Socket.io Real-Time Events
 
 | Event | Direction | Payload |
@@ -325,6 +372,11 @@ agent_analysis (id, agent_name[unique], agent_type, business_function,
                 applicable_count, non_applicable_count, control_map[jsonb])
 agent_security_status (agent_name[pk], timestamp, critical_count, warning_count,
                        report_summary[jsonb], nist_score, nist_risk, nist_controls[jsonb])
+
+-- Careers & Battle Arena
+careers_applications (id, role_id, role_title, name, email, mobile, portfolio, message, resume_data[jsonb], battle_token[unique], battle_token_used, created_at)
+battle_questions (id[pk], topic, question, grading_rubric[jsonb], model_answer, role_id, created_at)
+battle_answered_questions (id, email, question_id, created_at, unique(email, question_id))
 ```
 
 Indexes: `idx_traces_timestamp`, `idx_traces_agent`, `idx_traces_run_id`
@@ -363,6 +415,10 @@ Custom hash/pathname routing in `App.jsx` via `window.history.pushState` + `wind
 /governed-deployment -> GovernedDeployment (public)
 /sneak-peak    -> SwarmShortsPage (public)
 /insights      -> BlogSection (public)
+/changelog     -> ChangelogPage (public)
+/careers       -> CareersPage (public)
+/battle        -> InterviewPortalPage (public)
+/agent-ops     -> AgentOps (protected)
 ```
 
 Hash routes (`#/login`, `#/dashboard`) also work for static hosting.
@@ -402,6 +458,7 @@ const isNewPath =
 | `"MARTECH"` | MartechRoom |
 | `"OCTANE"` | OctaneRoom |
 | `"DEVOPS_GENI"` | DevopsGeniRoom |
+| `"SHOPPE"` | ShoppeRoom |
 | (default) | VideoRoom |
 
 When `roomData` is set, App.jsx renders ONLY the room component (full-screen).
@@ -458,6 +515,9 @@ Key deps: `livekit-agents`, `livekit-plugins-mistralai`, `livekit-plugins-silero
 | `OCTANE` | Octane Telemetry | Network telemetry, publishes Redis alerts |
 | `DEVOPS_GENI` | DevOps Geni | DevSecOps, SAST, system diagnostics |
 | `AIVYUH` | Aivyuh Agent | OWASP security compliance, swarm logic |
+| `SWARM_COPILOT` | Swarm Copilot | Context/knowledge base manager & Mem0 retrieval |
+| `SHOPPE` | Shoppe Co-Pilot | E-commerce browser automation & price comparison |
+| `REELS` | Reels Agent | Wav2Lip blog-to-video generator (background) |
 
 ### 7.2 LiveKit Integration Pattern
 

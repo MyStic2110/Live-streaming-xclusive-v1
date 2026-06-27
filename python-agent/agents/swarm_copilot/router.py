@@ -58,11 +58,46 @@ def is_follow_up_query(query: str) -> bool:
     }
     if words.intersection(follow_up_tokens):
         return True
-    
     if any(query_lower.startswith(prefix) for prefix in ["is ", "are ", "can ", "could ", "would ", "does ", "do ", "should ", "will ", "what "]):
         return True
         
     return False
+        
+
+def json_to_markdown(obj: Any, depth: int = 1) -> str:
+    if obj is None:
+        return ""
+    indent = "  " * max(0, depth - 1)
+
+    if isinstance(obj, list):
+        items_str = []
+        for item in obj:
+            if isinstance(item, (dict, list)):
+                items_str.append(f"{indent}- \n{json_to_markdown(item, depth + 1)}")
+            else:
+                items_str.append(f"{indent}- {item}")
+        return "\n".join(items_str)
+
+    if isinstance(obj, dict):
+        entries_str = []
+        for key, val in obj.items():
+            # Clean up key format: convert underscores to spaces, title-case words
+            formatted_key = " ".join(word.capitalize() for word in str(key).split("_"))
+            header_prefix = "#" * depth + " " if depth <= 3 else ""
+
+            if isinstance(val, (dict, list)):
+                if header_prefix:
+                    entries_str.append(f"{header_prefix}{formatted_key}\n{json_to_markdown(val, depth + 1)}")
+                else:
+                    entries_str.append(f"{indent}*{formatted_key}*:\n{json_to_markdown(val, depth + 1)}")
+            else:
+                if header_prefix:
+                    entries_str.append(f"{header_prefix}{formatted_key}: {val}")
+                else:
+                    entries_str.append(f"{indent}*{formatted_key}*: {val}")
+        return "\n".join(entries_str)
+
+    return f"{indent}{obj}"
 
 
 class ContextRouter:
@@ -130,7 +165,8 @@ class ContextRouter:
             ],
             "features": [
                 "workflow", "capabilities", "limit", "run", "platform",
-                "create", "delete", "humanintheloop", "designer", "sandbox"
+                "create", "delete", "humanintheloop", "designer", "sandbox",
+                "build", "building", "custom"
             ],
             "agents": [
                 # intent keywords
@@ -339,10 +375,11 @@ class ContextRouter:
                             page_copy["relevanceScore"] = matches
                             relevant_pages.append(page_copy)
                     relevant_pages.sort(key=lambda x: x["relevanceScore"], reverse=True)
-                    vertical_data["pages"] = [
-                        {k: v for k, v in p.items() if k != "relevanceScore"}
-                        for p in relevant_pages[:3]
-                    ]
+                    vertical_data["pages"] = []
+                    for p in relevant_pages[:3]:
+                        slim_p = {k: v for k, v in p.items() if k != "relevanceScore"}
+                        slim_p = {k: v for k, v in slim_p.items() if k != "content"}
+                        vertical_data["pages"].append(slim_p)
                 merged_context[vertical] = vertical_data
                 
                 # Strip 'methods' from agent_details before sending to the LLM.
@@ -366,7 +403,9 @@ class ContextRouter:
                     allowed_urls.add(url.rstrip(".,;!)?]}\\"))
 
         # Add the base platform domain to allowed URLs
-        allowed_urls.add("https://swarm.ai")
-        allowed_urls.add("https://docs.swarm.ai")
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        allowed_urls.add(frontend_url)
+        allowed_urls.add(f"{frontend_url}/")
+        allowed_urls.add(f"{frontend_url}/docs")
 
-        return json.dumps(merged_context, indent=2), matched_verticals, allowed_urls, is_explicit
+        return json_to_markdown(merged_context), matched_verticals, allowed_urls, is_explicit

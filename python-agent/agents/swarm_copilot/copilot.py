@@ -242,11 +242,7 @@ class SwarmCopilot:
             "\n## ACTIVE USER SESSION STATE:",
             f"Active interests: {', '.join(session.primary_interests)}",
             f"Prior conversation context: {session.memory_summary or 'None'}",
-            f"Retrieved User Context / Persistent Preferences:\n{memory_str}",
-            "\n## APPROVED KNOWLEDGE CONTEXT (TRUSTED DATA):",
-            "<approved_knowledge>",
-            context_json,
-            "</approved_knowledge>"
+                        f"Retrieved User Context / Persistent Preferences:\n{memory_str}"
         ]
         
         return "\n".join(prompt_parts)
