@@ -166,7 +166,7 @@ class ContextRouter:
             "features": [
                 "workflow", "capabilities", "limit", "run", "platform",
                 "create", "delete", "humanintheloop", "designer", "sandbox",
-                "build", "building", "custom"
+                "build", "building", "custom", "console", "control plane", "dashboard"
             ],
             "agents": [
                 # intent keywords

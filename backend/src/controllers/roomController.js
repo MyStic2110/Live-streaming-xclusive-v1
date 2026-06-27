@@ -118,6 +118,19 @@ export const talkToAI = async (req, res) => {
     const dispatch = await dispatchClient.createDispatch(roomName, agentName);
     console.log(`[HTTP_CONTROLLER] ✅ ${agentName} dispatched successfully!`);
 
+    // 4. Record session in PostgreSQL DB
+    try {
+      const dbUserId = req.user?.id || null;
+      await dbQuery(
+        `INSERT INTO sessions (user_id, room_name, agent_type, status)
+         VALUES ($1, $2, $3, 'active')`,
+        [dbUserId, roomName, agentName]
+      );
+      console.log(`[HTTP_CONTROLLER] Session logged to DB for room: ${roomName}`);
+    } catch (dbErr) {
+      console.warn("[HTTP_CONTROLLER] Failed to log active session to DB:", dbErr.message);
+    }
+
     res.json({ token, roomName: roomName, identity: userId, isAI: true });
   } catch (err) {
     console.error("[HTTP_CONTROLLER] ❌ CRITICAL AI DISPATCH ERROR:", err.message);

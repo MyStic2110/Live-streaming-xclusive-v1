@@ -15,6 +15,10 @@
       "description": "Drag-and-drop workspace to sequence agents, construct branching logic, and wire up database triggers without writing code."
     },
     {
+      "name": "Swarm Operations Console",
+      "description": "The Swarm Operations Console is the central control plane and dashboard for orchestrating your agent fleet. It provides real-time SRE telemetry, logs, active agent monitoring, visual workflow designers, and security auditing logs."
+    },
+    {
       "name": "Human-in-the-Loop Approval",
       "description": "Enables critical agent decisions (e.g. database mutations, deployment execution) to pause and wait for explicit human approval via Slack, email, or Web UI."
     },

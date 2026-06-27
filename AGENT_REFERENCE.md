@@ -679,6 +679,14 @@ cd python-agent && venv\Scripts\python.exe agents\lina\lina.py dev
 python-agent\venv\Scripts\python.exe scripts\daily_log_cleaner.py
 ```
 
+### Diagnostic Health Checks
+
+To verify that all infrastructure dependencies (PostgreSQL, Redis, LiveKit, Qdrant, Mem0, Node.js backend) are active and listening:
+
+```batch
+python-agent\venv\Scripts\python.exe scripts\agent_ops_healthcheck.py
+```
+
 ---
 
 ## 13. Coding Conventions & Critical Rules

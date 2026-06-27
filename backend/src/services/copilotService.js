@@ -278,7 +278,7 @@ const routerMapping = {
   features: [
     "workflow", "capabilities", "limit", "run", "platform",
     "create", "delete", "humanintheloop", "designer", "sandbox",
-    "build", "building", "custom"
+    "build", "building", "custom", "console", "control plane", "dashboard"
   ],
   agents: [
     "agent", "prebuilt", "builtin", "listagents", "whatagents", "showagents",
@@ -412,7 +412,7 @@ const jsonToMarkdown = (obj, depth = 1) => {
   return `${indent}${obj}`;
 };
 
-export const routeContext = async (query, lastVertical) => {
+export const routeContext = async (query, lastVertical, forcedVerticals = []) => {
   loadKnowledgeFiles();
 
   const queryLower = query.toLowerCase();
@@ -422,6 +422,14 @@ export const routeContext = async (query, lastVertical) => {
   const isGreeting = greetings.has(normalize(queryClean));
 
   let matchedVerticals = [];
+
+  if (forcedVerticals && Array.isArray(forcedVerticals)) {
+    for (const v of forcedVerticals) {
+      if (!matchedVerticals.includes(v)) {
+        matchedVerticals.push(v);
+      }
+    }
+  }
 
   // Tier 1: Fast Path (Keywords)
   for (const [vertical, keywords] of Object.entries(routerMapping)) {
@@ -694,6 +702,7 @@ export const routeContext = async (query, lastVertical) => {
 
   return {
     contextJson: jsonToMarkdown(mergedContext),
+    mergedContext,
     matchedVerticals,
     allowedUrls,
     isExplicit
@@ -960,6 +969,148 @@ const updateSessionMemory = (session, query, response) => {
   }
 };
 
+const mergeContexts = (accumulated, newContext) => {
+  if (!newContext) return;
+  for (const [vertical, data] of Object.entries(newContext)) {
+    if (!accumulated[vertical]) {
+      accumulated[vertical] = JSON.parse(JSON.stringify(data));
+      continue;
+    }
+
+    if ((vertical === "crawled_knowledge" || vertical === "github_knowledge") && data.pages && Array.isArray(data.pages)) {
+      const existingPages = accumulated[vertical].pages || [];
+      for (const newPage of data.pages) {
+        if (!existingPages.some(ep => ep.title === newPage.title)) {
+          existingPages.push(JSON.parse(JSON.stringify(newPage)));
+        }
+      }
+      accumulated[vertical].pages = existingPages;
+    } else if (vertical === "agents" && data.agent_details && Array.isArray(data.agent_details)) {
+      const existingAgents = accumulated[vertical].agent_details || [];
+      for (const newAgent of data.agent_details) {
+        if (!existingAgents.some(ea => ea.id === newAgent.id)) {
+          existingAgents.push(JSON.parse(JSON.stringify(newAgent)));
+        }
+      }
+      accumulated[vertical].agent_details = existingAgents;
+    } else if (vertical === "security") {
+      const accSec = accumulated[vertical];
+      if (data.live_audit_runs && Array.isArray(data.live_audit_runs)) {
+        const existingRuns = accSec.live_audit_runs || [];
+        for (const run of data.live_audit_runs) {
+          if (!existingRuns.some(er => er.run_id === run.run_id)) {
+            existingRuns.push(JSON.parse(JSON.stringify(run)));
+          }
+        }
+        accSec.live_audit_runs = existingRuns;
+      }
+      if (data.live_audit_history && typeof data.live_audit_history === "object") {
+        accSec.live_audit_history = {
+          ...(accSec.live_audit_history || {}),
+          ...JSON.parse(JSON.stringify(data.live_audit_history))
+        };
+      }
+      for (const [key, val] of Object.entries(data)) {
+        if (key !== "live_audit_runs" && key !== "live_audit_history") {
+          accSec[key] = JSON.parse(JSON.stringify(val));
+        }
+      }
+    } else {
+      accumulated[vertical] = {
+        ...accumulated[vertical],
+        ...JSON.parse(JSON.stringify(data))
+      };
+    }
+  }
+};
+
+const evaluateEvidence = async ({ query, contextJson, memories, apiKey, baseUrl }) => {
+  const evaluatorSystemPrompt = `
+You are the Swarm Retrieval Evaluator. Your task is to analyze the user's query, the accumulated context (evidence), and determine if we have enough specific, factual evidence to completely and accurately answer the user's query.
+
+CRITICAL RULE:
+- Set "enoughEvidence" to false if ANY question, name, or detail asked in the user query cannot be fully answered using the provided context.
+- Set "enoughEvidence" to true only if ALL requested parts, questions, and details in the user query can be fully and accurately answered using the provided context.
+
+Here are the available knowledge verticals and what information they contain:
+- pricing: Pricing tiers, enterprise plans, billing, custom contracts, and the founder's (Murali Dharan) contact details/phone number for proposals.
+- integrations: External service connections, Slack alerts, GitHub status sync, APIs, webhooks.
+- security: Security compliance standards (SOC2, GDPR), live audit runs, compliance database scans.
+- features: Core platform limits, sandbox execution, visual builders, capabilities.
+- agents: Fleetwood of specialized AI agents (Lina wellness coach, Astra blog researcher, DevOps Geni SRE commander, Aivyuh scanner, BI SQL cortex, etc.).
+- crawled_knowledge: Public articles, social media posts, reels, scripts, blogs.
+- github_knowledge: GitHub repo files, source code definitions, directory paths.
+
+If the context contains enough details, return:
+{
+  "enoughEvidence": true,
+  "explanation": "Brief explanation of why the evidence is sufficient."
+}
+
+If the context is missing key information, return:
+{
+  "enoughEvidence": false,
+  "explanation": "Brief explanation of what is missing from the evidence.",
+  "gapDescription": "Description of the gap in evidence.",
+  "suggestedQuery": "A refined, specific search query (using keywords) to fetch the missing details from the knowledge base.",
+  "suggestedVerticals": ["pricing", "integrations", "security", "features", "agents", "crawled_knowledge", "github_knowledge"] (choose one or more matching verticals from the list above that likely contain the gap information)
+}
+
+Be strict. If the user asks about a specific feature, integration, contact, or pricing tier, and it is not explicitly documented in the accumulated context, you MUST mark enoughEvidence as false and specify the gap.
+
+Respond ONLY with a valid JSON object. Do not include markdown code block formatting (like \`\`\`json) in your response.
+`;
+
+  const messages = [
+    { role: "system", content: evaluatorSystemPrompt },
+    {
+      role: "user",
+      content: `
+User Query: "${query}"
+Accumulated Context:
+${contextJson}
+
+Memories:
+${memories && memories.length ? memories.map(f => `- ${f}`).join("\n") : "None"}
+`
+    }
+  ];
+
+  try {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-4o-mini",
+        messages,
+        temperature: 0.0,
+        response_format: { type: "json_object" }
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (content) {
+        let cleanContent = content.trim();
+        if (cleanContent.startsWith("```")) {
+          cleanContent = cleanContent.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
+        }
+        return JSON.parse(cleanContent);
+      }
+    } else {
+      console.warn(`[LOOP ENGINEER] OpenRouter response not OK: ${response.status} ${await response.text().catch(() => "")}`);
+    }
+  } catch (err) {
+    console.error("[LOOP ENGINEER] Failed to evaluate evidence, failing open:", err);
+  }
+
+  return { enoughEvidence: true, explanation: "Failed to evaluate, continuing with current context." };
+};
+
 // --- CORE HANDLER (Streaming-friendly) ---
 export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone }) => {
   const startTime = parseFloat(performance.now());
@@ -1026,20 +1177,85 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
     return;
   }
 
-  // 3. Router logic
-  const { contextJson, matchedVerticals, allowedUrls, isExplicit } = await routeContext(query, session.last_vertical);
-
-  // Retrieve relevant semantic memories from Mem0 via the sidecar daemon
+  // 3. Router logic with Loop Engineering Iterative Reasoning
+  let currentQuery = query;
+  let forceVerticals = [];
+  let accumulatedContext = {};
+  let accumulatedMatchedVerticals = new Set();
+  let accumulatedAllowedUrls = new Set();
+  let finalIsExplicit = false;
   let memories = [];
-  try {
-    const mem0Result = await runMem0Sidecar("search", { user_id: activeSessionId, query });
-    memories = mem0Result.facts || [];
-  } catch (err) {
-    console.error("[Mem0 Node] Failed to search memories:", err.message);
+  const maxIterations = 3;
+  const evaluationApiKey = process.env.OPENROUTER_API_KEY;
+  const evaluationBaseUrl = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
+  let loopEvidenceSufficient = false;
+
+  for (let iter = 1; iter <= maxIterations; iter++) {
+    const loopPrefix = iter === 1 ? "🔍 " : " ➔ 🔍 ";
+    onChunk(loopPrefix);
+
+    const { contextJson: iterContextJson, mergedContext: iterMergedContext, matchedVerticals: iterMatchedVerticals, allowedUrls: iterAllowedUrls, isExplicit: iterIsExplicit } = await routeContext(currentQuery, session.last_vertical, forceVerticals);
+
+    console.info(`[LOOP ENGINEER] Iteration ${iter} matched verticals: ${iterMatchedVerticals.join(", ")}`);
+
+    mergeContexts(accumulatedContext, iterMergedContext);
+
+    for (const vertical of iterMatchedVerticals) {
+      accumulatedMatchedVerticals.add(vertical);
+    }
+    for (const url of iterAllowedUrls) {
+      accumulatedAllowedUrls.add(url);
+    }
+    if (iterIsExplicit) {
+      finalIsExplicit = true;
+    }
+
+    const currentAccumulatedMarkdown = jsonToMarkdown(accumulatedContext);
+
+    if (iter === 1) {
+      try {
+        const mem0Result = await runMem0Sidecar("search", { user_id: activeSessionId, query });
+        memories = mem0Result.facts || [];
+      } catch (err) {
+        console.error("[Mem0 Node] Failed to search memories:", err.message);
+      }
+    }
+
+    if (evaluationApiKey) {
+      onChunk(" 🤔");
+      const evaluation = await evaluateEvidence({
+        query,
+        contextJson: currentAccumulatedMarkdown,
+        memories,
+        apiKey: evaluationApiKey,
+        baseUrl: evaluationBaseUrl
+      });
+
+      console.info(`[LOOP ENGINEER] Evaluator output: ${JSON.stringify(evaluation)}`);
+
+      if (evaluation.enoughEvidence) {
+        onChunk(" ➔ ✅ 100%\n\n---\n\n");
+        loopEvidenceSufficient = true;
+        break;
+      } else {
+        onChunk(" ➔ ⚠️ ➔ 🔄");
+        currentQuery = evaluation.suggestedQuery;
+        forceVerticals = evaluation.suggestedVerticals || [];
+      }
+    } else {
+      break;
+    }
   }
 
-  // 4. Compile dynamic prompt
-  const compiledSystemPrompt = compilePrompt(matchedVerticals, contextJson, session, memories);
+  if (!loopEvidenceSufficient) {
+    onChunk(" ➔ ✅ 100% (Proceeding)\n\n---\n\n");
+  }
+
+  const finalContextJson = jsonToMarkdown(accumulatedContext);
+  const finalMatchedVerticals = Array.from(accumulatedMatchedVerticals);
+
+  // 4. Compile dynamic prompt using accumulated context
+  const compiledSystemPrompt = compilePrompt(finalMatchedVerticals, finalContextJson, session, memories);
 
   // 5. Invoke OpenRouter (openai/gpt-4o-mini) with streaming
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -1168,7 +1384,7 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
     const detokenizedResponse = COPILOT_PII_TOKENIZATION
       ? await securelytixDetokenize(responseText)
       : responseText;
-    const [safeResponse, violationType] = verifyOutput(detokenizedResponse, allowedUrls);
+    const [safeResponse, violationType] = verifyOutput(detokenizedResponse, accumulatedAllowedUrls);
 
     if (violationType) {
       try {
@@ -1185,8 +1401,8 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
 
     // 7. Update session data
     session.turn_count += 1;
-    if (isExplicit && matchedVerticals.length > 0) {
-      const valid = matchedVerticals.filter(v => v !== "faq");
+    if (finalIsExplicit && finalMatchedVerticals.length > 0) {
+      const valid = finalMatchedVerticals.filter(v => v !== "faq");
       if (valid.length > 0) {
         session.last_vertical = valid[0];
         if (!session.primary_interests.includes(session.last_vertical)) {

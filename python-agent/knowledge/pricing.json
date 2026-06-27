@@ -1,6 +1,6 @@
 {
   "vertical": "pricing",
-  "last_updated": "2026-06-05",
+  "last_updated": "2026-06-28",
   "philosophy": {
     "title": "Stop Renting Intelligence. Own Your Intelligence.",
     "description": "Swarm Agentic Lab does not offer fixed subscription tiers or one-size-fits-all pricing. Our platform serves as the central control plane for organizations building large-scale agent ecosystems and AI-powered operations."
@@ -8,23 +8,89 @@
   "pricing_factors": [
     "Business problem complexity",
     "Number of agents and workflows required",
-    "Deployment architecture",
-    "Training and enablement requirements",
-    "Ongoing support and governance needs",
-    "Security and compliance requirements"
+    "Deployment architecture (VPC, On-Prem, or Hybrid)",
+    "Training, custom enablement, and onboarding requirements",
+    "Ongoing support plan SLAs (Standard vs. 24/7 SRE)",
+    "Security, compliance, and custom LLM guardrail requirements"
   ],
   "why_no_fixed_plans": [
-    "Cloud-agnostic",
-    "LLM-agnostic",
-    "Framework-agnostic",
-    "Enterprise-focused",
-    "Designed for deployment within your environment"
+    "Cloud-agnostic deployment",
+    "LLM-agnostic flexibility (choose local or API models)",
+    "Framework-agnostic compatibility",
+    "Enterprise-focused customization",
+    "Designed for secure deployment within your own corporate perimeter"
   ],
   "limits": "There are no predefined public limits on active agents, workflows, or execution capacity. Capacity planning and deployment architecture are designed around your specific use case and infrastructure requirements.",
+  "commercial_models": {
+    "platform_licensing": {
+      "developer_sandbox": "Free 30-day trial for local testing, prototyping, and proof-of-concept development.",
+      "enterprise_license": "Annual base subscription covering control plane usage, orchestration, visual builders, and administrative tools."
+    },
+    "agent_economics": {
+      "seat_licenses": "Zero per-agent seat rents. You do not pay a monthly fee per active agent. Build and deploy as many agents as your infrastructure supports under the same base platform license.",
+      "agent_creation": {
+        "self_built": "Unlimited custom agents created by your in-house engineering team using our SDK are 100% free.",
+        "professional_services": "One-time development fees for agents designed, built, and integrated by Swarm professional services teams (quoted per complexity)."
+      },
+      "token_and_llm_costs": "You pay LLM API providers (OpenAI, Anthropic, OpenRouter, etc.) directly using your own API keys. Alternatively, you can run open-source models locally. Swarm never proxies, markups, or charges volume fees for token usage, typically saving organizations 40-70% in runtime costs compared to marked-up SaaS wrappers."
+    },
+    "billing_and_payment": {
+      "billing_cycles": [
+        "Annual contracts (standard)",
+        "Multi-year enterprise commitments (eligible for 15-25% platform fee discounts)"
+      ],
+      "monthly_options": "We do not offer monthly subscriptions or pay-as-you-go credit card billing for production environments.",
+      "payment_methods": [
+        "Bank Wire / ACH",
+        "Corporate Purchase Order (PO)"
+      ]
+    }
+  },
+  "support_plans": {
+    "standard_support": {
+      "cost": "Included in standard enterprise platform license",
+      "sla_response": "24 hours",
+      "channels": "Email and shared Slack channel support",
+      "hours": "9 AM to 5 PM business hours (Mon-Fri)"
+    },
+    "enterprise_premium_support": {
+      "cost": "Billed annually as an add-on fee",
+      "sla_response": "1 hour for critical S1 issues",
+      "channels": "24/7 pager duty, dedicated SRE support, dedicated customer success representative",
+      "hours": "24/7/365 coverage"
+    }
+  },
+  "standard_saas_faq": [
+    {
+      "question": "Is there a monthly subscription or credit card plan?",
+      "answer": "No. Swarm is built for secure, enterprise-grade private cloud deployments. All production licenses are billed on an annual or multi-year contract basis via invoice. We do not support monthly credit card billing."
+    },
+    {
+      "question": "How much does it cost to build a new agent?",
+      "answer": "If your own developers build agents using the Swarm SDK, it costs nothing extra. You own the code and execution rights. If you need our engineering team to build custom agents, integrations, or custom database connectors for you, we provide a professional services statement of work (SOW) with a one-time fixed fee."
+    },
+    {
+      "question": "Do you charge per active agent, or per developer seat?",
+      "answer": "Neither. We believe in letting you own your intelligence. Swarm does not charge seat rentals for developer accounts, nor does it charge runtime seat licenses for active agents. Once the enterprise platform license is established, you can build 5, 50, or 500 agents and give access to your entire team without worrying about escalating seat costs."
+    },
+    {
+      "question": "Who pays for the compute and hosting of the agents?",
+      "answer": "Since Swarm is deployed inside your own cloud infrastructure (VPC on AWS, GCP, Azure, or on-premises servers), you cover the compute and database hosting fees directly with your cloud provider. This architecture keeps your data secure and prevents vendor lock-in."
+    },
+    {
+      "question": "Are there yearly discounts?",
+      "answer": "Yes. Organizations committing to multi-year contracts (2 or 3 years) receive significant platform fee discounts (typically 15% to 25% depending on contract scale)."
+    },
+    {
+      "question": "How do you handle LLM API costs or token limits?",
+      "answer": "We don't markup your intelligence. You configure your own LLM API keys (e.g. from OpenAI, Anthropic, or OpenRouter) or hook up local open-source models (Llama, Mistral) running on your hardware. You pay the model providers directly for what you use, without any markups or proxy fees from Swarm."
+    }
+  ],
   "contact": {
-    "cta": "To receive a tailored proposal, implementation roadmap, and pricing estimate, please contact us directly.",
+    "cta": "To receive a tailored proposal, custom implementation roadmap, and pricing estimate, please contact our founder directly.",
     "name": "Murali Dharan",
     "role": "Founder, Swarm Agentic Lab",
-    "phone": "+91 97913 88549"
+    "phone": "+91 97913 88549",
+    "email": "murali@swarmagentic.com"
   }
 }

@@ -1,6 +1,11 @@
 import os from 'os';
 import net from 'net';
 import { query as dbQuery } from '../config/db.js';
+import { RoomServiceClient } from 'livekit-server-sdk';
+import { config } from '../config/livekit.js';
+
+const apiHost = config.livekit.url.replace("ws://", "http://").replace("wss://", "https://");
+const roomService = new RoomServiceClient(apiHost, config.livekit.apiKey, config.livekit.apiSecret);
 
 let startCpu = getCpuUsage();
 
@@ -69,13 +74,18 @@ export const startMetricsMonitor = (io) => {
       const freeMem = os.freemem();
       const memPercent = ((totalMem - freeMem) / totalMem) * 100;
 
-      // Active rooms query
+      // Active rooms query (fetch live rooms from LiveKit, fallback to DB if offline)
       let activeSessions = 0;
       try {
-        const sessRes = await dbQuery("SELECT COUNT(*) FROM sessions WHERE status = 'active'");
-        activeSessions = parseInt(sessRes.rows[0].count) || 0;
-      } catch (dbErr) {
-        // DB might be reconnecting/offline
+        const rooms = await roomService.listRooms();
+        activeSessions = rooms.length;
+      } catch (lkErr) {
+        try {
+          const sessRes = await dbQuery("SELECT COUNT(*) FROM sessions WHERE status = 'active'");
+          activeSessions = parseInt(sessRes.rows[0].count) || 0;
+        } catch (dbErr) {
+          // DB might be reconnecting/offline
+        }
       }
 
       // Check key microservice port health
