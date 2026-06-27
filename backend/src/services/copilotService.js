@@ -365,6 +365,8 @@ export const initEmbedder = async () => {
     }
   })();
   return embedderPromise;
+};
+
 // Start initialization immediately in background
 initEmbedder().catch(() => {});
 
