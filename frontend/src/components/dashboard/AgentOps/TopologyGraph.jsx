@@ -53,9 +53,10 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
     // Check if clicking a graph node
     const clickedNodeElement = e.target.closest('.graph-node');
     if (clickedNodeElement) {
-      const nodeId = clickedNodeElement.dataset.id;
+      e.preventDefault(); // Prevent text selection and default drag-and-drop
+      const nodeId = clickedNodeElement.getAttribute('data-id');
       const node = nodesRef.current.find(n => n.id === nodeId);
-      if (node && node.isConnected) {
+      if (node) {
         setIsDraggingNode(true);
         draggedNodeRef.current = nodeId;
         dragDistanceRef.current = 0;
@@ -72,6 +73,7 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
 
     // Canvas panning
     if (e.target.tagName === 'svg' || e.target.id === 'graph-bg') {
+      e.preventDefault(); // Prevent default browser selection behaviors
       setIsDragging(true);
       const { x: svgMouseX, y: svgMouseY } = getSVGCoords(e);
       setDragStart({ x: svgMouseX - transform.x, y: svgMouseY - transform.y });
@@ -93,6 +95,9 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
         node.y = svgY;
         node.vx = 0;
         node.vy = 0;
+        node.targetX = svgX;
+        node.targetY = svgY;
+        node.isManual = true;
       }
       
       dragDistanceRef.current += Math.abs(e.movementX) + Math.abs(e.movementY);
@@ -110,6 +115,21 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
   };
 
   const handleMouseUp = () => {
+    if (draggedNodeRef.current) {
+      const node = nodesRef.current.find(n => n.id === draggedNodeRef.current);
+      if (node) {
+        try {
+          let persistedPositions = {};
+          const stored = localStorage.getItem('topology_manual_positions');
+          if (stored) persistedPositions = JSON.parse(stored);
+          
+          persistedPositions[node.id] = { x: node.x, y: node.y };
+          localStorage.setItem('topology_manual_positions', JSON.stringify(persistedPositions));
+        } catch (e) {
+          console.warn('[TOPOLOGY] Failed to save node positions:', e);
+        }
+      }
+    }
     setIsDragging(false);
     setIsDraggingNode(false);
     draggedNodeRef.current = null;
@@ -157,6 +177,26 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
 
   const handleResetTransform = () => {
     setTransform({ x: 0, y: 0, scale: 1 });
+  };
+
+  const handleResetPositions = () => {
+    try {
+      localStorage.removeItem('topology_manual_positions');
+    } catch (e) {
+      console.warn('[TOPOLOGY] Failed to clear saved positions:', e);
+    }
+
+    nodesRef.current.forEach(node => {
+      const defaultNode = graphData.nodes.find(n => n.id === node.id);
+      if (defaultNode) {
+        node.targetX = defaultNode.x;
+        node.targetY = defaultNode.y;
+        node.isManual = false;
+        // Apply velocity pointing towards default coordinate for smooth sliding animation
+        node.vx = (defaultNode.x - node.x) * 0.12;
+        node.vy = (defaultNode.y - node.y) * 0.12;
+      }
+    });
   };
 
   // Group and arrange nodes & external microservices dynamically based on density
@@ -295,8 +335,18 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
 
   // Synchronize dynamic elements whenever topology structure changes
   useEffect(() => {
+    let persistedPositions = {};
+    try {
+      const stored = localStorage.getItem('topology_manual_positions');
+      if (stored) persistedPositions = JSON.parse(stored);
+    } catch (e) {
+      console.warn('[TOPOLOGY] Failed to load saved positions:', e);
+    }
+
     const nextNodes = graphData.nodes.map(n => {
       const existing = nodesRef.current.find(ex => ex.id === n.id);
+      const persisted = persistedPositions[n.id];
+
       if (existing) {
         return {
           ...n,
@@ -304,18 +354,21 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
           y: existing.y,
           vx: existing.vx,
           vy: existing.vy,
-          targetX: n.x,
-          targetY: n.y
+          targetX: existing.targetX !== undefined ? existing.targetX : n.x,
+          targetY: existing.targetY !== undefined ? existing.targetY : n.y,
+          isManual: existing.isManual || false
         };
       } else {
+        const usePersisted = persisted !== undefined;
         return {
           ...n,
-          x: n.x + (Math.random() * 60 - 30),
-          y: n.y + (Math.random() * 60 - 30),
+          x: usePersisted ? persisted.x : (n.x + (Math.random() * 60 - 30)),
+          y: usePersisted ? persisted.y : (n.y + (Math.random() * 60 - 30)),
           vx: 0,
           vy: 0,
-          targetX: n.x,
-          targetY: n.y
+          targetX: usePersisted ? persisted.x : n.x,
+          targetY: usePersisted ? persisted.y : n.y,
+          isManual: usePersisted
         };
       }
     });
@@ -367,10 +420,14 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
             const fx = (dx / dist) * f * 100;
             const fy = (dy / dist) * f * 100;
             
-            u.vx -= fx;
-            u.vy -= fy;
-            v.vx += fx;
-            v.vy += fy;
+            if (!u.isManual) {
+              u.vx -= fx;
+              u.vy -= fy;
+            }
+            if (!v.isManual) {
+              v.vx += fx;
+              v.vy += fy;
+            }
           }
         }
       }
@@ -392,17 +449,21 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
           const fx = (dx / dist) * f;
           const fy = (dy / dist) * f;
           
-          u.vx += fx;
-          u.vy += fy;
-          v.vx -= fx;
-          v.vy -= fy;
+          if (!u.isManual) {
+            u.vx += fx;
+            u.vy += fy;
+          }
+          if (!v.isManual) {
+            v.vx -= fx;
+            v.vy -= fy;
+          }
         }
       });
 
       // 3. Category structured alignment (soft gravity towards targets)
       const kAnchor = 0.06;
       nodes.forEach(node => {
-        if (node.id === draggedNodeRef.current) return;
+        if (node.isManual || node.id === draggedNodeRef.current) return;
         
         const isMainAgent = isSingle && node.type === 'agent';
         const strength = isMainAgent ? 0.25 : kAnchor;
@@ -414,7 +475,7 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
       // 4. Premium floating micro-drift effect
       const time = Date.now() * 0.001;
       nodes.forEach((node, idx) => {
-        if (node.id === draggedNodeRef.current) return;
+        if (node.isManual || node.id === draggedNodeRef.current) return;
         node.vx += Math.sin(time + idx) * 0.04;
         node.vy += Math.cos(time * 0.8 + idx) * 0.04;
       });
@@ -422,7 +483,7 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
       // 5. Integrate velocity, damp, and keep bounded
       const damping = 0.75;
       nodes.forEach(node => {
-        if (node.id === draggedNodeRef.current) {
+        if (node.isManual || node.id === draggedNodeRef.current) {
           node.vx = 0;
           node.vy = 0;
           return;
@@ -625,7 +686,7 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
                   onMouseEnter={isConnected ? () => setHoveredNode(node) : undefined}
                   onMouseLeave={isConnected ? () => setHoveredNode(null) : undefined}
                   onClick={() => handleNodeClick(node)}
-                  style={{ cursor: (isAgent && isConnected) ? 'pointer' : (isConnected ? 'grab' : 'default') }}
+                  style={{ cursor: isAgent ? 'pointer' : 'grab' }}
                 >
                   {/* Glow Filter for Active Card */}
                   {isOnline && isConnected && (
@@ -730,6 +791,7 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
         <button onClick={handleZoomIn} title="Zoom In">+</button>
         <button onClick={handleZoomOut} title="Zoom Out">−</button>
         <button onClick={handleResetTransform} title="Reset View">⟲</button>
+        <button onClick={handleResetPositions} title="Reset Layout" style={{ width: 'auto', padding: '0 10px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reset Nodes</button>
       </div>
     </div>
   );

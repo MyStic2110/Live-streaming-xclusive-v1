@@ -272,18 +272,32 @@ export default function AgentOps({ onBack }) {
 
   // Temporarily highlight visual routes in the topology graph with rich metadata
   const triggerFlowGlow = (agentId, targetService, meta = {}) => {
-    const key = `${agentId}->${targetService}_service`;
+    const isCopilot = agentId.includes('copilot');
+    const isLoopRouted = isCopilot && ['llm_gateway', 'mem0', 'searxng'].includes(targetService);
+    
+    // Determine the primary flow key
+    const fromId = isLoopRouted ? 'loop_engineering_service' : agentId;
+    const key = `${fromId}->${targetService}_service`;
+    const copilotLoopKey = `${agentId}->loop_engineering_service`;
+    
     const payload = { active: true, ...meta };
     setActiveTelemetryFlows(prev => {
       const next = { ...prev, [key]: payload };
+      if (isLoopRouted) {
+        next[copilotLoopKey] = { active: true, ...meta, event: 'LOOP ROUTE', label: 'evaluating', direction: '→' };
+      }
       if (targetService === 'mem0') {
         next['mem0_service->qdrant_service'] = { active: true, ...meta, event: 'MEM LOOKUP', label: 'vector', direction: '→' };
       }
       return next;
     });
+
     setTimeout(() => {
       setActiveTelemetryFlows(prev => {
         const next = { ...prev, [key]: { active: false } };
+        if (isLoopRouted) {
+          next[copilotLoopKey] = { active: false };
+        }
         if (targetService === 'mem0') {
           next['mem0_service->qdrant_service'] = { active: false };
         }
