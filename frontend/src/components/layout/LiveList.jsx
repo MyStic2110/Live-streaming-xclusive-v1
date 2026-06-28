@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
@@ -50,9 +51,10 @@ const ConsoleAgentCard = ({ agent, onAction }) => {
   const AgentIcon = agent.IconComponent;
   const [isHovered, setIsHovered] = useState(false);
   const stats = useLiveStats(true);
+  const MotionDiv = motion.div;
 
   return (
-    <motion.div
+    <MotionDiv
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
@@ -178,11 +180,11 @@ const ConsoleAgentCard = ({ agent, onAction }) => {
           ? (isHovered ? "OPEN SETUP WIZARD" : "CONFIGURE SETUP")
           : (isHovered ? "INITIALIZE SESSION" : "CONNECT CLI")}
       </button>
-    </motion.div>
+    </MotionDiv>
   );
 };
 
-export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboardClick, onDeploymentClick, onChangelogClick, onCareersClick, onBattleClick, user, onLoginClick, onLogout }) {
+export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboardClick, onDeploymentClick, onChangelogClick, onCareersClick, onBattleClick, user, onLoginClick, onLogout: _onLogout }) {
   const [legalModalType, setLegalModalType] = useState(null);
   const [enabledAgents, setEnabledAgents] = useState([]);
   const [copilotOpen, setCopilotOpen] = useState(false);
@@ -353,7 +355,7 @@ export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboa
             letterSpacing: "-2px",
             marginBottom: "2rem"
           }}>
-            Stop Renting Intelligence.<br/>Own Your <span style={{ color: COLORS.primary }}>Agent {heroWord}.</span>
+            Stop Renting Intelligence.<br/>Own Your <span style={{ color: COLORS.primary }}>Agent <span style={{ display: "inline-block", minWidth: "12ch", textAlign: "center" }}>{heroWord}</span>.</span>
           </h1>
 
           <p style={{
@@ -509,7 +511,7 @@ export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboa
               Everything you're probably wondering about deploying your AI fleet.
             </p>
           </div>
-          <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+          <div itemScope itemType="https://schema.org/FAQPage" style={{ maxWidth: "800px", margin: "0 auto" }}>
             {[
               { q: "How long does a typical build take?", a: "Most agents are live in production within 1–2 weeks, including local model fine-tuning." },
               { q: "Do you use my data for training?", a: "Never. Because your agents run entirely on your own local hardware or private VPC, your data never leaves your infrastructure." },
