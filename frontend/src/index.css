@@ -839,6 +839,38 @@ body {
   letter-spacing: 0.5px;
 }
 
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes borderPulse {
+  0%, 100% {
+    border-color: rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.1);
+  }
+  50% {
+    border-color: rgba(59, 130, 246, 0.7);
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.35);
+  }
+}
+
+@keyframes pulseScale {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+.eye-catchy-badge {
+  animation: pulseScale 3s ease-in-out infinite, borderPulse 3s ease-in-out infinite;
+  transition: all 0.3s ease;
+}
+
 
 
 

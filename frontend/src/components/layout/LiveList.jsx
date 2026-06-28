@@ -501,6 +501,277 @@ export default function LiveList({ onJoin, onBlogClick, onShortsClick, onDashboa
           </div>
         </section>
 
+        {/* How It Works Section */}
+        <section id="how-it-works" style={{ padding: "8rem 5%", background: COLORS.bgSoft, borderTop: `1px solid ${COLORS.border}`, borderBottom: `1px solid ${COLORS.border}` }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+            <div style={{ textAlign: "center", marginBottom: "5rem" }}>
+              <span style={{
+                fontSize: "0.85rem",
+                fontWeight: "900",
+                color: COLORS.primary,
+                textTransform: "uppercase",
+                letterSpacing: "3px",
+                marginBottom: "1rem",
+                display: "block"
+              }}>
+                HOW IT WORKS
+              </span>
+              <h2 style={{
+                fontSize: "clamp(2.2rem, 5vw, 3.2rem)",
+                fontWeight: "900",
+                color: "#0f172a",
+                lineHeight: "1.1",
+                letterSpacing: "-1.5px",
+                maxWidth: "700px",
+                margin: "0 auto"
+              }}>
+                From sold to shipped in weeks, not quarters.
+              </h2>
+            </div>
+
+            {/* Grid of Steps */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: "2.5rem",
+              position: "relative"
+            }}>
+              {[
+                {
+                  num: "01",
+                  title: "Discover",
+                  desc: "Kickoff call. We map your systems, identify the highest-leverage AI opportunities."
+                },
+                {
+                  num: "02",
+                  title: "Build",
+                  desc: "Built in our environment first, tested with real data before it touches your systems."
+                },
+                {
+                  num: "03",
+                  title: "Ship",
+                  desc: "Connected to your live tools, documented, handed off. You own everything we build."
+                },
+                {
+                  num: "04",
+                  title: "Support",
+                  desc: "14 to 30 days of bug fixes included. Optional retainer for ongoing partnership."
+                }
+              ].map((step) => (
+                <div 
+                  key={step.num}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.8)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(0, 0, 0, 0.05)",
+                    borderRadius: "24px",
+                    padding: "2.5rem 2rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "1.25rem",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.01)",
+                    transition: "all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)",
+                    position: "relative"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-6px)";
+                    e.currentTarget.style.boxShadow = "0 15px 35px rgba(59, 130, 246, 0.08)";
+                    e.currentTarget.style.borderColor = "rgba(59, 130, 246, 0.2)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.01)";
+                    e.currentTarget.style.borderColor = "rgba(0, 0, 0, 0.05)";
+                  }}
+                >
+                  <div style={{
+                    fontSize: "2.8rem",
+                    fontWeight: "900",
+                    fontFamily: "'Orbitron', sans-serif",
+                    background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    lineHeight: "1"
+                  }}>
+                    {step.num}
+                  </div>
+                  <h3 style={{
+                    fontSize: "1.35rem",
+                    fontWeight: "900",
+                    color: "#0f172a",
+                    margin: 0
+                  }}>
+                    {step.title}
+                  </h3>
+                  <p style={{
+                    fontSize: "0.92rem",
+                    color: COLORS.textMuted,
+                    lineHeight: "1.6",
+                    margin: 0
+                  }}>
+                    {step.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Founding Clients Section */}
+        <section id="founding-clients" style={{ padding: "6rem 5%", background: "#ffffff", borderBottom: `1px solid ${COLORS.border}` }}>
+          <div style={{
+            maxWidth: "1000px",
+            margin: "0 auto",
+            background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)",
+            borderRadius: "32px",
+            padding: "5rem 3rem",
+            color: "#ffffff",
+            position: "relative",
+            overflow: "hidden",
+            boxShadow: "0 25px 50px -12px rgba(15, 23, 42, 0.25)"
+          }}>
+            {/* Glowing blur effects */}
+            <div style={{
+              position: "absolute",
+              top: "-20%",
+              left: "-10%",
+              width: "300px",
+              height: "300px",
+              background: "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)",
+              pointerEvents: "none"
+            }} />
+            <div style={{
+              position: "absolute",
+              bottom: "-20%",
+              right: "-10%",
+              width: "300px",
+              height: "300px",
+              background: "radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%)",
+              pointerEvents: "none"
+            }} />
+
+            <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+              <span style={{
+                fontSize: "0.85rem",
+                fontWeight: "900",
+                color: "#60a5fa",
+                textTransform: "uppercase",
+                letterSpacing: "3px",
+                marginBottom: "0.75rem"
+              }}>
+                FOUNDING CLIENTS
+              </span>
+
+              <span style={{
+                fontSize: "1.05rem",
+                fontWeight: "800",
+                color: "#34d399",
+                marginBottom: "1.5rem",
+                letterSpacing: "0.5px"
+              }}>
+                5 founding spots left.
+              </span>
+
+              <h2 style={{
+                fontSize: "clamp(2.2rem, 4.5vw, 3.2rem)",
+                fontWeight: "900",
+                lineHeight: "1.2",
+                marginBottom: "1.5rem",
+                background: "linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent"
+              }}>
+                Founding rates 50% off.
+              </h2>
+
+              <p style={{
+                fontSize: "1.1rem",
+                color: "#94a3b8",
+                lineHeight: "1.7",
+                maxWidth: "680px",
+                marginBottom: "2.5rem",
+                margin: "0 auto 2.5rem"
+              }}>
+                We're taking on our first 5 clients at founding rates in exchange for case study rights and feedback. Founding clients lock in their retainer rate for life.
+              </p>
+
+              {/* Scarcity Counter Badge */}
+              <div className="eye-catchy-badge" style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "10px",
+                background: "rgba(16, 185, 129, 0.08)",
+                border: "1px solid rgba(16, 185, 129, 0.2)",
+                padding: "8px 20px",
+                borderRadius: "99px",
+                marginBottom: "2.5rem"
+              }}>
+                <span style={{
+                  position: "relative",
+                  display: "flex",
+                  height: "8px",
+                  width: "8px"
+                }}>
+                  <span style={{
+                    animation: "ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite",
+                    position: "absolute",
+                    display: "inline-flex",
+                    height: "100%",
+                    width: "100%",
+                    borderRadius: "50%",
+                    backgroundColor: "#10b981",
+                    opacity: 0.75
+                  }} />
+                  <span style={{
+                    position: "relative",
+                    display: "inline-flex",
+                    borderRadius: "50%",
+                    height: "8px",
+                    width: "8px",
+                    backgroundColor: "#10b981"
+                  }} />
+                </span>
+                <span style={{
+                  fontSize: "0.85rem",
+                  fontWeight: "800",
+                  color: "#34d399",
+                  textTransform: "uppercase",
+                  letterSpacing: "1px"
+                }}>
+                  5 founding spots left
+                </span>
+              </div>
+
+              {/* CTA Button */}
+              <button
+                onClick={onLoginClick}
+                style={{
+                  padding: "16px 40px",
+                  background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                  border: "none",
+                  color: "#ffffff",
+                  borderRadius: "14px",
+                  fontSize: "1.05rem",
+                  fontWeight: "800",
+                  cursor: "pointer",
+                  boxShadow: "0 10px 25px -5px rgba(59, 130, 246, 0.4)",
+                  transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 15px 30px -5px rgba(59, 130, 246, 0.5)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 10px 25px -5px rgba(59, 130, 246, 0.4)";
+                }}
+              >
+                Apply for a founding spot →
+              </button>
+            </div>
+          </div>
+        </section>
+
         {/* FAQ Section */}
         <section id="faq" style={{ padding: "8rem 5%", background: "white" }}>
           <div style={{ textAlign: "center", marginBottom: "4rem" }}>
