@@ -1068,6 +1068,13 @@ Be strict. If the user asks about a specific feature, integration, contact, or p
 Respond ONLY with a valid JSON object. Do not include markdown code block formatting (like \`\`\`json) in your response.
 `;
 
+  // Guard: evaluator context can be huge; cap it to stay under OpenRouter's 128K token limit.
+  // The evaluator only needs a representative sample, not the full dump.
+  const MAX_EVAL_CONTEXT_CHARS = 40000;
+  const truncatedContextJson = contextJson.length > MAX_EVAL_CONTEXT_CHARS
+    ? contextJson.slice(0, MAX_EVAL_CONTEXT_CHARS) + '\n...[context truncated for evaluation]'
+    : contextJson;
+
   const messages = [
     { role: "system", content: evaluatorSystemPrompt },
     {
@@ -1075,7 +1082,7 @@ Respond ONLY with a valid JSON object. Do not include markdown code block format
       content: `
 User Query: "${query}"
 Accumulated Context:
-${contextJson}
+${truncatedContextJson}
 
 Memories:
 ${memories && memories.length ? memories.map(f => `- ${f}`).join("\n") : "None"}
@@ -1094,6 +1101,7 @@ ${memories && memories.length ? memories.map(f => `- ${f}`).join("\n") : "None"}
         model: "openai/gpt-4o-mini",
         messages,
         temperature: 0.0,
+        max_tokens: 400,
         response_format: { type: "json_object" }
       })
     });
