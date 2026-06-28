@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, memo } from "react";
 import CostGuardAlert from "./CostGuardAlert";
 import { LiveKitRoom, useRoomContext, useLocalParticipant, useRemoteParticipants } from "@livekit/components-react";
 import { Send, ArrowLeft, Bot, User, Server, ShieldCheck, HardHat, Lock, Ghost, Monitor, BarChart2, Terminal, ChevronDown, ChevronUp } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -99,7 +99,7 @@ const CollapsiblePre = ({ children, ...props }) => {
   );
 };
 
-function DevopsGeniChat({ roomData, onLeave }) {
+function DevopsGeniChat({ roomData: _roomData, onLeave }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
   const [messages, setMessages] = useState([
@@ -401,41 +401,84 @@ function DevopsGeniChat({ roomData, onLeave }) {
                       <ReactMarkdown 
                         remarkPlugins={[remarkGfm]}
                         components={{
-                          h1: ({node, ...props}) => <h1 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#0f172a", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", marginBottom: "12px" }} {...props} />,
-                          h2: ({node, ...props}) => <h2 style={{ fontSize: "1.15rem", fontWeight: "800", color: "#0f172a", marginBottom: "10px", marginTop: "14px" }} {...props} />,
-                          h3: ({node, ...props}) => <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#0284c7", marginBottom: "8px", marginTop: "12px" }} {...props} />,
-                          p: ({node, ...props}) => <p style={{ marginBottom: "10px", lineHeight: "1.6", color: "#334155" }} {...props} />,
-                          li: ({node, ...props}) => <li style={{ marginBottom: "6px", color: "#334155", lineHeight: "1.6" }} {...props} />,
-                          ul: ({node, ...props}) => <ul style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
-                          ol: ({node, ...props}) => <ol style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
-                          strong: ({node, ...props}) => {
+                          h1: ({node: _node, ...props}) => <h1 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#0f172a", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", marginBottom: "12px" }} {...props} />,
+                          h2: ({node: _node, ...props}) => <h2 style={{ fontSize: "1.15rem", fontWeight: "800", color: "#0f172a", marginBottom: "10px", marginTop: "14px" }} {...props} />,
+                          h3: ({node: _node, ...props}) => <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#0284c7", marginBottom: "8px", marginTop: "12px" }} {...props} />,
+                          p: ({node: _node, ...props}) => <p style={{ marginBottom: "10px", lineHeight: "1.6", color: "#334155" }} {...props} />,
+                          li: ({node: _node, ...props}) => <li style={{ marginBottom: "6px", color: "#334155", lineHeight: "1.6" }} {...props} />,
+                          ul: ({node: _node, ...props}) => <ul style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
+                          ol: ({node: _node, ...props}) => <ol style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
+                          strong: ({node: _node, ...props}) => {
                             const text = props.children[0];
                             if (typeof text === 'string') {
-                              if (text.includes("Action Recommended") || text.includes("Recommended Action")) {
+                              const lowerText = text.toLowerCase();
+                              if (lowerText.includes("action recommended") || lowerText.includes("recommended action")) {
                                 return (
-                                  <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#0284c7", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                    🔧 {text}
+                                  <span style={{ 
+                                    display: "inline-flex", 
+                                    alignItems: "center", 
+                                    gap: "6px", 
+                                    backgroundColor: "rgba(2, 132, 199, 0.08)", 
+                                    color: "#0284c7", 
+                                    border: "1px solid rgba(2, 132, 199, 0.2)",
+                                    padding: "4px 8px", 
+                                    borderRadius: "6px", 
+                                    fontWeight: "800", 
+                                    fontSize: "0.78rem", 
+                                    textTransform: "uppercase", 
+                                    letterSpacing: "0.5px",
+                                    marginRight: "6px"
+                                  }}>
+                                    🔧 {text.replace(/:/g, '').trim()}
                                   </span>
                                 );
                               }
-                              if (text.includes("Impact Analysis") || text.includes("Resource Savings")) {
+                              if (lowerText.includes("impact analysis") || lowerText.includes("resource savings")) {
                                 return (
-                                  <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#16a34a", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                    📈 {text}
+                                  <span style={{ 
+                                    display: "inline-flex", 
+                                    alignItems: "center", 
+                                    gap: "6px", 
+                                    backgroundColor: "rgba(22, 163, 74, 0.08)", 
+                                    color: "#16a34a", 
+                                    border: "1px solid rgba(22, 163, 74, 0.2)",
+                                    padding: "4px 8px", 
+                                    borderRadius: "6px", 
+                                    fontWeight: "800", 
+                                    fontSize: "0.78rem", 
+                                    textTransform: "uppercase", 
+                                    letterSpacing: "0.5px",
+                                    marginRight: "6px"
+                                  }}>
+                                    📈 {text.replace(/:/g, '').trim()}
                                   </span>
                                 );
                               }
-                              if (text.includes("Risk Assessment") || text.includes("Critical Risk") || text.includes("High Risk")) {
+                              if (lowerText.includes("risk assessment") || lowerText.includes("critical risk") || lowerText.includes("high risk")) {
                                 return (
-                                  <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#dc2626", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                    ⚠️ {text}
+                                  <span style={{ 
+                                    display: "inline-flex", 
+                                    alignItems: "center", 
+                                    gap: "6px", 
+                                    backgroundColor: "rgba(220, 38, 38, 0.08)", 
+                                    color: "#dc2626", 
+                                    border: "1px solid rgba(220, 38, 38, 0.2)",
+                                    padding: "4px 8px", 
+                                    borderRadius: "6px", 
+                                    fontWeight: "800", 
+                                    fontSize: "0.78rem", 
+                                    textTransform: "uppercase", 
+                                    letterSpacing: "0.5px",
+                                    marginRight: "6px" 
+                                  }}>
+                                    ⚠️ {text.replace(/:/g, '').trim()}
                                   </span>
                                 );
                               }
                             }
                             return <strong style={{ color: "#0f172a", fontWeight: "700" }} {...props} />;
                           },
-                          code: ({node, inline, className, children, ...props}) => {
+                          code: ({node: _node, inline: _inline, className: _className, children, ...props}) => {
                             return (
                               <code 
                                 style={{ 
@@ -452,7 +495,7 @@ function DevopsGeniChat({ roomData, onLeave }) {
                               </code>
                             );
                           },
-                          pre: ({node, ...props}) => <CollapsiblePre {...props} />
+                          pre: ({node: _node, ...props}) => <CollapsiblePre {...props} />
                         }}
                       >
                         {msg.text || msg.message || ""}
@@ -517,26 +560,29 @@ function DevopsGeniChat({ roomData, onLeave }) {
               { label: "Ghost Python processes",     Icon: Ghost,        action: "👻 Check for ghost Python processes" },
               { label: "Node.js crash logs",         Icon: Monitor,      action: "🖥️ Analyze Node.js backend crash logs" },
               { label: "Swarm memory usage",         Icon: BarChart2,    action: "📊 What is the current Swarm memory usage?" }
-            ].map(({ label, Icon, action }) => (
-              <button
-                key={action}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleQuickAction(action);
-                }}
-                style={{
-                  whiteSpace: "nowrap", padding: "8px 14px", borderRadius: "20px", border: "1px solid #e5e7eb",
-                  backgroundColor: "#ffffff", fontSize: "0.82rem", color: "#374151", cursor: "pointer",
-                  boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", transition: "all 0.2s",
-                  display: "flex", alignItems: "center", gap: "6px"
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f0f9ff"; e.currentTarget.style.borderColor = "#7dd3fc"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#ffffff"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
-              >
-                <Icon size={13} strokeWidth={2.2} color="#0284c7" />
-                {label}
-              </button>
-            ))}
+            ].map(({ label, Icon, action }) => {
+              const IconComponent = Icon;
+              return (
+                <button
+                  key={action}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleQuickAction(action);
+                  }}
+                  style={{
+                    whiteSpace: "nowrap", padding: "8px 14px", borderRadius: "20px", border: "1px solid #e5e7eb",
+                    backgroundColor: "#ffffff", fontSize: "0.82rem", color: "#374151", cursor: "pointer",
+                    boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", transition: "all 0.2s",
+                    display: "flex", alignItems: "center", gap: "6px"
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f0f9ff"; e.currentTarget.style.borderColor = "#7dd3fc"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#ffffff"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+                >
+                  <IconComponent size={13} strokeWidth={2.2} color="#0284c7" />
+                  {label}
+                </button>
+              );
+            })}
           </div>
           <form 
             onSubmit={handleSend}

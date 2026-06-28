@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState } from "react";
 import axios from "axios";
 import LiveList from "./components/layout/LiveList";
@@ -21,6 +22,7 @@ import DevopsOrb from "./components/layout/DevopsOrb";
 import SwarmShortsPage from "./components/dashboard/SwarmShortsPage";
 import DashboardPage from "./components/dashboard/DashboardPage";
 import AgentOps from "./components/dashboard/AgentOps/AgentOps";
+import PromptPlayground from "./components/dashboard/PromptPlayground";
 import ComplianceDashboard from "./components/dashboard/ComplianceDashboard";
 import GovernedDeployment from "./components/dashboard/GovernedDeployment";
 import NotFoundPage from "./components/layout/NotFoundPage";
@@ -38,7 +40,7 @@ function App() {
     try {
       const stored = localStorage.getItem("user");
       return stored ? JSON.parse(stored) : null;
-    } catch (e) {
+    } catch {
       return null;
     }
   });
@@ -47,8 +49,82 @@ function App() {
   // ponytail: unified view mode state
   const [viewMode, setViewMode] = useState(null); // 'blog' | 'shorts' | 'changelog' | 'careers' | null
   const [currentPath, setCurrentPath] = useState(window.location.hash || window.location.pathname);
-  const [isWaPopupOpen, setIsWaPopupOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("fleet");
+
+  const isFleetPath =
+    currentPath.replace(/\/$/, "") === "/fleet" ||
+    window.location.hash.replace(/\/$/, "") === "#/fleet" ||
+    window.location.hash === "#fleet" ||
+    window.location.hash === "#/fleet/";
+
+  const isShortsPath =
+    currentPath.split("?")[0].replace(/\/$/, "") === "/sneak-peak" ||
+    window.location.hash.split("?")[0] === "#/sneak-peak" ||
+    currentPath.includes("sneak-peak");
+
+  const isDashboardPath =
+    currentPath.replace(/\/$/, "") === "/dashboard" ||
+    window.location.hash === "#/dashboard" ||
+    window.location.hash === "#dashboard";
+
+  const isCompliancePath =
+    currentPath.replace(/\/$/, "") === "/compliance" ||
+    window.location.hash.replace(/\/$/, "") === "#/compliance" ||
+    window.location.hash === "#compliance" ||
+    window.location.hash === "#/compliance/";
+
+  const isDeploymentPath =
+    currentPath.replace(/\/$/, "") === "/governed-deployment" ||
+    window.location.hash.replace(/\/$/, "") === "#/governed-deployment" ||
+    window.location.hash === "#governed-deployment" ||
+    window.location.hash === "#/governed-deployment/";
+
+  const isAgentOpsPath =
+    currentPath.replace(/\/$/, "") === "/agent-ops" ||
+    window.location.hash === "#/agent-ops" ||
+    window.location.hash === "#agent-ops";
+
+  const isPlaygroundPath =
+    currentPath.replace(/\/$/, "") === "/playground" ||
+    window.location.hash === "#/playground" ||
+    window.location.hash === "#playground";
+
+  const isInsightsPath =
+    currentPath.replace(/\/$/, "") === "/insights" ||
+    window.location.hash.replace(/\/$/, "") === "#/insights" ||
+    window.location.hash === "#insights" ||
+    window.location.hash === "#/insights/";
+
+  const isChangelogPath =
+    currentPath.replace(/\/$/, "") === "/changelog" ||
+    window.location.hash.replace(/\/$/, "") === "#/changelog" ||
+    window.location.hash === "#changelog";
+
+  const isBlogPath =
+    currentPath.replace(/\/$/, "") === "/blog" ||
+    currentPath.startsWith("/blog/") ||
+    window.location.hash.replace(/\/$/, "") === "#/blog" ||
+    window.location.hash.startsWith("#/blog/");
+
+  const isCareersPath =
+    currentPath.replace(/\/$/, "") === "/careers" ||
+    window.location.hash.replace(/\/$/, "") === "#/careers" ||
+    window.location.hash === "#careers";
+
+  const isBattlePath =
+    currentPath.replace(/\/$/, "") === "/battle" ||
+    window.location.hash.replace(/\/$/, "") === "#/battle" ||
+    window.location.hash === "#battle" ||
+    currentPath.includes("battle");
+
+  const isLoginPath =
+    currentPath.replace(/\/$/, "") === "/login" ||
+    window.location.hash.replace(/\/$/, "") === "#/login" ||
+    window.location.hash === "#login";
+
+  const isResetPasswordPath =
+    currentPath.replace(/\/$/, "") === "/reset-password" ||
+    window.location.hash.replace(/\/$/, "") === "#/reset-password";
 
   // Sync currentPath to activeTab
   React.useEffect(() => {
@@ -59,6 +135,8 @@ function App() {
     else if (isCompliancePath) setActiveTab("compliance");
     else if (isChangelogPath) setActiveTab("changelog");
     else if (isCareersPath) setActiveTab("careers");
+    else if (isAgentOpsPath) setActiveTab("agent-ops");
+    else if (isPlaygroundPath) setActiveTab("playground");
     else setActiveTab("fleet");
   }, [currentPath]);
 
@@ -80,7 +158,9 @@ function App() {
     } else if (tabId === "agent-ops") {
       window.history.pushState({}, "", "/agent-ops");
       setCurrentPath("/agent-ops");
-    } else if (tabId === "insights") {
+    } else if (tabId === "playground") {
+      window.history.pushState({}, "", "/playground");
+      setCurrentPath("/playground");
     } else if (tabId === "insights") {
       window.history.pushState({}, "", "/insights");
       setCurrentPath("/insights");
@@ -106,16 +186,7 @@ function App() {
     }
   }, [token]);
 
-  React.useEffect(() => {
-    // Auto-open WhatsApp popup after 5 seconds if not closed in this session
-    const hasClosed = sessionStorage.getItem("wa-popup-closed");
-    if (!hasClosed) {
-      const timer = setTimeout(() => {
-        setIsWaPopupOpen(true);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+
 
   React.useEffect(() => {
     const handleLocationChange = () => {
@@ -195,10 +266,6 @@ function App() {
     setRoomData(null);
   };
 
-  const toggleBlog = () => {
-    setViewMode(viewMode === 'blog' ? null : 'blog');
-  };
-
   // ponytail: replaced individual room type flags with a lookup map
   const ROOM_COMPONENTS = {
     LINA: LinaRoom,
@@ -218,75 +285,7 @@ function App() {
   const CurrentRoom = ROOM_COMPONENTS[roomData?.creatorId] || VideoRoom; // fallback to generic VideoRoom
 
 
-  const isFleetPath =
-    currentPath.replace(/\/$/, "") === "/fleet" ||
-    window.location.hash.replace(/\/$/, "") === "#/fleet" ||
-    window.location.hash === "#fleet" ||
-    window.location.hash === "#/fleet/";
 
-  const isShortsPath =
-    currentPath.split("?")[0].replace(/\/$/, "") === "/sneak-peak" ||
-    window.location.hash.split("?")[0] === "#/sneak-peak" ||
-    currentPath.includes("sneak-peak");
-
-  const isDashboardPath =
-    currentPath.replace(/\/$/, "") === "/dashboard" ||
-    window.location.hash === "#/dashboard" ||
-    window.location.hash === "#dashboard";
-
-  const isCompliancePath =
-    currentPath.replace(/\/$/, "") === "/compliance" ||
-    window.location.hash.replace(/\/$/, "") === "#/compliance" ||
-    window.location.hash === "#compliance" ||
-    window.location.hash === "#/compliance/";
-
-  const isDeploymentPath =
-    currentPath.replace(/\/$/, "") === "/governed-deployment" ||
-    window.location.hash.replace(/\/$/, "") === "#/governed-deployment" ||
-    window.location.hash === "#governed-deployment" ||
-    window.location.hash === "#/governed-deployment/";
-
-  const isAgentOpsPath =
-    currentPath.replace(/\/$/, "") === "/agent-ops" ||
-    window.location.hash === "#/agent-ops" ||
-    window.location.hash === "#agent-ops";
-
-  const isInsightsPath =
-    currentPath.replace(/\/$/, "") === "/insights" ||
-    window.location.hash.replace(/\/$/, "") === "#/insights" ||
-    window.location.hash === "#insights" ||
-    window.location.hash === "#/insights/";
-
-  const isChangelogPath =
-    currentPath.replace(/\/$/, "") === "/changelog" ||
-    window.location.hash.replace(/\/$/, "") === "#/changelog" ||
-    window.location.hash === "#changelog";
-
-  const isBlogPath =
-    currentPath.replace(/\/$/, "") === "/blog" ||
-    currentPath.startsWith("/blog/") ||
-    window.location.hash.replace(/\/$/, "") === "#/blog" ||
-    window.location.hash.startsWith("#/blog/");
-
-  const isCareersPath =
-    currentPath.replace(/\/$/, "") === "/careers" ||
-    window.location.hash.replace(/\/$/, "") === "#/careers" ||
-    window.location.hash === "#careers";
-
-  const isBattlePath =
-    currentPath.replace(/\/$/, "") === "/battle" ||
-    window.location.hash.replace(/\/$/, "") === "#/battle" ||
-    window.location.hash === "#battle" ||
-    currentPath.includes("battle");
-
-  const isLoginPath =
-    currentPath.replace(/\/$/, "") === "/login" ||
-    window.location.hash.replace(/\/$/, "") === "#/login" ||
-    window.location.hash === "#login";
-
-  const isResetPasswordPath =
-    currentPath.replace(/\/$/, "") === "/reset-password" ||
-    window.location.hash.replace(/\/$/, "") === "#/reset-password";
 
   let content;
   if (viewMode === 'changelog' || isChangelogPath || activeTab === "changelog") {
@@ -307,6 +306,8 @@ function App() {
     content = <GovernedDeployment onBack={() => handleTabChange("fleet")} />;
   } else if (isAgentOpsPath || activeTab === "agent-ops") {
     content = <AgentOps onBack={() => handleTabChange("fleet")} />;
+  } else if (isPlaygroundPath || activeTab === "playground") {
+    content = <PromptPlayground onBack={() => handleTabChange("fleet")} />;
   } else if (roomData) {
     const RoomComponent = CurrentRoom;
     content = <RoomComponent roomData={roomData} onLeave={handleLeave} />;

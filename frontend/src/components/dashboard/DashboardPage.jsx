@@ -831,41 +831,84 @@ function DashboardPage({ onBack }) {
                         <ReactMarkdown 
                           remarkPlugins={[remarkGfm]}
                           components={{
-                            h1: ({node, ...props}) => <h1 style={{ fontSize: "1.2rem", fontWeight: "800", color: "#0f172a", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", marginBottom: "12px" }} {...props} />,
-                            h2: ({node, ...props}) => <h2 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#0f172a", marginBottom: "10px", marginTop: "14px" }} {...props} />,
-                            h3: ({node, ...props}) => <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#2563eb", marginBottom: "8px", marginTop: "12px" }} {...props} />,
-                            p: ({node, ...props}) => <p style={{ marginBottom: "10px", lineHeight: "1.6", color: "#334155" }} {...props} />,
-                            li: ({node, ...props}) => <li style={{ marginBottom: "6px", color: "#334155", lineHeight: "1.6" }} {...props} />,
-                            ul: ({node, ...props}) => <ul style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
-                            ol: ({node, ...props}) => <ol style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
-                            strong: ({node, ...props}) => {
+                            h1: ({node: _node, ...props}) => <h1 style={{ fontSize: "1.2rem", fontWeight: "800", color: "#0f172a", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", marginBottom: "12px" }} {...props} />,
+                            h2: ({node: _node, ...props}) => <h2 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#0f172a", marginBottom: "10px", marginTop: "14px" }} {...props} />,
+                            h3: ({node: _node, ...props}) => <h3 style={{ fontSize: "1.05rem", fontWeight: "700", color: "#2563eb", marginBottom: "8px", marginTop: "12px" }} {...props} />,
+                            p: ({node: _node, ...props}) => <p style={{ marginBottom: "10px", lineHeight: "1.6", color: "#334155" }} {...props} />,
+                            li: ({node: _node, ...props}) => <li style={{ marginBottom: "6px", color: "#334155", lineHeight: "1.6" }} {...props} />,
+                            ul: ({node: _node, ...props}) => <ul style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
+                            ol: ({node: _node, ...props}) => <ol style={{ marginTop: "4px", marginBottom: "10px", paddingLeft: "1.2rem" }} {...props} />,
+                            strong: ({node: _node, ...props}) => {
                               const text = props.children[0];
                               if (typeof text === 'string') {
-                                if (text.includes("Action Recommended") || text.includes("Recommended Action")) {
+                                const lowerText = text.toLowerCase();
+                                if (lowerText.includes("action recommended") || lowerText.includes("recommended action")) {
                                   return (
-                                    <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#2563eb", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                      🔧 {text}
+                                    <span style={{ 
+                                      display: "inline-flex", 
+                                      alignItems: "center", 
+                                      gap: "6px", 
+                                      backgroundColor: "rgba(37, 99, 235, 0.08)", 
+                                      color: "#2563eb", 
+                                      border: "1px solid rgba(37, 99, 235, 0.2)",
+                                      padding: "4px 8px", 
+                                      borderRadius: "6px", 
+                                      fontWeight: "800", 
+                                      fontSize: "0.78rem", 
+                                      textTransform: "uppercase", 
+                                      letterSpacing: "0.5px",
+                                      marginRight: "6px"
+                                    }}>
+                                      🔧 {text.replace(/:/g, '').trim()}
                                     </span>
                                   );
                                 }
-                                if (text.includes("Impact Analysis") || text.includes("Resource Savings")) {
+                                if (lowerText.includes("impact analysis") || lowerText.includes("resource savings")) {
                                   return (
-                                    <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#059669", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                      📈 {text}
+                                    <span style={{ 
+                                      display: "inline-flex", 
+                                      alignItems: "center", 
+                                      gap: "6px", 
+                                      backgroundColor: "rgba(5, 150, 105, 0.08)", 
+                                      color: "#059669", 
+                                      border: "1px solid rgba(5, 150, 105, 0.2)",
+                                      padding: "4px 8px", 
+                                      borderRadius: "6px", 
+                                      fontWeight: "800", 
+                                      fontSize: "0.78rem", 
+                                      textTransform: "uppercase", 
+                                      letterSpacing: "0.5px",
+                                      marginRight: "6px"
+                                    }}>
+                                      📈 {text.replace(/:/g, '').trim()}
                                     </span>
                                   );
                                 }
-                                if (text.includes("Risk Assessment") || text.includes("Critical Risk") || text.includes("High Risk")) {
+                                if (lowerText.includes("risk assessment") || lowerText.includes("critical risk") || lowerText.includes("high risk")) {
                                   return (
-                                    <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#dc2626", fontWeight: "800", marginTop: "12px", marginBottom: "6px", fontSize: "0.95rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                      ⚠️ {text}
+                                    <span style={{ 
+                                      display: "inline-flex", 
+                                      alignItems: "center", 
+                                      gap: "6px", 
+                                      backgroundColor: "rgba(239, 68, 68, 0.08)", 
+                                      color: "#dc2626", 
+                                      border: "1px solid rgba(239, 68, 68, 0.2)",
+                                      padding: "4px 8px", 
+                                      borderRadius: "6px", 
+                                      fontWeight: "800", 
+                                      fontSize: "0.78rem", 
+                                      textTransform: "uppercase", 
+                                      letterSpacing: "0.5px",
+                                      marginRight: "6px" 
+                                    }}>
+                                      ⚠️ {text.replace(/:/g, '').trim()}
                                     </span>
                                   );
                                 }
                               }
                               return <strong style={{ color: "#0f172a", fontWeight: "700" }} {...props} />;
                             },
-                            code: ({node, inline, className, children, ...props}) => {
+                            code: ({node: _node, inline: _inline, className: _className, children, ...props}) => {
                               return (
                                 <code 
                                   style={{ 
@@ -882,7 +925,7 @@ function DashboardPage({ onBack }) {
                                 </code>
                               );
                             },
-                            pre: ({node, ...props}) => <CollapsiblePre {...props} />
+                            pre: ({node: _node, ...props}) => <CollapsiblePre {...props} />
                           }}
                         >
                           {trace.outputs}

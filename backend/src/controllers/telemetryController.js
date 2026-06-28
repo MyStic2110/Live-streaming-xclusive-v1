@@ -487,3 +487,47 @@ export const detokenize = async (req, res) => {
     res.json({ data: req.body.data });
   }
 };
+
+export const runPlaygroundChat = async (req, res) => {
+  const { systemPrompt, userQuery, model, temperature } = req.body;
+
+  if (!userQuery) {
+    return res.status(400).json({ error: "userQuery is required" });
+  }
+
+  const messages = [];
+  if (systemPrompt) {
+    messages.push({ role: "system", content: systemPrompt });
+  }
+  messages.push({ role: "user", content: userQuery });
+
+  try {
+    const openRouterRes = await fetch(
+      `${process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1"}/chat/completions`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: model || "openai/gpt-4o-mini",
+          messages,
+          temperature: temperature !== undefined ? parseFloat(temperature) : 0.7,
+          max_tokens: 1000
+        })
+      }
+    );
+
+    if (!openRouterRes.ok) {
+      const errText = await openRouterRes.text();
+      return res.status(openRouterRes.status).json({ error: `OpenRouter error: ${errText}` });
+    }
+
+    const data = await openRouterRes.json();
+    res.json(data);
+  } catch (err) {
+    console.error("[PLAYGROUND_CONTROLLER] LLM run error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};

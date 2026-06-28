@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Monitor, BarChart2, Cpu, LogOut, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
+import { Monitor, BarChart2, Cpu, LogOut, ChevronLeft, ChevronRight, Shield, Terminal } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -38,6 +38,7 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
     { id: 'analytics',  label: 'Analytics & Costs', Icon: BarChart2 },
     { id: 'compliance', label: 'Compliance Hub',  Icon: Shield    },
     { id: 'agent-ops',  label: 'Agent Ops',       Icon: Cpu       },
+    { id: 'playground', label: 'Prompt Playground', Icon: Terminal },
   ];
 
   const getBreadcrumb = () => {
@@ -109,25 +110,28 @@ export default function ConsoleLayout({ user, onLogout, activeTab, onTabChange, 
 
           {/* Nav List */}
           <nav className="sidebar-list">
-            {menuItems.map(({ id, label, Icon }) => (
-              <div
-                key={id}
-                onClick={() => onTabChange(id)}
-                className={`sidebar-item ${activeTab === id ? 'active' : ''}`}
-                style={{
-                  color: activeTab === id ? whitelabel.theme.primary : (isDarkTab ? '#94a3b8' : 'var(--text-muted)'),
-                  background: activeTab === id ? (isDarkTab ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.08)') : 'transparent',
-                  borderColor: activeTab === id ? (isDarkTab ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.1)') : 'transparent',
-                }}
-              >
-                <Icon
-                  size={18}
-                  strokeWidth={activeTab === id ? 2.2 : 1.8}
-                  color={activeTab === id ? whitelabel.theme.primary : (isDarkTab ? '#94a3b8' : 'var(--text-muted)')}
-                />
-                <span className="sidebar-text">{label}</span>
-              </div>
-            ))}
+            {menuItems.map(({ id, label, Icon }) => {
+              const IconComponent = Icon;
+              return (
+                <div
+                  key={id}
+                  onClick={() => onTabChange(id)}
+                  className={`sidebar-item ${activeTab === id ? 'active' : ''}`}
+                  style={{
+                    color: activeTab === id ? whitelabel.theme.primary : (isDarkTab ? '#94a3b8' : 'var(--text-muted)'),
+                    background: activeTab === id ? (isDarkTab ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.08)') : 'transparent',
+                    borderColor: activeTab === id ? (isDarkTab ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.1)') : 'transparent',
+                  }}
+                >
+                  <IconComponent
+                    size={18}
+                    strokeWidth={activeTab === id ? 2.2 : 1.8}
+                    color={activeTab === id ? whitelabel.theme.primary : (isDarkTab ? '#94a3b8' : 'var(--text-muted)')}
+                  />
+                  <span className="sidebar-text">{label}</span>
+                </div>
+              );
+            })}
           </nav>
         </div>
 

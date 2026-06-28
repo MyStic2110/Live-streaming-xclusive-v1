@@ -28,6 +28,7 @@ router.post('/security/aivyuh-scan', authenticateToken, requireRole(['admin', 'o
 router.post('/security/nist-scan', authenticateToken, requireRole(['admin', 'operator']), roomController.runNistScan);
 router.post('/security/remediate', authenticateToken, requireRole(['admin']), roomController.updateSecurityConstraint);
 router.post('/detokenize', authenticateToken, telemetryController.detokenize);
+router.post('/playground/run', authenticateToken, requireRole(['admin', 'operator']), telemetryController.runPlaygroundChat);
 
 // Compliance audits (Operator / Admin / Viewer RBAC)
 router.get('/compliance/summary', authenticateToken, requireRole(['admin', 'operator', 'viewer']), complianceController.getComplianceSummary);
