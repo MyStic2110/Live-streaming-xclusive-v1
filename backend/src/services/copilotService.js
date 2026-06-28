@@ -6,6 +6,11 @@ import { v4 as uuidv4 } from "uuid";
 import { pipeline } from "@huggingface/transformers";
 import { spawn, spawnSync } from "child_process";
 
+let ioInstance = null;
+export const setSocketIO = (io) => {
+  ioInstance = io;
+};
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -1044,7 +1049,8 @@ Here are the available knowledge verticals and what information they contain:
 If the context contains enough details, return:
 {
   "enoughEvidence": true,
-  "explanation": "Brief explanation of why the evidence is sufficient."
+  "explanation": "Brief explanation of why the evidence is sufficient.",
+  "evidenceScore": 1.0
 }
 
 If the context is missing key information, return:
@@ -1053,10 +1059,11 @@ If the context is missing key information, return:
   "explanation": "Brief explanation of what is missing from the evidence.",
   "gapDescription": "Description of the gap in evidence.",
   "suggestedQuery": "A refined, specific search query (using keywords) to fetch the missing details from the knowledge base.",
-  "suggestedVerticals": ["pricing", "integrations", "security", "features", "agents", "crawled_knowledge", "github_knowledge"] (choose one or more matching verticals from the list above that likely contain the gap information)
+  "suggestedVerticals": ["pricing", "integrations", "security", "features", "agents", "crawled_knowledge", "github_knowledge"],
+  "evidenceScore": <float between 0.0 and 0.9 representing current completeness of context to answer the query>
 }
 
-Be strict. If the user asks about a specific feature, integration, contact, or pricing tier, and it is not explicitly documented in the accumulated context, you MUST mark enoughEvidence as false and specify the gap.
+Be strict. If the user asks about a specific feature, integration, contact, or pricing tier, and it is not explicitly documented in the accumulated context, you MUST mark enoughEvidence as false and specify the gap and a lower evidenceScore.
 
 Respond ONLY with a valid JSON object. Do not include markdown code block formatting (like \`\`\`json) in your response.
 `;
@@ -1114,6 +1121,7 @@ ${memories && memories.length ? memories.map(f => `- ${f}`).join("\n") : "None"}
 // --- CORE HANDLER (Streaming-friendly) ---
 export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone }) => {
   const startTime = parseFloat(performance.now());
+  const runId = uuidv4().replace(/-/g, "");
 
   // 1. Guardrail input validation
   const [isSafe, refusalMessage, eventType] = validateInput(query);
@@ -1130,7 +1138,7 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
 
     const { session: s, sessionId: sid } = await loadSession(sessionId);
     onChunk(refusalMessage);
-    onDone({ response: refusalMessage, sessionId: sid, runId: uuidv4().replace(/-/g, "") });
+    onDone({ response: refusalMessage, sessionId: sid, runId });
     return;
   }
 
@@ -1143,7 +1151,7 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
     session.memory_summary = "Copilot greeted the user.";
     await saveSession(activeSessionId, session);
     onChunk(welcome);
-    onDone({ response: welcome, sessionId: activeSessionId, runId: uuidv4().replace(/-/g, "") });
+    onDone({ response: welcome, sessionId: activeSessionId, runId });
     return;
   }
 
@@ -1160,7 +1168,7 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
     updateSessionMemory(session, query, redirection);
     await saveSession(activeSessionId, session);
     onChunk(redirection);
-    onDone({ response: redirection, sessionId: activeSessionId, runId: uuidv4().replace(/-/g, "") });
+    onDone({ response: redirection, sessionId: activeSessionId, runId });
     return;
   }
 
@@ -1173,7 +1181,7 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
     updateSessionMemory(session, query, greetingMsg);
     await saveSession(activeSessionId, session);
     onChunk(greetingMsg);
-    onDone({ response: greetingMsg, sessionId: activeSessionId, runId: uuidv4().replace(/-/g, "") });
+    onDone({ response: greetingMsg, sessionId: activeSessionId, runId });
     return;
   }
 
@@ -1193,6 +1201,16 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
   for (let iter = 1; iter <= maxIterations; iter++) {
     const loopPrefix = iter === 1 ? "🔍 " : " ➔ 🔍 ";
     onChunk(loopPrefix);
+
+    if (ioInstance) {
+      ioInstance.emit("copilot_loop_status", {
+        run_id: runId,
+        event: "loop_start",
+        iteration: iter,
+        query: currentQuery,
+        timestamp: Date.now()
+      });
+    }
 
     const { contextJson: iterContextJson, mergedContext: iterMergedContext, matchedVerticals: iterMatchedVerticals, allowedUrls: iterAllowedUrls, isExplicit: iterIsExplicit } = await routeContext(currentQuery, session.last_vertical, forceVerticals);
 
@@ -1233,6 +1251,21 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
 
       console.info(`[LOOP ENGINEER] Evaluator output: ${JSON.stringify(evaluation)}`);
 
+      if (ioInstance) {
+        ioInstance.emit("copilot_loop_status", {
+          run_id: runId,
+          event: "loop_evaluation",
+          iteration: iter,
+          enoughEvidence: evaluation.enoughEvidence,
+          explanation: evaluation.explanation,
+          gapDescription: evaluation.gapDescription || null,
+          suggestedQuery: evaluation.suggestedQuery || null,
+          suggestedVerticals: evaluation.suggestedVerticals || [],
+          evidenceScore: evaluation.evidenceScore !== undefined ? parseFloat(evaluation.evidenceScore) : (evaluation.enoughEvidence ? 1.0 : 0.45),
+          timestamp: Date.now()
+        });
+      }
+
       if (evaluation.enoughEvidence) {
         onChunk(" ➔ ✅ 100%\n\n---\n\n");
         loopEvidenceSufficient = true;
@@ -1255,7 +1288,15 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
   const finalMatchedVerticals = Array.from(accumulatedMatchedVerticals);
 
   // 4. Compile dynamic prompt using accumulated context
-  const compiledSystemPrompt = compilePrompt(finalMatchedVerticals, finalContextJson, session, memories);
+  let compiledSystemPrompt = compilePrompt(finalMatchedVerticals, finalContextJson, session, memories);
+
+  // Guard: if the compiled prompt is too large (OpenRouter context limit),
+  // truncate the context portion to keep within ~15K tokens (60K chars).
+  const MAX_PROMPT_CHARS = 60000;
+  if (compiledSystemPrompt.length > MAX_PROMPT_CHARS) {
+    console.warn(`[COPILOT] System prompt too large (${compiledSystemPrompt.length} chars), truncating to ${MAX_PROMPT_CHARS}`);
+    compiledSystemPrompt = compiledSystemPrompt.slice(0, MAX_PROMPT_CHARS) + '\n\n[Context truncated due to length. Answer based on what is available above.]';
+  }
 
   // 5. Invoke OpenRouter (openai/gpt-4o-mini) with streaming
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -1291,7 +1332,6 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
   let responseText = "";
   let promptTokens = 0;
   let completionTokens = 0;
-  let runId = uuidv4().replace(/-/g, "");
 
   try {
     const openrouterResp = await fetch(`${baseUrl}/chat/completions`, {
@@ -1304,6 +1344,7 @@ export const processCopilotMessage = async ({ query, sessionId, onChunk, onDone 
         model,
         messages,
         temperature: 0.3,
+        max_tokens: 1500,
         stream: true
       })
     });

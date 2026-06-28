@@ -9,6 +9,7 @@ import { createClient } from 'redis';
 import { config } from './src/config/livekit.js';
 import * as roomController from './src/controllers/roomController.js';
 import * as telemetryController from './src/controllers/telemetryController.js';
+import * as copilotService from './src/services/copilotService.js';
 import logger from './src/config/logger.js';
 import { connectDB } from './src/config/db.js';
 
@@ -145,6 +146,7 @@ process.on("unhandledRejection", (reason) => {
 // Inject io instance into the controllers
 roomController.setSocketIO(io);
 telemetryController.setSocketIO(io);
+copilotService.setSocketIO(io);
 registerBattleSockets(io);
 startMetricsMonitor(io);
 

@@ -60,6 +60,10 @@ export default function AgentOps({ onBack }) {
   const [runAgentMap, setRunAgentMap] = useState({});
   // Active links: flowKey -> { active, run_id, event, label, direction, ts }
   const [activeTelemetryFlows, setActiveTelemetryFlows] = useState({});
+  // LLM Judge hallucination scores: run_id -> { score, reasoning, flags, evaluated_at }
+  const [hallucinationResults, setHallucinationResults] = useState({});
+  // Loop Engineering iteration scores: run_id -> latest { iteration, enoughEvidence, evidenceScore, gapDescription }
+  const [loopStatuses, setLoopStatuses] = useState({});
 
   useEffect(() => {
     // 1. Fetch initial agents list
@@ -196,6 +200,67 @@ export default function AgentOps({ onBack }) {
             ...prev,
             [agentId]: [...currentLogs, logLine].slice(-150)
           };
+        });
+      }
+    });
+
+    // Track hallucination judge evaluations from the auto-trigger system
+    socket.on('hallucination_result', (result) => {
+      if (!result || !result.run_id) return;
+      setHallucinationResults(prev => ({ ...prev, [result.run_id]: result }));
+
+      // Find which agent this run belongs to and log a summary
+      const agentId = runAgentMap[result.run_id] || 'swarm_copilot';
+      const accuracy = Math.round((1 - result.score) * 100);
+      const label = result.score <= 0.20 ? 'ACCURATE' : result.score <= 0.50 ? 'UNCERTAIN' : result.score <= 0.75 ? 'SUSPECT' : 'HALLUCINATED';
+      setAgentLogs(prev => {
+        const currentLogs = prev[agentId] || [];
+        return {
+          ...prev,
+          [agentId]: [...currentLogs, {
+            text: `[JUDGE] Accuracy: ${accuracy}% (${label}) — ${result.reasoning || 'Evaluation complete.'}`,
+            type: result.score <= 0.20 ? 'success' : result.score <= 0.50 ? 'warn' : 'error'
+          }].slice(-150)
+        };
+      });
+    });
+
+    // Track Loop Engineering iterative reasoning progress
+    socket.on('copilot_loop_status', (payload) => {
+      if (!payload || !payload.run_id) return;
+      const { run_id, event, iteration, enoughEvidence, evidenceScore, gapDescription, query: iterQuery } = payload;
+
+      if (event === 'loop_start') {
+        setAgentLogs(prev => {
+          const currentLogs = prev['swarm_copilot'] || [];
+          return {
+            ...prev,
+            swarm_copilot: [...currentLogs, {
+              text: `[LOOP #${iteration}] Searching knowledge base → "${(iterQuery || '').slice(0, 60)}..."`,
+              type: 'info'
+            }].slice(-150)
+          };
+        });
+        triggerFlowGlow('swarm_copilot', 'loop_engineering', {
+          run_id: run_id.slice(0, 8), event: `ITER ${iteration}`,
+          label: 'searching', direction: '→', ts: new Date().toLocaleTimeString()
+        });
+      } else if (event === 'loop_evaluation') {
+        setLoopStatuses(prev => ({ ...prev, [run_id]: payload }));
+        const scoreLabel = evidenceScore !== undefined ? `${Math.round(evidenceScore * 100)}%` : '?%';
+        setAgentLogs(prev => {
+          const currentLogs = prev['swarm_copilot'] || [];
+          return {
+            ...prev,
+            swarm_copilot: [...currentLogs, {
+              text: `[LOOP #${iteration}] Evidence: ${scoreLabel} — ${enoughEvidence ? '✅ Sufficient' : `⚠️ Gap: ${gapDescription || 'Refining query...'}`}`,
+              type: enoughEvidence ? 'success' : 'warn'
+            }].slice(-150)
+          };
+        });
+        triggerFlowGlow('swarm_copilot', 'loop_engineering', {
+          run_id: run_id.slice(0, 8), event: enoughEvidence ? 'DONE' : 'RETRY',
+          label: scoreLabel, direction: '←', ts: new Date().toLocaleTimeString()
         });
       }
     });
@@ -367,6 +432,8 @@ export default function AgentOps({ onBack }) {
             onSelect={handleAgentSelect} 
             services={metrics.services}
             activeFlows={activeTelemetryFlows}
+            hallucinationResults={hallucinationResults}
+            loopStatuses={loopStatuses}
           />
         ) : (
           renderAgentCluster()

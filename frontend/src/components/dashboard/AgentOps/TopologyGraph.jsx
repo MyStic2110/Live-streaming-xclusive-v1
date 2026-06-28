@@ -6,7 +6,7 @@ import './TopologyGraph.css';
  * Visualizes agent node hierarchies, external microservices, and live data telemetry flows.
  * Supports a focused, dedicated view when inspecting a single agent.
  */
-export default function TopologyGraph({ agents, onSelect, services = {}, activeFlows = {} }) {
+export default function TopologyGraph({ agents, onSelect, services = {}, activeFlows = {}, hallucinationResults = {}, loopStatuses = {} }) {
   const [hoveredNode, setHoveredNode] = useState(null);
   const [isResizing, setIsResizing] = useState(false);
 
@@ -167,13 +167,14 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
     // 2. Microservice destinations (Organized in Top and Bottom rows to prevent overlapping)
     const servicesList = [
       { id: 'mem0_service', name: 'Mem0 Memory', x: 80, y: 50, type: 'service', status: services.mem0 ? 'online' : 'offline', desc: 'Semantic Memory Sidecar Engine (Port 8770)' },
-      { id: 'qdrant_service', name: 'Qdrant Vector', x: 350, y: 50, type: 'service', status: services.qdrant ? 'online' : 'offline', desc: 'Vector store for Agent long-term memory (Port 6333)' },
-      { id: 'llm_gateway_service', name: 'OpenRouter LLM', x: 550, y: 50, type: 'service', status: 'online', desc: 'Enterprise OpenRouter LLM API gateway' },
+      { id: 'qdrant_service', name: 'Qdrant Vector', x: 300, y: 50, type: 'service', status: services.qdrant ? 'online' : 'offline', desc: 'Vector store for Agent long-term memory (Port 6333)' },
+      { id: 'loop_engineering_service', name: 'Loop Engineer', x: 450, y: 155, type: 'service', status: 'online', desc: 'Iterative retrieval evaluator: searches until evidence is sufficient to answer the query' },
+      { id: 'llm_gateway_service', name: 'OpenRouter LLM', x: 600, y: 50, type: 'service', status: 'online', desc: 'Enterprise OpenRouter LLM API gateway' },
       { id: 'searxng_service', name: 'SearxNG Search', x: 820, y: 50, type: 'service', status: services.searxng ? 'online' : 'offline', desc: 'Privacy-respecting meta-search engine API (Port 8081)' },
       
       { id: 'livekit_service', name: 'LiveKit Voice', x: 80, y: 430, type: 'service', status: services.livekit ? 'online' : 'offline', desc: 'Real-time WebRTC audio & speech streaming server (Port 7880)' },
-      { id: 'db_service', name: 'PostgreSQL DB', x: 350, y: 430, type: 'service', status: services.db ? 'online' : 'offline', desc: 'Main transactional Swarm database (Port 5433)' },
-      { id: 'redis_service', name: 'Redis Pub/Sub', x: 550, y: 430, type: 'service', status: services.redis ? 'online' : 'offline', desc: 'Redis event broker & telemetry stream (Port 6379)' },
+      { id: 'db_service', name: 'PostgreSQL DB', x: 300, y: 430, type: 'service', status: services.db ? 'online' : 'offline', desc: 'Main transactional Swarm database (Port 5433)' },
+      { id: 'redis_service', name: 'Redis Pub/Sub', x: 600, y: 430, type: 'service', status: services.redis ? 'online' : 'offline', desc: 'Redis event broker & telemetry stream (Port 6379)' },
       { id: 'securelytix_service', name: 'Securelytix SDK', x: 820, y: 430, type: 'service', status: services.securelytix ? 'online' : 'offline', desc: 'Vulnerability scanners & compliance pipelines (Port 8080)' }
     ];
 
@@ -197,12 +198,29 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
 
       // --- DYNAMIC service wiring from agent.services (returned by /api/agents) ---
       const agentServices = agent.agentData?.services || agent.services || [];
-      agentServices.forEach(svcId => {
-        links.push({ from: id, to: svcId, isServiceLink: true });
-      });
-      // If mem0 is connected, auto-add the mem0 -> qdrant cascade link
-      if (agentServices.includes('mem0_service')) {
+      
+      // For Swarm Copilot: route through Loop Engineering node
+      const isCopilot = id.includes('copilot');
+      if (isCopilot) {
+        // Agent -> Loop Engineer (always wired for copilot)
+        links.push({ from: id, to: 'loop_engineering_service', isServiceLink: true });
+        // Loop Engineer -> mem0, searxng, llm_gateway (the retrieval chain)
+        links.push({ from: 'loop_engineering_service', to: 'mem0_service', isServiceLink: true });
+        links.push({ from: 'loop_engineering_service', to: 'searxng_service', isServiceLink: true });
+        links.push({ from: 'loop_engineering_service', to: 'llm_gateway_service', isServiceLink: true });
         links.push({ from: 'mem0_service', to: 'qdrant_service', isServiceLink: true });
+        // Wire remaining agent-specific services directly
+        agentServices.filter(svcId => !['mem0_service','searxng_service','llm_gateway_service'].includes(svcId)).forEach(svcId => {
+          links.push({ from: id, to: svcId, isServiceLink: true });
+        });
+      } else {
+        agentServices.forEach(svcId => {
+          links.push({ from: id, to: svcId, isServiceLink: true });
+        });
+        // If mem0 is connected, auto-add the mem0 -> qdrant cascade link
+        if (agentServices.includes('mem0_service')) {
+          links.push({ from: 'mem0_service', to: 'qdrant_service', isServiceLink: true });
+        }
       }
 
     } else {
@@ -665,22 +683,40 @@ export default function TopologyGraph({ agents, onSelect, services = {}, activeF
                     </text>
 
                     {/* Metric Subtext for services */}
-                    {isService && isConnected && (
-                      <text
-                        x={0}
-                        y={36}
-                        className="node-sub-metric"
-                      >
-                        {node.id === 'db_service' ? 'Port 5433' :
-                         node.id === 'qdrant_service' ? 'Port 6333' :
-                         node.id === 'mem0_service' ? 'Port 8770' :
-                         node.id === 'redis_service' ? 'Port 6379' :
-                         node.id === 'searxng_service' ? 'Port 8081' :
-                         node.id === 'livekit_service' ? 'Port 7880' :
-                         node.id === 'securelytix_service' ? 'Port 8080' :
-                         node.id === 'llm_gateway_service' ? 'OpenRouter API' : ''}
-                      </text>
-                    )}
+                    {isService && isConnected && (() => {
+                      // Derive live score badges from real-time socket data
+                      const latestLoopRun = Object.values(loopStatuses).sort((a,b) => (b.timestamp||0)-(a.timestamp||0))[0];
+                      const latestHallucinationRun = Object.values(hallucinationResults).sort((a,b) => new Date(b.evaluated_at||0) - new Date(a.evaluated_at||0))[0];
+
+                      let metricText = '';
+                      let metricColor = '#9ca3af';
+
+                      if (node.id === 'loop_engineering_service' && latestLoopRun && latestLoopRun.evidenceScore !== undefined) {
+                        const pct = Math.round(latestLoopRun.evidenceScore * 100);
+                        metricText = `Evidence: ${pct}%`;
+                        metricColor = pct >= 90 ? '#10b981' : pct >= 60 ? '#fbbf24' : '#f87171';
+                      } else if (node.id === 'llm_gateway_service' && latestHallucinationRun) {
+                        const acc = Math.round((1 - latestHallucinationRun.score) * 100);
+                        metricText = `Acc: ${acc}%`;
+                        metricColor = acc >= 90 ? '#10b981' : acc >= 70 ? '#fbbf24' : '#f87171';
+                      } else {
+                        metricText = (
+                          node.id === 'db_service' ? 'Port 5433' :
+                          node.id === 'qdrant_service' ? 'Port 6333' :
+                          node.id === 'mem0_service' ? 'Port 8770' :
+                          node.id === 'redis_service' ? 'Port 6379' :
+                          node.id === 'searxng_service' ? 'Port 8081' :
+                          node.id === 'livekit_service' ? 'Port 7880' :
+                          node.id === 'securelytix_service' ? 'Port 8080' : ''
+                        );
+                      }
+
+                      return metricText ? (
+                        <text x={0} y={36} className="node-sub-metric" fill={metricColor} style={{ fontWeight: metricText.startsWith('Evidence') || metricText.startsWith('Acc') ? 700 : 400 }}>
+                          {metricText}
+                        </text>
+                      ) : null;
+                    })()}
                   </g>
                 </g>
               );

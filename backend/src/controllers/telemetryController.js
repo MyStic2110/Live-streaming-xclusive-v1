@@ -140,6 +140,77 @@ export const handleLlmTrace = async (req, res) => {
           run_id
         ]
       );
+
+      // Auto-trigger background hallucination evaluation
+      if (process.env.OPENROUTER_API_KEY) {
+        setTimeout(async () => {
+          try {
+            const traceRes = await query('SELECT * FROM traces WHERE run_id = $1', [run_id]);
+            if (traceRes.rows.length > 0) {
+              const trace = traceRes.rows[0];
+              const inputs = parseJson(trace.inputs);
+              const outputs = trace.outputs;
+              
+              if (inputs && inputs.length > 0 && outputs) {
+                const contextSummary = inputs
+                  .map(m => `[${(m.role || 'user').toUpperCase()}]: ${String(m.content || '').slice(0, 800)}`)
+                  .join("\n");
+                
+                const judgeMessages = [
+                  { role: "system", content: JUDGE_SYSTEM_PROMPT },
+                  { role: "user", content: `CONVERSATION CONTEXT:\n${contextSummary}\n\nAI RESPONSE TO EVALUATE:\n${String(outputs).slice(0, 1200)}` }
+                ];
+                
+                const openRouterRes = await fetch(
+                  `${process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1"}/chat/completions`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                      model: "openai/gpt-4o-mini",
+                      messages: judgeMessages,
+                      temperature: 0.1,
+                      max_tokens: 400
+                    })
+                  }
+                );
+                
+                if (openRouterRes.ok) {
+                  const judgeData = await openRouterRes.json();
+                  if (judgeData) {
+                    const raw = judgeData.choices?.[0]?.message?.content?.trim() || "{}";
+                    let parsed;
+                    try {
+                      const clean = raw.replace(/^```[a-z]*\n?/i, "").replace(/```$/g, "").trim();
+                      parsed = JSON.parse(clean);
+                    } catch {
+                      parsed = { score: 0.5, reasoning: "Failed to parse judge response.", flags: [] };
+                    }
+                    
+                    const result = {
+                      run_id,
+                      score: Math.min(1, Math.max(0, parseFloat(parsed.score) || 0)),
+                      reasoning: parsed.reasoning || "",
+                      flags: Array.isArray(parsed.flags) ? parsed.flags : [],
+                      evaluated_at: new Date().toISOString()
+                    };
+                    
+                    hallucinationStore.set(run_id, result);
+                    if (ioInstance) {
+                      ioInstance.emit("hallucination_result", result);
+                    }
+                  }
+                }
+              }
+            }
+          } catch (evalErr) {
+            console.error("[TELEMETRY] Auto-evaluation failed:", evalErr.message);
+          }
+        }, 1500);
+      }
     } else if (event === "llm_error") {
       const inputCost = data.input_cost || 0;
       const outputCost = data.output_cost || 0;
